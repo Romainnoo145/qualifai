@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProspectStatus {
+  DRAFT
+  ENRICHED
+  GENERATING
+  READY
+  SENT
+  VIEWED
+  ENGAGED
+  CONVERTED
+  ARCHIVED
+}
+
+model Prospect {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  slug      String   @unique @db.VarChar(12)
+
+  // Lusha enrichment fields
+  companyName   String?
+  domain        String
+  industry      String?
+  subIndustry   String?
+  employeeRange String?
+  revenueRange  String?
+  technologies  String[]
+  specialties   String[]
+  country       String?
+  city          String?
+  description   String?
+  logoUrl       String?
+  lushaRawData  Json?
+
+  // Wizard content (pre-generated)
+  heroContent       Json?
+  dataOpportunities Json?
+  automationAgents  Json?
+  successStories    Json?
+  aiRoadmap         Json?
+
+  // Status tracking
+  status        ProspectStatus @default(DRAFT)
+  internalNotes String?
+
+  // Relations
+  sessions         WizardSession[]
+  notificationLogs NotificationLog[]
+
+  @@index([domain])
+  @@index([status])
+}
+
+model WizardSession {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prospectId     String
+  prospect       Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  currentStep    Int      @default(0)
+  maxStepReached Int      @default(0)
+
+  // Time tracking per step (in seconds)
+  stepTimes Json?
+
+  // Conversion events
+  pdfDownloaded   Boolean   @default(false)
+  pdfDownloadedAt DateTime?
+  callBooked      Boolean   @default(false)
+  callBookedAt    DateTime?
+
+  // Session metadata
+  userAgent String?
+  ipAddress String?
+
+  @@index([prospectId])
+}
+
+model IndustryTemplate {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  industry    String
+  subIndustry String?
+  displayName String
+  icon        String
+  colorAccent String
+
+  // Prompt fragments for content generation
+  dataOpportunityPrompts Json
+  automationPrompts      Json
+  successStoryTemplates  Json
+  roadmapTemplates       Json
+
+  @@unique([industry, subIndustry])
+  @@index([industry])
+}
+
+model NotificationLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  type       String
+  channel    String
+  status     String
+  metadata   Json?
+
+  @@index([prospectId])
+  @@index([type])
+}
