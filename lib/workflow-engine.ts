@@ -6,7 +6,11 @@ import {
   type Prospect,
   type WorkflowHypothesis,
 } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+import Anthropic from '@anthropic-ai/sdk';
 import { readFile } from 'node:fs/promises';
+
+const anthropic = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 
 export const WORKFLOW_OFFER_NAME = 'Workflow Optimization Sprint';
 export const CTA_STEP_1 = 'I made a 1-page Workflow Loss Map for your team.';
@@ -915,31 +919,126 @@ export function offersToCandidates(payload: unknown): ProofCandidate[] {
     });
 }
 
-async function loadProofCatalog(): Promise<ProofCandidate[]> {
-  const inventoryPayload = await readJsonSafe(env.OBSIDIAN_INVENTORY_JSON_PATH);
-  const offersPayload = await readJsonSafe(
-    env.OBSIDIAN_CLIENT_OFFERS_JSON_PATH,
-  );
-  return [
-    ...inventoryToCandidates(inventoryPayload),
-    ...offersToCandidates(offersPayload),
-  ];
+type UseCaseRecord = {
+  id: string;
+  title: string;
+  summary: string;
+  tags: string[];
+  isShipped: boolean;
+  externalUrl: string | null;
+};
+
+async function scoreWithClaude(
+  useCases: UseCaseRecord[],
+  query: string,
+  limit: number,
+): Promise<ProofMatchResult[]> {
+  try {
+    const useCaseList = useCases
+      .map(
+        (uc, i) =>
+          `${i + 1}. [${uc.id}] ${uc.title}: ${uc.summary}. Tags: ${uc.tags.join(', ')}`,
+      )
+      .join('\n');
+
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 512,
+      messages: [
+        {
+          role: 'user',
+          content: `Score each use case for relevance to the prospect's pain point. Return ONLY a JSON array, no other text.
+
+Pain point: ${query}
+
+Use cases:
+${useCaseList}
+
+Return JSON array: [{"id": "...", "score": 0.0}]
+Higher score = more relevant. 0.0 = no relevance. Be generous with partial matches — Dutch and English terms for the same concept should match (e.g., "facturering" matches "invoice automation").`,
+        },
+      ],
+    });
+
+    const text =
+      response.content[0]?.type === 'text' ? response.content[0].text : '';
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) throw new Error('No JSON array in response');
+
+    const scores = JSON.parse(jsonMatch[0]) as Array<{
+      id: string;
+      score: number;
+    }>;
+    const scoreMap = new Map(scores.map((s) => [s.id, s.score]));
+
+    return useCases
+      .map((uc) => ({
+        sourceType: 'use_case',
+        proofId: uc.id,
+        proofTitle: uc.title,
+        proofSummary: uc.summary,
+        proofUrl: uc.externalUrl,
+        score: round2(scoreMap.get(uc.id) ?? 0),
+        isRealShipped: uc.isShipped,
+        isCustomPlan: false,
+      }))
+      .filter((m) => m.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+  } catch {
+    // Fallback to keyword scoring if Claude fails
+    return fallbackKeywordScore(useCases, query, limit);
+  }
 }
 
-function scoreProof(queryTokens: string[], candidate: ProofCandidate): number {
-  if (queryTokens.length === 0 || candidate.keywords.length === 0) return 0;
-  const candidateSet = new Set(candidate.keywords);
-  const overlap = queryTokens.filter((token) => candidateSet.has(token)).length;
-  const coverage = overlap / queryTokens.length;
-  return round2(coverage);
+function fallbackKeywordScore(
+  useCases: UseCaseRecord[],
+  query: string,
+  limit: number,
+): ProofMatchResult[] {
+  const queryTokens = toTokens(query);
+  return useCases
+    .map((uc) => {
+      const candidateTokens = new Set(
+        toTokens([uc.title, uc.summary, ...uc.tags].join(' ')),
+      );
+      const overlap = queryTokens.filter((t) => candidateTokens.has(t)).length;
+      const score =
+        queryTokens.length > 0 ? round2(overlap / queryTokens.length) : 0;
+      return {
+        sourceType: 'use_case',
+        proofId: uc.id,
+        proofTitle: uc.title,
+        proofSummary: uc.summary,
+        proofUrl: uc.externalUrl,
+        score,
+        isRealShipped: uc.isShipped,
+        isCustomPlan: false,
+      };
+    })
+    .filter((m) => m.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
 }
 
 export async function matchProofs(
+  db: PrismaClient,
   query: string,
   limit = 4,
 ): Promise<ProofMatchResult[]> {
-  const catalog = await loadProofCatalog();
-  if (catalog.length === 0) {
+  const useCases = await db.useCase.findMany({
+    where: { isActive: true },
+    select: {
+      id: true,
+      title: true,
+      summary: true,
+      tags: true,
+      isShipped: true,
+      externalUrl: true,
+    },
+  });
+
+  if (useCases.length === 0) {
     return [
       {
         sourceType: 'custom',
@@ -955,17 +1054,9 @@ export async function matchProofs(
     ];
   }
 
-  const queryTokens = toTokens(query);
-  const scored = catalog
-    .map((candidate) => ({
-      candidate,
-      score: scoreProof(queryTokens, candidate),
-    }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .filter((item) => item.score > 0);
+  const results = await scoreWithClaude(useCases, query, limit);
 
-  if (scored.length === 0) {
+  if (results.length === 0) {
     return [
       {
         sourceType: 'custom',
@@ -981,16 +1072,7 @@ export async function matchProofs(
     ];
   }
 
-  return scored.map(({ candidate, score }) => ({
-    sourceType: candidate.sourceType,
-    proofId: candidate.proofId,
-    proofTitle: candidate.title,
-    proofSummary: candidate.summary,
-    proofUrl: candidate.url,
-    score,
-    isRealShipped: candidate.shipped,
-    isCustomPlan: false,
-  }));
+  return results;
 }
 
 export function runSummaryPayload(
