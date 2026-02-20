@@ -10,7 +10,14 @@ import type { PrismaClient } from '@prisma/client';
 import Anthropic from '@anthropic-ai/sdk';
 import { readFile } from 'node:fs/promises';
 
-const anthropic = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+// Lazily initialized to avoid accessing env at module load time (breaks test isolation)
+let anthropicClient: Anthropic | null = null;
+function getAnthropicClient(): Anthropic {
+  if (!anthropicClient) {
+    anthropicClient = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+  }
+  return anthropicClient;
+}
 
 export const WORKFLOW_OFFER_NAME = 'Workflow Optimization Sprint';
 export const CTA_STEP_1 = 'I made a 1-page Workflow Loss Map for your team.';
@@ -941,7 +948,7 @@ async function scoreWithClaude(
       )
       .join('\n');
 
-    const response = await anthropic.messages.create({
+    const response = await getAnthropicClient().messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 512,
       messages: [
