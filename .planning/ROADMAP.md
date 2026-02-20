@@ -3,7 +3,7 @@
 ## Milestones
 
 - v1.0 MVP — Phases 1-5 (shipped 2026-02-20)
-- v1.1 Evidence-Backed Multi-Touch Outreach — Phases 6-10 (in progress)
+- v1.1 Evidence-Backed Multi-Touch Outreach — Phases 6-11 (in progress)
 
 ## Phases
 
@@ -26,7 +26,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 - [x] **Phase 7: Evidence Approval Gate** — Wire hypothesis review UI and block outreach until admin approves at least one hypothesis per prospect
 - [x] **Phase 8: Deep Evidence Pipeline** — Add SerpAPI search discovery and managed-browser extraction as new evidence sources feeding the existing pipeline
 - [x] **Phase 9: Engagement Triggers** — Wire wizard, PDF, reply, and email events to immediate touch task creation with deduplication
-- [ ] **Phase 10: Cadence Engine** — Build engagement-driven cadence state machine that automatically schedules and advances multi-touch sequences
+- [x] **Phase 10: Cadence Engine** — Build engagement-driven cadence state machine that automatically schedules and advances multi-touch sequences
 - [ ] **Phase 11: Prospect Dashboard** — Upgrade wizard to evidence-backed prospect dashboard with multi-channel contact, one-click quotes, and readable URLs
 
 ---
@@ -153,10 +153,10 @@ Plans:
 
 Plans:
 
-- [ ] 10-01-PLAN.md — Schema migration: add scheduledAt, triggeredBy, nextStepReadyAt columns to OutreachStep (Wave 1)
-- [ ] 10-02-PLAN.md — Cadence engine TDD: buildCadenceState + evaluateCadence + processDueCadenceSteps with unit tests (Wave 2)
-- [ ] 10-03-PLAN.md — Wiring: completeTouchTask cadence hook + cron route + getCadenceState tRPC query (Wave 3)
-- [ ] 10-04-PLAN.md — Cadence history UI: CadenceTab component + prospect detail page tab (Wave 4)
+- [x] 10-01-PLAN.md — Schema migration: add scheduledAt, triggeredBy, nextStepReadyAt columns to OutreachStep (Wave 1)
+- [x] 10-02-PLAN.md — Cadence engine TDD: buildCadenceState + evaluateCadence + processDueCadenceSteps with unit tests (Wave 2)
+- [x] 10-03-PLAN.md — Wiring: completeTouchTask cadence hook + cron route + getCadenceState tRPC query (Wave 3)
+- [x] 10-04-PLAN.md — Cadence history UI: CadenceTab component + prospect detail page tab (Wave 4)
 
 ### Phase 11: Prospect Dashboard
 
@@ -193,5 +193,5 @@ Plans:
 | 7. Evidence Approval Gate | v1.1      | 2/2            | Complete    | 2026-02-20 |
 | 8. Deep Evidence Pipeline | v1.1      | 3/3            | Complete    | 2026-02-21 |
 | 9. Engagement Triggers    | v1.1      | 2/2            | Complete    | 2026-02-21 |
-| 10. Cadence Engine        | v1.1      | 0/4            | Not started | —          |
+| 10. Cadence Engine        | v1.1      | 4/4            | Complete    | 2026-02-21 |
 | 11. Prospect Dashboard    | v1.1      | 0/?            | Not started | —          |
