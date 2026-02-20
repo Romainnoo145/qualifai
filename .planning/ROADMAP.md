@@ -22,7 +22,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 ---
 
-- [ ] **Phase 6: Use Cases Foundation** — Replace Obsidian JSON proof catalog with in-app Use Cases management and DB-backed proof matching
+- [x] **Phase 6: Use Cases Foundation** — Replace Obsidian JSON proof catalog with in-app Use Cases management and DB-backed proof matching
 - [ ] **Phase 7: Evidence Approval Gate** — Wire hypothesis review UI and block outreach until admin approves at least one hypothesis per prospect
 - [ ] **Phase 8: Deep Evidence Pipeline** — Add SerpAPI search discovery and managed-browser extraction as new evidence sources feeding the existing pipeline
 - [ ] **Phase 9: Engagement Triggers** — Wire wizard, PDF, reply, and email events to immediate touch task creation with deduplication
@@ -51,9 +51,9 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 Plans:
 
-- [ ] 06-01-PLAN.md — UseCase model + migration + tRPC CRUD router + Obsidian import (Wave 1)
-- [ ] 06-02-PLAN.md — Use Cases admin UI + sidebar nav item (Wave 2)
-- [ ] 06-03-PLAN.md — DB-backed proof matching with Claude semantic scoring (Wave 2)
+- [x] 06-01-PLAN.md — UseCase model + migration + tRPC CRUD router + Obsidian import (Wave 1)
+- [x] 06-02-PLAN.md — Use Cases admin UI + sidebar nav item (Wave 2)
+- [x] 06-03-PLAN.md — DB-backed proof matching with Claude semantic scoring (Wave 2)
 
 ---
 
@@ -169,7 +169,7 @@ Plans:
 | Phase                     | Milestone | Plans Complete | Status      | Completed  |
 | ------------------------- | --------- | -------------- | ----------- | ---------- |
 | 1-5. MVP                  | v1.0      | —              | Complete    | 2026-02-20 |
-| 6. Use Cases Foundation   | v1.1      | 0/3            | Planned     | —          |
+| 6. Use Cases Foundation   | v1.1      | 3/3            | Complete    | 2026-02-20 |
 | 7. Evidence Approval Gate | v1.1      | 0/3            | Not started | —          |
 | 8. Deep Evidence Pipeline | v1.1      | 0/3            | Not started | —          |
 | 9. Engagement Triggers    | v1.1      | 0/3            | Not started | —          |
