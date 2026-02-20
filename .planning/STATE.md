@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 10 of 11 (Cadence Engine)
-Plan: 2 of 4 in current phase
-Status: Phase 10 in progress — Plan 02 complete (cadence engine core functions)
-Last activity: 2026-02-20 — Phase 10 Plan 02 complete (buildCadenceState, evaluateCadence, processDueCadenceSteps — 14 tests)
+Plan: 3 of 4 in current phase
+Status: Phase 10 in progress — Plan 03 complete (cadence engine wired into application)
+Last activity: 2026-02-21 — Phase 10 Plan 03 complete (completeTouchTask hook, cron route, getCadenceState tRPC query)
 
-Progress: [████████░░] 82% (v1.1)
+Progress: [████████░░] 85% (v1.1)
 
 ## Performance Metrics
 
@@ -32,7 +32,7 @@ Progress: [████████░░] 82% (v1.1)
 | 7. Evidence Approval Gate | 2/2   | 6 min  | 3 min    |
 | 8. Deep Evidence Pipeline | 3/3   | ~21min | ~7min    |
 | 9. Engagement Triggers    | 2/2   | ~5min  | ~2.5min  |
-| 10. Cadence Engine        | 2/4   | 3 min  | 1.5 min  |
+| 10. Cadence Engine        | 3/4   | 5 min  | 1.7 min  |
 | 11. Prospect Dashboard    | 0/?   | —      | —        |
 
 _Updated after each plan completion_
@@ -86,6 +86,9 @@ _Updated after each plan completion_
 - [Phase 10-02]: EngagementSignals interface has no openedAt field — email opens excluded at type level, locked decision enforced at compile time
 - [Phase 10-02]: evaluateCadence counts SENT and QUEUED steps as completed — DRAFTED steps are pending, not completed, so don't contribute to exhaustion
 - [Phase 10-02]: nextScheduledAt returns null when no prior touches — prevents cron sweep from immediately firing on brand-new sequences
+- [Phase 10-03]: resolveSequenceId checks metadata.outreachSequenceId first — cadence-created tasks carry this, skips unnecessary DB query
+- [Phase 10-03]: getCadenceState includes full sequence+steps+contact include — Phase 10-04 UI needs full structure
+- [Phase 10-03]: getCadenceState engagementLevel computed at query time from wizardSession — no persisted field needed
 
 ### Roadmap Evolution
 
@@ -102,6 +105,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Stopped at: Completed 10-cadence-engine-02-PLAN.md — Cadence engine (buildCadenceState, evaluateCadence, processDueCadenceSteps) built and tested with 14 unit tests. Ready for Phase 10 Plan 03.
+Last session: 2026-02-21
+Stopped at: Completed 10-cadence-engine-03-PLAN.md — Cadence engine wired at three points: completeTouchTask hook (evaluateCadence fire-and-forget), cron route (/api/internal/cron/cadence-sweep), tRPC query (sequences.getCadenceState). Ready for Phase 10 Plan 04.
 Resume file: None
