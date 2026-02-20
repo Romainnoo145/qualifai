@@ -86,37 +86,37 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status  |
 | ----------- | ----- | ------- |
-| UCASE-01    | —     | Pending |
-| UCASE-02    | —     | Pending |
-| UCASE-03    | —     | Pending |
-| UCASE-04    | —     | Pending |
-| EVID-01     | —     | Pending |
-| EVID-02     | —     | Pending |
-| EVID-03     | —     | Pending |
-| EVID-04     | —     | Pending |
-| EVID-05     | —     | Pending |
-| HYPO-01     | —     | Pending |
-| HYPO-02     | —     | Pending |
-| HYPO-03     | —     | Pending |
-| HYPO-04     | —     | Pending |
-| CADNC-01    | —     | Pending |
-| CADNC-02    | —     | Pending |
-| CADNC-03    | —     | Pending |
-| CADNC-04    | —     | Pending |
-| CADNC-05    | —     | Pending |
-| ENGAG-01    | —     | Pending |
-| ENGAG-02    | —     | Pending |
-| ENGAG-03    | —     | Pending |
-| ENGAG-04    | —     | Pending |
-| ENGAG-05    | —     | Pending |
+| UCASE-01    | 6     | Pending |
+| UCASE-02    | 6     | Pending |
+| UCASE-03    | 6     | Pending |
+| UCASE-04    | 6     | Pending |
+| EVID-01     | 8     | Pending |
+| EVID-02     | 8     | Pending |
+| EVID-03     | 8     | Pending |
+| EVID-04     | 8     | Pending |
+| EVID-05     | 8     | Pending |
+| HYPO-01     | 7     | Pending |
+| HYPO-02     | 7     | Pending |
+| HYPO-03     | 7     | Pending |
+| HYPO-04     | 7     | Pending |
+| CADNC-01    | 10    | Pending |
+| CADNC-02    | 10    | Pending |
+| CADNC-03    | 10    | Pending |
+| CADNC-04    | 10    | Pending |
+| CADNC-05    | 10    | Pending |
+| ENGAG-01    | 9     | Pending |
+| ENGAG-02    | 9     | Pending |
+| ENGAG-03    | 9     | Pending |
+| ENGAG-04    | 9     | Pending |
+| ENGAG-05    | 9     | Pending |
 
 **Coverage:**
 
 - v1.1 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23
+- Mapped to phases: 23
+- Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-02-20_
-_Last updated: 2026-02-20 after initial definition_
+_Last updated: 2026-02-20 after roadmap creation (phases 6-10 assigned)_
