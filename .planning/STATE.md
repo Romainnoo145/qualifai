@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 8 of 10 (Deep Evidence Pipeline)
-Plan: 2 of 3 in current phase
-Status: Plan 2 complete — ready for Plan 3 (pipeline wiring)
-Last activity: 2026-02-21 — Phase 8 Plan 2 complete (Crawl4AI browser extraction client, TDD, 10 tests)
+Plan: 3 of 3 in current phase
+Status: Phase 8 complete — all 3 plans done (SerpAPI discovery, Crawl4AI extraction, pipeline wiring)
+Last activity: 2026-02-21 — Phase 8 Plan 3 complete (deepCrawl pipeline wiring, 2 tasks)
 
-Progress: [█████░░░░░] 47% (v1.1)
+Progress: [█████░░░░░] 50% (v1.1)
 
 ## Performance Metrics
 
@@ -30,7 +30,7 @@ Progress: [█████░░░░░] 47% (v1.1)
 | ------------------------- | ----- | ------ | -------- |
 | 6. Use Cases Foundation   | 3/3   | 13 min | 4.3 min  |
 | 7. Evidence Approval Gate | 2/2   | 6 min  | 3 min    |
-| 8. Deep Evidence Pipeline | 2/3   | ~19min | ~9.5min  |
+| 8. Deep Evidence Pipeline | 3/3   | ~21min | ~7min    |
 | 9. Engagement Triggers    | 0/3   | —      | —        |
 | 10. Cadence Engine        | 0/5   | —      | —        |
 
@@ -68,6 +68,9 @@ _Updated after each plan completion_
 - Crawl4AI fallback drafts use sourceType REVIEWS regardless of URL — minimal content is ambiguous, safer as manual review signal
 - 60s AbortController timeout for Crawl4AI — browser rendering is slow, short timeouts produce excessive fallbacks
 - Crawl4AI ingest caps at 10 URLs per batch — prevents runaway extraction costs in pipeline
+- deepCrawl branch uses allDrafts accumulator before dedup — zero-cost default path, clean merge point for SERP evidence
+- SerpAPI cache stored in ResearchRun.inputSnapshot JSON (no new column) — read from existingRunId snapshot, written on cache miss
+- Cache validity checked via discoveredAt field in serpCache; isCacheValid false triggers fresh SerpAPI call + cache persist
 
 ### Pending Todos
 
@@ -81,5 +84,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 08-02-PLAN.md — Crawl4AI browser extraction client implemented with TDD (10 tests passing). Ready for Plan 03 (pipeline wiring).
+Stopped at: Completed 08-03-PLAN.md — Phase 8 fully complete. deepCrawl pipeline wiring: SerpAPI discovery + Crawl4AI extraction integrated into executeResearchRun with 24h cache. Ready for Phase 9 (Engagement Triggers).
 Resume file: None
