@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { Prisma } from '@prisma/client';
 import { publicProcedure, router } from '../trpc';
 import { notifyAdmin } from '@/lib/notifications';
+import { createEngagementCallTask } from '@/lib/outreach/engagement-triggers';
 
 export const wizardRouter = router({
   getWizard: publicProcedure
@@ -112,6 +113,13 @@ export const wizardRouter = router({
           where: { id: session.prospectId },
           data: { status: 'ENGAGED' },
         });
+
+        // Create engagement call task (fire-and-forget, non-blocking)
+        createEngagementCallTask(
+          ctx.db,
+          session.prospectId,
+          'wizard_step3',
+        ).catch(console.error);
       }
 
       return { maxStep };
@@ -141,6 +149,13 @@ export const wizardRouter = router({
         companyName: session.prospect.companyName ?? session.prospect.domain,
         slug: session.prospect.slug,
       }).catch(console.error);
+
+      // Create engagement call task for PDF download
+      createEngagementCallTask(
+        ctx.db,
+        session.prospectId,
+        'pdf_download',
+      ).catch(console.error);
 
       return { success: true };
     }),
