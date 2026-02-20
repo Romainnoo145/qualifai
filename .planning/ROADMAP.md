@@ -97,13 +97,13 @@ Plans:
 4. Re-running deep research on the same prospect within a session returns cached SerpAPI results without additional API calls
 5. Pages guarded by cookie consent banners (Cookiebot) are handled so content is still extracted
 
-**Plans:** TBD
+**Plans:** 3 plans in 2 waves
 
 Plans:
 
-- [ ] 08-01: SerpAPI integration (discover review + job URLs, cache per prospect, cost controls)
-- [ ] 08-02: Managed browser extraction (delegate to external API, SERP_RESULT evidence type, cookie consent handling)
-- [ ] 08-03: Wire deep crawl into research pipeline (deepCrawl flag, worker delegation, evidence deduplication)
+- [ ] 08-01-PLAN.md — SerpAPI URL discovery client with TDD (Google Maps reviews + Google Jobs) (Wave 1)
+- [ ] 08-02-PLAN.md — Crawl4AI REST API client with TDD (browser extraction + cookie consent + fallback drafts) (Wave 1)
+- [ ] 08-03-PLAN.md — Wire deep crawl into research pipeline (deepCrawl flag, SerpAPI cache, evidence deduplication) (Wave 2)
 
 ---
 
