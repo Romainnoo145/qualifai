@@ -72,13 +72,12 @@ Plans:
 3. Admin can approve or reject a hypothesis; the decision is persisted and visible in the prospect detail
 4. Attempting to generate or send outreach for a prospect with no approved hypothesis is blocked with a clear error
 
-**Plans:** TBD
+**Plans:** 2 plans in 2 waves
 
 Plans:
 
-- [ ] 07-01: Hypothesis generation (AI produces pain point + use case matches + evidence citations)
-- [ ] 07-02: Hypothesis review UI (approve / reject per hypothesis with evidence preview)
-- [ ] 07-03: Outreach gate (block sequence generation until at least one approved hypothesis exists)
+- [ ] 07-01-PLAN.md — Backend: Wire matchProofs into regenerateForRun, enrich hypothesis queries, add outreach gate (Wave 1)
+- [ ] 07-02-PLAN.md — UI: Standalone hypothesis review page, nav item, enhanced HypothesesTab with evidence display (Wave 2)
 
 ---
 
