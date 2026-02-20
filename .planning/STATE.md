@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 6 of 10 (Use Cases Foundation)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-20 — Plan 06-02 complete (Use Cases admin UI + nav item)
+Plan: 3 of 3 in current phase
+Status: Phase complete — ready for Phase 7
+Last activity: 2026-02-20 — Plan 06-03 complete (DB-backed matchProofs with Claude semantic scoring)
 
-Progress: [██░░░░░░░░] 13% (v1.1)
+Progress: [███░░░░░░░] 20% (v1.1)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 2 (v1.1)
-- Average duration: 3.5 min
-- Total execution time: 7 min
+- Total plans completed: 3 (v1.1)
+- Average duration: 4.3 min
+- Total execution time: 13 min
 
 **By Phase:**
 
-| Phase                     | Plans | Total | Avg/Plan |
-| ------------------------- | ----- | ----- | -------- |
-| 6. Use Cases Foundation   | 2/3   | 7 min | 3.5 min  |
-| 7. Evidence Approval Gate | 0/3   | —     | —        |
-| 8. Deep Evidence Pipeline | 0/3   | —     | —        |
-| 9. Engagement Triggers    | 0/3   | —     | —        |
-| 10. Cadence Engine        | 0/5   | —     | —        |
+| Phase                     | Plans | Total  | Avg/Plan |
+| ------------------------- | ----- | ------ | -------- |
+| 6. Use Cases Foundation   | 3/3   | 13 min | 4.3 min  |
+| 7. Evidence Approval Gate | 0/3   | —      | —        |
+| 8. Deep Evidence Pipeline | 0/3   | —      | —        |
+| 9. Engagement Triggers    | 0/3   | —      | —        |
+| 10. Cadence Engine        | 0/5   | —      | —        |
 
 _Updated after each plan completion_
 
@@ -46,6 +46,9 @@ _Updated after each plan completion_
 - Empty externalUrl string converted to null at persistence layer — Zod rejects empty URL strings so handled explicitly
 - UseCaseForm extracted as sub-component for both create and inline edit — avoids duplicating 100-line form
 - tRPC timestamps arrive as strings not Dates — UseCase type uses string | Date for createdAt/updatedAt
+- Lazy Anthropic client initialization via getAnthropicClient() — prevents env access at module load time which breaks test isolation
+- matchProofs() accepts PrismaClient as explicit db parameter — keeps function testable with mock, no module-level DB singleton
+- Keyword-overlap fallback in matchProofs() — activates automatically when Claude Haiku API call fails
 - Evidence approval gate (Phase 7) wired before new evidence sources (Phase 8) — prevents SerpAPI results bypassing review
 - Playwright never in Next.js request cycle — use managed browser API (Browserless/ScrapingBee) in Phase 8
 - Email opens excluded from cadence escalation — Apple MPP causes 40-60% false positives
@@ -64,5 +67,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 06-02-PLAN.md — Use Cases admin page + sidebar nav item. Ready for 06-03 (proof matching wiring).
+Stopped at: Completed 06-03-PLAN.md — DB-backed matchProofs with Claude Haiku semantic scoring. Phase 6 complete. Ready for Phase 7 (Evidence Approval Gate).
 Resume file: None
