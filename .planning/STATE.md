@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 8 of 10 (Deep Evidence Pipeline)
-Plan: 1 of 3 in current phase
-Status: Plan 1 complete — ready for Plan 2 (Crawl4AI client)
-Last activity: 2026-02-21 — Phase 8 Plan 1 complete (SerpAPI URL discovery client, TDD, env vars)
+Plan: 2 of 3 in current phase
+Status: Plan 2 complete — ready for Plan 3 (pipeline wiring)
+Last activity: 2026-02-21 — Phase 8 Plan 2 complete (Crawl4AI browser extraction client, TDD, 10 tests)
 
-Progress: [█████░░░░░] 43% (v1.1)
+Progress: [█████░░░░░] 47% (v1.1)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 6 (v1.1)
-- Average duration: 4.0 min
-- Total execution time: 34 min
+- Total plans completed: 7 (v1.1)
+- Average duration: 4.1 min
+- Total execution time: 38 min
 
 **By Phase:**
 
@@ -30,7 +30,7 @@ Progress: [█████░░░░░] 43% (v1.1)
 | ------------------------- | ----- | ------ | -------- |
 | 6. Use Cases Foundation   | 3/3   | 13 min | 4.3 min  |
 | 7. Evidence Approval Gate | 2/2   | 6 min  | 3 min    |
-| 8. Deep Evidence Pipeline | 1/3   | ~15min | ~15min   |
+| 8. Deep Evidence Pipeline | 2/3   | ~19min | ~9.5min  |
 | 9. Engagement Triggers    | 0/3   | —      | —        |
 | 10. Cadence Engine        | 0/5   | —      | —        |
 
@@ -63,6 +63,11 @@ _Updated after each plan completion_
 - Google Maps uses two-step SerpAPI flow: google_maps fetches data_id, google_maps_reviews uses data_id — mapsDataId returned for cache persistence
 - Each SerpAPI engine call wrapped in independent try/catch — failures are logged but non-blocking, returns partial results
 - SerpAPI results capped at 5 reviewUrls and 5 jobUrls — controls downstream Crawl4AI scraping cost
+- Crawl4AI REST API requires {type: ClassName, params: {...}} wrapping for all config objects — not optional, verified by test
+- magic: true + simulate_user: true in Crawl4AI CrawlerRunConfig handles cookie consent banners without explicit DOM interaction
+- Crawl4AI fallback drafts use sourceType REVIEWS regardless of URL — minimal content is ambiguous, safer as manual review signal
+- 60s AbortController timeout for Crawl4AI — browser rendering is slow, short timeouts produce excessive fallbacks
+- Crawl4AI ingest caps at 10 URLs per batch — prevents runaway extraction costs in pipeline
 
 ### Pending Todos
 
@@ -76,5 +81,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 08-01-PLAN.md — SerpAPI URL discovery client implemented with TDD (6 tests passing). Ready for Plan 02 (Crawl4AI client).
+Stopped at: Completed 08-02-PLAN.md — Crawl4AI browser extraction client implemented with TDD (10 tests passing). Ready for Plan 03 (pipeline wiring).
 Resume file: None
