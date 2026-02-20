@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 ## Current Position
 
-Phase: 8 of 10 (Deep Evidence Pipeline)
-Plan: 3 of 3 in current phase
-Status: Phase 8 complete — verified 13/13 must-haves. Ready for Phase 9
-Last activity: 2026-02-21 — Phase 8 verified and complete (SerpAPI discovery, Crawl4AI extraction, pipeline wiring)
+Phase: 9 of 11 (Engagement Triggers)
+Plan: 2 of 3 in current phase
+Status: Plan 09-02 complete — ENGAG-01, ENGAG-02, ENGAG-03 satisfied. Dedup guard consolidated into utility (09-03 may be implicit complete).
+Last activity: 2026-02-20 — Phase 9 Plan 02 complete (engagement trigger utility, wizard/reply wiring)
 
-Progress: [██████░░░░] 60% (v1.1)
+Progress: [███████░░░] 70% (v1.1)
 
 ## Performance Metrics
 
@@ -31,8 +31,9 @@ Progress: [██████░░░░] 60% (v1.1)
 | 6. Use Cases Foundation   | 3/3   | 13 min | 4.3 min  |
 | 7. Evidence Approval Gate | 2/2   | 6 min  | 3 min    |
 | 8. Deep Evidence Pipeline | 3/3   | ~21min | ~7min    |
-| 9. Engagement Triggers    | 0/3   | —      | —        |
+| 9. Engagement Triggers    | 2/3   | ~5min  | ~2.5min  |
 | 10. Cadence Engine        | 0/5   | —      | —        |
+| 11. Prospect Dashboard    | 0/?   | —      | —        |
 
 _Updated after each plan completion_
 
@@ -71,6 +72,14 @@ _Updated after each plan completion_
 - deepCrawl branch uses allDrafts accumulator before dedup — zero-cost default path, clean merge point for SERP evidence
 - SerpAPI cache stored in ResearchRun.inputSnapshot JSON (no new column) — read from existingRunId snapshot, written on cache miss
 - Cache validity checked via discoveredAt field in serpCache; isCacheValid false triggers fresh SerpAPI call + cache persist
+- Dedup guard built directly into createEngagementCallTask — dedup IS the first step of task creation, 09-03 plan consolidated here
+- Contact resolution for engagement triggers: OutreachSequence.contactId first (active outreach), then earliest non-opted-out Contact
+- TriggerSource type (wizard_step3, pdf_download, interested_reply) constrains all call sites at compile time
+- Engagement dedup key: (prospectId via contact relation, triggerSource via metadata JSON path) — matches calcom/route.ts bookingUid dedup pattern
+
+### Roadmap Evolution
+
+- Phase 11 added: Prospect Dashboard — upgrade wizard to evidence-backed dashboard with multi-channel contact, one-click quotes, readable URLs
 
 ### Pending Todos
 
@@ -83,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Phase 8 verified and complete (13/13 must-haves). Deep evidence pipeline ships: SerpAPI URL discovery, Crawl4AI browser extraction, pipeline wiring with cache + dedup. Ready for Phase 9 (Engagement Triggers).
+Last session: 2026-02-20
+Stopped at: Completed 09-02-PLAN.md — createEngagementCallTask utility wired into wizard.ts and reply-workflow.ts. ENGAG-01/02/03 satisfied. Ready for 09-03.
 Resume file: None
