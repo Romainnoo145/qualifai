@@ -72,6 +72,10 @@ _Updated after each plan completion_
 - deepCrawl branch uses allDrafts accumulator before dedup — zero-cost default path, clean merge point for SERP evidence
 - SerpAPI cache stored in ResearchRun.inputSnapshot JSON (no new column) — read from existingRunId snapshot, written on cache miss
 - Cache validity checked via discoveredAt field in serpCache; isCacheValid false triggers fresh SerpAPI call + cache persist
+- Resend webhook verification uses resend.webhooks.verify() (Svix), not node:crypto HMAC — multi-header signing requires Svix library
+- resendMessageId stored in OutreachLog.metadata JSON (not separate column) — webhook correlation via Prisma path query
+- openedAt only set when currently null — preserves first open timestamp, ignores subsequent opens from same email
+- RESEND_WEBHOOK_SECRET defined as optional in env.mjs — returns 500 if missing at runtime, matching calcom pattern
 - Dedup guard built directly into createEngagementCallTask — dedup IS the first step of task creation, 09-03 plan consolidated here
 - Contact resolution for engagement triggers: OutreachSequence.contactId first (active outreach), then earliest non-opted-out Contact
 - TriggerSource type (wizard_step3, pdf_download, interested_reply) constrains all call sites at compile time
@@ -92,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Stopped at: Completed 09-02-PLAN.md — createEngagementCallTask utility wired into wizard.ts and reply-workflow.ts. ENGAG-01/02/03 satisfied. Ready for 09-03.
+Last session: 2026-02-21
+Stopped at: Completed 09-01-PLAN.md — Resend webhook route with Svix verification, email.opened/clicked capture, resendMessageId stored at send time. ENGAG-04/05 satisfied. (Executed after 09-02 due to parallel agent ordering.)
 Resume file: None
