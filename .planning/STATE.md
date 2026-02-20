@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 ## Current Position
 
-Phase: 10 of 11 (Cadence Engine) — COMPLETE
-Plan: 4 of 4 in current phase
-Status: Phase 10 verified (5/5 must-haves). Ready for Phase 11
-Last activity: 2026-02-21 — Phase 10 verified and complete (schema migration, cadence engine TDD, wiring, CadenceTab UI)
+Phase: 11 of 11 (Prospect Dashboard) — IN PROGRESS
+Plan: 1 of 2 in current phase
+Status: Plan 11-01 complete (schema migration, slug utility, requestQuote mutation, notifyAdmin extended, env vars)
+Last activity: 2026-02-21 — Phase 11 Plan 01 complete: backend infrastructure for prospect dashboard
 
-Progress: [█████████░] 90% (v1.1)
+Progress: [█████████░] 93% (v1.1)
 
 ## Performance Metrics
 
@@ -33,7 +33,7 @@ Progress: [█████████░] 90% (v1.1)
 | 8. Deep Evidence Pipeline | 3/3   | ~21min | ~7min    |
 | 9. Engagement Triggers    | 2/2   | ~5min  | ~2.5min  |
 | 10. Cadence Engine        | 4/4   | 7 min  | 1.75 min |
-| 11. Prospect Dashboard    | 0/?   | —      | —        |
+| 11. Prospect Dashboard    | 1/2   | 3 min  | 3 min    |
 
 _Updated after each plan completion_
 
@@ -91,6 +91,12 @@ _Updated after each plan completion_
 - [Phase 10-03]: getCadenceState engagementLevel computed at query time from wizardSession — no persisted field needed
 - [Phase 10-04]: tRPC deeply-inferred getCadenceState return type causes TS2589 — cast sequences to any[] at component boundary, typed inner callbacks maintain correctness
 - [Phase 10-04]: Cadence tab placed last in prospect detail tab array — cadence monitoring is final step of prospect workflow after outreach sequences sent
+- [Phase 11-01]: readableSlug auto-generation checks !prospect.readableSlug — re-enriching never overwrites a custom slug set by admin
+- [Phase 11-01]: generateReadableSlug mutation sanitises override with toReadableSlug then handles uniqueness conflict against other prospects
+- [Phase 11-01]: quote_request email body in Dutch (NL/BE target market), lists matched use case titles for admin context
+- [Phase 11-01]: matchedUseCases sourced from ACCEPTED workflowHypotheses (take 3) x proofMatches (take 2) useCase titles — bounded cost
+- [Phase 11-01]: requestQuote only sets CONVERTED if not already CONVERTED — idempotent for repeated quote requests
+- [Phase 11-01]: generateUniqueReadableSlug accepts PrismaClient as explicit db param — testable, no module-level DB singleton (matchProofs pattern)
 
 ### Roadmap Evolution
 
@@ -108,5 +114,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Phase 10 verified and complete (5/5 must-haves). Cadence engine ships: schema migration (scheduledAt/triggeredBy/nextStepReadyAt), buildCadenceState/evaluateCadence/processDueCadenceSteps with 14 unit tests, completeTouchTask hook, cron sweep route, getCadenceState tRPC query, CadenceTab UI in prospect detail. Ready for Phase 11 (Prospect Dashboard).
+Stopped at: Phase 11 Plan 01 complete. Backend infrastructure for prospect dashboard: Prisma migration (readableSlug on Prospect, quoteRequested/quoteRequestedAt on WizardSession), lib/readable-slug.ts utilities, enrichProspect auto-slug wiring, admin.generateReadableSlug mutation, wizard.requestQuote mutation, notifyAdmin quote_request type with Dutch email, three contact channel env vars. Ready for Phase 11 Plan 02 (Dashboard UI).
 Resume file: None
