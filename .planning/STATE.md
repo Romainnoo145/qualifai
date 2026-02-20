@@ -5,22 +5,22 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v1.1 Phase 8 — Deep Evidence Pipeline
+**Current focus:** v1.1 Phase 9 — Engagement Triggers
 
 ## Current Position
 
 Phase: 8 of 10 (Deep Evidence Pipeline)
 Plan: 3 of 3 in current phase
-Status: Phase 8 complete — all 3 plans done (SerpAPI discovery, Crawl4AI extraction, pipeline wiring)
-Last activity: 2026-02-21 — Phase 8 Plan 3 complete (deepCrawl pipeline wiring, 2 tasks)
+Status: Phase 8 complete — verified 13/13 must-haves. Ready for Phase 9
+Last activity: 2026-02-21 — Phase 8 verified and complete (SerpAPI discovery, Crawl4AI extraction, pipeline wiring)
 
-Progress: [█████░░░░░] 50% (v1.1)
+Progress: [██████░░░░] 60% (v1.1)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 7 (v1.1)
+- Total plans completed: 8 (v1.1)
 - Average duration: 4.1 min
 - Total execution time: 38 min
 
@@ -84,5 +84,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 08-03-PLAN.md — Phase 8 fully complete. deepCrawl pipeline wiring: SerpAPI discovery + Crawl4AI extraction integrated into executeResearchRun with 24h cache. Ready for Phase 9 (Engagement Triggers).
+Stopped at: Phase 8 verified and complete (13/13 must-haves). Deep evidence pipeline ships: SerpAPI URL discovery, Crawl4AI browser extraction, pipeline wiring with cache + dedup. Ready for Phase 9 (Engagement Triggers).
 Resume file: None

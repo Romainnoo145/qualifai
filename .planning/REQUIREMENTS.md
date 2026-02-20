@@ -84,31 +84,31 @@ Explicitly excluded. Documented to prevent scope creep.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| UCASE-01    | 6     | Pending |
-| UCASE-02    | 6     | Pending |
-| UCASE-03    | 6     | Pending |
-| UCASE-04    | 6     | Pending |
-| EVID-01     | 8     | Pending |
-| EVID-02     | 8     | Pending |
-| EVID-03     | 8     | Pending |
-| EVID-04     | 8     | Pending |
-| EVID-05     | 8     | Pending |
-| HYPO-01     | 7     | Pending |
-| HYPO-02     | 7     | Pending |
-| HYPO-03     | 7     | Pending |
-| HYPO-04     | 7     | Pending |
-| CADNC-01    | 10    | Pending |
-| CADNC-02    | 10    | Pending |
-| CADNC-03    | 10    | Pending |
-| CADNC-04    | 10    | Pending |
-| CADNC-05    | 10    | Pending |
-| ENGAG-01    | 9     | Pending |
-| ENGAG-02    | 9     | Pending |
-| ENGAG-03    | 9     | Pending |
-| ENGAG-04    | 9     | Pending |
-| ENGAG-05    | 9     | Pending |
+| Requirement | Phase | Status   |
+| ----------- | ----- | -------- |
+| UCASE-01    | 6     | Complete |
+| UCASE-02    | 6     | Complete |
+| UCASE-03    | 6     | Complete |
+| UCASE-04    | 6     | Complete |
+| EVID-01     | 8     | Complete |
+| EVID-02     | 8     | Complete |
+| EVID-03     | 8     | Complete |
+| EVID-04     | 8     | Complete |
+| EVID-05     | 8     | Complete |
+| HYPO-01     | 7     | Complete |
+| HYPO-02     | 7     | Complete |
+| HYPO-03     | 7     | Complete |
+| HYPO-04     | 7     | Complete |
+| CADNC-01    | 10    | Pending  |
+| CADNC-02    | 10    | Pending  |
+| CADNC-03    | 10    | Pending  |
+| CADNC-04    | 10    | Pending  |
+| CADNC-05    | 10    | Pending  |
+| ENGAG-01    | 9     | Pending  |
+| ENGAG-02    | 9     | Pending  |
+| ENGAG-03    | 9     | Pending  |
+| ENGAG-04    | 9     | Pending  |
+| ENGAG-05    | 9     | Pending  |
 
 **Coverage:**
 
@@ -119,4 +119,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ---
 
 _Requirements defined: 2026-02-20_
-_Last updated: 2026-02-20 after roadmap creation (phases 6-10 assigned)_
+_Last updated: 2026-02-21 after Phase 8 completion (UCASE, HYPO, EVID requirements complete)_
