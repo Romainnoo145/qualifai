@@ -10,26 +10,26 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 7 of 10 (Evidence Approval Gate)
-Plan: 1 of 3 in current phase
-Status: Plan 07-01 complete — ready for Plan 07-02
-Last activity: 2026-02-20 — Plan 07-01 complete (matchProofs wiring + hypothesis approval gate)
+Plan: 2 of 3 in current phase
+Status: Plan 07-02 complete — ready for Plan 07-03
+Last activity: 2026-02-20 — Plan 07-02 complete (/admin/hypotheses page, enhanced HypothesesTab with evidence display, PRECONDITION_FAILED error handling)
 
-Progress: [████░░░░░░] 23% (v1.1)
+Progress: [█████░░░░░] 27% (v1.1)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 4 (v1.1)
-- Average duration: 3.5 min
-- Total execution time: 15 min
+- Total plans completed: 5 (v1.1)
+- Average duration: 3.8 min
+- Total execution time: 19 min
 
 **By Phase:**
 
 | Phase                     | Plans | Total  | Avg/Plan |
 | ------------------------- | ----- | ------ | -------- |
 | 6. Use Cases Foundation   | 3/3   | 13 min | 4.3 min  |
-| 7. Evidence Approval Gate | 1/3   | 2 min  | 2 min    |
+| 7. Evidence Approval Gate | 2/3   | 6 min  | 3 min    |
 | 8. Deep Evidence Pipeline | 0/3   | —      | —        |
 | 9. Engagement Triggers    | 0/3   | —      | —        |
 | 10. Cadence Engine        | 0/5   | —      | —        |
@@ -56,6 +56,9 @@ _Updated after each plan completion_
 - SerpAPI caching mandatory from Phase 8 day one — cost compounds fast without it
 - Hypothesis gate in runAutopilot placed BEFORE executeResearchRun — checking after would always block (fresh DRAFT hypotheses)
 - listAll does not resolve evidenceRefs — lightweight for list page, evidence detail only in listByProspect
+- Used alert() for PRECONDITION_FAILED surfacing — sonner not imported in prospect page, alert is sufficient for now
+- Skipped disabled state on Queue Outreach button — hypotheses data not in LossMapTab scope, backend gate + onError is the correct guard
+- Evidence URL fallback uses ev.title ?? ev.sourceUrl — no URL parsing, truncation handles long URLs via CSS
 
 ### Pending Todos
 
@@ -69,5 +72,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 07-01-PLAN.md — matchProofs wiring into regenerateForRun, enriched listByProspect, listAll, hypothesis approval gates in queueOutreachDraft and runAutopilot. Ready for Plan 07-02.
+Stopped at: Completed 07-02-PLAN.md — /admin/hypotheses batch-review page, Hypotheses nav item in sidebar, enhanced HypothesesTab with proof matches + evidence display (bottlenecks + opportunities), PRECONDITION_FAILED error handler on Queue Outreach. Ready for Plan 07-03.
 Resume file: None
