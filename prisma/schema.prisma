@@ -6,6 +6,10 @@ datasource db {
   provider = "postgresql"
 }
 
+// =============================================================================
+// ENUMS
+// =============================================================================
+
 enum ProspectStatus {
   DRAFT
   ENRICHED
@@ -18,26 +22,113 @@ enum ProspectStatus {
   ARCHIVED
 }
 
+enum OutreachStatus {
+  NONE
+  QUEUED
+  EMAIL_SENT
+  OPENED
+  REPLIED
+  CONVERTED
+  OPTED_OUT
+}
+
+enum SignalType {
+  JOB_CHANGE
+  PROMOTION
+  NEW_JOB_LISTING
+  HEADCOUNT_GROWTH
+  FUNDING_EVENT
+  TECHNOLOGY_ADOPTION
+  INTENT_TOPIC
+}
+
+enum OutreachType {
+  INTRO_EMAIL
+  WIZARD_LINK
+  PDF_REPORT
+  FOLLOW_UP
+  SIGNAL_TRIGGERED
+}
+
+enum ResearchStatus {
+  PENDING
+  CRAWLING
+  EXTRACTING
+  HYPOTHESIS
+  BRIEFING
+  FAILED
+  COMPLETED
+}
+
+enum EvidenceSourceType {
+  WEBSITE
+  DOCS
+  CAREERS
+  HELP_CENTER
+  JOB_BOARD
+  REVIEWS
+  MANUAL_URL
+}
+
+enum HypothesisStatus {
+  DRAFT
+  ACCEPTED
+  REJECTED
+}
+
+enum SequenceStatus {
+  DRAFTED
+  QUEUED
+  SENT
+  OPENED
+  REPLIED
+  BOOKED
+  CLOSED_LOST
+}
+
+enum AssetType {
+  WORKFLOW_LOSS_MAP
+  PDF_BRIEF
+  DEMO_SCRIPT
+  EMAIL_COPY
+  CALL_PREP_PLAN
+}
+
+// =============================================================================
+// CORE MODELS
+// =============================================================================
+
 model Prospect {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   slug      String   @unique @db.VarChar(12)
 
-  // Lusha enrichment fields
-  companyName   String?
-  domain        String
-  industry      String?
-  subIndustry   String?
-  employeeRange String?
-  revenueRange  String?
-  technologies  String[]
-  specialties   String[]
-  country       String?
-  city          String?
-  description   String?
-  logoUrl       String?
-  lushaRawData  Json?
+  // Provider enrichment fields (Apollo-backed)
+  companyName     String?
+  domain          String
+  industry        String?
+  subIndustry     String?
+  employeeRange   String?
+  employeeCount   Int?
+  revenueRange    String?
+  revenueEstimate String?
+  technologies    String[]
+  specialties     String[]
+  country         String?
+  city            String?
+  state           String?
+  description     String?
+  logoUrl         String?
+  linkedinUrl     String?
+  foundedYear     Int?
+  naicsCode       String?
+  sicCode         String?
+  lushaCompanyId  String?   @unique
+  lushaRawData    Json?
+  intentTopics    Json?
+  fundingInfo     Json?
+  lastEnrichedAt  DateTime?
 
   // Wizard content (pre-generated)
   heroContent       Json?
@@ -53,10 +144,462 @@ model Prospect {
   // Relations
   sessions         WizardSession[]
   notificationLogs NotificationLog[]
+  contacts         Contact[]
+  signals          Signal[]
+  campaignProspects       CampaignProspect[]
+  researchRuns            ResearchRun[]
+  evidenceItems           EvidenceItem[]
+  workflowHypotheses      WorkflowHypothesis[]
+  automationOpportunities AutomationOpportunity[]
+  proofMatches            ProofMatch[]
+  workflowLossMaps        WorkflowLossMap[]
+  outreachSequences       OutreachSequence[]
+  callPrepPlans           CallPrepPlan[]
 
   @@index([domain])
   @@index([status])
 }
+
+model Contact {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Person info
+  firstName  String
+  lastName   String
+  jobTitle   String?
+  seniority  String?
+  department String?
+
+  // Contact info
+  emails       Json?
+  phones       Json?
+  primaryEmail String?
+  primaryPhone String?
+
+  // Location
+  country String?
+  city    String?
+  state   String?
+
+  // Provider data (Apollo-backed)
+  lushaPersonId  String? @unique
+  linkedinUrl    String?
+  socialProfiles Json?
+  lushaRawData   Json?
+
+  // Outreach tracking
+  outreachStatus  OutreachStatus @default(NONE)
+  lastContactedAt DateTime?
+  outreachNotes   String?
+
+  // Relations
+  prospectId  String
+  prospect    Prospect      @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  signals     Signal[]
+  outreachLogs OutreachLog[]
+  outreachSequences OutreachSequence[]
+
+  @@index([prospectId])
+  @@index([outreachStatus])
+  @@index([seniority])
+}
+
+model Signal {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  signalType  SignalType
+  title       String
+  description String?
+  metadata    Json?
+  detectedAt  DateTime  @default(now())
+  isProcessed Boolean   @default(false)
+
+  // Can link to company, contact, or both
+  prospectId String?
+  prospect   Prospect? @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  contactId  String?
+  contact    Contact?  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([signalType])
+  @@index([isProcessed])
+  @@index([prospectId])
+  @@index([contactId])
+}
+
+model OutreachLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  contactId String
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  type    OutreachType
+  channel String       @default("email")
+  status  String       @default("draft")
+
+  subject  String?
+  bodyHtml String?
+  bodyText String?
+  metadata Json?
+
+  sentAt   DateTime?
+  openedAt DateTime?
+  outreachSteps OutreachStep[]
+
+  @@index([contactId])
+  @@index([type])
+  @@index([status])
+}
+
+model CreditUsage {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  endpoint   String
+  operation  String
+  credits    Int      @default(1)
+  prospectId String?
+  contactId  String?
+  metadata   Json?
+
+  @@index([endpoint])
+  @@index([createdAt])
+}
+
+model SavedSearch {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  type        String // "company" or "contact"
+  filters     Json
+  resultCount Int    @default(0)
+  lastRunAt   DateTime?
+
+  @@index([type])
+}
+
+model Campaign {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  name       String
+  slug       String   @unique
+  nicheKey   String
+  language   String   @default("nl")
+  tone       String?
+  strictGate Boolean  @default(true)
+  isActive   Boolean  @default(true)
+
+  campaignProspects CampaignProspect[]
+  researchRuns      ResearchRun[]
+  workflowLossMaps  WorkflowLossMap[]
+  outreachSequences OutreachSequence[]
+  callPrepPlans     CallPrepPlan[]
+
+  @@index([isActive])
+}
+
+model CampaignProspect {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  campaignId String
+  prospectId String
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  prospect Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, prospectId])
+  @@index([campaignId])
+  @@index([prospectId])
+}
+
+model ResearchRun {
+  id            String         @id @default(cuid())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  status        ResearchStatus @default(PENDING)
+  startedAt     DateTime?
+  completedAt   DateTime?
+  error         String?
+  workerId      String?
+  inputSnapshot Json?
+  summary       Json?
+
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  evidenceItems           EvidenceItem[]
+  workflowHypotheses      WorkflowHypothesis[]
+  automationOpportunities AutomationOpportunity[]
+  workflowLossMaps        WorkflowLossMap[]
+  outreachSequences       OutreachSequence[]
+  callPrepPlans           CallPrepPlan[]
+
+  @@index([prospectId])
+  @@index([campaignId])
+  @@index([status, createdAt])
+}
+
+model EvidenceItem {
+  id              String             @id @default(cuid())
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  sourceType      EvidenceSourceType
+  sourceUrl       String
+  title           String?
+  snippet         String
+  workflowTag     String
+  confidenceScore Float
+  isApproved      Boolean            @default(false)
+  metadata        Json?
+
+  researchRunId String
+  researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
+  prospectId    String
+  prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  proofMatches ProofMatch[]
+
+  @@index([researchRunId])
+  @@index([prospectId, createdAt])
+  @@index([workflowTag])
+}
+
+model WorkflowHypothesis {
+  id                           String           @id @default(cuid())
+  createdAt                    DateTime         @default(now())
+  updatedAt                    DateTime         @updatedAt
+  title                        String
+  problemStatement             String
+  assumptions                  Json?
+  confidenceScore              Float
+  evidenceRefs                 Json?
+  validationQuestions          Json?
+  hoursSavedWeekLow            Int?
+  hoursSavedWeekMid            Int?
+  hoursSavedWeekHigh           Int?
+  handoffSpeedGainPct          Float?
+  errorReductionPct            Float?
+  revenueLeakageRecoveredLow   Float?
+  revenueLeakageRecoveredMid   Float?
+  revenueLeakageRecoveredHigh  Float?
+  status                       HypothesisStatus @default(DRAFT)
+
+  researchRunId String
+  researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
+  prospectId    String
+  prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  proofMatches ProofMatch[]
+
+  @@index([researchRunId])
+  @@index([prospectId, status])
+}
+
+model AutomationOpportunity {
+  id                           String           @id @default(cuid())
+  createdAt                    DateTime         @default(now())
+  updatedAt                    DateTime         @updatedAt
+  title                        String
+  description                  String
+  assumptions                  Json?
+  confidenceScore              Float
+  evidenceRefs                 Json?
+  hoursSavedWeekLow            Int?
+  hoursSavedWeekMid            Int?
+  hoursSavedWeekHigh           Int?
+  handoffSpeedGainPct          Float?
+  errorReductionPct            Float?
+  revenueLeakageRecoveredLow   Float?
+  revenueLeakageRecoveredMid   Float?
+  revenueLeakageRecoveredHigh  Float?
+  status                       HypothesisStatus @default(DRAFT)
+
+  researchRunId String
+  researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
+  prospectId    String
+  prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  proofMatches ProofMatch[]
+
+  @@index([researchRunId])
+  @@index([prospectId, status])
+}
+
+model ProofMatch {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  sourceType     String
+  proofId        String?
+  proofTitle     String
+  proofSummary   String?
+  proofUrl       String?
+  score          Float
+  isRealShipped  Boolean  @default(true)
+  isCustomPlan   Boolean  @default(false)
+
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  workflowHypothesisId    String?
+  workflowHypothesis      WorkflowHypothesis? @relation(fields: [workflowHypothesisId], references: [id], onDelete: SetNull)
+  automationOpportunityId String?
+  automationOpportunity   AutomationOpportunity? @relation(fields: [automationOpportunityId], references: [id], onDelete: SetNull)
+  evidenceItemId          String?
+  evidenceItem            EvidenceItem? @relation(fields: [evidenceItemId], references: [id], onDelete: SetNull)
+  useCaseId   String?
+  useCase     UseCase? @relation(fields: [useCaseId], references: [id], onDelete: SetNull)
+
+  @@index([prospectId])
+  @@index([workflowHypothesisId])
+  @@index([automationOpportunityId])
+  @@index([evidenceItemId])
+  @@index([useCaseId])
+}
+
+model UseCase {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  title       String
+  summary     String
+  category    String
+  outcomes    String[]
+  tags        String[]
+  caseStudyRefs String[]
+  isActive    Boolean  @default(true)
+  isShipped   Boolean  @default(true)
+  sourceRef   String?
+  externalUrl String?
+
+  proofMatches ProofMatch[]
+
+  @@index([isActive, isShipped])
+  @@index([category])
+}
+
+model WorkflowLossMap {
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  assetType     AssetType @default(WORKFLOW_LOSS_MAP)
+  version       Int       @default(1)
+  language      String    @default("nl")
+  title         String
+  markdown      String
+  html          String?
+  pdfUrl        String?
+  metrics       Json?
+  emailSubject  String?
+  emailBodyText String?
+  emailBodyHtml String?
+  demoScript    String?
+  ctaStep1      String
+  ctaStep2      String
+
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  researchRunId String
+  researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  outreachSequences OutreachSequence[]
+  callPrepPlans     CallPrepPlan[]
+
+  @@index([prospectId, createdAt])
+  @@index([researchRunId])
+}
+
+model OutreachSequence {
+  id               String         @id @default(cuid())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  templateKey      String
+  status           SequenceStatus @default(DRAFTED)
+  isEvidenceBacked Boolean        @default(false)
+  metadata         Json?
+
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  researchRunId String?
+  researchRun   ResearchRun? @relation(fields: [researchRunId], references: [id], onDelete: SetNull)
+  workflowLossMapId String?
+  workflowLossMap   WorkflowLossMap? @relation(fields: [workflowLossMapId], references: [id], onDelete: SetNull)
+
+  steps OutreachStep[]
+
+  @@index([prospectId, status])
+  @@index([contactId])
+  @@index([campaignId])
+}
+
+model OutreachStep {
+  id         String         @id @default(cuid())
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  stepOrder  Int
+  subject    String?
+  bodyText   String
+  bodyHtml   String?
+  plannedAt  DateTime?
+  sentAt     DateTime?
+  status     SequenceStatus @default(DRAFTED)
+  metadata   Json?
+
+  sequenceId String
+  sequence   OutreachSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  outreachLogId String?
+  outreachLog   OutreachLog? @relation(fields: [outreachLogId], references: [id], onDelete: SetNull)
+
+  @@unique([sequenceId, stepOrder])
+  @@index([outreachLogId])
+}
+
+model CallPrepPlan {
+  id                 String    @id @default(cuid())
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  assetType          AssetType @default(CALL_PREP_PLAN)
+  version            Int       @default(1)
+  language           String    @default("nl")
+  summary            String
+  plan30             Json
+  plan60             Json
+  plan90             Json
+  stakeholderMap     Json?
+  discoveryQuestions Json?
+  riskList           Json?
+  demoFlow           Json?
+
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  researchRunId String
+  researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
+  workflowLossMapId String?
+  workflowLossMap   WorkflowLossMap? @relation(fields: [workflowLossMapId], references: [id], onDelete: SetNull)
+
+  @@index([prospectId, createdAt])
+  @@index([researchRunId])
+}
+
+// =============================================================================
+// EXISTING MODELS (unchanged)
+// =============================================================================
 
 model WizardSession {
   id        String   @id @default(cuid())
