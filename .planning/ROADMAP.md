@@ -164,7 +164,7 @@ Plans:
 
 **Depends on:** Phase 8 (evidence pipeline data to display), Phase 7 (approved hypotheses to show)
 
-**Requirements:** TBD (run /gsd:plan-phase 11 to define)
+**Requirements:** DASH-01, DASH-02, DASH-03, DASH-04, DASH-05
 
 **Success Criteria** (what must be TRUE when this phase completes):
 
@@ -174,11 +174,12 @@ Plans:
 4. Prospect URLs use readable format `/voor/bedrijfsnaam` instead of random nanoid slugs
 5. All existing wizard engagement tracking (step times, PDF download, call booked) continues to work
 
-**Plans:** TBD
+**Plans:** 2 plans in 2 waves
 
 Plans:
 
-- [ ] TBD (run /gsd:plan-phase 11 to break down)
+- [ ] 11-01-PLAN.md — Schema migration (readableSlug, quote tracking) + slug utility + enrichment wiring + quote mutation + notifyAdmin extension + contact env vars (Wave 1)
+- [ ] 11-02-PLAN.md — /voor/[slug] dashboard route + DashboardClient with evidence content + contact buttons + admin link updates (Wave 2)
 
 ---
 
