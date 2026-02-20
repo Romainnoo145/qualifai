@@ -9,20 +9,20 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 ## Current Position
 
-Phase: 9 of 11 (Engagement Triggers)
-Plan: 2 of 2 in current phase
-Status: Phase 9 complete — verified 10/10 must-haves. Ready for Phase 10
-Last activity: 2026-02-21 — Phase 9 verified and complete (Resend webhook, engagement triggers, dedup guard)
+Phase: 10 of 11 (Cadence Engine)
+Plan: 1 of 4 in current phase
+Status: Phase 10 in progress — Plan 01 complete (cadence schema columns)
+Last activity: 2026-02-20 — Phase 10 Plan 01 complete (OutreachStep cadence columns + migration)
 
-Progress: [████████░░] 80% (v1.1)
+Progress: [████████░░] 82% (v1.1)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 10 (v1.1)
-- Average duration: 3.8 min
-- Total execution time: 43 min
+- Total plans completed: 11 (v1.1)
+- Average duration: 3.5 min
+- Total execution time: 44 min
 
 **By Phase:**
 
@@ -32,7 +32,7 @@ Progress: [████████░░] 80% (v1.1)
 | 7. Evidence Approval Gate | 2/2   | 6 min  | 3 min    |
 | 8. Deep Evidence Pipeline | 3/3   | ~21min | ~7min    |
 | 9. Engagement Triggers    | 2/2   | ~5min  | ~2.5min  |
-| 10. Cadence Engine        | 0/4   | —      | —        |
+| 10. Cadence Engine        | 1/4   | 1 min  | 1 min    |
 | 11. Prospect Dashboard    | 0/?   | —      | —        |
 
 _Updated after each plan completion_
@@ -80,6 +80,8 @@ _Updated after each plan completion_
 - Contact resolution for engagement triggers: OutreachSequence.contactId first (active outreach), then earliest non-opted-out Contact
 - TriggerSource type (wizard_step3, pdf_download, interested_reply) constrains all call sites at compile time
 - Engagement dedup key: (prospectId via contact relation, triggerSource via metadata JSON path) — matches calcom/route.ts bookingUid dedup pattern
+- [Phase 10-cadence-engine]: triggeredBy stored as String? not Prisma enum — accommodates TriggerSource values without parallel enum migration
+- [Phase 10-cadence-engine]: nextStepReadyAt indexed via @@index([nextStepReadyAt]) — enables efficient cron sweep query WHERE nextStepReadyAt <= NOW()
 
 ### Roadmap Evolution
 
@@ -96,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Phase 9 verified and complete (10/10 must-haves). Engagement triggers ship: Resend webhook with Svix verification, createEngagementCallTask utility with dedup, wired into wizard step 3+, PDF download, interested reply. Ready for Phase 10 (Cadence Engine).
+Last session: 2026-02-20
+Stopped at: Completed 10-cadence-engine-01-PLAN.md — OutreachStep cadence columns (scheduledAt, triggeredBy, nextStepReadyAt) added and migrated. Ready for Phase 10 Plan 02.
 Resume file: None
