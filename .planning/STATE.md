@@ -9,20 +9,20 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 
 ## Current Position
 
-Phase: 7 of 10 (Evidence Approval Gate)
-Plan: 2 of 2 in current phase
-Status: Phase complete — ready for Phase 8
-Last activity: 2026-02-20 — Phase 7 complete (matchProofs wiring, enriched queries, outreach gate, hypothesis review UI)
+Phase: 8 of 10 (Deep Evidence Pipeline)
+Plan: 1 of 3 in current phase
+Status: Plan 1 complete — ready for Plan 2 (Crawl4AI client)
+Last activity: 2026-02-21 — Phase 8 Plan 1 complete (SerpAPI URL discovery client, TDD, env vars)
 
-Progress: [████░░░░░░] 40% (v1.1)
+Progress: [█████░░░░░] 43% (v1.1)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 5 (v1.1)
-- Average duration: 3.8 min
-- Total execution time: 19 min
+- Total plans completed: 6 (v1.1)
+- Average duration: 4.0 min
+- Total execution time: 34 min
 
 **By Phase:**
 
@@ -30,7 +30,7 @@ Progress: [████░░░░░░] 40% (v1.1)
 | ------------------------- | ----- | ------ | -------- |
 | 6. Use Cases Foundation   | 3/3   | 13 min | 4.3 min  |
 | 7. Evidence Approval Gate | 2/2   | 6 min  | 3 min    |
-| 8. Deep Evidence Pipeline | 0/3   | —      | —        |
+| 8. Deep Evidence Pipeline | 1/3   | ~15min | ~15min   |
 | 9. Engagement Triggers    | 0/3   | —      | —        |
 | 10. Cadence Engine        | 0/5   | —      | —        |
 
@@ -59,6 +59,10 @@ _Updated after each plan completion_
 - Used alert() for PRECONDITION_FAILED surfacing — sonner not imported in prospect page, alert is sufficient for now
 - Skipped disabled state on Queue Outreach button — hypotheses data not in LossMapTab scope, backend gate + onError is the correct guard
 - Evidence URL fallback uses ev.title ?? ev.sourceUrl — no URL parsing, truncation handles long URLs via CSS
+- discoverSerpUrls accesses process.env.SERP_API_KEY directly (not env.mjs) — keeps module testable without full env setup
+- Google Maps uses two-step SerpAPI flow: google_maps fetches data_id, google_maps_reviews uses data_id — mapsDataId returned for cache persistence
+- Each SerpAPI engine call wrapped in independent try/catch — failures are logged but non-blocking, returns partial results
+- SerpAPI results capped at 5 reviewUrls and 5 jobUrls — controls downstream Crawl4AI scraping cost
 
 ### Pending Todos
 
@@ -71,6 +75,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-20
-Stopped at: Phase 7 complete — evidence approval gate fully implemented. Ready for Phase 8 (Deep Evidence Pipeline).
+Last session: 2026-02-21
+Stopped at: Completed 08-01-PLAN.md — SerpAPI URL discovery client implemented with TDD (6 tests passing). Ready for Plan 02 (Crawl4AI client).
 Resume file: None
