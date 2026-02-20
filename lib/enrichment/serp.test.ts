@@ -88,7 +88,7 @@ describe('discoverSerpUrls', () => {
     // Only 2 calls: google_maps and google_jobs (no google_maps_reviews)
     const calls = mockGetJson.mock.calls;
     const engines = calls.map(
-      (call) => (call[0] as Record<string, unknown>).engine,
+      (call) => (call[0] as unknown as Record<string, unknown>).engine,
     );
     expect(engines).not.toContain('google_maps_reviews');
   });
