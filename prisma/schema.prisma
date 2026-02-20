@@ -559,6 +559,11 @@ model OutreachStep {
   status     SequenceStatus @default(DRAFTED)
   metadata   Json?
 
+  // Phase 10: Cadence Engine columns
+  scheduledAt     DateTime?  // When this step was scheduled by cadence engine
+  triggeredBy     String?    // 'manual' | 'cadence' | TriggerSource values
+  nextStepReadyAt DateTime?  // When the NEXT step should be created (cron-queryable)
+
   sequenceId String
   sequence   OutreachSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
   outreachLogId String?
@@ -566,6 +571,7 @@ model OutreachStep {
 
   @@unique([sequenceId, stepOrder])
   @@index([outreachLogId])
+  @@index([nextStepReadyAt])  // Enables efficient cron sweep query
 }
 
 model CallPrepPlan {
