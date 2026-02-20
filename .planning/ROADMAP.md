@@ -27,6 +27,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 - [x] **Phase 8: Deep Evidence Pipeline** — Add SerpAPI search discovery and managed-browser extraction as new evidence sources feeding the existing pipeline
 - [ ] **Phase 9: Engagement Triggers** — Wire wizard, PDF, reply, and email events to immediate touch task creation with deduplication
 - [ ] **Phase 10: Cadence Engine** — Build engagement-driven cadence state machine that automatically schedules and advances multi-touch sequences
+- [ ] **Phase 11: Prospect Dashboard** — Upgrade wizard to evidence-backed prospect dashboard with multi-channel contact, one-click quotes, and readable URLs
 
 ---
 
@@ -123,13 +124,12 @@ Plans:
 4. Email open and click events are captured and stored via Resend webhook with HMAC signature verification
 5. Email opens alone never trigger cadence escalation — only wizard engagement and PDF download do
 
-**Plans:** TBD
+**Plans:** 2 plans in 1 wave
 
 Plans:
 
-- [ ] 09-01: Resend webhook route (HMAC verification, open/click event capture, resendMessageId stored at send time)
-- [ ] 09-02: Engagement trigger wiring (wizard step 3+, PDF download, interested reply → immediate call task)
-- [ ] 09-03: Deduplication guard (prevent duplicate tasks when same engagement fires multiple times)
+- [ ] 09-01-PLAN.md — Resend webhook route (Svix verification, open/click event capture, resendMessageId stored at send time) (Wave 1)
+- [ ] 09-02-PLAN.md — Engagement trigger utility + wiring with dedup guard (wizard step 3+, PDF download, interested reply -> immediate call task) (Wave 1)
 
 ---
 
@@ -159,11 +159,33 @@ Plans:
 - [ ] 10-04: Cadence cron job (Railway cron processes due steps on schedule)
 - [ ] 10-05: Cadence history UI (admin can see cadence state and history per prospect)
 
+### Phase 11: Prospect Dashboard
+
+**Goal:** Upgrade the public wizard from an educational presentation into a prospect dashboard that displays evidence-backed pain points with matched use cases, provides multi-channel contact options (Cal.com + WhatsApp + call + email), enables one-click quote requests, and uses readable URLs (`/voor/bedrijfsnaam`).
+
+**Depends on:** Phase 8 (evidence pipeline data to display), Phase 7 (approved hypotheses to show)
+
+**Requirements:** TBD (run /gsd:plan-phase 11 to define)
+
+**Success Criteria** (what must be TRUE when this phase completes):
+
+1. Prospect dashboard shows real evidence-backed pain points and matched use cases (from approved hypotheses, not just AI-generated content)
+2. Dashboard has Cal.com booking, WhatsApp (wa.me), call (tel:), and email (mailto:) contact buttons to Klarifai
+3. Prospect can request a quote with one click — admin receives notification with prospect context and matched use cases
+4. Prospect URLs use readable format `/voor/bedrijfsnaam` instead of random nanoid slugs
+5. All existing wizard engagement tracking (step times, PDF download, call booked) continues to work
+
+**Plans:** TBD
+
+Plans:
+
+- [ ] TBD (run /gsd:plan-phase 11 to break down)
+
 ---
 
 ## Progress
 
-**Execution order:** 6 → 7 → 8 → 9 → 10
+**Execution order:** 6 → 7 → 8 → 9 → 10 → 11
 
 | Phase                     | Milestone | Plans Complete | Status      | Completed  |
 | ------------------------- | --------- | -------------- | ----------- | ---------- |
@@ -171,5 +193,6 @@ Plans:
 | 6. Use Cases Foundation   | v1.1      | 3/3            | Complete    | 2026-02-20 |
 | 7. Evidence Approval Gate | v1.1      | 2/2            | Complete    | 2026-02-20 |
 | 8. Deep Evidence Pipeline | v1.1      | 3/3            | Complete    | 2026-02-21 |
-| 9. Engagement Triggers    | v1.1      | 0/3            | Not started | —          |
+| 9. Engagement Triggers    | v1.1      | 0/2            | Not started | —          |
 | 10. Cadence Engine        | v1.1      | 0/5            | Not started | —          |
+| 11. Prospect Dashboard    | v1.1      | 0/?            | Not started | —          |
