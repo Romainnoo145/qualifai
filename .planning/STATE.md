@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 10 of 11 (Cadence Engine)
-Plan: 1 of 4 in current phase
-Status: Phase 10 in progress — Plan 01 complete (cadence schema columns)
-Last activity: 2026-02-20 — Phase 10 Plan 01 complete (OutreachStep cadence columns + migration)
+Plan: 2 of 4 in current phase
+Status: Phase 10 in progress — Plan 02 complete (cadence engine core functions)
+Last activity: 2026-02-20 — Phase 10 Plan 02 complete (buildCadenceState, evaluateCadence, processDueCadenceSteps — 14 tests)
 
 Progress: [████████░░] 82% (v1.1)
 
@@ -20,9 +20,9 @@ Progress: [████████░░] 82% (v1.1)
 
 **Velocity:**
 
-- Total plans completed: 11 (v1.1)
+- Total plans completed: 12 (v1.1)
 - Average duration: 3.5 min
-- Total execution time: 44 min
+- Total execution time: 46 min
 
 **By Phase:**
 
@@ -32,7 +32,7 @@ Progress: [████████░░] 82% (v1.1)
 | 7. Evidence Approval Gate | 2/2   | 6 min  | 3 min    |
 | 8. Deep Evidence Pipeline | 3/3   | ~21min | ~7min    |
 | 9. Engagement Triggers    | 2/2   | ~5min  | ~2.5min  |
-| 10. Cadence Engine        | 1/4   | 1 min  | 1 min    |
+| 10. Cadence Engine        | 2/4   | 3 min  | 1.5 min  |
 | 11. Prospect Dashboard    | 0/?   | —      | —        |
 
 _Updated after each plan completion_
@@ -82,6 +82,10 @@ _Updated after each plan completion_
 - Engagement dedup key: (prospectId via contact relation, triggerSource via metadata JSON path) — matches calcom/route.ts bookingUid dedup pattern
 - [Phase 10-cadence-engine]: triggeredBy stored as String? not Prisma enum — accommodates TriggerSource values without parallel enum migration
 - [Phase 10-cadence-engine]: nextStepReadyAt indexed via @@index([nextStepReadyAt]) — enables efficient cron sweep query WHERE nextStepReadyAt <= NOW()
+- [Phase 10-02]: buildCadenceState is a pure function (no DB) — enables deterministic unit testing without mocks, same pattern as matchProofs
+- [Phase 10-02]: EngagementSignals interface has no openedAt field — email opens excluded at type level, locked decision enforced at compile time
+- [Phase 10-02]: evaluateCadence counts SENT and QUEUED steps as completed — DRAFTED steps are pending, not completed, so don't contribute to exhaustion
+- [Phase 10-02]: nextScheduledAt returns null when no prior touches — prevents cron sweep from immediately firing on brand-new sequences
 
 ### Roadmap Evolution
 
@@ -99,5 +103,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 10-cadence-engine-01-PLAN.md — OutreachStep cadence columns (scheduledAt, triggeredBy, nextStepReadyAt) added and migrated. Ready for Phase 10 Plan 02.
+Stopped at: Completed 10-cadence-engine-02-PLAN.md — Cadence engine (buildCadenceState, evaluateCadence, processDueCadenceSteps) built and tested with 14 unit tests. Ready for Phase 10 Plan 03.
 Resume file: None
