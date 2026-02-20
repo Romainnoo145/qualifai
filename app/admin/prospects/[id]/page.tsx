@@ -144,7 +144,12 @@ export default function ProspectDetail() {
 
   const copyLink = () => {
     if (!prospect.data) return;
-    const url = `${window.location.origin}/discover/${prospect.data.slug}`;
+    // Prefer /voor/ readable URL when readableSlug is set
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = prospect.data as any;
+    const url = data.readableSlug
+      ? `${window.location.origin}/voor/${data.readableSlug}`
+      : `${window.location.origin}/discover/${prospect.data.slug}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -459,17 +464,35 @@ export default function ProspectDetail() {
             />
           )}
           {activeTab === 'wizard' && (
-            <div className="bg-white border border-slate-200 border-dashed p-12 text-center rounded-2xl">
-              <p className="text-sm text-slate-500 mb-6">
+            <div className="bg-white border border-slate-200 border-dashed p-12 text-center rounded-2xl space-y-6">
+              <p className="text-sm text-slate-500">
                 Interactive Prospect Experience
               </p>
-              <Link
-                href={`/discover/${p.slug}`}
-                target="_blank"
-                className="btn-pill-primary px-8 py-3 text-sm inline-flex items-center gap-2"
-              >
-                Open Live Wizard <ExternalLink className="w-4 h-4" />
-              </Link>
+              {p.readableSlug && (
+                <div className="flex items-center justify-center gap-2">
+                  <code className="text-xs text-slate-400 bg-slate-50 px-3 py-1 rounded-lg border border-slate-100">
+                    /voor/{p.readableSlug}
+                  </code>
+                </div>
+              )}
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {p.readableSlug && (
+                  <Link
+                    href={`/voor/${p.readableSlug}`}
+                    target="_blank"
+                    className="btn-pill-primary px-8 py-3 text-sm inline-flex items-center gap-2"
+                  >
+                    Open Dashboard <ExternalLink className="w-4 h-4" />
+                  </Link>
+                )}
+                <Link
+                  href={`/discover/${p.slug}`}
+                  target="_blank"
+                  className="btn-pill-secondary px-8 py-3 text-sm inline-flex items-center gap-2"
+                >
+                  Open Legacy Wizard <ExternalLink className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
           )}
           {activeTab === 'cadence' && <CadenceTab prospectId={id} />}

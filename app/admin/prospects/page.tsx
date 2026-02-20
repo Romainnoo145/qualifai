@@ -2,8 +2,16 @@
 
 import { api } from '@/components/providers';
 import Link from 'next/link';
-import { Globe, Building2, ExternalLink, Copy, Check } from 'lucide-react';
+import {
+  Globe,
+  Building2,
+  ExternalLink,
+  Copy,
+  Check,
+  ChevronRight,
+} from 'lucide-react';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 const statusColors: Record<string, string> = {
   DRAFT: 'bg-slate-100 text-slate-600',
@@ -21,22 +29,27 @@ export default function ProspectList() {
   const prospects = api.admin.listProspects.useQuery();
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 
-  const copyLink = (slug: string) => {
-    const url = `${window.location.origin}/discover/${slug}`;
+  const copyLink = (prospect: {
+    slug: string;
+    readableSlug: string | null;
+  }) => {
+    const url = prospect.readableSlug
+      ? `${window.location.origin}/voor/${prospect.readableSlug}`
+      : `${window.location.origin}/discover/${prospect.slug}`;
     navigator.clipboard.writeText(url);
-    setCopiedSlug(slug);
+    setCopiedSlug(prospect.slug);
     setTimeout(() => setCopiedSlug(null), 2000);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold font-heading text-slate-900">
+    <div className="space-y-16">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
           Prospects
         </h1>
         <Link
           href="/admin/prospects/new"
-          className="px-4 py-2 rounded-lg text-sm font-semibold bg-klarifai-midnight text-white hover:bg-klarifai-indigo transition-colors"
+          className="px-8 py-3 btn-pill-primary text-xs"
         >
           + New Prospect
         </Link>
@@ -62,88 +75,106 @@ export default function ProspectList() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-4">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {(prospects.data?.prospects as any[])?.map((prospect: any) => (
             <div
               key={prospect.id}
-              className="glass-card glass-card-hover p-4 flex items-center justify-between"
+              className="glass-card glass-card-hover p-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between group"
             >
-              <div className="flex items-center gap-4">
-                {prospect.logoUrl ? (
-                  <img
-                    src={prospect.logoUrl}
-                    alt=""
-                    className="w-10 h-10 rounded-lg object-cover"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
-                    <Globe className="w-5 h-5 text-slate-400" />
-                  </div>
-                )}
+              <div className="flex items-center gap-6">
+                <div className="w-14 h-14 rounded-2xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden">
+                  {prospect.logoUrl ? (
+                    <img
+                      src={prospect.logoUrl}
+                      alt=""
+                      className="w-8 h-8 object-contain"
+                    />
+                  ) : (
+                    <Building2 className="w-6 h-6 text-slate-200" />
+                  )}
+                </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-4">
                     <Link
                       href={`/admin/prospects/${prospect.id}`}
-                      className="font-semibold text-slate-900 hover:text-klarifai-blue transition-colors"
+                      className="text-xl font-black text-[#040026] tracking-tighter hover:text-[#007AFF] transition-all"
                     >
                       {prospect.companyName ?? prospect.domain}
                     </Link>
                     <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${statusColors[prospect.status] ?? ''}`}
+                      className={cn(
+                        'text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border',
+                        statusColors[prospect.status] ||
+                          'bg-slate-50 text-slate-400 border-slate-100',
+                      )}
                     >
                       {prospect.status}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
-                    <span>{prospect.domain}</span>
+                  <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-400 mt-2">
+                    <span className="flex items-center gap-2">
+                      <Globe className="w-3.5 h-3.5" /> {prospect.domain}
+                    </span>
                     {prospect.industry && (
                       <>
-                        <span className="text-slate-300">/</span>
+                        <span className="w-1 h-1 rounded-full bg-slate-200" />
                         <span>{prospect.industry}</span>
                       </>
                     )}
                     {prospect._count.sessions > 0 && (
                       <>
-                        <span className="text-slate-300">/</span>
-                        <span>{prospect._count.sessions} sessions</span>
+                        <span className="w-1 h-1 rounded-full bg-slate-200" />
+                        <span className="text-[#007AFF]">
+                          {prospect._count.sessions} sessions
+                        </span>
                       </>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-3">
                 {['READY', 'SENT', 'VIEWED', 'ENGAGED', 'CONVERTED'].includes(
                   prospect.status,
                 ) && (
                   <>
                     <button
-                      onClick={() => copyLink(prospect.slug)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                      onClick={() => copyLink(prospect)}
+                      className="ui-tap flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-slate-100 transition-all border border-slate-100"
                     >
                       {copiedSlug === prospect.slug ? (
                         <>
-                          <Check className="w-3 h-3" />
+                          <Check className="w-3.5 h-3.5" />
                           Copied
                         </>
                       ) : (
                         <>
-                          <Copy className="w-3 h-3" />
-                          Copy Link
+                          <Copy className="w-3.5 h-3.5" />
+                          Share
                         </>
                       )}
                     </button>
                     <Link
-                      href={`/discover/${prospect.slug}`}
+                      href={
+                        prospect.readableSlug
+                          ? `/voor/${prospect.readableSlug}`
+                          : `/discover/${prospect.slug}`
+                      }
                       target="_blank"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-klarifai-midnight text-white hover:bg-klarifai-indigo transition-colors"
+                      className="ui-tap flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#1E1E4A] transition-all shadow-xl shadow-[#040026]/10"
                     >
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-3.5 h-3.5" />
                       Preview
                     </Link>
                   </>
                 )}
+                <Link
+                  href={`/admin/prospects/${prospect.id}`}
+                  className="ui-tap p-2.5 rounded-xl bg-slate-50 text-slate-400 hover:text-[#040026] hover:bg-slate-100 border border-slate-100 transition-all"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </Link>
               </div>
             </div>
           ))}
