@@ -1,14 +1,114 @@
 import { z } from 'zod';
 import { adminProcedure, router } from '../trpc';
 import { nanoid } from 'nanoid';
-import { enrichCompanyByDomain } from '@/lib/lusha';
+import { enrichCompany } from '@/lib/enrichment';
 import { generateWizardContent } from '@/lib/ai/generate-wizard';
 import type { CompanyContext, IndustryPrompts } from '@/lib/ai/prompts';
 import type { Prisma } from '@prisma/client';
+import { env } from '@/env.mjs';
+import {
+  generateUniqueReadableSlug,
+  toReadableSlug,
+} from '@/lib/readable-slug';
 
 // Helper to cast to Prisma-compatible JSON
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
+}
+
+function buildEnrichmentData(
+  enriched: Awaited<ReturnType<typeof enrichCompany>>,
+) {
+  return {
+    companyName: enriched.companyName,
+    industry: enriched.industry,
+    subIndustry: enriched.subIndustry,
+    employeeRange: enriched.employeeRange,
+    employeeCount: enriched.employeeCount,
+    revenueRange: enriched.revenueRange,
+    revenueEstimate: enriched.revenueEstimate,
+    technologies: enriched.technologies,
+    specialties: enriched.specialties,
+    country: enriched.country,
+    city: enriched.city,
+    state: enriched.state,
+    description: enriched.description,
+    logoUrl: enriched.logoUrl,
+    linkedinUrl: enriched.linkedinUrl,
+    foundedYear: enriched.foundedYear,
+    naicsCode: enriched.naicsCode,
+    sicCode: enriched.sicCode,
+    lushaCompanyId: enriched.lushaCompanyId,
+    lushaRawData: toJson(enriched.rawData),
+    intentTopics: enriched.intentTopics
+      ? toJson(enriched.intentTopics)
+      : undefined,
+    fundingInfo: enriched.fundingInfo
+      ? toJson(enriched.fundingInfo)
+      : undefined,
+    lastEnrichedAt: new Date(),
+    status: 'ENRICHED' as const,
+  };
+}
+
+function buildCompanyContext(prospect: {
+  companyName: string | null;
+  domain: string;
+  industry: string | null;
+  subIndustry: string | null;
+  employeeRange: string | null;
+  revenueRange: string | null;
+  technologies: string[];
+  specialties: string[];
+  country: string | null;
+  city: string | null;
+  description: string | null;
+}): CompanyContext {
+  return {
+    companyName: prospect.companyName ?? prospect.domain,
+    domain: prospect.domain,
+    industry: prospect.industry,
+    subIndustry: prospect.subIndustry,
+    employeeRange: prospect.employeeRange,
+    revenueRange: prospect.revenueRange,
+    technologies: prospect.technologies,
+    specialties: prospect.specialties,
+    country: prospect.country,
+    city: prospect.city,
+    description: prospect.description,
+  };
+}
+
+function buildIndustryPrompts(
+  template: {
+    dataOpportunityPrompts: unknown;
+    automationPrompts: unknown;
+    successStoryTemplates: unknown;
+    roadmapTemplates: unknown;
+  } | null,
+): IndustryPrompts | undefined {
+  if (!template) return undefined;
+  return {
+    dataOpportunityPrompts: template.dataOpportunityPrompts as string[],
+    automationPrompts: template.automationPrompts as string[],
+    successStoryTemplates: template.successStoryTemplates as Array<{
+      title: string;
+      industry: string;
+      outcome: string;
+    }>,
+    roadmapTemplates: template.roadmapTemplates as Array<{
+      phase: string;
+      items: string[];
+    }>,
+  };
+}
+
+const REENRICH_AFTER_HOURS = env.ENRICHMENT_REENRICH_AFTER_HOURS ?? 72;
+
+function isEnrichmentFresh(lastEnrichedAt: Date | null | undefined): boolean {
+  if (!lastEnrichedAt) return false;
+  const ageMs = Date.now() - lastEnrichedAt.getTime();
+  return ageMs < REENRICH_AFTER_HOURS * 60 * 60 * 1000;
 }
 
 export const adminRouter = router({
@@ -31,31 +131,67 @@ export const adminRouter = router({
     }),
 
   enrichProspect: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(
+      z.object({
+        id: z.string(),
+        force: z.boolean().default(false),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const prospect = await ctx.db.prospect.findUniqueOrThrow({
         where: { id: input.id },
       });
 
-      const enriched = await enrichCompanyByDomain(prospect.domain);
+      if (!input.force && isEnrichmentFresh(prospect.lastEnrichedAt)) {
+        return prospect;
+      }
+
+      const enriched = await enrichCompany(prospect.domain, prospect.id);
+
+      const shouldAutoSlug = enriched.companyName && !prospect.readableSlug;
+      const readableSlug = shouldAutoSlug
+        ? await generateUniqueReadableSlug(ctx.db, enriched.companyName!)
+        : undefined;
 
       const updated = await ctx.db.prospect.update({
         where: { id: input.id },
         data: {
-          companyName: enriched.companyName,
-          industry: enriched.industry,
-          subIndustry: enriched.subIndustry,
-          employeeRange: enriched.employeeRange,
-          revenueRange: enriched.revenueRange,
-          technologies: enriched.technologies,
-          specialties: enriched.specialties,
-          country: enriched.country,
-          city: enriched.city,
-          description: enriched.description,
-          logoUrl: enriched.logoUrl,
-          lushaRawData: toJson(enriched.rawData),
-          status: 'ENRICHED',
+          ...buildEnrichmentData(enriched),
+          ...(shouldAutoSlug ? { readableSlug } : {}),
         },
+      });
+
+      return updated;
+    }),
+
+  generateReadableSlug: adminProcedure
+    .input(z.object({ id: z.string(), override: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const prospect = await ctx.db.prospect.findUniqueOrThrow({
+        where: { id: input.id },
+      });
+
+      let candidate: string;
+      if (input.override) {
+        candidate = toReadableSlug(input.override);
+      } else {
+        candidate = await generateUniqueReadableSlug(
+          ctx.db,
+          prospect.companyName ?? prospect.domain,
+        );
+      }
+
+      // Ensure uniqueness — another prospect may already have the sanitised override
+      const conflict = await ctx.db.prospect.findUnique({
+        where: { readableSlug: candidate },
+      });
+      if (conflict && conflict.id !== prospect.id) {
+        candidate = await generateUniqueReadableSlug(ctx.db, candidate);
+      }
+
+      const updated = await ctx.db.prospect.update({
+        where: { id: input.id },
+        data: { readableSlug: candidate },
       });
 
       return updated;
@@ -73,46 +209,15 @@ export const adminRouter = router({
         data: { status: 'GENERATING' },
       });
 
-      // Find matching industry template
       const template = prospect.industry
         ? await ctx.db.industryTemplate.findFirst({
             where: { industry: prospect.industry },
           })
         : null;
 
-      const companyContext: CompanyContext = {
-        companyName: prospect.companyName ?? prospect.domain,
-        domain: prospect.domain,
-        industry: prospect.industry,
-        subIndustry: prospect.subIndustry,
-        employeeRange: prospect.employeeRange,
-        revenueRange: prospect.revenueRange,
-        technologies: prospect.technologies,
-        specialties: prospect.specialties,
-        country: prospect.country,
-        city: prospect.city,
-        description: prospect.description,
-      };
-
-      const industryPrompts: IndustryPrompts | undefined = template
-        ? {
-            dataOpportunityPrompts: template.dataOpportunityPrompts as string[],
-            automationPrompts: template.automationPrompts as string[],
-            successStoryTemplates: template.successStoryTemplates as Array<{
-              title: string;
-              industry: string;
-              outcome: string;
-            }>,
-            roadmapTemplates: template.roadmapTemplates as Array<{
-              phase: string;
-              items: string[];
-            }>,
-          }
-        : undefined;
-
       const content = await generateWizardContent(
-        companyContext,
-        industryPrompts,
+        buildCompanyContext(prospect),
+        buildIndustryPrompts(template),
       );
 
       const updated = await ctx.db.prospect.update({
@@ -154,30 +259,15 @@ export const adminRouter = router({
         },
       });
 
-      // Enrich via Lusha
+      // Enrich via Apollo provider.
       try {
-        const enriched = await enrichCompanyByDomain(cleanDomain);
+        const enriched = await enrichCompany(cleanDomain, prospect.id);
         prospect = await ctx.db.prospect.update({
           where: { id: prospect.id },
-          data: {
-            companyName: enriched.companyName,
-            industry: enriched.industry,
-            subIndustry: enriched.subIndustry,
-            employeeRange: enriched.employeeRange,
-            revenueRange: enriched.revenueRange,
-            technologies: enriched.technologies,
-            specialties: enriched.specialties,
-            country: enriched.country,
-            city: enriched.city,
-            description: enriched.description,
-            logoUrl: enriched.logoUrl,
-            lushaRawData: toJson(enriched.rawData),
-            status: 'ENRICHED',
-          },
+          data: buildEnrichmentData(enriched),
         });
       } catch (error) {
-        console.error('Lusha enrichment failed:', error);
-        // Continue with domain-only data
+        console.error('Apollo enrichment failed:', error);
       }
 
       // Generate AI content
@@ -192,39 +282,9 @@ export const adminRouter = router({
           })
         : null;
 
-      const companyContext: CompanyContext = {
-        companyName: prospect.companyName ?? cleanDomain,
-        domain: cleanDomain,
-        industry: prospect.industry,
-        subIndustry: prospect.subIndustry,
-        employeeRange: prospect.employeeRange,
-        revenueRange: prospect.revenueRange,
-        technologies: prospect.technologies,
-        specialties: prospect.specialties,
-        country: prospect.country,
-        city: prospect.city,
-        description: prospect.description,
-      };
-
-      const industryPrompts: IndustryPrompts | undefined = template
-        ? {
-            dataOpportunityPrompts: template.dataOpportunityPrompts as string[],
-            automationPrompts: template.automationPrompts as string[],
-            successStoryTemplates: template.successStoryTemplates as Array<{
-              title: string;
-              industry: string;
-              outcome: string;
-            }>,
-            roadmapTemplates: template.roadmapTemplates as Array<{
-              phase: string;
-              items: string[];
-            }>,
-          }
-        : undefined;
-
       const content = await generateWizardContent(
-        companyContext,
-        industryPrompts,
+        buildCompanyContext(prospect),
+        buildIndustryPrompts(template),
       );
 
       prospect = await ctx.db.prospect.update({
@@ -260,7 +320,7 @@ export const adminRouter = router({
         take: (input?.limit ?? 50) + 1,
         cursor: input?.cursor ? { id: input.cursor } : undefined,
         include: {
-          _count: { select: { sessions: true } },
+          _count: { select: { sessions: true, contacts: true } },
         },
       });
 
@@ -281,7 +341,25 @@ export const adminRouter = router({
         include: {
           sessions: { orderBy: { createdAt: 'desc' }, take: 20 },
           notificationLogs: { orderBy: { createdAt: 'desc' }, take: 10 },
-          _count: { select: { sessions: true } },
+          contacts: {
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              jobTitle: true,
+              seniority: true,
+              department: true,
+              primaryEmail: true,
+              outreachStatus: true,
+            },
+          },
+          signals: {
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+          },
+          _count: { select: { sessions: true, contacts: true, signals: true } },
         },
       });
     }),
@@ -319,20 +397,70 @@ export const adminRouter = router({
     }),
 
   getDashboardStats: adminProcedure.query(async ({ ctx }) => {
-    const [total, ready, viewed, engaged, converted, recentSessions] =
-      await Promise.all([
-        ctx.db.prospect.count(),
-        ctx.db.prospect.count({ where: { status: 'READY' } }),
-        ctx.db.prospect.count({ where: { status: 'VIEWED' } }),
-        ctx.db.prospect.count({ where: { status: 'ENGAGED' } }),
-        ctx.db.prospect.count({ where: { status: 'CONVERTED' } }),
-        ctx.db.wizardSession.findMany({
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-          include: { prospect: { select: { companyName: true, slug: true } } },
-        }),
-      ]);
+    const [
+      total,
+      ready,
+      viewed,
+      engaged,
+      converted,
+      totalContacts,
+      totalSignals,
+      unprocessedSignals,
+      outreachQueued,
+      outreachSent,
+      outreachOpened,
+      outreachReplied,
+      outreachBooked,
+      outreachConverted,
+      pendingDrafts,
+      recentSessions,
+      creditUsage,
+    ] = await Promise.all([
+      ctx.db.prospect.count(),
+      ctx.db.prospect.count({ where: { status: 'READY' } }),
+      ctx.db.prospect.count({ where: { status: 'VIEWED' } }),
+      ctx.db.prospect.count({ where: { status: 'ENGAGED' } }),
+      ctx.db.prospect.count({ where: { status: 'CONVERTED' } }),
+      ctx.db.contact.count(),
+      ctx.db.signal.count(),
+      ctx.db.signal.count({ where: { isProcessed: false } }),
+      ctx.db.contact.count({ where: { outreachStatus: 'QUEUED' } }),
+      ctx.db.contact.count({ where: { outreachStatus: 'EMAIL_SENT' } }),
+      ctx.db.contact.count({ where: { outreachStatus: 'OPENED' } }),
+      ctx.db.contact.count({ where: { outreachStatus: 'REPLIED' } }),
+      ctx.db.outreachSequence.count({ where: { status: 'BOOKED' } }),
+      ctx.db.contact.count({ where: { outreachStatus: 'CONVERTED' } }),
+      ctx.db.outreachLog.count({ where: { status: 'draft' } }),
+      ctx.db.wizardSession.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        include: { prospect: { select: { companyName: true, slug: true } } },
+      }),
+      ctx.db.creditUsage.aggregate({
+        _sum: { credits: true },
+      }),
+    ]);
 
-    return { total, ready, viewed, engaged, converted, recentSessions };
+    return {
+      total,
+      ready,
+      viewed,
+      engaged,
+      converted,
+      totalContacts,
+      totalSignals,
+      unprocessedSignals,
+      pipeline: {
+        queued: outreachQueued,
+        sent: outreachSent,
+        opened: outreachOpened,
+        replied: outreachReplied,
+        booked: outreachBooked,
+        converted: outreachConverted,
+      },
+      pendingDrafts,
+      creditsUsed: creditUsage._sum.credits ?? 0,
+      recentSessions,
+    };
   }),
 });

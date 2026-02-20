@@ -41,6 +41,9 @@ export const env = createEnv({
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url().optional(),
     NEXT_PUBLIC_CALCOM_BOOKING_URL: z.string().url().optional(),
+    NEXT_PUBLIC_WHATSAPP_NUMBER: z.string().optional(),
+    NEXT_PUBLIC_PHONE_NUMBER: z.string().optional(),
+    NEXT_PUBLIC_CONTACT_EMAIL: z.string().email().optional(),
   },
 
   runtimeEnv: {
@@ -79,6 +82,9 @@ export const env = createEnv({
     CRAWL4AI_BASE_URL: process.env.CRAWL4AI_BASE_URL,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_CALCOM_BOOKING_URL: process.env.NEXT_PUBLIC_CALCOM_BOOKING_URL,
+    NEXT_PUBLIC_WHATSAPP_NUMBER: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER,
+    NEXT_PUBLIC_PHONE_NUMBER: process.env.NEXT_PUBLIC_PHONE_NUMBER,
+    NEXT_PUBLIC_CONTACT_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL,
   },
 
   // Skip validation during build (Vercel injects at runtime)

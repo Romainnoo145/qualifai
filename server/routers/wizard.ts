@@ -193,4 +193,72 @@ export const wizardRouter = router({
 
       return { success: true };
     }),
+
+  requestQuote: publicProcedure
+    .input(
+      z.object({
+        sessionId: z.string(),
+        message: z.string().max(500).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const session = await ctx.db.wizardSession.findUnique({
+        where: { id: input.sessionId },
+        include: {
+          prospect: {
+            include: {
+              workflowHypotheses: {
+                where: { status: 'ACCEPTED' },
+                take: 3,
+                include: {
+                  proofMatches: {
+                    take: 2,
+                    include: {
+                      useCase: { select: { title: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!session) return null;
+
+      // Mark quote as requested
+      await ctx.db.wizardSession.update({
+        where: { id: input.sessionId },
+        data: {
+          quoteRequested: true,
+          quoteRequestedAt: new Date(),
+        },
+      });
+
+      // Move prospect to CONVERTED if not already
+      if (session.prospect.status !== 'CONVERTED') {
+        await ctx.db.prospect.update({
+          where: { id: session.prospectId },
+          data: { status: 'CONVERTED' },
+        });
+      }
+
+      // Build matched use case titles for notification
+      const matchedUseCases = session.prospect.workflowHypotheses.flatMap((h) =>
+        h.proofMatches
+          .map((pm) => pm.useCase?.title)
+          .filter((t): t is string => Boolean(t)),
+      );
+
+      // Fire-and-forget admin notification
+      notifyAdmin({
+        prospectId: session.prospectId,
+        type: 'quote_request',
+        companyName: session.prospect.companyName ?? session.prospect.domain,
+        slug: session.prospect.slug,
+        matchedUseCases,
+      }).catch(console.error);
+
+      return { success: true };
+    }),
 });
