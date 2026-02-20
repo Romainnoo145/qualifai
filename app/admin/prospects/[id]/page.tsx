@@ -26,6 +26,7 @@ import {
   ClipboardList,
   ChevronRight,
   AlertTriangle,
+  Timer,
 } from 'lucide-react';
 import { useState } from 'react';
 import { CompanyVitals } from '@/components/features/prospects/company-vitals';
@@ -33,6 +34,7 @@ import { CommandCenter } from '@/components/features/prospects/command-center';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { CadenceTab } from '@/components/features/CadenceTab';
 
 type Tab =
   | 'company'
@@ -42,7 +44,8 @@ type Tab =
   | 'research'
   | 'hypotheses'
   | 'lossmap'
-  | 'callprep';
+  | 'callprep'
+  | 'cadence';
 
 type DiscoveryGuardrail = {
   code: string;
@@ -227,6 +230,7 @@ export default function ProspectDetail() {
       icon: ClipboardList,
     },
     { key: 'wizard' as const, label: 'Wizard', icon: ExternalLink },
+    { key: 'cadence' as const, label: 'Cadence', icon: Timer },
   ];
 
   return (
@@ -468,6 +472,7 @@ export default function ProspectDetail() {
               </Link>
             </div>
           )}
+          {activeTab === 'cadence' && <CadenceTab prospectId={id} />}
         </div>
       </section>
     </div>
