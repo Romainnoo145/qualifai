@@ -1,5 +1,5 @@
 {
-  "name": "klarifai-discover",
+  "name": "qualifai",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -19,6 +19,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
+    "smoke:workflow": "NODE_ENV=development tsx -r dotenv/config scripts/smoke-workflow.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "prepare": "husky"
@@ -56,6 +57,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "resend": "^6.9.1",
+    "serpapi": "^2.2.1",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^4.3.6"
