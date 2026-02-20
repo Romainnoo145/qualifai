@@ -32,7 +32,7 @@ Progress: [████████░░] 80% (v1.1)
 | 7. Evidence Approval Gate | 2/2   | 6 min  | 3 min    |
 | 8. Deep Evidence Pipeline | 3/3   | ~21min | ~7min    |
 | 9. Engagement Triggers    | 2/2   | ~5min  | ~2.5min  |
-| 10. Cadence Engine        | 0/5   | —      | —        |
+| 10. Cadence Engine        | 0/4   | —      | —        |
 | 11. Prospect Dashboard    | 0/?   | —      | —        |
 
 _Updated after each plan completion_

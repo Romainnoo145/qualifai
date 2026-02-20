@@ -149,15 +149,14 @@ Plans:
 4. A cron job runs on schedule and processes all prospects with due cadence steps, creating tasks as needed
 5. Admin can see the cadence history and current cadence state for any prospect in the outreach detail view
 
-**Plans:** TBD
+**Plans:** 4 plans in 4 waves
 
 Plans:
 
-- [ ] 10-01: Schema migration (OutreachStep.scheduledAt, triggeredBy, nextStepReadyAt columns)
-- [ ] 10-02: Cadence engine (buildCadenceState + evaluateCadence + configuration rules)
-- [ ] 10-03: completeTouchTask wiring (calls evaluateCadence after each task completion)
-- [ ] 10-04: Cadence cron job (Railway cron processes due steps on schedule)
-- [ ] 10-05: Cadence history UI (admin can see cadence state and history per prospect)
+- [ ] 10-01-PLAN.md — Schema migration: add scheduledAt, triggeredBy, nextStepReadyAt columns to OutreachStep (Wave 1)
+- [ ] 10-02-PLAN.md — Cadence engine TDD: buildCadenceState + evaluateCadence + processDueCadenceSteps with unit tests (Wave 2)
+- [ ] 10-03-PLAN.md — Wiring: completeTouchTask cadence hook + cron route + getCadenceState tRPC query (Wave 3)
+- [ ] 10-04-PLAN.md — Cadence history UI: CadenceTab component + prospect detail page tab (Wave 4)
 
 ### Phase 11: Prospect Dashboard
 
@@ -194,5 +193,5 @@ Plans:
 | 7. Evidence Approval Gate | v1.1      | 2/2            | Complete    | 2026-02-20 |
 | 8. Deep Evidence Pipeline | v1.1      | 3/3            | Complete    | 2026-02-21 |
 | 9. Engagement Triggers    | v1.1      | 2/2            | Complete    | 2026-02-21 |
-| 10. Cadence Engine        | v1.1      | 0/5            | Not started | —          |
+| 10. Cadence Engine        | v1.1      | 0/4            | Not started | —          |
 | 11. Prospect Dashboard    | v1.1      | 0/?            | Not started | —          |
