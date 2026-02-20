@@ -25,7 +25,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 - [x] **Phase 6: Use Cases Foundation** — Replace Obsidian JSON proof catalog with in-app Use Cases management and DB-backed proof matching
 - [x] **Phase 7: Evidence Approval Gate** — Wire hypothesis review UI and block outreach until admin approves at least one hypothesis per prospect
 - [x] **Phase 8: Deep Evidence Pipeline** — Add SerpAPI search discovery and managed-browser extraction as new evidence sources feeding the existing pipeline
-- [ ] **Phase 9: Engagement Triggers** — Wire wizard, PDF, reply, and email events to immediate touch task creation with deduplication
+- [x] **Phase 9: Engagement Triggers** — Wire wizard, PDF, reply, and email events to immediate touch task creation with deduplication
 - [ ] **Phase 10: Cadence Engine** — Build engagement-driven cadence state machine that automatically schedules and advances multi-touch sequences
 - [ ] **Phase 11: Prospect Dashboard** — Upgrade wizard to evidence-backed prospect dashboard with multi-channel contact, one-click quotes, and readable URLs
 
@@ -128,8 +128,8 @@ Plans:
 
 Plans:
 
-- [ ] 09-01-PLAN.md — Resend webhook route (Svix verification, open/click event capture, resendMessageId stored at send time) (Wave 1)
-- [ ] 09-02-PLAN.md — Engagement trigger utility + wiring with dedup guard (wizard step 3+, PDF download, interested reply -> immediate call task) (Wave 1)
+- [x] 09-01-PLAN.md — Resend webhook route (Svix verification, open/click event capture, resendMessageId stored at send time) (Wave 1)
+- [x] 09-02-PLAN.md — Engagement trigger utility + wiring with dedup guard (wizard step 3+, PDF download, interested reply -> immediate call task) (Wave 1)
 
 ---
 
@@ -193,6 +193,6 @@ Plans:
 | 6. Use Cases Foundation   | v1.1      | 3/3            | Complete    | 2026-02-20 |
 | 7. Evidence Approval Gate | v1.1      | 2/2            | Complete    | 2026-02-20 |
 | 8. Deep Evidence Pipeline | v1.1      | 3/3            | Complete    | 2026-02-21 |
-| 9. Engagement Triggers    | v1.1      | 0/2            | Not started | —          |
+| 9. Engagement Triggers    | v1.1      | 2/2            | Complete    | 2026-02-21 |
 | 10. Cadence Engine        | v1.1      | 0/5            | Not started | —          |
 | 11. Prospect Dashboard    | v1.1      | 0/?            | Not started | —          |

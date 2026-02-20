@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v1.1 Phase 9 — Engagement Triggers
+**Current focus:** v1.1 Phase 10 — Cadence Engine
 
 ## Current Position
 
 Phase: 9 of 11 (Engagement Triggers)
-Plan: 2 of 3 in current phase
-Status: Plan 09-02 complete — ENGAG-01, ENGAG-02, ENGAG-03 satisfied. Dedup guard consolidated into utility (09-03 may be implicit complete).
-Last activity: 2026-02-20 — Phase 9 Plan 02 complete (engagement trigger utility, wizard/reply wiring)
+Plan: 2 of 2 in current phase
+Status: Phase 9 complete — verified 10/10 must-haves. Ready for Phase 10
+Last activity: 2026-02-21 — Phase 9 verified and complete (Resend webhook, engagement triggers, dedup guard)
 
-Progress: [███████░░░] 70% (v1.1)
+Progress: [████████░░] 80% (v1.1)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 8 (v1.1)
-- Average duration: 4.1 min
-- Total execution time: 38 min
+- Total plans completed: 10 (v1.1)
+- Average duration: 3.8 min
+- Total execution time: 43 min
 
 **By Phase:**
 
@@ -31,7 +31,7 @@ Progress: [███████░░░] 70% (v1.1)
 | 6. Use Cases Foundation   | 3/3   | 13 min | 4.3 min  |
 | 7. Evidence Approval Gate | 2/2   | 6 min  | 3 min    |
 | 8. Deep Evidence Pipeline | 3/3   | ~21min | ~7min    |
-| 9. Engagement Triggers    | 2/3   | ~5min  | ~2.5min  |
+| 9. Engagement Triggers    | 2/2   | ~5min  | ~2.5min  |
 | 10. Cadence Engine        | 0/5   | —      | —        |
 | 11. Prospect Dashboard    | 0/?   | —      | —        |
 
@@ -97,5 +97,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 09-01-PLAN.md — Resend webhook route with Svix verification, email.opened/clicked capture, resendMessageId stored at send time. ENGAG-04/05 satisfied. (Executed after 09-02 due to parallel agent ordering.)
+Stopped at: Phase 9 verified and complete (10/10 must-haves). Engagement triggers ship: Resend webhook with Svix verification, createEngagementCallTask utility with dedup, wired into wizard step 3+, PDF download, interested reply. Ready for Phase 10 (Cadence Engine).
 Resume file: None
