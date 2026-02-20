@@ -5,31 +5,31 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v1.1 Phase 6 — Use Cases Foundation
+**Current focus:** v1.1 Phase 7 — Evidence Approval Gate
 
 ## Current Position
 
-Phase: 6 of 10 (Use Cases Foundation)
-Plan: 3 of 3 in current phase
-Status: Phase complete — ready for Phase 7
-Last activity: 2026-02-20 — Plan 06-03 complete (DB-backed matchProofs with Claude semantic scoring)
+Phase: 7 of 10 (Evidence Approval Gate)
+Plan: 1 of 3 in current phase
+Status: Plan 07-01 complete — ready for Plan 07-02
+Last activity: 2026-02-20 — Plan 07-01 complete (matchProofs wiring + hypothesis approval gate)
 
-Progress: [███░░░░░░░] 20% (v1.1)
+Progress: [████░░░░░░] 23% (v1.1)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 3 (v1.1)
-- Average duration: 4.3 min
-- Total execution time: 13 min
+- Total plans completed: 4 (v1.1)
+- Average duration: 3.5 min
+- Total execution time: 15 min
 
 **By Phase:**
 
 | Phase                     | Plans | Total  | Avg/Plan |
 | ------------------------- | ----- | ------ | -------- |
 | 6. Use Cases Foundation   | 3/3   | 13 min | 4.3 min  |
-| 7. Evidence Approval Gate | 0/3   | —      | —        |
+| 7. Evidence Approval Gate | 1/3   | 2 min  | 2 min    |
 | 8. Deep Evidence Pipeline | 0/3   | —      | —        |
 | 9. Engagement Triggers    | 0/3   | —      | —        |
 | 10. Cadence Engine        | 0/5   | —      | —        |
@@ -54,6 +54,8 @@ _Updated after each plan completion_
 - Email opens excluded from cadence escalation — Apple MPP causes 40-60% false positives
 - Cadence timestamps in DB columns (OutreachStep.scheduledAt, nextStepReadyAt), not JSON metadata
 - SerpAPI caching mandatory from Phase 8 day one — cost compounds fast without it
+- Hypothesis gate in runAutopilot placed BEFORE executeResearchRun — checking after would always block (fresh DRAFT hypotheses)
+- listAll does not resolve evidenceRefs — lightweight for list page, evidence detail only in listByProspect
 
 ### Pending Todos
 
@@ -67,5 +69,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 06-03-PLAN.md — DB-backed matchProofs with Claude Haiku semantic scoring. Phase 6 complete. Ready for Phase 7 (Evidence Approval Gate).
+Stopped at: Completed 07-01-PLAN.md — matchProofs wiring into regenerateForRun, enriched listByProspect, listAll, hypothesis approval gates in queueOutreachDraft and runAutopilot. Ready for Plan 07-02.
 Resume file: None
