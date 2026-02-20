@@ -208,6 +208,7 @@ export const campaignsRouter = router({
           | 'planned'
           | 'completed'
           | 'blocked_gate'
+          | 'blocked_hypothesis'
           | 'no_hypotheses'
           | 'no_contact'
           | 'error';
@@ -242,6 +243,25 @@ export const campaignsRouter = router({
       for (const prospect of prospects) {
         const company = prospect.companyName ?? prospect.domain;
         try {
+          // Hypothesis approval gate — must check BEFORE executeResearchRun
+          // because executeResearchRun creates a new run with DRAFT hypotheses.
+          // Query by prospectId (across all runs), not by a specific runId.
+          const approvedHypothesisCount = await ctx.db.workflowHypothesis.count(
+            {
+              where: { prospectId: prospect.id, status: 'ACCEPTED' },
+            },
+          );
+          if (approvedHypothesisCount === 0) {
+            results.push({
+              prospectId: prospect.id,
+              company,
+              status: 'blocked_hypothesis',
+              detail:
+                'No approved hypothesis — approve at least one before outreach. Run research first, then approve hypotheses.',
+            });
+            continue;
+          }
+
           const manualReviewUrls = buildDefaultReviewSeedUrls(
             prospect.domain,
             prospect.companyName,
@@ -626,6 +646,9 @@ export const campaignsRouter = router({
         completed: results.filter((item) => item.status === 'completed').length,
         blockedGate: results.filter((item) => item.status === 'blocked_gate')
           .length,
+        blockedHypothesis: results.filter(
+          (item) => item.status === 'blocked_hypothesis',
+        ).length,
         noContact: results.filter((item) => item.status === 'no_contact')
           .length,
         failed: results.filter((item) => item.status === 'error').length,
