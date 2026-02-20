@@ -47,13 +47,13 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 3. Each use case record stores title, description, category, outcomes, case study references, and NL synonym tags
 4. Running proof matching on a prospect returns matched use cases from the database with Claude-powered semantic scoring
 
-**Plans:** TBD
+**Plans:** 3 plans in 2 waves
 
 Plans:
 
-- [ ] 06-01: UseCase model, migration, and tRPC router (CRUD + import)
-- [ ] 06-02: Use Cases admin UI (list, create, edit, delete, import)
-- [ ] 06-03: DB-backed proof matching (replace Obsidian JSON reads with UseCase queries)
+- [ ] 06-01-PLAN.md — UseCase model + migration + tRPC CRUD router + Obsidian import (Wave 1)
+- [ ] 06-02-PLAN.md — Use Cases admin UI + sidebar nav item (Wave 2)
+- [ ] 06-03-PLAN.md — DB-backed proof matching with Claude semantic scoring (Wave 2)
 
 ---
 
@@ -169,7 +169,7 @@ Plans:
 | Phase                     | Milestone | Plans Complete | Status      | Completed  |
 | ------------------------- | --------- | -------------- | ----------- | ---------- |
 | 1-5. MVP                  | v1.0      | —              | Complete    | 2026-02-20 |
-| 6. Use Cases Foundation   | v1.1      | 0/3            | Not started | —          |
+| 6. Use Cases Foundation   | v1.1      | 0/3            | Planned     | —          |
 | 7. Evidence Approval Gate | v1.1      | 0/3            | Not started | —          |
 | 8. Deep Evidence Pipeline | v1.1      | 0/3            | Not started | —          |
 | 9. Engagement Triggers    | v1.1      | 0/3            | Not started | —          |
