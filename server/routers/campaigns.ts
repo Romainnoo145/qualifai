@@ -61,7 +61,10 @@ export const campaignsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       return ctx.db.campaign.findMany({
-        where: input?.isActive === undefined ? undefined : { isActive: input.isActive },
+        where:
+          input?.isActive === undefined
+            ? undefined
+            : { isActive: input.isActive },
         orderBy: { updatedAt: 'desc' },
         take: input?.limit ?? 50,
         include: {
@@ -76,26 +79,28 @@ export const campaignsRouter = router({
       });
     }),
 
-  get: adminProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
-    return ctx.db.campaign.findUniqueOrThrow({
-      where: { id: input.id },
-      include: {
-        campaignProspects: {
-          include: {
-            prospect: {
-              select: {
-                id: true,
-                companyName: true,
-                domain: true,
-                status: true,
+  get: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.campaign.findUniqueOrThrow({
+        where: { id: input.id },
+        include: {
+          campaignProspects: {
+            include: {
+              prospect: {
+                select: {
+                  id: true,
+                  companyName: true,
+                  domain: true,
+                  status: true,
+                },
               },
             },
+            orderBy: { createdAt: 'desc' },
           },
-          orderBy: { createdAt: 'desc' },
         },
-      },
-    });
-  }),
+      });
+    }),
 
   update: adminProcedure
     .input(
@@ -117,7 +122,9 @@ export const campaignsRouter = router({
           ...(input.nicheKey !== undefined && { nicheKey: input.nicheKey }),
           ...(input.language !== undefined && { language: input.language }),
           ...(input.tone !== undefined && { tone: input.tone }),
-          ...(input.strictGate !== undefined && { strictGate: input.strictGate }),
+          ...(input.strictGate !== undefined && {
+            strictGate: input.strictGate,
+          }),
           ...(input.isActive !== undefined && { isActive: input.isActive }),
         },
       });
@@ -325,7 +332,10 @@ export const campaignsRouter = router({
 
           const selectedHypotheses = hypotheses.slice(0, 3);
           const selectedOpportunities = opportunities.slice(0, 2);
-          if (selectedHypotheses.length === 0 || selectedOpportunities.length === 0) {
+          if (
+            selectedHypotheses.length === 0 ||
+            selectedOpportunities.length === 0
+          ) {
             results.push({
               prospectId: prospect.id,
               company,
@@ -339,8 +349,16 @@ export const campaignsRouter = router({
           const proofMatches = await ctx.db.proofMatch.findMany({
             where: {
               OR: [
-                { workflowHypothesisId: { in: selectedHypotheses.map((h) => h.id) } },
-                { automationOpportunityId: { in: selectedOpportunities.map((o) => o.id) } },
+                {
+                  workflowHypothesisId: {
+                    in: selectedHypotheses.map((h) => h.id),
+                  },
+                },
+                {
+                  automationOpportunityId: {
+                    in: selectedOpportunities.map((o) => o.id),
+                  },
+                },
               ],
             },
             orderBy: { score: 'desc' },
@@ -361,9 +379,12 @@ export const campaignsRouter = router({
               specialties: true,
             },
           });
-          const bookingUrl = buildCalBookingUrl(env.NEXT_PUBLIC_CALCOM_BOOKING_URL, {
-            company: company,
-          });
+          const bookingUrl = buildCalBookingUrl(
+            env.NEXT_PUBLIC_CALCOM_BOOKING_URL,
+            {
+              company: company,
+            },
+          );
           const draft = createWorkflowLossMapDraft(
             prospectFull,
             selectedHypotheses,
@@ -379,9 +400,10 @@ export const campaignsRouter = router({
             throw new Error('Generated asset did not pass CTA validation');
           }
 
-          const version = (await ctx.db.workflowLossMap.count({
-            where: { prospectId: prospect.id },
-          })) + 1;
+          const version =
+            (await ctx.db.workflowLossMap.count({
+              where: { prospectId: prospect.id },
+            })) + 1;
           const lossMap = await ctx.db.workflowLossMap.create({
             data: {
               prospectId: prospect.id,
@@ -408,13 +430,12 @@ export const campaignsRouter = router({
             companyName: company,
             markdown: draft.markdown,
           });
-          const savedLossMap =
-            pdf.pdfUrl
-              ? await ctx.db.workflowLossMap.update({
-                  where: { id: lossMap.id },
-                  data: { pdfUrl: pdf.pdfUrl },
-                })
-              : lossMap;
+          const savedLossMap = pdf.pdfUrl
+            ? await ctx.db.workflowLossMap.update({
+                where: { id: lossMap.id },
+                data: { pdfUrl: pdf.pdfUrl },
+              })
+            : lossMap;
 
           let sequenceId: string | undefined;
           if (input.queueDrafts) {
@@ -453,13 +474,17 @@ export const campaignsRouter = router({
               continue;
             }
 
-            const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
+            const appUrl =
+              process.env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
             const lossMapUrl = `${appUrl}/discover/${prospect.slug}`;
-            const calBookingUrl = buildCalBookingUrl(env.NEXT_PUBLIC_CALCOM_BOOKING_URL, {
-              name: `${contact.firstName} ${contact.lastName}`.trim(),
-              email: contact.primaryEmail ?? undefined,
-              company,
-            });
+            const calBookingUrl = buildCalBookingUrl(
+              env.NEXT_PUBLIC_CALCOM_BOOKING_URL,
+              {
+                name: `${contact.firstName} ${contact.lastName}`.trim(),
+                email: contact.primaryEmail ?? undefined,
+                company,
+              },
+            );
             const steps = createOutreachSequenceSteps(
               contact.firstName,
               company,
@@ -487,7 +512,8 @@ export const campaignsRouter = router({
                 status: 'completed',
                 runId: research.run.id,
                 lossMapId: savedLossMap.id,
-                detail: 'Skipped draft queue (already exists for this loss map)',
+                detail:
+                  'Skipped draft queue (already exists for this loss map)',
               });
               continue;
             }
@@ -502,19 +528,19 @@ export const campaignsRouter = router({
                 templateKey: 'Sprint_2Step_Intro',
                 status: 'DRAFTED',
                 isEvidenceBacked: true,
-                  metadata: toJson({
-                    workflowOffer: 'Workflow Optimization Sprint',
-                    ctaStep1: savedLossMap.ctaStep1,
-                    ctaStep2: savedLossMap.ctaStep2,
-                    calBookingUrl,
-                    calEventTypeId: env.CALCOM_EVENT_TYPE_ID ?? null,
-                    contactPriorityScore: contactPriority?.score ?? null,
-                    contactPriorityTier: contactPriority?.tier ?? null,
-                    contactQualityStatus: contactPriority?.status ?? null,
-                    manualReviewReasons: contactPriority?.reasons ?? [],
-                  }),
-                },
-              });
+                metadata: toJson({
+                  workflowOffer: 'Workflow Optimization Sprint',
+                  ctaStep1: savedLossMap.ctaStep1,
+                  ctaStep2: savedLossMap.ctaStep2,
+                  calBookingUrl,
+                  calEventTypeId: env.CALCOM_EVENT_TYPE_ID ?? null,
+                  contactPriorityScore: contactPriority?.score ?? null,
+                  contactPriorityTier: contactPriority?.tier ?? null,
+                  contactQualityStatus: contactPriority?.status ?? null,
+                  manualReviewReasons: contactPriority?.reasons ?? [],
+                }),
+              },
+            });
             sequenceId = sequence.id;
 
             for (const step of steps) {
@@ -598,8 +624,10 @@ export const campaignsRouter = router({
         dryRun: false,
         scanned: prospects.length,
         completed: results.filter((item) => item.status === 'completed').length,
-        blockedGate: results.filter((item) => item.status === 'blocked_gate').length,
-        noContact: results.filter((item) => item.status === 'no_contact').length,
+        blockedGate: results.filter((item) => item.status === 'blocked_gate')
+          .length,
+        noContact: results.filter((item) => item.status === 'no_contact')
+          .length,
         failed: results.filter((item) => item.status === 'error').length,
         results,
       };

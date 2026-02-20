@@ -10,25 +10,25 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 6 of 10 (Use Cases Foundation)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-20 — Plan 06-01 complete (UseCase model + tRPC router)
+Last activity: 2026-02-20 — Plan 06-02 complete (Use Cases admin UI + nav item)
 
-Progress: [█░░░░░░░░░] 7% (v1.1)
+Progress: [██░░░░░░░░] 13% (v1.1)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 1 (v1.1)
-- Average duration: 4 min
-- Total execution time: 4 min
+- Total plans completed: 2 (v1.1)
+- Average duration: 3.5 min
+- Total execution time: 7 min
 
 **By Phase:**
 
 | Phase                     | Plans | Total | Avg/Plan |
 | ------------------------- | ----- | ----- | -------- |
-| 6. Use Cases Foundation   | 1/3   | 4 min | 4 min    |
+| 6. Use Cases Foundation   | 2/3   | 7 min | 3.5 min  |
 | 7. Evidence Approval Gate | 0/3   | —     | —        |
 | 8. Deep Evidence Pipeline | 0/3   | —     | —        |
 | 9. Engagement Triggers    | 0/3   | —     | —        |
@@ -44,6 +44,8 @@ _Updated after each plan completion_
 - UseCase.delete is soft delete (isActive=false) — consistent with Campaign pattern, preserves ProofMatch history
 - importFromObsidian uses sourceRef (Obsidian proofId) as idempotency key — re-running never creates duplicates
 - Empty externalUrl string converted to null at persistence layer — Zod rejects empty URL strings so handled explicitly
+- UseCaseForm extracted as sub-component for both create and inline edit — avoids duplicating 100-line form
+- tRPC timestamps arrive as strings not Dates — UseCase type uses string | Date for createdAt/updatedAt
 - Evidence approval gate (Phase 7) wired before new evidence sources (Phase 8) — prevents SerpAPI results bypassing review
 - Playwright never in Next.js request cycle — use managed browser API (Browserless/ScrapingBee) in Phase 8
 - Email opens excluded from cadence escalation — Apple MPP causes 40-60% false positives
@@ -62,5 +64,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-20
-Stopped at: Completed 06-01-PLAN.md — UseCase model, migration, tRPC router. Ready for 06-02 (admin UI).
+Stopped at: Completed 06-02-PLAN.md — Use Cases admin page + sidebar nav item. Ready for 06-03 (proof matching wiring).
 Resume file: None
