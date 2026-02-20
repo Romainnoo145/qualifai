@@ -9,7 +9,8 @@ const resend = new Resend(env.RESEND_API_KEY);
 
 const FROM_EMAIL =
   process.env.OUTREACH_FROM_EMAIL ?? 'Romano Groenewoud <info@klarifai.nl>';
-const REPLY_TO_EMAIL = process.env.OUTREACH_REPLY_TO_EMAIL ?? 'info@klarifai.nl';
+const REPLY_TO_EMAIL =
+  process.env.OUTREACH_REPLY_TO_EMAIL ?? 'info@klarifai.nl';
 const UNSUBSCRIBE_EMAIL =
   process.env.OUTREACH_UNSUBSCRIBE_EMAIL ?? REPLY_TO_EMAIL;
 const APP_URL = env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
@@ -79,7 +80,11 @@ export async function sendOutreachEmail(
   }
 
   const unsubscribeUrl = buildUnsubscribeUrl(contactId, to);
-  const compliantContent = withComplianceFooter(bodyHtml, bodyText, unsubscribeUrl);
+  const compliantContent = withComplianceFooter(
+    bodyHtml,
+    bodyText,
+    unsubscribeUrl,
+  );
   const messageMetadata = {
     ...(metadata ?? {}),
     unsubscribeUrl,
