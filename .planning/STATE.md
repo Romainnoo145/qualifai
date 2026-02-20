@@ -97,6 +97,9 @@ _Updated after each plan completion_
 - [Phase 11-01]: matchedUseCases sourced from ACCEPTED workflowHypotheses (take 3) x proofMatches (take 2) useCase titles — bounded cost
 - [Phase 11-01]: requestQuote only sets CONVERTED if not already CONVERTED — idempotent for repeated quote requests
 - [Phase 11-01]: generateUniqueReadableSlug accepts PrismaClient as explicit db param — testable, no module-level DB singleton (matchProofs pattern)
+- [Phase 11-prospect-dashboard]: [Phase 11-02]: DashboardClient receives prospectSlug (nanoid) explicitly as prop — decouples URL routing slug from WizardSession tracking slug
+- [Phase 11-prospect-dashboard]: [Phase 11-02]: /voor/[slug] dashboard has 4 steps (not 6 like old wizard) — evidence content is denser, fewer steps needed for clear UX
+- [Phase 11-prospect-dashboard]: [Phase 11-02]: Admin wizard tab shows both dashboard (/voor/) and legacy wizard (/discover/) side-by-side when readableSlug exists — enables admin to compare/verify
 
 ### Roadmap Evolution
 
@@ -114,5 +117,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Phase 11 Plan 01 complete. Backend infrastructure for prospect dashboard: Prisma migration (readableSlug on Prospect, quoteRequested/quoteRequestedAt on WizardSession), lib/readable-slug.ts utilities, enrichProspect auto-slug wiring, admin.generateReadableSlug mutation, wizard.requestQuote mutation, notifyAdmin quote_request type with Dutch email, three contact channel env vars. Ready for Phase 11 Plan 02 (Dashboard UI).
+Stopped at: Phase 11 Plan 02 Tasks 1+2 complete. /voor/[slug] dashboard route built (page.tsx + dashboard-client.tsx), admin links updated to prefer /voor/ URL. Awaiting human verification checkpoint (Task 3) before plan can be marked complete.
 Resume file: None
