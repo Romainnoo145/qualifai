@@ -16,6 +16,7 @@ import {
   FileText,
   Menu,
   X,
+  Lightbulb,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -138,6 +139,7 @@ function AdminShell({
       group: 'Intelligence',
       items: [
         { href: '/admin/use-cases', label: 'Use Cases', icon: BookOpen },
+        { href: '/admin/hypotheses', label: 'Hypotheses', icon: Lightbulb },
         { href: '/admin/research', label: 'Research runs', icon: Beaker },
         { href: '/admin/briefs', label: 'Product Briefs', icon: FileText },
         { href: '/admin/signals', label: 'Signals feed', icon: Zap },
