@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 12 of 15 (Navigation and Language)
-Plan: 1 of 2
+Plan: 2 of 2 (complete)
 Status: In progress
-Last activity: 2026-02-21 — Phase 12 Plan 01 complete (sidebar restructured to 6 flat items)
+Last activity: 2026-02-21 — Phase 12 Plan 02 complete (TERM-01: all jargon removed from admin UI)
 
-Progress: [█░░░░░░░░░] 13% (v1.2)
+Progress: [██░░░░░░░░] 25% (v1.2)
 
 ## Performance Metrics
 
@@ -34,7 +34,7 @@ Progress: [█░░░░░░░░░] 13% (v1.2)
 | 9. Engagement Triggers    | 2/2   | ~5 min  | ~2.5 min |
 | 10. Cadence Engine        | 4/4   | 7 min   | 1.75 min |
 | 11. Prospect Dashboard    | 2/2   | ~6 min  | 3 min    |
-| 12. Navigation & Language | 1/2   | 2 min   | 2 min    |
+| 12. Navigation & Language | 2/2   | 6 min   | 3 min    |
 
 _Updated after each plan completion_
 
@@ -44,6 +44,8 @@ _Updated after each plan completion_
 
 - [Phase 12, Plan 01]: navItems is flat NavItem[] array — no group wrappers, no section labels; removed pages stay accessible via direct URL
 - [Phase 12, Plan 01]: Signals label is "Signals" (not "Signals feed") for sidebar consistency
+- [Phase 12, Plan 02]: Only user-visible string literals changed in TERM-01 — variable/prop names (latestLossMap, generateLossMap, CallPrepTab, etc.) left intact to avoid regressions
+- [Phase 12, Plan 02]: "Workflow Reports" used for briefs page heading to match tab rename in prospect detail
 
 Recent decisions affecting v1.2 work:
 
@@ -71,5 +73,5 @@ None identified for v1.2 phases.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 12-01-PLAN.md (sidebar restructure)
+Stopped at: Completed 12-02-PLAN.md (TERM-01 jargon cleanup — Phase 12 complete)
 Resume file: None
