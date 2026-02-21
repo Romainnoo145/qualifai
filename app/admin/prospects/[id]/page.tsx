@@ -24,6 +24,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
 import { EvidenceSection } from '@/components/features/prospects/evidence-section';
 import { AnalysisSection } from '@/components/features/prospects/analysis-section';
+import { OutreachPreviewSection } from '@/components/features/prospects/outreach-preview-section';
 
 type DiscoveryGuardrail = {
   code: string;
@@ -47,6 +48,7 @@ export default function ProspectDetail() {
     useState<DiscoveryGuardrail | null>(null);
 
   const prospect = api.admin.getProspect.useQuery({ id });
+  const researchRuns = api.research.listRuns.useQuery({ prospectId: id });
   const utils = api.useUtils();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -104,6 +106,7 @@ export default function ProspectDetail() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const p = prospect.data as any;
+  const latestRunId = researchRuns.data?.[0]?.id ?? null;
 
   return (
     <div className="space-y-10">
@@ -376,11 +379,11 @@ export default function ProspectDetail() {
         <h2 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">
           Outreach Preview
         </h2>
-        <div className="glass-card p-8 text-center">
-          <p className="text-sm text-slate-400">
-            Outreach Preview section — coming in plan 13-03
-          </p>
-        </div>
+        <OutreachPreviewSection
+          prospectId={id}
+          prospect={p}
+          latestRunId={latestRunId}
+        />
       </section>
 
       {/* Section 4: Results */}
