@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '@/env.mjs';
 import {
   SYSTEM_PROMPT,
@@ -23,26 +23,28 @@ import {
   type HeroContent,
 } from './schemas';
 
-const anthropic = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+let genai: GoogleGenerativeAI | null = null;
+function getGenAI(): GoogleGenerativeAI {
+  if (!genai) {
+    genai = new GoogleGenerativeAI(env.GOOGLE_AI_API_KEY!);
+  }
+  return genai;
+}
 
 async function generateJSON<T>(
   prompt: string,
   schema: { parse: (data: unknown) => T },
+  systemPrompt?: string,
 ): Promise<T> {
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-5-20250514',
-    max_tokens: 4096,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: prompt }],
+  const model = getGenAI().getGenerativeModel({
+    model: 'gemini-2.0-flash',
+    systemInstruction: systemPrompt ?? SYSTEM_PROMPT,
   });
 
-  const textBlock = response.content.find((block) => block.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') {
-    throw new Error('No text response from Claude');
-  }
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
 
-  let jsonText = textBlock.text.trim();
-  // Strip markdown code fences if present
+  let jsonText = text.trim();
   if (jsonText.startsWith('```')) {
     jsonText = jsonText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
   }

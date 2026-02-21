@@ -7,16 +7,16 @@ import {
   type WorkflowHypothesis,
 } from '@prisma/client';
 import type { PrismaClient } from '@prisma/client';
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { readFile } from 'node:fs/promises';
 
 // Lazily initialized to avoid accessing env at module load time (breaks test isolation)
-let anthropicClient: Anthropic | null = null;
-function getAnthropicClient(): Anthropic {
-  if (!anthropicClient) {
-    anthropicClient = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+let genaiClient: GoogleGenerativeAI | null = null;
+function getGenAI(): GoogleGenerativeAI {
+  if (!genaiClient) {
+    genaiClient = new GoogleGenerativeAI(env.GOOGLE_AI_API_KEY!);
   }
-  return anthropicClient;
+  return genaiClient;
 }
 
 export const WORKFLOW_OFFER_NAME = 'Workflow Optimization Sprint';
@@ -948,13 +948,11 @@ async function scoreWithClaude(
       )
       .join('\n');
 
-    const response = await getAnthropicClient().messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 512,
-      messages: [
-        {
-          role: 'user',
-          content: `Score each use case for relevance to the prospect's pain point. Return ONLY a JSON array, no other text.
+    const model = getGenAI().getGenerativeModel({
+      model: 'gemini-2.0-flash',
+    });
+    const response = await model.generateContent(
+      `Score each use case for relevance to the prospect's pain point. Return ONLY a JSON array, no other text.
 
 Pain point: ${query}
 
@@ -963,12 +961,9 @@ ${useCaseList}
 
 Return JSON array: [{"id": "...", "score": 0.0}]
 Higher score = more relevant. 0.0 = no relevance. Be generous with partial matches — Dutch and English terms for the same concept should match (e.g., "facturering" matches "invoice automation").`,
-        },
-      ],
-    });
+    );
 
-    const text =
-      response.content[0]?.type === 'text' ? response.content[0].text : '';
+    const text = response.response.text();
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) throw new Error('No JSON array in response');
 
