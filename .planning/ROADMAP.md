@@ -199,12 +199,12 @@ Plans:
 2. The terms "Loss Map", "Call Prep", "Nodes", and "Sprint Intelligence" do not appear anywhere in the sidebar, page headings, or button labels
 3. Nav groups feel logically organized — admin can predict where to find any feature without trial and error
 
-**Plans:** TBD
+**Plans:** 2 plans in 1 wave
 
 Plans:
 
-- [ ] 12-01-PLAN.md — Sidebar restructure (6 items, correct order, correct labels) + remove obsolete nav entries
-- [ ] 12-02-PLAN.md — First-pass terminology sweep: headings, buttons, tabs, and toasts using jargon terms
+- [ ] 12-01-PLAN.md — Sidebar restructure: flatten to 6 items (Dashboard, Companies, Campaigns, Draft Queue, Use Cases, Signals), remove group headers and obsolete nav entries (Wave 1)
+- [ ] 12-02-PLAN.md — Terminology sweep: replace jargon (Loss Map, Call Prep, Nodes, Sprint Intelligence, and settings-page spy language) with plain labels across 7 files (Wave 1)
 
 ---
 
@@ -298,7 +298,7 @@ Plans:
 | 9. Engagement Triggers      | v1.1      | 2/2            | Complete    | 2026-02-21 |
 | 10. Cadence Engine          | v1.1      | 4/4            | Complete    | 2026-02-21 |
 | 11. Prospect Dashboard      | v1.1      | 2/2            | Complete    | 2026-02-21 |
-| 12. Navigation and Language | v1.2      | 0/2            | Not started | -          |
+| 12. Navigation and Language | v1.2      | 0/2            | Planned     | -          |
 | 13. Prospect Story Flow     | v1.2      | 0/5            | Not started | -          |
 | 14. Campaign Reporting      | v1.2      | 0/3            | Not started | -          |
 | 15. Action Queue Dashboard  | v1.2      | 0/2            | Not started | -          |
