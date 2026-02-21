@@ -92,7 +92,7 @@ export default function ContactDetail() {
           </Link>
           <div className="px-4 py-1.5 rounded-full bg-[#040026]/5 text-[#040026] border border-[#040026]/10">
             <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-              Personnel Intelligence
+              Contact Profile
             </span>
           </div>
         </div>

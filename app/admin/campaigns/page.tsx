@@ -84,7 +84,7 @@ export default function CampaignsPage() {
 
       <div className="glass-card p-10 space-y-8 rounded-[2.5rem]">
         <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
-          Initialize Tactical Sprint
+          Create Campaign
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <input
@@ -149,7 +149,7 @@ export default function CampaignsPage() {
             onChange={(e) => setSelectedProspect(e.target.value)}
             className="w-full px-6 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all appearance-none"
           >
-            <option value="">Select Target Domain</option>
+            <option value="">Select Company</option>
             {prospectOptions.map((prospect) => (
               <option key={prospect.id} value={prospect.id}>
                 {prospect.companyName ?? prospect.domain}
@@ -175,7 +175,7 @@ export default function CampaignsPage() {
               </>
             ) : (
               <>
-                <Link2 className="w-4 h-4 opacity-50" /> Link Node
+                <Link2 className="w-4 h-4 opacity-50" /> Link Company
               </>
             )}
           </button>
@@ -258,7 +258,7 @@ export default function CampaignsPage() {
           </div>
           {selectedCampaignDetails.data.campaignProspects.length === 0 ? (
             <p className="text-sm font-bold text-slate-400 bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-200 text-center">
-              No node intelligence linked for this tactical sprint.
+              No companies linked to this campaign.
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
