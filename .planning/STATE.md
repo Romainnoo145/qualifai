@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 
 ## Current Position
 
-Phase: 13 of 15 (Prospect Story Flow)
-Plan: 0 of 5
-Status: Ready to plan
-Last activity: 2026-02-21 — Phase 12 complete (nav restructure + jargon cleanup + gap closure)
+Phase: 13 of 16 (Prospect Story Flow)
+Plan: 1 of 5
+Status: In progress
+Last activity: 2026-02-22 — Plan 13-01 complete (vertical section layout + Evidence section)
 
 Progress: [██░░░░░░░░] 25% (v1.2)
 
@@ -46,6 +46,8 @@ _Updated after each plan completion_
 - [Phase 12, Plan 01]: Signals label is "Signals" (not "Signals feed") for sidebar consistency
 - [Phase 12, Plan 02]: Only user-visible string literals changed in TERM-01 — variable/prop names (latestLossMap, generateLossMap, CallPrepTab, etc.) left intact to avoid regressions
 - [Phase 12, Plan 02]: "Workflow Reports" used for briefs page heading to match tab rename in prospect detail
+- [Phase 13, Plan 01]: Mutations (startResearch, matchProof, etc.) removed from page.tsx — section components in plans 02-04 will own their own mutations locally
+- [Phase 13, Plan 01]: EvidenceSection receives signals as prop from parent getProspect query (already loaded) instead of a separate query
 
 Recent decisions affecting v1.2 work:
 
@@ -60,6 +62,10 @@ Recent decisions affecting v1.2 work:
 
 None yet.
 
+### Roadmap Evolution
+
+- Phase 16 added: Draft Queue Redesign — one-click-per-action outreach queue (user feedback: current Draft Queue is too complex for "autopilot with oversight" vision)
+
 ### Blockers/Concerns
 
 None identified for v1.2 phases.
@@ -72,6 +78,6 @@ None identified for v1.2 phases.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Phase 12 complete — ready to plan Phase 13
+Last session: 2026-02-22
+Stopped at: Completed 13-01-PLAN.md (vertical sections + EvidenceSection)
 Resume file: None
