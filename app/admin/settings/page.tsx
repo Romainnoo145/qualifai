@@ -67,7 +67,7 @@ export default function SettingsPage() {
       {/* Credit usage */}
       <div className="glass-card p-10 rounded-[2.5rem]">
         <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 ml-1">
-          Operational Footprint
+          Usage Overview
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="p-8 bg-[#FCFCFD] rounded-3xl border border-slate-100 flex flex-col items-center justify-center space-y-3 shadow-inner">
@@ -76,7 +76,7 @@ export default function SettingsPage() {
               {stats.data?.creditsUsed ?? 0}
             </p>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Credits Deployed
+              Credits Used
             </p>
           </div>
           <div className="p-8 bg-[#FCFCFD] rounded-3xl border border-slate-100 flex flex-col items-center justify-center space-y-3 shadow-inner">
@@ -85,7 +85,7 @@ export default function SettingsPage() {
               {stats.data?.total ?? 0}
             </p>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Target Domains
+              Companies
             </p>
           </div>
           <div className="p-8 bg-[#FCFCFD] rounded-3xl border border-slate-100 flex flex-col items-center justify-center space-y-3 shadow-inner">
@@ -94,7 +94,7 @@ export default function SettingsPage() {
               {stats.data?.totalContacts ?? 0}
             </p>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Personnel Nodes
+              Contacts
             </p>
           </div>
           <div className="p-8 bg-[#FCFCFD] rounded-3xl border border-slate-100 flex flex-col items-center justify-center space-y-3 shadow-inner">
@@ -103,7 +103,7 @@ export default function SettingsPage() {
               {stats.data?.totalSignals ?? 0}
             </p>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Market Signals
+              Signals
             </p>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default function SettingsPage() {
       {/* Data Export */}
       <div className="glass-card p-10 rounded-[2.5rem]">
         <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 ml-1">
-          Tactical Offloading
+          Data Export
         </h2>
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <button
@@ -125,9 +125,7 @@ export default function SettingsPage() {
             ) : (
               <Download className="w-4 h-4 opacity-50" />
             )}{' '}
-            {exporting === 'companies'
-              ? 'Exporting...'
-              : 'Export Organizations'}
+            {exporting === 'companies' ? 'Exporting...' : 'Export Companies'}
           </button>
           <button
             onClick={() => void downloadExport('contacts')}
@@ -139,7 +137,7 @@ export default function SettingsPage() {
             ) : (
               <Download className="w-4 h-4 opacity-50" />
             )}{' '}
-            {exporting === 'contacts' ? 'Exporting...' : 'Export Personnel'}
+            {exporting === 'contacts' ? 'Exporting...' : 'Export Contacts'}
           </button>
         </div>
         {exportError && (
@@ -148,28 +146,25 @@ export default function SettingsPage() {
           </p>
         )}
         <p className="text-[10px] font-bold text-slate-300 mt-6 leading-relaxed max-w-sm ml-1">
-          Enrichment exports include granular environmental data. Authorization
-          required for all tactical offloads.
+          Export enriched company and contact data as CSV.
         </p>
       </div>
 
       {/* Account info */}
       <div className="glass-card p-10 rounded-[2.5rem]">
         <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 ml-1">
-          System Architecture
+          System Info
         </h2>
         <div className="space-y-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-slate-50">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Platform Core
+              Platform
             </span>
-            <span className="text-sm font-black text-[#040026]">
-              Qualifai Deep Search
-            </span>
+            <span className="text-sm font-black text-[#040026]">Qualifai</span>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-slate-50">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Discovery Engine
+              Enrichment
             </span>
             <span className="text-sm font-black text-[#040026]">
               Apollo Enrichment API
@@ -177,7 +172,7 @@ export default function SettingsPage() {
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-slate-50">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Linguistic Model
+              AI Model
             </span>
             <span className="text-sm font-black text-[#040026]">
               Claude 3.5 Sonnet (Anthropic)
@@ -185,20 +180,18 @@ export default function SettingsPage() {
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-slate-50">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Dispatch Layer
+              Email Delivery
             </span>
-            <span className="text-sm font-black text-[#040026]">
-              Resend Protocol
-            </span>
+            <span className="text-sm font-black text-[#040026]">Resend</span>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Temporal Sync
+              Scheduling
             </span>
             <span className="text-sm font-black text-[#040026]">
               {process.env.NEXT_PUBLIC_CALCOM_BOOKING_URL
                 ? 'Cal.com Link Active'
-                : 'Sequential Sync Offline'}
+                : 'Not configured'}
             </span>
           </div>
         </div>

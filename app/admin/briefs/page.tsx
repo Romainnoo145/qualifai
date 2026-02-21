@@ -37,11 +37,11 @@ export default function BriefsPage() {
     <div className="space-y-16">
       <div className="flex items-center gap-6">
         <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
-          Workflow Loss Maps
+          Workflow Reports
         </h1>
         <div className="px-4 py-1.5 rounded-full bg-[#EBCB4B]/10 text-[#040026] border border-[#EBCB4B]/20">
           <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-            <Sparkles className="w-3 h-3 text-[#EBCB4B]" /> High Fidelity Assets
+            <Sparkles className="w-3 h-3 text-[#EBCB4B]" /> Generated Reports
           </span>
         </div>
       </div>
@@ -87,17 +87,17 @@ export default function BriefsPage() {
                 <FileText className="w-10 h-10 text-slate-200" />
               </div>
               <p className="font-black text-[#040026] text-xl tracking-tight">
-                Select an intelligence asset
+                Select a report
               </p>
               <p className="text-slate-400 text-sm mt-2 font-medium">
-                Choose a loss map from the list to preview high-fidelity data.
+                Choose a report from the list to preview.
               </p>
             </div>
           ) : selected.isLoading ? (
             <div className="glass-card p-32 text-center rounded-[2.5rem]">
               <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-[#040026]" />
               <p className="text-sm font-bold text-slate-400">
-                Loading Intelligence...
+                Loading report...
               </p>
             </div>
           ) : selectedBrief ? (
@@ -123,7 +123,7 @@ export default function BriefsPage() {
                   target="_blank"
                   className="ui-tap inline-flex items-center justify-center gap-3 px-8 py-3 btn-pill-primary text-xs w-full sm:w-auto"
                 >
-                  <FileDown className="w-4 h-4" /> Export High-Res PDF
+                  <FileDown className="w-4 h-4" /> Export PDF
                 </a>
               </div>
 
@@ -133,7 +133,7 @@ export default function BriefsPage() {
                     <History className="w-4 h-4 text-[#040026]" />
                   </div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    Research Lineage: {selectedBrief.researchRun.id}
+                    Research Run: {selectedBrief.researchRun.id}
                   </p>
                 </div>
                 <pre className="text-sm text-slate-600 overflow-auto whitespace-pre-wrap font-medium leading-relaxed font-mono">

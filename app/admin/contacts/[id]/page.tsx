@@ -146,7 +146,7 @@ export default function ContactDetail() {
                 ? 'Initializing...'
                 : latestLossMap.data
                   ? 'Initialize Outreach'
-                  : 'No Loss Map Yet'}
+                  : 'No Report Yet'}
             </button>
             <button
               onClick={() =>

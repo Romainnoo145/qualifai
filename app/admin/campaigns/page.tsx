@@ -129,7 +129,7 @@ export default function CampaignsPage() {
 
       <div className="glass-card p-10 space-y-8 rounded-[2.5rem]">
         <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
-          Propagate Nodes to Sprint
+          Add Companies to Campaign
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <select
@@ -137,7 +137,7 @@ export default function CampaignsPage() {
             onChange={(e) => setSelectedCampaign(e.target.value)}
             className="w-full px-6 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all appearance-none"
           >
-            <option value="">Select Tactical Campaign</option>
+            <option value="">Select Campaign</option>
             {campaignOptions.map((campaign) => (
               <option key={campaign.id} value={campaign.id}>
                 {campaign.name}
@@ -206,7 +206,7 @@ export default function CampaignsPage() {
               <div className="flex flex-wrap items-center gap-6 text-[10px] font-black text-slate-300 uppercase tracking-widest">
                 <span className="inline-flex items-center gap-2">
                   <Building2 className="w-3.5 h-3.5 opacity-50" />{' '}
-                  {campaign._count.campaignProspects} Nodes
+                  {campaign._count.campaignProspects} Companies
                 </span>
                 <span>{campaign._count.researchRuns} Analyses</span>
                 <span>{campaign._count.workflowLossMaps} Briefs</span>
@@ -220,7 +220,7 @@ export default function CampaignsPage() {
         <div className="glass-card p-10 rounded-[2.5rem]">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between mb-8">
             <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
-              Sprint Intelligence
+              Campaign Processing
             </h2>
             <div className="flex flex-wrap items-center gap-4">
               <input

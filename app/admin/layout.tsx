@@ -77,7 +77,7 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
               Admin Access
             </h1>
             <p className="text-sm text-slate-500 font-medium">
-              Precision Intelligence Engine
+              Sales Intelligence
             </p>
           </div>
 
