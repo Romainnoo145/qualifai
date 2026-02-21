@@ -6,17 +6,13 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Building2,
-  Users,
   Zap,
   Mail,
   LogOut,
   FolderKanban,
-  Beaker,
   BookOpen,
-  FileText,
   Menu,
   X,
-  Lightbulb,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -126,32 +122,13 @@ function AdminShell({
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  const navItems = [
-    {
-      group: 'Overview',
-      items: [
-        { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '/admin/prospects', label: 'Companies', icon: Building2 },
-        { href: '/admin/campaigns', label: 'Campaigns', icon: FolderKanban },
-      ],
-    },
-    {
-      group: 'Intelligence',
-      items: [
-        { href: '/admin/use-cases', label: 'Use Cases', icon: BookOpen },
-        { href: '/admin/hypotheses', label: 'Hypotheses', icon: Lightbulb },
-        { href: '/admin/research', label: 'Research runs', icon: Beaker },
-        { href: '/admin/briefs', label: 'Product Briefs', icon: FileText },
-        { href: '/admin/signals', label: 'Signals feed', icon: Zap },
-      ],
-    },
-    {
-      group: 'Outreach',
-      items: [
-        { href: '/admin/contacts', label: 'Contacts', icon: Users },
-        { href: '/admin/outreach', label: 'Draft Queue', icon: Mail },
-      ],
-    },
+  const navItems: NavItem[] = [
+    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/admin/prospects', label: 'Companies', icon: Building2 },
+    { href: '/admin/campaigns', label: 'Campaigns', icon: FolderKanban },
+    { href: '/admin/outreach', label: 'Draft Queue', icon: Mail },
+    { href: '/admin/use-cases', label: 'Use Cases', icon: BookOpen },
+    { href: '/admin/signals', label: 'Signals', icon: Zap },
   ];
 
   const NavLink = ({ item }: { item: NavItem }) => {
@@ -198,18 +175,9 @@ function AdminShell({
           </Link>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-4 py-8 space-y-10">
-          {navItems.map((group) => (
-            <div key={group.group} className="space-y-2">
-              <p className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
-                {group.group}
-              </p>
-              <div className="space-y-1">
-                {group.items.map((item) => (
-                  <NavLink key={item.href} item={item} />
-                ))}
-              </div>
-            </div>
+        <nav className="flex-1 overflow-y-auto px-4 py-8 space-y-1">
+          {navItems.map((item) => (
+            <NavLink key={item.href} item={item} />
           ))}
         </nav>
 
@@ -275,16 +243,9 @@ function AdminShell({
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <nav className="p-4 space-y-6">
-              {navItems.map((group) => (
-                <div key={group.group} className="space-y-1">
-                  <p className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
-                    {group.group}
-                  </p>
-                  {group.items.map((item) => (
-                    <NavLink key={item.href} item={item} />
-                  ))}
-                </div>
+            <nav className="p-4 space-y-1">
+              {navItems.map((item) => (
+                <NavLink key={item.href} item={item} />
               ))}
             </nav>
           </aside>
