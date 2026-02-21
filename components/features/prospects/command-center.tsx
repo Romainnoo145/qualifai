@@ -154,10 +154,10 @@ export function CommandCenter({
               {latestLossMap ? (
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                  Loss Map ready
+                  Workflow Report ready
                 </span>
               ) : (
-                'No Loss Map'
+                'No Workflow Report'
               )}
             </span>
           </div>
@@ -182,7 +182,7 @@ export function CommandCenter({
               variant="outline"
               leftIcon={<FileText className="w-3.5 h-3.5" />}
             >
-              {latestLossMap ? 'Regenerate Loss Map' : 'Generate Loss Map'}
+              {latestLossMap ? 'Regenerate Report' : 'Generate Report'}
             </Button>
           )}
         </div>

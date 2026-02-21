@@ -213,12 +213,12 @@ export default function ProspectDetail() {
     },
     {
       key: 'lossmap' as const,
-      label: 'Loss Map',
+      label: 'Workflow Report',
       icon: FileText,
     },
     {
       key: 'callprep' as const,
-      label: 'Call Prep',
+      label: 'Call Brief',
       icon: ClipboardList,
     },
     { key: 'wizard' as const, label: 'Wizard', icon: ExternalLink },
@@ -1021,7 +1021,7 @@ function LossMapTab({
             </>
           ) : (
             <>
-              <FileText className="w-4 h-4" /> Generate Loss Map
+              <FileText className="w-4 h-4" /> Generate Report
             </>
           )}
         </button>
@@ -1046,7 +1046,7 @@ function LossMapTab({
       </div>
       {!canGenerate && (
         <p className="text-xs text-slate-400">
-          Run a research cycle first to unlock loss map generation.
+          Run research first to generate the workflow report.
         </p>
       )}
 
@@ -1089,7 +1089,7 @@ function LossMapTab({
       ) : (
         <div className="glass-card p-8 text-center">
           <p className="text-sm text-slate-500">
-            No Workflow Loss Map generated yet.
+            No workflow report generated yet.
           </p>
         </div>
       )}
