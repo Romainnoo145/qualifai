@@ -359,17 +359,8 @@ export const adminRouter = router({
           }
         }
 
-        // Auto-accept all hypotheses
-        await ctx.db.workflowHypothesis.updateMany({
-          where: { researchRunId: runId },
-          data: { status: 'ACCEPTED' },
-        });
-
-        // Auto-accept all automation opportunities
-        await ctx.db.automationOpportunity.updateMany({
-          where: { researchRunId: runId },
-          data: { status: 'ACCEPTED' },
-        });
+        // Hypotheses stay as DRAFT — admin reviews and accepts/rejects
+        // in the prospect detail Hypotheses tab before they appear on /voor/ dashboard
       } catch (error) {
         console.error('Research pipeline failed (non-blocking):', error);
       }
