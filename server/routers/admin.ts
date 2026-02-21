@@ -10,6 +10,8 @@ import {
   generateUniqueReadableSlug,
   toReadableSlug,
 } from '@/lib/readable-slug';
+import { executeResearchRun } from '@/lib/research-executor';
+import { matchProofs } from '@/lib/workflow-engine';
 
 // Helper to cast to Prisma-compatible JSON
 function toJson(value: unknown): Prisma.InputJsonValue {
@@ -197,6 +199,13 @@ export const adminRouter = router({
       return updated;
     }),
 
+  deleteProspect: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.prospect.delete({ where: { id: input.id } });
+      return { success: true };
+    }),
+
   generateContent: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -262,12 +271,29 @@ export const adminRouter = router({
       // Enrich via Apollo provider.
       try {
         const enriched = await enrichCompany(cleanDomain, prospect.id);
+        const slugSource = enriched.companyName ?? cleanDomain.split('.')[0]!;
+        const readableSlug = await generateUniqueReadableSlug(
+          ctx.db,
+          slugSource,
+        );
         prospect = await ctx.db.prospect.update({
           where: { id: prospect.id },
-          data: buildEnrichmentData(enriched),
+          data: {
+            ...buildEnrichmentData(enriched),
+            readableSlug,
+          },
         });
       } catch (error) {
         console.error('Apollo enrichment failed:', error);
+        // Still generate readableSlug from domain even if enrichment fails
+        const readableSlug = await generateUniqueReadableSlug(
+          ctx.db,
+          cleanDomain.split('.')[0]!,
+        );
+        prospect = await ctx.db.prospect.update({
+          where: { id: prospect.id },
+          data: { readableSlug },
+        });
       }
 
       // Generate AI content
@@ -298,6 +324,55 @@ export const adminRouter = router({
           status: 'READY',
         },
       });
+
+      // Run research pipeline (non-blocking: failures don't break prospect creation)
+      try {
+        const result = await executeResearchRun(ctx.db, {
+          prospectId: prospect.id,
+          manualUrls: [],
+        });
+        const runId = result.run.id;
+
+        // Match proofs for all hypotheses
+        const hypotheses = await ctx.db.workflowHypothesis.findMany({
+          where: { researchRunId: runId },
+        });
+        for (const h of hypotheses) {
+          const query = `${h.title} ${h.problemStatement}`;
+          const matches = await matchProofs(ctx.db, query, 4);
+          for (const match of matches) {
+            await ctx.db.proofMatch.create({
+              data: {
+                prospectId: prospect.id,
+                workflowHypothesisId: h.id,
+                sourceType: match.sourceType,
+                proofId: match.proofId,
+                proofTitle: match.proofTitle,
+                proofSummary: match.proofSummary,
+                proofUrl: match.proofUrl,
+                score: match.score,
+                isRealShipped: match.isRealShipped,
+                isCustomPlan: match.isCustomPlan,
+                useCaseId: match.isCustomPlan ? undefined : match.proofId,
+              },
+            });
+          }
+        }
+
+        // Auto-accept all hypotheses
+        await ctx.db.workflowHypothesis.updateMany({
+          where: { researchRunId: runId },
+          data: { status: 'ACCEPTED' },
+        });
+
+        // Auto-accept all automation opportunities
+        await ctx.db.automationOpportunity.updateMany({
+          where: { researchRunId: runId },
+          data: { status: 'ACCEPTED' },
+        });
+      } catch (error) {
+        console.error('Research pipeline failed (non-blocking):', error);
+      }
 
       return prospect;
     }),

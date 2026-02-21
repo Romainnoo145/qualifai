@@ -14,7 +14,6 @@ import {
   Clock,
   FileDown,
   Phone,
-  Building2,
   Zap,
   Briefcase,
   Loader2,
@@ -24,12 +23,10 @@ import {
   Target,
   FileText,
   ClipboardList,
-  ChevronRight,
   AlertTriangle,
   Timer,
 } from 'lucide-react';
 import { useState } from 'react';
-import { CompanyVitals } from '@/components/features/prospects/company-vitals';
 import { CommandCenter } from '@/components/features/prospects/command-center';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
@@ -37,8 +34,6 @@ import { cn } from '@/lib/utils';
 import { CadenceTab } from '@/components/features/CadenceTab';
 
 type Tab =
-  | 'company'
-  | 'contacts'
   | 'signals'
   | 'wizard'
   | 'research'
@@ -58,7 +53,7 @@ export default function ProspectDetail() {
   const params = useParams();
   const id = params.id as string;
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>('company');
+  const [activeTab, setActiveTab] = useState<Tab>('signals');
   const [manualResearchUrls, setManualResearchUrls] = useState('');
   const [contactDiscoveryGuardrail, setContactDiscoveryGuardrail] =
     useState<DiscoveryGuardrail | null>(null);
@@ -123,7 +118,6 @@ export default function ProspectDetail() {
       await utils.sequences.list.invalidate();
     },
     onError: (error) => {
-      // PRECONDITION_FAILED from hypothesis approval gate
       if (error.data?.code === 'PRECONDITION_FAILED') {
         alert(error.message);
       }
@@ -144,7 +138,6 @@ export default function ProspectDetail() {
 
   const copyLink = () => {
     if (!prospect.data) return;
-    // Prefer /voor/ readable URL when readableSlug is set
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = prospect.data as any;
     const url = data.readableSlug
@@ -203,12 +196,6 @@ export default function ProspectDetail() {
   };
 
   const tabs = [
-    { key: 'company' as const, label: 'Company', icon: Building2 },
-    {
-      key: 'contacts' as const,
-      label: `Contacts (${p._count?.contacts ?? 0})`,
-      icon: Users,
-    },
     {
       key: 'signals' as const,
       label: `Signals (${p._count?.signals ?? 0})`,
@@ -239,141 +226,262 @@ export default function ProspectDetail() {
   ];
 
   return (
-    <div className="space-y-32">
-      {/* Premium Minimal Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-12">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-4 mb-8">
-            <Link
-              href="/admin/prospects"
-              className="ui-tap w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition-all border border-slate-200/50"
+    <div className="space-y-10">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <Link
+            href="/admin/prospects"
+            className="ui-tap p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-[#040026] hover:bg-slate-100 border border-slate-100 transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <StatusBadge status={p.status} />
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
+              {p.companyName ?? p.domain}
+            </h1>
+            {p.description && (
+              <p className="text-sm text-slate-400 mt-2 max-w-2xl">
+                {p.description}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={copyLink}
+              className="ui-tap flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-slate-100 transition-all border border-slate-100"
             >
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-            <div className="px-4 py-1.5 rounded-full bg-[#040026]/5 text-[#040026] border border-[#040026]/10">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-                Strategy Session
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5" /> Copied
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="w-3.5 h-3.5" /> Share
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Company Info (inline) */}
+      <section className="glass-card p-6">
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+          {p.industry && (
+            <div className="flex items-center gap-2 text-sm">
+              <Globe className="w-4 h-4 text-slate-400" />
+              <span className="text-slate-600">
+                {p.industry}
+                {p.subIndustry ? ` / ${p.subIndustry}` : ''}
               </span>
             </div>
-          </div>
-          <div className="flex items-center gap-6">
-            <h1 className="text-5xl font-black text-[#040026] tracking-tighter">
-              {p.companyName}
-            </h1>
-            <StatusBadge status={p.status} className="mt-2 scale-110" />
-          </div>
-          <p className="text-[#040026]/40 font-bold mt-6 max-w-2xl text-xl leading-relaxed tracking-tight">
-            {p.description ||
-              'Synthesizing intelligence to uncover hidden operational friction.'}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={copyLink}
-            className="rounded-2xl border-slate-200 text-slate-600 hover:bg-slate-50 px-8"
-            leftIcon={
-              copied ? (
-                <Check className="w-4 h-4 text-emerald-500" />
-              ) : (
-                <ExternalLink className="w-4 h-4" />
-              )
-            }
-          >
-            {copied ? 'Link Copied' : 'Share'}
-          </Button>
-          <Button
-            variant="yellow"
-            size="lg"
-            className="px-10"
-            rightIcon={<ChevronRight className="w-4 h-4" />}
-          >
-            Outreach
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-24 items-start">
-        {/* Main Command Feed (8/12) */}
-        <div className="lg:col-span-8 space-y-24">
-          <section>
-            <div className="flex items-center gap-4 mb-10">
-              <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] whitespace-nowrap">
-                Command Center
-              </h2>
-              <div className="h-px flex-1 bg-slate-100" />
+          )}
+          {(p.city ?? p.country) && (
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="w-4 h-4 text-slate-400" />
+              <span className="text-slate-600">
+                {[p.city, p.state, p.country].filter(Boolean).join(', ')}
+              </span>
             </div>
-
-            <CommandCenter
-              prospect={p}
-              researchRuns={researchRuns.data}
-              hypothesisData={hypothesisData.data}
-              latestLossMap={latestLossMap.data}
-              latestCallPrep={latestCallPrep.data}
-              isResearching={startResearch.isPending}
-              isMatchingProof={matchProof.isPending}
-              isGeneratingLossMap={generateLossMap.isPending}
-              isQueueing={queueLossMapDraft.isPending}
-              onStartResearch={() =>
-                startResearch.mutate({
-                  prospectId: id,
-                  manualUrls: manualResearchUrls.split('\n').filter(Boolean),
-                })
-              }
-              onMatchProof={(runId: string) => matchProof.mutate({ runId })}
-              onSetHypothesisStatus={(
-                kind: any,
-                entryId: string,
-                status: any,
-              ) => setHypothesisStatus.mutate({ kind, id: entryId, status })}
-              onGenerateLossMap={runLossMapGeneration}
-              onQueueOutreach={queueOutreachForContact}
-            />
-          </section>
-
-          {/* Tabs moved to bottom */}
+          )}
+          {(p.employeeRange || p.employeeCount) && (
+            <div className="flex items-center gap-2 text-sm">
+              <Users className="w-4 h-4 text-slate-400" />
+              <span className="text-slate-600">
+                {p.employeeCount
+                  ? `${p.employeeCount.toLocaleString()} employees`
+                  : `${p.employeeRange} employees`}
+              </span>
+            </div>
+          )}
+          {(p.revenueRange || p.revenueEstimate) && (
+            <div className="flex items-center gap-2 text-sm">
+              <DollarSign className="w-4 h-4 text-slate-400" />
+              <span className="text-slate-600">
+                {p.revenueEstimate ?? p.revenueRange}
+              </span>
+            </div>
+          )}
+          {p.foundedYear && (
+            <div className="flex items-center gap-2 text-sm">
+              <Calendar className="w-4 h-4 text-slate-400" />
+              <span className="text-slate-600">Founded {p.foundedYear}</span>
+            </div>
+          )}
+          {p.linkedinUrl && (
+            <div className="flex items-center gap-2 text-sm">
+              <Linkedin className="w-4 h-4 text-slate-400" />
+              <a
+                href={p.linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ui-focus text-klarifai-blue hover:underline rounded-full px-1"
+              >
+                LinkedIn
+              </a>
+            </div>
+          )}
+          {(p._count?.sessions ?? 0) > 0 && (
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="w-4 h-4 text-slate-400" />
+              <span className="text-slate-600">
+                {p._count.sessions} sessions
+              </span>
+            </div>
+          )}
+          {(p.notificationLogs?.length ?? 0) > 0 && (
+            <div className="flex items-center gap-2 text-sm">
+              <Phone className="w-4 h-4 text-slate-400" />
+              <span className="text-slate-600">
+                {p.notificationLogs.length} notifications
+              </span>
+            </div>
+          )}
         </div>
-
-        {/* Intelligence Sidebar (4/12) */}
-        <aside className="lg:col-span-4 lg:sticky lg:top-12 space-y-12">
-          <CompanyVitals prospect={p} />
-
-          <div className="p-8 bg-[#FCFCFD] border border-[#F1F3F5] rounded-3xl">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8 px-1">
-              Engagement Pulse
-            </h3>
-            <div className="space-y-8">
-              <div className="flex items-center justify-between group cursor-pointer">
-                <div className="flex items-center gap-4">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/20" />
-                  <span className="text-xs text-slate-600 font-bold group-hover:text-slate-900 transition-colors tracking-tight">
-                    Session Active
-                  </span>
-                </div>
-                <span className="text-[11px] text-slate-400 font-black font-mono">
-                  2m ago
+        {p.technologies?.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-slate-100">
+            <div className="flex flex-wrap gap-1.5">
+              {p.technologies.map((tech: string) => (
+                <span
+                  key={tech}
+                  className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600"
+                >
+                  {tech}
                 </span>
-              </div>
-              <div className="flex items-center justify-between group cursor-pointer">
-                <div className="flex items-center gap-4">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 shadow-lg shadow-blue-500/20" />
-                  <span className="text-xs text-slate-600 font-bold group-hover:text-slate-900 transition-colors tracking-tight">
-                    First Contact
-                  </span>
-                </div>
-                <span className="text-[11px] text-slate-400 font-black font-mono">
-                  1d ago
-                </span>
-              </div>
+              ))}
             </div>
           </div>
-        </aside>
-      </div>
+        )}
+        {p.internalNotes && (
+          <div className="mt-4 pt-4 border-t border-slate-100">
+            <p className="text-sm text-slate-600">{p.internalNotes}</p>
+          </div>
+        )}
+      </section>
 
-      {/* Tabs Section - Full Width Bottom */}
-      <section className="pt-24 border-t border-slate-50">
+      {/* Contacts (inline) */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
+            Contacts ({p.contacts?.length ?? 0})
+          </h2>
+          <button
+            onClick={() => {
+              setContactDiscoveryGuardrail(null);
+              discoverContacts.mutate({ prospectId: id });
+            }}
+            disabled={discoverContacts.isPending}
+            className="ui-tap flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-slate-100 transition-all border border-slate-100 disabled:opacity-50"
+          >
+            {discoverContacts.isPending ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Discovering...
+              </>
+            ) : (
+              <>
+                <Users className="w-3.5 h-3.5" /> Discover Contacts
+              </>
+            )}
+          </button>
+        </div>
+
+        {contactDiscoveryGuardrail && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-5 py-4 mb-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-black text-amber-900">
+                  {contactDiscoveryGuardrail.title}
+                </p>
+                <p className="text-xs font-bold text-amber-800 mt-1">
+                  {contactDiscoveryGuardrail.message}
+                </p>
+                {contactDiscoveryGuardrail.recommendation && (
+                  <p className="text-xs font-semibold text-amber-700 mt-2">
+                    {contactDiscoveryGuardrail.recommendation}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {p.contacts?.length > 0 ? (
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {p.contacts.map((contact: any) => (
+              <Link
+                key={contact.id}
+                href={`/admin/contacts/${contact.id}`}
+                className="glass-card glass-card-hover ui-focus px-4 py-3 flex items-center gap-3 shrink-0"
+              >
+                <div className="w-9 h-9 rounded-full bg-klarifai-indigo/10 flex items-center justify-center">
+                  <span className="text-xs font-semibold text-klarifai-indigo">
+                    {contact.firstName?.[0]}
+                    {contact.lastName?.[0]}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-klarifai-midnight truncate">
+                    {contact.firstName} {contact.lastName}
+                  </p>
+                  {contact.jobTitle && (
+                    <p className="text-[11px] text-slate-400 truncate flex items-center gap-1">
+                      <Briefcase className="w-3 h-3 shrink-0" />
+                      {contact.jobTitle}
+                    </p>
+                  )}
+                </div>
+                {contact.seniority && (
+                  <span className="text-[9px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
+                    {contact.seniority}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="glass-card p-6 text-center">
+            <p className="text-sm text-slate-400">
+              No contacts yet. Click &quot;Discover Contacts&quot; to find
+              people at this company.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* Command Center */}
+      <section>
+        <CommandCenter
+          prospect={p}
+          researchRuns={researchRuns.data}
+          hypothesisData={hypothesisData.data}
+          latestLossMap={latestLossMap.data}
+          latestCallPrep={latestCallPrep.data}
+          isResearching={startResearch.isPending}
+          isMatchingProof={matchProof.isPending}
+          isGeneratingLossMap={generateLossMap.isPending}
+          isQueueing={queueLossMapDraft.isPending}
+          onStartResearch={() =>
+            startResearch.mutate({
+              prospectId: id,
+              manualUrls: manualResearchUrls.split('\n').filter(Boolean),
+            })
+          }
+          onMatchProof={(runId: string) => matchProof.mutate({ runId })}
+          onSetHypothesisStatus={(kind: any, entryId: string, status: any) =>
+            setHypothesisStatus.mutate({ kind, id: entryId, status })
+          }
+          onGenerateLossMap={runLossMapGeneration}
+          onQueueOutreach={queueOutreachForContact}
+        />
+      </section>
+
+      {/* Tabs (7 remaining) */}
+      <section>
         <div className="flex items-center gap-2 p-1.5 bg-slate-50/80 rounded-2xl w-fit mb-12 border border-slate-100">
           {tabs.map((tab) => (
             <button
@@ -387,8 +495,7 @@ export default function ProspectDetail() {
               )}
             >
               <tab.icon className="w-4 h-4" />
-              {tab.key === 'contacts' ||
-              tab.key === 'signals' ||
+              {tab.key === 'signals' ||
               tab.key === 'research' ||
               tab.key === 'hypotheses'
                 ? tab.label.split(' ')[0]
@@ -398,18 +505,6 @@ export default function ProspectDetail() {
         </div>
 
         <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-          {activeTab === 'company' && <CompanyTab p={p} />}
-          {activeTab === 'contacts' && (
-            <ContactsTab
-              p={p}
-              onDiscover={() => {
-                setContactDiscoveryGuardrail(null);
-                discoverContacts.mutate({ prospectId: id });
-              }}
-              isDiscovering={discoverContacts.isPending}
-              discoveryGuardrail={contactDiscoveryGuardrail}
-            />
-          )}
           {activeTab === 'signals' && (
             <SignalsTab
               p={p}
@@ -498,286 +593,6 @@ export default function ProspectDetail() {
           {activeTab === 'cadence' && <CadenceTab prospectId={id} />}
         </div>
       </section>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function CompanyTab({ p }: { p: any }) {
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-6">
-        <div className="glass-card p-6">
-          <h2 className="text-sm font-semibold text-klarifai-midnight mb-4">
-            Company Profile
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {p.industry && (
-              <div className="flex items-center gap-2 text-sm">
-                <Globe className="w-4 h-4 text-slate-400" />
-                <span className="text-slate-600">
-                  {p.industry}
-                  {p.subIndustry ? ` / ${p.subIndustry}` : ''}
-                </span>
-              </div>
-            )}
-            {(p.city ?? p.country) && (
-              <div className="flex items-center gap-2 text-sm">
-                <MapPin className="w-4 h-4 text-slate-400" />
-                <span className="text-slate-600">
-                  {[p.city, p.state, p.country].filter(Boolean).join(', ')}
-                </span>
-              </div>
-            )}
-            {(p.employeeRange || p.employeeCount) && (
-              <div className="flex items-center gap-2 text-sm">
-                <Users className="w-4 h-4 text-slate-400" />
-                <span className="text-slate-600">
-                  {p.employeeCount
-                    ? `${p.employeeCount.toLocaleString()} employees`
-                    : `${p.employeeRange} employees`}
-                </span>
-              </div>
-            )}
-            {(p.revenueRange || p.revenueEstimate) && (
-              <div className="flex items-center gap-2 text-sm">
-                <DollarSign className="w-4 h-4 text-slate-400" />
-                <span className="text-slate-600">
-                  {p.revenueEstimate ?? p.revenueRange}
-                </span>
-              </div>
-            )}
-            {p.foundedYear && (
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                <span className="text-slate-600">Founded {p.foundedYear}</span>
-              </div>
-            )}
-            {p.linkedinUrl && (
-              <div className="flex items-center gap-2 text-sm">
-                <Linkedin className="w-4 h-4 text-slate-400" />
-                <a
-                  href={p.linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ui-focus text-klarifai-blue hover:underline rounded-full px-1"
-                >
-                  LinkedIn
-                </a>
-              </div>
-            )}
-          </div>
-          {p.description && (
-            <p className="text-sm text-slate-500 mt-4 border-t border-slate-100 pt-4">
-              {p.description}
-            </p>
-          )}
-          {p.technologies.length > 0 && (
-            <div className="mt-4 border-t border-slate-100 pt-4">
-              <p className="text-xs font-medium text-slate-500 mb-2">
-                Technologies
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {p.technologies.map((tech: string) => (
-                  <span
-                    key={tech}
-                    className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600"
-                  >
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {p.internalNotes && (
-          <div className="glass-card p-6">
-            <h2 className="text-sm font-semibold text-klarifai-midnight mb-2">
-              Internal Notes
-            </h2>
-            <p className="text-sm text-slate-600">{p.internalNotes}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Sessions sidebar */}
-      <div className="space-y-6">
-        <div className="glass-card p-6">
-          <h2 className="text-sm font-semibold text-klarifai-midnight mb-4">
-            Sessions ({p._count?.sessions ?? 0})
-          </h2>
-          {p.sessions?.length > 0 ? (
-            <div className="space-y-3">
-              {p.sessions.map((session: any) => (
-                <div
-                  key={session.id}
-                  className="p-3 bg-slate-50 rounded-lg text-sm"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                    <span className="text-xs text-slate-400">
-                      {new Date(session.createdAt).toLocaleString()}
-                    </span>
-                    <span className="text-xs font-medium text-slate-600">
-                      Step {session.maxStepReached}/5
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    {session.pdfDownloaded && (
-                      <span className="inline-flex items-center gap-1 text-[10px] bg-klarifai-blue/10 text-klarifai-blue px-1.5 py-0.5 rounded-full">
-                        <FileDown className="w-3 h-3" /> PDF
-                      </span>
-                    )}
-                    {session.callBooked && (
-                      <span className="inline-flex items-center gap-1 text-[10px] bg-klarifai-emerald/10 text-klarifai-emerald px-1.5 py-0.5 rounded-full">
-                        <Phone className="w-3 h-3" /> Call
-                      </span>
-                    )}
-                    {!session.pdfDownloaded && !session.callBooked && (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
-                        <Clock className="w-3 h-3" /> Browsing
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400 text-center py-4">
-              No sessions yet
-            </p>
-          )}
-        </div>
-
-        {p.notificationLogs?.length > 0 && (
-          <div className="glass-card p-6">
-            <h2 className="text-sm font-semibold text-klarifai-midnight mb-4">
-              Notifications
-            </h2>
-            <div className="space-y-2">
-              {p.notificationLogs.map((log: any) => (
-                <div
-                  key={log.id}
-                  className="flex items-center justify-between gap-2 text-xs"
-                >
-                  <span className="text-slate-600">{log.type}</span>
-                  <span
-                    className={
-                      log.status === 'sent' ? 'text-green-600' : 'text-red-500'
-                    }
-                  >
-                    {log.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ContactsTab({
-  p,
-  onDiscover,
-  isDiscovering,
-  discoveryGuardrail,
-}: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  p: any;
-  onDiscover: () => void;
-  isDiscovering: boolean;
-  discoveryGuardrail: DiscoveryGuardrail | null;
-}) {
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-slate-500">
-          {p.contacts?.length ?? 0} contacts found
-        </p>
-        <button
-          onClick={onDiscover}
-          disabled={isDiscovering}
-          className="ui-focus flex items-center justify-center gap-2 px-4 py-2 btn-pill-primary text-sm disabled:opacity-50 w-full sm:w-auto"
-        >
-          {isDiscovering ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Discovering...
-            </>
-          ) : (
-            <>
-              <Users className="w-4 h-4" /> Discover Contacts
-            </>
-          )}
-        </button>
-      </div>
-
-      {discoveryGuardrail && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-5 py-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-black text-amber-900">
-                {discoveryGuardrail.title}
-              </p>
-              <p className="text-xs font-bold text-amber-800 mt-1">
-                {discoveryGuardrail.message}
-              </p>
-              {discoveryGuardrail.recommendation && (
-                <p className="text-xs font-semibold text-amber-700 mt-2">
-                  {discoveryGuardrail.recommendation}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {p.contacts?.length > 0 ? (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-          {p.contacts.map((contact: any) => (
-            <Link
-              key={contact.id}
-              href={`/admin/contacts/${contact.id}`}
-              className="glass-card glass-card-hover card-interactive ui-focus p-4"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-klarifai-indigo/10 flex items-center justify-center">
-                  <span className="text-sm font-semibold text-klarifai-indigo">
-                    {contact.firstName?.[0]}
-                    {contact.lastName?.[0]}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-klarifai-midnight truncate">
-                    {contact.firstName} {contact.lastName}
-                  </p>
-                  {contact.jobTitle && (
-                    <p className="text-xs text-slate-500 truncate flex items-center gap-1">
-                      <Briefcase className="w-3 h-3 shrink-0" />
-                      {contact.jobTitle}
-                    </p>
-                  )}
-                </div>
-                {contact.seniority && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 shrink-0">
-                    {contact.seniority}
-                  </span>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <div className="glass-card p-8 text-center">
-          <Users className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm text-slate-500">
-            No contacts yet. Click &quot;Discover Contacts&quot; to find people
-            at this company.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

@@ -46,6 +46,11 @@ export default async function WizardPage({ params }: Props) {
       successStories: true,
       aiRoadmap: true,
       status: true,
+      workflowLossMaps: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        select: { id: true },
+      },
     },
   });
 
@@ -68,6 +73,8 @@ export default async function WizardPage({ params }: Props) {
       automationAgents={prospect.automationAgents as Record<string, unknown>}
       successStories={prospect.successStories as Record<string, unknown>}
       aiRoadmap={prospect.aiRoadmap as Record<string, unknown>}
+      lossMapId={prospect.workflowLossMaps[0]?.id ?? null}
+      bookingUrl={process.env.NEXT_PUBLIC_CALCOM_BOOKING_URL ?? null}
     />
   );
 }

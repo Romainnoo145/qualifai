@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getCalApi } from '@calcom/embed-react';
 import {
   ChevronRight,
   ChevronLeft,
@@ -159,18 +160,47 @@ export function DashboardClient({
     );
   };
 
-  const handleBookCall = () => {
-    if (!bookingUrl) return;
-    if (sessionId) trackCall.mutate({ sessionId });
+  // Extract Cal.com path from full URL (e.g. "https://cal.com/klarifai/demo" -> "klarifai/demo")
+  const calLink = (() => {
+    if (!bookingUrl) return null;
     try {
       const url = new URL(bookingUrl);
-      url.searchParams.set('company', companyName);
-      url.searchParams.set('source', 'dashboard');
-      window.open(url.toString(), '_blank', 'noopener,noreferrer');
+      return url.pathname.replace(/^\//, '');
     } catch {
-      window.open(bookingUrl, '_blank', 'noopener,noreferrer');
+      return bookingUrl;
     }
-  };
+  })();
+
+  // Initialize Cal.com embed API
+  useEffect(() => {
+    if (!canBookCall) return;
+    (async () => {
+      const cal = await getCalApi();
+      cal('ui', {
+        theme: 'light',
+        cssVarsPerTheme: {
+          light: { 'cal-brand': '#040026' },
+          dark: { 'cal-brand': '#EBCB4B' },
+        },
+        hideEventTypeDetails: false,
+      });
+    })();
+  }, [canBookCall]);
+
+  const handleBookCall = useCallback(() => {
+    if (!calLink) return;
+    if (sessionId) trackCall.mutate({ sessionId });
+    (async () => {
+      const cal = await getCalApi();
+      cal('modal', {
+        calLink,
+        config: {
+          layout: 'month_view',
+          name: companyName,
+        },
+      });
+    })();
+  }, [calLink, sessionId, trackCall, companyName]);
 
   const handleRequestQuote = () => {
     if (!sessionId || quoteRequested) return;
@@ -406,16 +436,6 @@ export function DashboardClient({
                 )}
 
                 {/* Powered by Klarifai */}
-                <div className="flex items-center justify-center gap-3 text-xs font-bold text-slate-300">
-                  <div className="w-6 h-6 rounded-lg bg-[#040026] flex items-center justify-center">
-                    <span className="text-[#EBCB4B] font-black text-[8px]">
-                      K
-                    </span>
-                  </div>
-                  <span className="uppercase tracking-[0.2em]">
-                    Powered by Klarifai Intelligence
-                  </span>
-                </div>
               </div>
             )}
 
@@ -738,42 +758,48 @@ export function DashboardClient({
                 </div>
 
                 {/* Download + Book call row */}
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={handlePdfDownload}
                     disabled={!canDownloadReport}
-                    className="glass-card glass-card-hover p-10 flex flex-col items-center gap-4 rounded-[2.5rem] border-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="glass-card glass-card-hover p-6 rounded-2xl border-slate-100 disabled:opacity-50 disabled:cursor-not-allowed group text-left"
                   >
-                    <div className="w-14 h-14 rounded-3xl bg-slate-50 flex items-center justify-center shadow-inner">
-                      <FileDown className="w-7 h-7 text-slate-300" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-base font-black text-[#040026] tracking-tight">
-                        Download Rapport
-                      </p>
-                      <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">
-                        {canDownloadReport
-                          ? 'Workflow Loss Map PDF'
-                          : 'Nog niet beschikbaar'}
-                      </p>
+                    <div className="flex items-start gap-4">
+                      <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <FileDown className="w-5 h-5 text-red-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-[#040026] tracking-tight">
+                          Download Rapport
+                        </p>
+                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                          {canDownloadReport
+                            ? 'Alle kansen en aanbevelingen als PDF'
+                            : 'Nog niet beschikbaar'}
+                        </p>
+                      </div>
                     </div>
                   </button>
 
                   <button
                     onClick={handleBookCall}
                     disabled={!canBookCall}
-                    className="glass-card p-10 flex flex-col items-center gap-4 bg-[#040026] rounded-[2.5rem] border-0 hover:bg-[#1E1E4A] transition-all group shadow-2xl shadow-[#040026]/20 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="p-6 rounded-2xl bg-[#040026] hover:bg-[#1E1E4A] transition-all group shadow-xl shadow-[#040026]/20 disabled:opacity-60 disabled:cursor-not-allowed text-left"
                   >
-                    <div className="w-14 h-14 rounded-3xl bg-white/5 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
-                      <Calendar className="w-7 h-7 text-[#EBCB4B]" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-base font-black text-white tracking-tight">
-                        Gesprek Inplannen
-                      </p>
-                      <p className="text-xs font-bold text-white/40 mt-1 uppercase tracking-widest">
-                        {canBookCall ? '30 Min Consult' : 'Niet beschikbaar'}
-                      </p>
+                    <div className="flex items-start gap-4">
+                      <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <Calendar className="w-5 h-5 text-[#EBCB4B]" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-white tracking-tight">
+                          Plan een Gesprek
+                        </p>
+                        <p className="text-xs text-white/50 mt-1 leading-relaxed">
+                          {canBookCall
+                            ? 'Kies een moment dat jou uitkomt'
+                            : 'Niet beschikbaar'}
+                        </p>
+                      </div>
                     </div>
                   </button>
                 </div>
@@ -858,16 +884,6 @@ export function DashboardClient({
                 </div>
 
                 {/* Powered by Klarifai */}
-                <div className="flex items-center justify-center gap-3 text-xs font-bold text-slate-300">
-                  <div className="w-6 h-6 rounded-lg bg-[#040026] flex items-center justify-center">
-                    <span className="text-[#EBCB4B] font-black text-[8px]">
-                      K
-                    </span>
-                  </div>
-                  <span className="uppercase tracking-[0.2em]">
-                    Powered by Klarifai Intelligence
-                  </span>
-                </div>
               </div>
             )}
           </motion.div>

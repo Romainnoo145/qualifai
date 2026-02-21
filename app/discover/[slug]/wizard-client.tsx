@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getCalApi } from '@calcom/embed-react';
 import {
   ChevronRight,
   ChevronLeft,
@@ -55,6 +56,8 @@ interface WizardProps {
   automationAgents: Record<string, unknown>;
   successStories: Record<string, unknown>;
   aiRoadmap: Record<string, unknown>;
+  lossMapId: string | null;
+  bookingUrl: string | null;
 }
 
 const STEPS = [
@@ -74,6 +77,8 @@ export function WizardClient({
   automationAgents,
   successStories,
   aiRoadmap,
+  lossMapId,
+  bookingUrl,
 }: WizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -85,6 +90,8 @@ export function WizardClient({
   const trackProgress = api.wizard.trackProgress.useMutation();
   const trackPdf = api.wizard.trackPdfDownload.useMutation();
   const trackCall = api.wizard.trackCallBooked.useMutation();
+  const canDownloadReport = Boolean(lossMapId);
+  const canBookCall = Boolean(bookingUrl);
 
   // Start session on mount
   useEffect(() => {
@@ -126,25 +133,82 @@ export function WizardClient({
   };
 
   const handlePdfDownload = () => {
+    if (!lossMapId) return;
     if (sessionId) trackPdf.mutate({ sessionId });
-    // TODO: Phase 2 — actual PDF generation
-    alert('PDF download coming soon!');
+    window.open(
+      `/api/export/loss-map/${lossMapId}?format=pdf`,
+      '_blank',
+      'noopener,noreferrer',
+    );
   };
 
-  const handleBookCall = () => {
+  // Extract Cal.com path from full URL (e.g. "https://cal.com/klarifai/demo" -> "klarifai/demo")
+  const calLink = (() => {
+    if (!bookingUrl) return null;
+    try {
+      const url = new URL(bookingUrl);
+      // Strip leading slash from pathname
+      return url.pathname.replace(/^\//, '');
+    } catch {
+      return bookingUrl;
+    }
+  })();
+
+  // Initialize Cal.com embed API
+  useEffect(() => {
+    if (!canBookCall) return;
+    (async () => {
+      const cal = await getCalApi();
+      cal('ui', {
+        theme: 'light',
+        cssVarsPerTheme: {
+          light: { 'cal-brand': '#040026' },
+          dark: { 'cal-brand': '#EBCB4B' },
+        },
+        hideEventTypeDetails: false,
+      });
+    })();
+  }, [canBookCall]);
+
+  const handleBookCall = useCallback(() => {
+    if (!calLink) return;
     if (sessionId) trackCall.mutate({ sessionId });
-    // TODO: Phase 2 — Calendly embed
-    window.open('https://calendly.com', '_blank');
-  };
+    (async () => {
+      const cal = await getCalApi();
+      cal('modal', {
+        calLink,
+        config: {
+          layout: 'month_view',
+          name: companyName,
+        },
+      });
+    })();
+  }, [calLink, sessionId, trackCall, companyName]);
 
-  const hero = heroContent as {
+  const heroSource =
+    heroContent && typeof heroContent === 'object' ? heroContent : {};
+  const hero = heroSource as {
     headline: string;
     subheadline: string;
     stats: Array<{ label: string; value: string; icon: string }>;
     industryInsight: string;
   };
+  const safeHero = {
+    headline: hero.headline ?? `AI kansen voor ${companyName}`,
+    subheadline:
+      hero.subheadline ??
+      'In een paar minuten zie je waar automatisering en AI directe impact kunnen maken.',
+    stats: Array.isArray(hero.stats) ? hero.stats : [],
+    industryInsight:
+      hero.industryInsight ??
+      'De grootste winst zit vaak in slimmere overdrachten, minder fouten en kortere doorlooptijden.',
+  };
 
-  const data = dataOpportunities as {
+  const dataSource =
+    dataOpportunities && typeof dataOpportunities === 'object'
+      ? dataOpportunities
+      : {};
+  const data = dataSource as {
     opportunities: Array<{
       title: string;
       icon: string;
@@ -155,7 +219,11 @@ export function WizardClient({
     }>;
   };
 
-  const agents = automationAgents as {
+  const agentsSource =
+    automationAgents && typeof automationAgents === 'object'
+      ? automationAgents
+      : {};
+  const agents = agentsSource as {
     agents: Array<{
       name: string;
       icon: string;
@@ -167,7 +235,9 @@ export function WizardClient({
     }>;
   };
 
-  const stories = successStories as {
+  const storiesSource =
+    successStories && typeof successStories === 'object' ? successStories : {};
+  const stories = storiesSource as {
     stories: Array<{
       companyName: string;
       industry: string;
@@ -179,7 +249,9 @@ export function WizardClient({
     }>;
   };
 
-  const roadmap = aiRoadmap as {
+  const roadmapSource =
+    aiRoadmap && typeof aiRoadmap === 'object' ? aiRoadmap : {};
+  const roadmap = roadmapSource as {
     phases: Array<{
       name: string;
       duration: string;
@@ -194,6 +266,15 @@ export function WizardClient({
     estimatedROI: string;
     nextStep: string;
   };
+  const safeRoadmap = {
+    phases: Array.isArray(roadmap.phases) ? roadmap.phases : [],
+    estimatedROI:
+      roadmap.estimatedROI ??
+      'Verwachte ROI: meetbaar binnen 60-90 dagen na implementatie.',
+    nextStep:
+      roadmap.nextStep ??
+      'Plan een korte teardown om prioriteiten en snelle wins te bevestigen.',
+  };
 
   const variants = {
     enter: (d: number) => ({ x: d > 0 ? 80 : -80, opacity: 0 }),
@@ -202,17 +283,15 @@ export function WizardClient({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col font-sans">
       {/* Top progress bar */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/60">
-        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-klarifai-midnight flex items-center justify-center">
-              <span className="text-klarifai-yellow font-bold text-[10px]">
-                K
-              </span>
+      <header className="sticky top-0 z-50 bg-[#F8F9FA]/80 backdrop-blur-3xl border-b border-black/5">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-9 h-9 rounded-2xl bg-[#040026] flex items-center justify-center shadow-lg shadow-[#040026]/10">
+              <span className="text-[#EBCB4B] font-black text-xs">K</span>
             </div>
-            <span className="text-sm font-heading font-bold text-slate-900">
+            <span className="text-md font-black text-[#040026] tracking-tighter">
               {companyName}
             </span>
           </div>
@@ -223,12 +302,12 @@ export function WizardClient({
               <button
                 key={step.id}
                 onClick={() => goToStep(step.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                className={`flex items-center gap-3 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                   currentStep === step.id
-                    ? 'bg-klarifai-midnight text-white'
+                    ? 'bg-[#040026] text-white shadow-xl shadow-[#040026]/10'
                     : currentStep > step.id
-                      ? 'bg-klarifai-emerald/10 text-klarifai-emerald'
-                      : 'text-slate-400 hover:text-slate-600'
+                      ? 'text-emerald-500 bg-emerald-50/50'
+                      : 'text-slate-400 hover:text-[#040026] hover:bg-white'
                 }`}
               >
                 <step.icon className="w-3.5 h-3.5" />
@@ -265,30 +344,30 @@ export function WizardClient({
           >
             {/* Step 0: Hero */}
             {currentStep === 0 && (
-              <div className="space-y-8 text-center max-w-3xl mx-auto">
-                <div className="space-y-4">
+              <div className="space-y-12 text-center max-w-4xl mx-auto py-12">
+                <div className="space-y-8">
                   <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.1 }}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-klarifai-yellow/10 border border-klarifai-yellow/20"
+                    className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-[#EBCB4B]/10 border border-[#EBCB4B]/20 shadow-sm"
                   >
-                    <Sparkles className="w-4 h-4 text-klarifai-yellow-dark" />
-                    <span className="text-sm font-medium text-klarifai-midnight">
-                      AI Discovery Report
+                    <Sparkles className="w-4 h-4 text-[#EBCB4B]" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#040026]">
+                      Intelligence Asset 01
                     </span>
                   </motion.div>
-                  <h1 className="text-4xl md:text-5xl font-heading font-bold text-slate-900 leading-tight">
-                    {hero.headline}
+                  <h1 className="text-5xl md:text-7xl font-black text-[#040026] leading-[0.9] tracking-tighter">
+                    {safeHero.headline}
                   </h1>
-                  <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-                    {hero.subheadline}
+                  <p className="text-xl font-bold text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                    {safeHero.subheadline}
                   </p>
                 </div>
 
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-4">
-                  {hero.stats?.map((stat, i) => {
+                  {safeHero.stats?.map((stat, i) => {
                     const Icon = getIcon(stat.icon);
                     return (
                       <motion.div
@@ -313,7 +392,7 @@ export function WizardClient({
                 {/* Industry insight */}
                 <div className="glass-card p-6 text-left">
                   <p className="text-sm text-slate-600 italic">
-                    &ldquo;{hero.industryInsight}&rdquo;
+                    &ldquo;{safeHero.industryInsight}&rdquo;
                   </p>
                 </div>
               </div>
@@ -399,8 +478,8 @@ export function WizardClient({
                         className="glass-card glass-card-hover p-6"
                       >
                         <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 rounded-xl bg-klarifai-midnight/5 flex items-center justify-center shrink-0">
-                            <Icon className="w-6 h-6 text-klarifai-midnight" />
+                          <div className="w-12 h-12 rounded-xl bg-[#040026]/5 flex items-center justify-center shrink-0">
+                            <Icon className="w-6 h-6 text-[#040026]" />
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
@@ -533,7 +612,7 @@ export function WizardClient({
                 </div>
 
                 <div className="space-y-6">
-                  {roadmap.phases?.map((phase, i) => {
+                  {safeRoadmap.phases?.map((phase, i) => {
                     const Icon = getIcon(phase.icon);
                     return (
                       <motion.div
@@ -542,9 +621,9 @@ export function WizardClient({
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: i * 0.12 }}
                       >
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 rounded-xl bg-klarifai-midnight flex items-center justify-center">
-                            <Icon className="w-5 h-5 text-klarifai-yellow" />
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 rounded-2xl bg-[#040026] flex items-center justify-center shadow-lg shadow-[#040026]/10">
+                            <Icon className="w-5 h-5 text-[#EBCB4B]" />
                           </div>
                           <div>
                             <h3 className="font-bold text-slate-900">
@@ -596,13 +675,13 @@ export function WizardClient({
                   initial={{ scale: 0.95, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="glass-card p-6 text-center bg-gradient-to-br from-klarifai-midnight to-klarifai-indigo text-white"
+                  className="p-10 text-center bg-[#040026] text-white rounded-[2rem]"
                 >
-                  <p className="text-sm opacity-70 mb-1">
-                    Estimated 12-Month ROI
+                  <p className="text-xs font-black uppercase tracking-widest text-[#EBCB4B] mb-2">
+                    Estimated 12-Month Impact
                   </p>
-                  <p className="text-2xl font-heading font-bold">
-                    {roadmap.estimatedROI}
+                  <p className="text-3xl font-black tracking-tighter">
+                    {safeRoadmap.estimatedROI}
                   </p>
                 </motion.div>
               </div>
@@ -613,48 +692,74 @@ export function WizardClient({
               <div className="space-y-8 text-center max-w-2xl mx-auto">
                 <div>
                   <h2 className="text-3xl font-heading font-bold text-slate-900">
-                    Ready to Get Started?
+                    Klaar om te starten?
                   </h2>
-                  <p className="text-slate-500 mt-2">{roadmap.nextStep}</p>
+                  <p className="text-slate-500 mt-2">{safeRoadmap.nextStep}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* Download Report card */}
                   <button
                     onClick={handlePdfDownload}
-                    className="glass-card glass-card-hover p-8 flex flex-col items-center gap-3"
+                    disabled={!canDownloadReport}
+                    className="glass-card glass-card-hover p-10 flex flex-col items-center gap-5 rounded-[2.5rem] border-slate-100 text-left disabled:opacity-50 disabled:cursor-not-allowed group"
                   >
-                    <FileDown className="w-8 h-8 text-klarifai-blue" />
-                    <div>
-                      <p className="font-semibold text-slate-900">
-                        Download Report
+                    <div className="w-16 h-16 rounded-3xl bg-red-50 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                      <FileDown className="w-8 h-8 text-red-600" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-black text-[#040026] tracking-tight">
+                        Download Rapport
                       </p>
-                      <p className="text-xs text-slate-400 mt-1">
-                        PDF summary of your AI roadmap
+                      <p className="text-sm text-slate-400 mt-2 leading-relaxed">
+                        {canDownloadReport
+                          ? 'Ontvang een compleet overzicht van alle kansen en aanbevelingen als PDF.'
+                          : 'Rapport is nog niet beschikbaar.'}
                       </p>
                     </div>
+                    {canDownloadReport && (
+                      <span className="text-[10px] font-black text-[#040026] uppercase tracking-[0.2em] flex items-center gap-2 mt-auto">
+                        Download PDF <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
+                    )}
                   </button>
 
+                  {/* Book Call card */}
                   <button
                     onClick={handleBookCall}
-                    className="glass-card p-8 flex flex-col items-center gap-3 bg-gradient-to-br from-klarifai-midnight to-klarifai-indigo text-white border-0 hover:opacity-90 transition-opacity"
+                    disabled={!canBookCall}
+                    className="p-10 flex flex-col items-center gap-5 bg-[#040026] rounded-[2.5rem] hover:bg-[#1E1E4A] transition-all group shadow-2xl shadow-[#040026]/20 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <Calendar className="w-8 h-8 text-klarifai-yellow" />
-                    <div>
-                      <p className="font-semibold">Book a Discovery Call</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        30 min with an AI strategist
+                    <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                      <Calendar className="w-8 h-8 text-[#EBCB4B]" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-black text-white tracking-tight">
+                        Plan een Gesprek
+                      </p>
+                      <p className="text-sm text-white/50 mt-2 leading-relaxed">
+                        {canBookCall
+                          ? 'Kies een moment dat jou uitkomt en bespreek de volgende stappen in een videocall.'
+                          : 'Boeking is momenteel niet beschikbaar.'}
                       </p>
                     </div>
+                    {canBookCall && (
+                      <span className="text-[10px] font-black text-[#EBCB4B] uppercase tracking-[0.2em] flex items-center gap-2 mt-auto">
+                        Open agenda <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
+                    )}
                   </button>
                 </div>
 
-                <div className="flex items-center justify-center gap-2 text-sm text-slate-400">
-                  <div className="w-8 h-8 rounded-lg bg-klarifai-midnight flex items-center justify-center">
-                    <span className="text-klarifai-yellow font-bold text-[10px]">
+                <div className="flex items-center justify-center gap-3 text-xs font-bold text-slate-300">
+                  <div className="w-6 h-6 rounded-lg bg-[#040026] flex items-center justify-center">
+                    <span className="text-[#EBCB4B] font-black text-[8px]">
                       K
                     </span>
                   </div>
-                  <span>Powered by Klarifai</span>
+                  <span className="uppercase tracking-[0.2em]">
+                    Powered by Klarifai Intelligence
+                  </span>
                 </div>
               </div>
             )}
@@ -663,27 +768,27 @@ export function WizardClient({
       </main>
 
       {/* Bottom navigation */}
-      <footer className="sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-slate-200/60">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+      <footer className="sticky bottom-0 bg-[#F8F9FA]/80 backdrop-blur-3xl border-t border-black/5">
+        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
           <button
             onClick={prev}
             disabled={currentStep === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-0 disabled:cursor-default transition-all"
+            className="ui-tap flex items-center gap-3 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#040026] hover:bg-white disabled:opacity-0 disabled:cursor-default transition-all"
           >
             <ChevronLeft className="w-4 h-4" />
-            Back
+            Previous
           </button>
 
           {/* Mobile step dots */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-3 md:hidden">
             {STEPS.map((step) => (
               <div
                 key={step.id}
-                className={`w-2 h-2 rounded-full transition-colors ${
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
                   currentStep === step.id
-                    ? 'bg-klarifai-midnight'
+                    ? 'bg-[#040026] scale-150 shadow-lg shadow-[#040026]/20'
                     : currentStep > step.id
-                      ? 'bg-klarifai-emerald'
+                      ? 'bg-emerald-400'
                       : 'bg-slate-200'
                 }`}
               />
@@ -693,9 +798,9 @@ export function WizardClient({
           {currentStep < 5 ? (
             <button
               onClick={next}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold bg-klarifai-midnight text-white hover:bg-klarifai-indigo transition-colors"
+              className="ui-tap flex items-center gap-3 px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#1E1E4A] transition-all shadow-xl shadow-[#040026]/10"
             >
-              Next
+              Continue
               <ChevronRight className="w-4 h-4" />
             </button>
           ) : (
