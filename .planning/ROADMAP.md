@@ -203,8 +203,8 @@ Plans:
 
 Plans:
 
-- [ ] 12-01-PLAN.md — Sidebar restructure: flatten to 6 items (Dashboard, Companies, Campaigns, Draft Queue, Use Cases, Signals), remove group headers and obsolete nav entries (Wave 1)
-- [ ] 12-02-PLAN.md — Terminology sweep: replace jargon (Loss Map, Call Prep, Nodes, Sprint Intelligence, and settings-page spy language) with plain labels across 7 files (Wave 1)
+- [x] 12-01-PLAN.md — Sidebar restructure: flatten to 6 items (Dashboard, Companies, Campaigns, Draft Queue, Use Cases, Signals), remove group headers and obsolete nav entries (Wave 1)
+- [x] 12-02-PLAN.md — Terminology sweep: replace jargon (Loss Map, Call Prep, Nodes, Sprint Intelligence, and settings-page spy language) with plain labels across 7 files (Wave 2)
 
 ---
 
@@ -298,7 +298,7 @@ Plans:
 | 9. Engagement Triggers      | v1.1      | 2/2            | Complete    | 2026-02-21 |
 | 10. Cadence Engine          | v1.1      | 4/4            | Complete    | 2026-02-21 |
 | 11. Prospect Dashboard      | v1.1      | 2/2            | Complete    | 2026-02-21 |
-| 12. Navigation and Language | v1.2      | 0/2            | Planned     | -          |
+| 12. Navigation and Language | v1.2      | 2/2            | Complete    | 2026-02-21 |
 | 13. Prospect Story Flow     | v1.2      | 0/5            | Not started | -          |
 | 14. Campaign Reporting      | v1.2      | 0/3            | Not started | -          |
 | 15. Action Queue Dashboard  | v1.2      | 0/2            | Not started | -          |

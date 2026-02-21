@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v1.2 — Autopilot with Oversight (Phase 12: Navigation and Language)
+**Current focus:** v1.2 — Autopilot with Oversight (Phase 13: Prospect Story Flow)
 
 ## Current Position
 
-Phase: 12 of 15 (Navigation and Language)
-Plan: 2 of 2 (complete)
-Status: In progress
-Last activity: 2026-02-21 — Phase 12 Plan 02 complete (TERM-01: all jargon removed from admin UI)
+Phase: 13 of 15 (Prospect Story Flow)
+Plan: 0 of 5
+Status: Ready to plan
+Last activity: 2026-02-21 — Phase 12 complete (nav restructure + jargon cleanup + gap closure)
 
 Progress: [██░░░░░░░░] 25% (v1.2)
 
@@ -73,5 +73,5 @@ None identified for v1.2 phases.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 12-02-PLAN.md (TERM-01 jargon cleanup — Phase 12 complete)
+Stopped at: Phase 12 complete — ready to plan Phase 13
 Resume file: None
