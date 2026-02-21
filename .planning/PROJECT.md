@@ -28,17 +28,18 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - ✓ **Admin command center** (dashboard, prospect detail, pipeline view) — v1.0
 - ✓ **Multi-touch task queue** (call + LinkedIn + WhatsApp manual tasks) — v1.0
 - ✓ **Apollo plan-limit guardrails** (UX warnings when people-endpoints blocked) — v1.0
+- ✓ **Use Cases management** (service catalog + case studies in admin) — v1.1
+- ✓ **Smart proof matching** (pijnpunten ↔ use cases with Claude semantic scoring) — v1.1
+- ✓ **Deep evidence pipeline** (SerpAPI discovery + Crawl4AI browser extraction) — v1.1
+- ✓ **Evidence approval gate** (manual hypothesis review before outreach) — v1.1
+- ✓ **Engagement triggers** (wizard/PDF/reply → immediate call tasks with dedup) — v1.1
+- ✓ **Cadence engine** (engagement-driven multi-touch scheduling across 4 channels) — v1.1
+- ✓ **Prospect dashboard** (/voor/bedrijfsnaam with evidence-backed content + multi-channel contact) — v1.1
+- ✓ **One-click quote request** (admin notification with matched use cases) — v1.1
 
 ### Active
 
-<!-- Current scope: v1.1 Evidence-Backed Multi-Touch Outreach -->
-
-- [ ] Deep evidence pipeline (SerpAPI discovery + Playwright extraction)
-- [ ] Use Cases management (service catalog + case studies in admin)
-- [ ] Smart proof matching (pijnpunten ↔ use cases)
-- [ ] Handmatige evidence approval gate vóór outreach
-- [ ] Engagement-driven multi-touch cadence (email → call → LinkedIn → WhatsApp)
-- [ ] CTA tracking triggers (wizard view, PDF download, email open → escalate cadence)
+<!-- No active requirements — v1.1 complete, v1.2 not yet defined -->
 
 ### Out of Scope
 
@@ -73,17 +74,11 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - **Multi-tenant**: All models need organization_id (NOT NULL, indexed)
 - **Port**: App runs on 9200
 
-## Current Milestone: v1.1 Evidence-Backed Multi-Touch Outreach
+## Current Milestone: v1.1 Complete
 
-**Goal:** Upgrade outreach from email-only with thin evidence to engagement-driven multi-touch sequences backed by deep, browser-rendered evidence matched to real services.
+**Shipped:** 2026-02-21
 
-**Target features:**
-
-- Deep evidence pipeline (SerpAPI + Playwright)
-- Use Cases catalog in admin
-- Smart proof matching against actual services
-- Manual evidence approval before outreach
-- Engagement-driven cadence across 4 channels
+v1.1 delivered evidence-backed multi-touch outreach: deep evidence pipeline, use cases catalog, proof matching, engagement triggers, cadence engine, and prospect dashboard with readable URLs.
 
 ## Key Decisions
 
@@ -97,4 +92,4 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ---
 
-_Last updated: 2026-02-20 after milestone v1.1 initialization_
+_Last updated: 2026-02-21 after milestone v1.1 completion_

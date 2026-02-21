@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v1.1 Phase 11 — Prospect Dashboard
+**Current focus:** v1.1 complete — ready for v1.2
 
 ## Current Position
 
-Phase: 11 of 11 (Prospect Dashboard) — IN PROGRESS
-Plan: 1 of 2 in current phase
-Status: Plan 11-01 complete (schema migration, slug utility, requestQuote mutation, notifyAdmin extended, env vars)
-Last activity: 2026-02-21 — Quick task 1: merge search into prospects, restructure detail page, CTA card fixes
+Phase: 11 of 11 (Prospect Dashboard) — COMPLETE
+Plan: 2 of 2 in current phase
+Status: v1.1 milestone complete. All 6 phases shipped. Human verification passed.
+Last activity: 2026-02-21 — Phase 11 verified, auto-accept removed, manual approval gate restored
 
-Progress: [█████████░] 93% (v1.1)
+Progress: [██████████] 100% (v1.1)
 
 ## Performance Metrics
 
@@ -33,7 +33,7 @@ Progress: [█████████░] 93% (v1.1)
 | 8. Deep Evidence Pipeline | 3/3   | ~21min | ~7min    |
 | 9. Engagement Triggers    | 2/2   | ~5min  | ~2.5min  |
 | 10. Cadence Engine        | 4/4   | 7 min  | 1.75 min |
-| 11. Prospect Dashboard    | 1/2   | 3 min  | 3 min    |
+| 11. Prospect Dashboard    | 2/2   | ~6 min | 3 min    |
 
 _Updated after each plan completion_
 
@@ -100,6 +100,7 @@ _Updated after each plan completion_
 - [Phase 11-prospect-dashboard]: [Phase 11-02]: DashboardClient receives prospectSlug (nanoid) explicitly as prop — decouples URL routing slug from WizardSession tracking slug
 - [Phase 11-prospect-dashboard]: [Phase 11-02]: /voor/[slug] dashboard has 4 steps (not 6 like old wizard) — evidence content is denser, fewer steps needed for clear UX
 - [Phase 11-prospect-dashboard]: [Phase 11-02]: Admin wizard tab shows both dashboard (/voor/) and legacy wizard (/discover/) side-by-side when readableSlug exists — enables admin to compare/verify
+- [Phase 11-prospect-dashboard]: Auto-accept of hypotheses removed from createAndProcess — hypotheses stay DRAFT, admin must approve in Hypotheses tab before /voor/ dashboard shows them
 
 ### Roadmap Evolution
 
@@ -123,5 +124,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Quick task 1 complete. Search merged into prospects page (3-way toggle), detail page restructured (company+contacts inline, 7 tabs), CTA cards on /voor/ dashboard fixed (Cal.com modal, visual parity, red PDF icon). All committed.
+Stopped at: v1.1 milestone complete. All phases shipped and verified. Ready for v1.2 milestone.
 Resume file: None
