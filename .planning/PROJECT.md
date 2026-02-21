@@ -39,7 +39,11 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ### Active
 
-<!-- No active requirements — v1.1 complete, v1.2 not yet defined -->
+- [ ] **Action queue dashboard** — unified hub showing hypotheses to review, drafts to approve, calls to make, replies to handle
+- [ ] **Nav simplification** — 10 nav items → 6 (Dashboard, Companies, Campaigns, Draft Queue, Use Cases, Signals)
+- [ ] **Prospect detail story flow** — replace 7 tabs with Evidence → Analysis → Outreach Preview → Results
+- [ ] **Campaign cohort reporting** — funnel metrics, per-prospect status, group performance by segment
+- [ ] **Terminology cleanup** — replace jargon (Loss Map, Call Prep, Nodes, Sprint Intelligence) with plain language
 
 ### Out of Scope
 
@@ -74,11 +78,17 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - **Multi-tenant**: All models need organization_id (NOT NULL, indexed)
 - **Port**: App runs on 9200
 
-## Current Milestone: v1.1 Complete
+## Current Milestone: v1.2 — Autopilot with Oversight
 
-**Shipped:** 2026-02-21
+**Goal:** Transform the admin experience from a collection of disconnected pages into a streamlined oversight dashboard where the system runs automatically and the admin reviews what goes out and why.
 
-v1.1 delivered evidence-backed multi-touch outreach: deep evidence pipeline, use cases catalog, proof matching, engagement triggers, cadence engine, and prospect dashboard with readable URLs.
+**Target features:**
+
+- Action queue dashboard (unified decision hub)
+- Simplified navigation (6 items, clear grouping)
+- Prospect detail as story flow (evidence → analysis → outreach → results)
+- Campaign cohort reporting (funnel metrics, group performance)
+- Terminology cleanup (plain language, no internal jargon)
 
 ## Key Decisions
 
@@ -92,4 +102,4 @@ v1.1 delivered evidence-backed multi-touch outreach: deep evidence pipeline, use
 
 ---
 
-_Last updated: 2026-02-21 after milestone v1.1 completion_
+_Last updated: 2026-02-21 after milestone v1.2 kickoff_

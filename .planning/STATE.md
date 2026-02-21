@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-20)
+See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v1.1 complete — ready for v1.2
+**Current focus:** v1.2 — Autopilot with Oversight
 
 ## Current Position
 
-Phase: 11 of 11 (Prospect Dashboard) — COMPLETE
-Plan: 2 of 2 in current phase
-Status: v1.1 milestone complete. All 6 phases shipped. Human verification passed.
-Last activity: 2026-02-21 — Phase 11 verified, auto-accept removed, manual approval gate restored
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-21 — Milestone v1.2 started
 
-Progress: [██████████] 100% (v1.1)
+Progress: [░░░░░░░░░░] 0% (v1.2)
 
 ## Performance Metrics
 
@@ -124,5 +124,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: v1.1 milestone complete. All phases shipped and verified. Ready for v1.2 milestone.
+Stopped at: v1.2 milestone kickoff — defining requirements
 Resume file: None
