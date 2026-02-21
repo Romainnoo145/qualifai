@@ -4,6 +4,7 @@
 
 - v1.0 MVP — Phases 1-5 (shipped 2026-02-20)
 - v1.1 Evidence-Backed Multi-Touch Outreach — Phases 6-11 (shipped 2026-02-21)
+- v1.2 Autopilot with Oversight — Phases 12-15 (in progress)
 
 ## Phases
 
@@ -14,24 +15,8 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 </details>
 
----
-
-### v1.1 Evidence-Backed Multi-Touch Outreach (Shipped 2026-02-21)
-
-**Milestone goal:** Upgrade outreach from email-only with thin evidence to engagement-driven multi-touch sequences backed by deep, browser-rendered evidence matched to real services admin-manages in-app.
-
----
-
-- [x] **Phase 6: Use Cases Foundation** — Replace Obsidian JSON proof catalog with in-app Use Cases management and DB-backed proof matching
-- [x] **Phase 7: Evidence Approval Gate** — Wire hypothesis review UI and block outreach until admin approves at least one hypothesis per prospect
-- [x] **Phase 8: Deep Evidence Pipeline** — Add SerpAPI search discovery and managed-browser extraction as new evidence sources feeding the existing pipeline
-- [x] **Phase 9: Engagement Triggers** — Wire wizard, PDF, reply, and email events to immediate touch task creation with deduplication
-- [x] **Phase 10: Cadence Engine** — Build engagement-driven cadence state machine that automatically schedules and advances multi-touch sequences
-- [x] **Phase 11: Prospect Dashboard** — Upgrade wizard to evidence-backed prospect dashboard with multi-channel contact, one-click quotes, and readable URLs
-
----
-
-## Phase Details
+<details>
+<summary>v1.1 Evidence-Backed Multi-Touch Outreach (Phases 6-11) — SHIPPED 2026-02-21</summary>
 
 ### Phase 6: Use Cases Foundation
 
@@ -158,6 +143,8 @@ Plans:
 - [x] 10-03-PLAN.md — Wiring: completeTouchTask cadence hook + cron route + getCadenceState tRPC query (Wave 3)
 - [x] 10-04-PLAN.md — Cadence history UI: CadenceTab component + prospect detail page tab (Wave 4)
 
+---
+
 ### Phase 11: Prospect Dashboard
 
 **Goal:** Upgrade the public wizard from an educational presentation into a prospect dashboard that displays evidence-backed pain points with matched use cases, provides multi-channel contact options (Cal.com + WhatsApp + call + email), enables one-click quote requests, and uses readable URLs (`/voor/bedrijfsnaam`).
@@ -181,18 +168,137 @@ Plans:
 - [x] 11-01-PLAN.md — Schema migration (readableSlug, quote tracking) + slug utility + enrichment wiring + quote mutation + notifyAdmin extension + contact env vars (Wave 1)
 - [x] 11-02-PLAN.md — /voor/[slug] dashboard route + DashboardClient with evidence content + contact buttons + admin link updates (Wave 2)
 
+</details>
+
+---
+
+### v1.2 Autopilot with Oversight (In Progress)
+
+**Milestone goal:** Transform the admin experience from a collection of disconnected pages into a streamlined oversight dashboard where the system runs automatically and the admin reviews what goes out and why.
+
+- [ ] **Phase 12: Navigation and Language** — Reduce nav from 10 items to 6 and replace internal jargon with plain language throughout
+- [ ] **Phase 13: Prospect Story Flow** — Replace the 7-tab prospect detail with a linear Evidence → Analysis → Outreach Preview → Results flow with full plain-language labels
+- [ ] **Phase 14: Campaign Reporting** — Give campaigns real funnel visibility: create named cohorts, see per-prospect status and conversion metrics
+- [ ] **Phase 15: Action Queue Dashboard** — Unify all pending decisions into a single dashboard hub that links directly to where the admin acts
+
+---
+
+## Phase Details
+
+### Phase 12: Navigation and Language
+
+**Goal:** Admin navigates a clean 6-item sidebar with no jargon — the structure alone communicates what the app does.
+
+**Depends on:** Phase 11 (v1.1 complete)
+
+**Requirements:** NAV-01, NAV-02, TERM-01
+
+**Success Criteria** (what must be TRUE when this phase completes):
+
+1. Sidebar shows exactly 6 items in this order: Dashboard, Companies, Campaigns, Draft Queue, Use Cases, Signals — no more, no less
+2. The terms "Loss Map", "Call Prep", "Nodes", and "Sprint Intelligence" do not appear anywhere in the sidebar, page headings, or button labels
+3. Nav groups feel logically organized — admin can predict where to find any feature without trial and error
+
+**Plans:** TBD
+
+Plans:
+
+- [ ] 12-01-PLAN.md — Sidebar restructure (6 items, correct order, correct labels) + remove obsolete nav entries
+- [ ] 12-02-PLAN.md — First-pass terminology sweep: headings, buttons, tabs, and toasts using jargon terms
+
+---
+
+### Phase 13: Prospect Story Flow
+
+**Goal:** Opening a prospect shows one coherent story from raw evidence to sent outreach — admin can follow the chain of reasoning without switching tabs.
+
+**Depends on:** Phase 12 (nav must be settled before restructuring a major page)
+
+**Requirements:** DETAIL-01, DETAIL-02, DETAIL-03, DETAIL-04, DETAIL-05, TERM-02
+
+**Success Criteria** (what must be TRUE when this phase completes):
+
+1. Prospect detail has four sections in order — Evidence, Analysis, Outreach Preview, Results — replacing the current 7-tab layout
+2. Evidence section lists scraped sources with their URLs visible, so admin can verify where data came from
+3. Analysis section shows each hypothesis with the reasoning chain: which evidence led to which conclusion and which services were matched
+4. Outreach Preview shows exactly what the prospect will receive — email content, dashboard content — before anything is sent
+5. Results section shows engagement data: email opens, replies, bookings, and conversions tied to this prospect
+6. All section headings, labels, and field names use plain language — no internal technical terms remain in the prospect detail
+
+**Plans:** TBD
+
+Plans:
+
+- [ ] 13-01-PLAN.md — Evidence section: list scraped sources with source URL display
+- [ ] 13-02-PLAN.md — Analysis section: hypothesis display with evidence reasoning and matched services
+- [ ] 13-03-PLAN.md — Outreach Preview section: email and dashboard content preview
+- [ ] 13-04-PLAN.md — Results section: engagement metrics display (opens, replies, bookings, conversions)
+- [ ] 13-05-PLAN.md — Full terminology sweep: replace all remaining internal terms throughout the app
+
+---
+
+### Phase 14: Campaign Reporting
+
+**Goal:** Admin can create named prospect cohorts and see exactly where each prospect stands in the funnel — at a glance and per-prospect.
+
+**Depends on:** Phase 12 (nav must include Campaigns item before campaign UI is built out)
+
+**Requirements:** CAMP-01, CAMP-02, CAMP-03, CAMP-04
+
+**Success Criteria** (what must be TRUE when this phase completes):
+
+1. Admin can create a campaign with a name and segment description, then add prospects to it
+2. Campaign view shows a funnel: imported → researched → approved → emailed → replied → booked — with counts at each stage
+3. Campaign view lists every prospect with their current funnel stage visible at a glance
+4. Campaign view shows conversion metrics: response rate and booking rate calculated from funnel counts
+
+**Plans:** TBD
+
+Plans:
+
+- [ ] 14-01-PLAN.md — Campaign creation UI and prospect assignment
+- [ ] 14-02-PLAN.md — Funnel visualization and per-prospect status display
+- [ ] 14-03-PLAN.md — Conversion metrics (response rate, booking rate)
+
+---
+
+### Phase 15: Action Queue Dashboard
+
+**Goal:** Admin opens the dashboard and immediately knows what needs attention — every pending decision is listed with a direct link to act on it.
+
+**Depends on:** Phase 13 (prospect detail must exist in final form before it's linked from the queue), Phase 14 (campaign data feeds dashboard context)
+
+**Requirements:** DASH-01, DASH-02, DASH-03
+
+**Success Criteria** (what must be TRUE when this phase completes):
+
+1. Dashboard shows a unified list of items needing admin decisions: hypotheses to review, drafts to approve, calls due, replies to handle
+2. Each item in the queue links directly to the page where the admin takes action — no extra navigation steps
+3. Dashboard shows a count per action type with urgency indicators (e.g., overdue calls, unread replies)
+
+**Plans:** TBD
+
+Plans:
+
+- [ ] 15-01-PLAN.md — Action queue data layer: tRPC queries aggregating pending decisions across hypothesis, outreach, task, and reply tables
+- [ ] 15-02-PLAN.md — Action queue UI: dashboard page with grouped action items, counts, urgency indicators, and direct links
+
 ---
 
 ## Progress
 
-**Execution order:** 6 → 7 → 8 → 9 → 10 → 11
+**Execution order:** 12 → 13 → 14 → 15
 
-| Phase                     | Milestone | Plans Complete | Status   | Completed  |
-| ------------------------- | --------- | -------------- | -------- | ---------- |
-| 1-5. MVP                  | v1.0      | —              | Complete | 2026-02-20 |
-| 6. Use Cases Foundation   | v1.1      | 3/3            | Complete | 2026-02-20 |
-| 7. Evidence Approval Gate | v1.1      | 2/2            | Complete | 2026-02-20 |
-| 8. Deep Evidence Pipeline | v1.1      | 3/3            | Complete | 2026-02-21 |
-| 9. Engagement Triggers    | v1.1      | 2/2            | Complete | 2026-02-21 |
-| 10. Cadence Engine        | v1.1      | 4/4            | Complete | 2026-02-21 |
-| 11. Prospect Dashboard    | v1.1      | 2/2            | Complete | 2026-02-21 |
+| Phase                       | Milestone | Plans Complete | Status      | Completed  |
+| --------------------------- | --------- | -------------- | ----------- | ---------- |
+| 1-5. MVP                    | v1.0      | —              | Complete    | 2026-02-20 |
+| 6. Use Cases Foundation     | v1.1      | 3/3            | Complete    | 2026-02-20 |
+| 7. Evidence Approval Gate   | v1.1      | 2/2            | Complete    | 2026-02-20 |
+| 8. Deep Evidence Pipeline   | v1.1      | 3/3            | Complete    | 2026-02-21 |
+| 9. Engagement Triggers      | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 10. Cadence Engine          | v1.1      | 4/4            | Complete    | 2026-02-21 |
+| 11. Prospect Dashboard      | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 12. Navigation and Language | v1.2      | 0/2            | Not started | -          |
+| 13. Prospect Story Flow     | v1.2      | 0/5            | Not started | -          |
+| 14. Campaign Reporting      | v1.2      | 0/3            | Not started | -          |
+| 15. Action Queue Dashboard  | v1.2      | 0/2            | Not started | -          |

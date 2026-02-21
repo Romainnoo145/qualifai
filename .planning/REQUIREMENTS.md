@@ -124,32 +124,32 @@ Explicitly excluded. Documented to prevent scope creep.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| DASH-01     | —     | Pending |
-| DASH-02     | —     | Pending |
-| DASH-03     | —     | Pending |
-| NAV-01      | —     | Pending |
-| NAV-02      | —     | Pending |
-| DETAIL-01   | —     | Pending |
-| DETAIL-02   | —     | Pending |
-| DETAIL-03   | —     | Pending |
-| DETAIL-04   | —     | Pending |
-| DETAIL-05   | —     | Pending |
-| CAMP-01     | —     | Pending |
-| CAMP-02     | —     | Pending |
-| CAMP-03     | —     | Pending |
-| CAMP-04     | —     | Pending |
-| TERM-01     | —     | Pending |
-| TERM-02     | —     | Pending |
+| Requirement | Phase    | Status  |
+| ----------- | -------- | ------- |
+| NAV-01      | Phase 12 | Pending |
+| NAV-02      | Phase 12 | Pending |
+| TERM-01     | Phase 12 | Pending |
+| DETAIL-01   | Phase 13 | Pending |
+| DETAIL-02   | Phase 13 | Pending |
+| DETAIL-03   | Phase 13 | Pending |
+| DETAIL-04   | Phase 13 | Pending |
+| DETAIL-05   | Phase 13 | Pending |
+| TERM-02     | Phase 13 | Pending |
+| CAMP-01     | Phase 14 | Pending |
+| CAMP-02     | Phase 14 | Pending |
+| CAMP-03     | Phase 14 | Pending |
+| CAMP-04     | Phase 14 | Pending |
+| DASH-01     | Phase 15 | Pending |
+| DASH-02     | Phase 15 | Pending |
+| DASH-03     | Phase 15 | Pending |
 
 **Coverage:**
 
 - v1.2 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16 ⚠️
+- Mapped to phases: 16
+- Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-02-20_
-_Last updated: 2026-02-21 after v1.2 milestone definition_
+_Last updated: 2026-02-21 after v1.2 roadmap creation_
