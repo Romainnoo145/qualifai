@@ -180,6 +180,7 @@ Plans:
 - [ ] **Phase 13: Prospect Story Flow** — Replace the 7-tab prospect detail with a linear Evidence → Analysis → Outreach Preview → Results flow with full plain-language labels
 - [ ] **Phase 14: Campaign Reporting** — Give campaigns real funnel visibility: create named cohorts, see per-prospect status and conversion metrics
 - [ ] **Phase 15: Action Queue Dashboard** — Unify all pending decisions into a single dashboard hub that links directly to where the admin acts
+- [ ] **Phase 16: Draft Queue Redesign** — Replace complex outreach approval with one-click-per-action queue (LinkedIn/Gmail/WhatsApp/Call per row)
 
 ---
 
@@ -225,15 +226,15 @@ Plans:
 5. Results section shows engagement data: email opens, replies, bookings, and conversions tied to this prospect
 6. All section headings, labels, and field names use plain language — no internal technical terms remain in the prospect detail
 
-**Plans:** TBD
+**Plans:** 5 plans in 3 waves
 
 Plans:
 
-- [ ] 13-01-PLAN.md — Evidence section: list scraped sources with source URL display
-- [ ] 13-02-PLAN.md — Analysis section: hypothesis display with evidence reasoning and matched services
-- [ ] 13-03-PLAN.md — Outreach Preview section: email and dashboard content preview
-- [ ] 13-04-PLAN.md — Results section: engagement metrics display (opens, replies, bookings, conversions)
-- [ ] 13-05-PLAN.md — Full terminology sweep: replace all remaining internal terms throughout the app
+- [ ] 13-01-PLAN.md — Page restructure (tabs to vertical sections) + Evidence section with source URL display (Wave 1)
+- [ ] 13-02-PLAN.md — Analysis section: hypothesis reasoning chain with matched services (Wave 2)
+- [ ] 13-03-PLAN.md — Outreach Preview section: email content, dashboard link, call brief (Wave 2)
+- [ ] 13-04-PLAN.md — Results section: engagement metrics, cadence timeline, dashboard activity (Wave 3)
+- [ ] 13-05-PLAN.md — TERM-02: full terminology sweep replacing remaining internal terms (Wave 3)
 
 ---
 
@@ -283,11 +284,22 @@ Plans:
 - [ ] 15-01-PLAN.md — Action queue data layer: tRPC queries aggregating pending decisions across hypothesis, outreach, task, and reply tables
 - [ ] 15-02-PLAN.md — Action queue UI: dashboard page with grouped action items, counts, urgency indicators, and direct links
 
+### Phase 16: Draft Queue Redesign
+
+**Goal:** Replace the complex multi-step outreach approval with a simple one-click-per-action queue — each row shows prospect name, channel icon (LinkedIn/Gmail/WhatsApp/Call), content preview, and a single approve button. The system decides what to send and when; the admin just confirms or rejects.
+
+**Depends on:** Phase 13 (prospect detail must be final before linking from queue)
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd:plan-phase 16 to break down)
+
 ---
 
 ## Progress
 
-**Execution order:** 12 → 13 → 14 → 15
+**Execution order:** 12 → 13 → 14 → 15 → 16
 
 | Phase                       | Milestone | Plans Complete | Status      | Completed  |
 | --------------------------- | --------- | -------------- | ----------- | ---------- |
@@ -299,6 +311,7 @@ Plans:
 | 10. Cadence Engine          | v1.1      | 4/4            | Complete    | 2026-02-21 |
 | 11. Prospect Dashboard      | v1.1      | 2/2            | Complete    | 2026-02-21 |
 | 12. Navigation and Language | v1.2      | 2/2            | Complete    | 2026-02-21 |
-| 13. Prospect Story Flow     | v1.2      | 0/5            | Not started | -          |
+| 13. Prospect Story Flow     | v1.2      | 0/5            | Planned     | -          |
 | 14. Campaign Reporting      | v1.2      | 0/3            | Not started | -          |
 | 15. Action Queue Dashboard  | v1.2      | 0/2            | Not started | -          |
+| 16. Draft Queue Redesign    | v1.2      | 0/?            | Not started | -          |
