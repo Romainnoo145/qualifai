@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 Phase: 11 of 11 (Prospect Dashboard) — IN PROGRESS
 Plan: 1 of 2 in current phase
 Status: Plan 11-01 complete (schema migration, slug utility, requestQuote mutation, notifyAdmin extended, env vars)
-Last activity: 2026-02-21 — Phase 11 Plan 01 complete: backend infrastructure for prospect dashboard
+Last activity: 2026-02-21 — Quick task 1: merge search into prospects, restructure detail page, CTA card fixes
 
 Progress: [█████████░] 93% (v1.1)
 
@@ -114,8 +114,14 @@ None yet.
 - Phase 8: Managed browser API selection (Browserless vs ScrapingBee) needs validation before Phase 8 planning — pricing and NL-region reliability unconfirmed as of 2026-02-20
 - Phase 10: Cadence rule thresholds ("+2 days on PDF download", "close_lost after 4 touches") need product owner sign-off before implementation
 
+### Quick Tasks Completed
+
+| #   | Description                                                                                  | Date       | Commit  | Directory                                                                                         |
+| --- | -------------------------------------------------------------------------------------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------- |
+| 1   | Merge search into prospects page, restructure detail page, fix CTA cards on /voor/ dashboard | 2026-02-21 | 42fd9ee | [1-commit-search-merge-detail-page-restruct](./quick/1-commit-search-merge-detail-page-restruct/) |
+
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Phase 11 Plan 02 Tasks 1+2 complete. /voor/[slug] dashboard route built (page.tsx + dashboard-client.tsx), admin links updated to prefer /voor/ URL. Awaiting human verification checkpoint (Task 3) before plan can be marked complete.
+Stopped at: Quick task 1 complete. Search merged into prospects page (3-way toggle), detail page restructured (company+contacts inline, 7 tabs), CTA cards on /voor/ dashboard fixed (Cal.com modal, visual parity, red PDF icon). All committed.
 Resume file: None
