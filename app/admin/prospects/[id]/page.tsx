@@ -23,6 +23,7 @@ import { useState } from 'react';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
 import { EvidenceSection } from '@/components/features/prospects/evidence-section';
+import { AnalysisSection } from '@/components/features/prospects/analysis-section';
 
 type DiscoveryGuardrail = {
   code: string;
@@ -59,6 +60,11 @@ export default function ProspectDetail() {
       },
     },
   );
+
+  const setHypothesisStatus = api.hypotheses.setStatus.useMutation({
+    onSuccess: () =>
+      utils.hypotheses.listByProspect.invalidate({ prospectId: id }),
+  });
 
   const copyLink = () => {
     if (!prospect.data) return;
@@ -357,11 +363,12 @@ export default function ProspectDetail() {
         <h2 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">
           Analysis
         </h2>
-        <div className="glass-card p-8 text-center">
-          <p className="text-sm text-slate-400">
-            Analysis section — coming in plan 13-02
-          </p>
-        </div>
+        <AnalysisSection
+          prospectId={id}
+          onSetStatus={(kind, entryId, status) =>
+            setHypothesisStatus.mutate({ kind, id: entryId, status })
+          }
+        />
       </section>
 
       {/* Section 3: Outreach Preview */}
