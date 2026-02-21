@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 12 of 15 (Navigation and Language)
-Plan: 0 of 2
-Status: Ready to plan
-Last activity: 2026-02-21 — v1.2 roadmap created, phases 12-15 defined
+Plan: 1 of 2
+Status: In progress
+Last activity: 2026-02-21 — Phase 12 Plan 01 complete (sidebar restructured to 6 flat items)
 
-Progress: [░░░░░░░░░░] 0% (v1.2)
+Progress: [█░░░░░░░░░] 13% (v1.2)
 
 ## Performance Metrics
 
@@ -34,12 +34,16 @@ Progress: [░░░░░░░░░░] 0% (v1.2)
 | 9. Engagement Triggers    | 2/2   | ~5 min  | ~2.5 min |
 | 10. Cadence Engine        | 4/4   | 7 min   | 1.75 min |
 | 11. Prospect Dashboard    | 2/2   | ~6 min  | 3 min    |
+| 12. Navigation & Language | 1/2   | 2 min   | 2 min    |
 
 _Updated after each plan completion_
 
 ## Accumulated Context
 
 ### Decisions
+
+- [Phase 12, Plan 01]: navItems is flat NavItem[] array — no group wrappers, no section labels; removed pages stay accessible via direct URL
+- [Phase 12, Plan 01]: Signals label is "Signals" (not "Signals feed") for sidebar consistency
 
 Recent decisions affecting v1.2 work:
 
@@ -67,5 +71,5 @@ None identified for v1.2 phases.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: v1.2 roadmap created — ready to plan Phase 12
+Stopped at: Completed 12-01-PLAN.md (sidebar restructure)
 Resume file: None
