@@ -50,6 +50,7 @@ interface HypothesisData {
   errorReductionPct: number | null;
   revenueLeakageRecoveredMid: number | null;
   proofMatches: ProofMatchData[];
+  status: 'DRAFT' | 'ACCEPTED' | 'REJECTED' | 'PENDING' | 'DECLINED';
 }
 
 interface DashboardClientProps {
@@ -58,6 +59,7 @@ interface DashboardClientProps {
   logoUrl: string | null;
   industry: string | null;
   hypotheses: HypothesisData[];
+  prospectStatus: string;
   lossMapId: string | null;
   bookingUrl: string | null;
   whatsappNumber: string | null;
@@ -86,6 +88,7 @@ export function DashboardClient({
   companyName,
   industry,
   hypotheses,
+  prospectStatus,
   lossMapId,
   bookingUrl,
   whatsappNumber,
@@ -103,11 +106,41 @@ export function DashboardClient({
   const stepTimesRef = useRef<Record<string, number>>({});
   const stepStartRef = useRef<number>(Date.now());
 
+  // Hypothesis validation state — optimistic updates
+  const [validationState, setValidationState] = useState<
+    Record<string, 'confirmed' | 'declined' | null>
+  >({});
+
   const startSession = api.wizard.startSession.useMutation();
   const trackProgress = api.wizard.trackProgress.useMutation();
   const trackPdf = api.wizard.trackPdfDownload.useMutation();
   const trackCall = api.wizard.trackCallBooked.useMutation();
   const requestQuote = api.wizard.requestQuote.useMutation();
+
+  // Pre-populate validation state from server-provided hypothesis status
+  useEffect(() => {
+    const initial: Record<string, 'confirmed' | 'declined' | null> = {};
+    for (const h of hypotheses) {
+      if (h.status === 'ACCEPTED') initial[h.id] = 'confirmed';
+      if (h.status === 'DECLINED') initial[h.id] = 'declined';
+      // PENDING = null (not yet validated by prospect)
+    }
+    setValidationState(initial);
+  }, [hypotheses]);
+
+  const validateHypothesis = api.hypotheses.validateByProspect.useMutation();
+
+  const handleValidate = (
+    hypothesisId: string,
+    action: 'confirm' | 'decline',
+  ) => {
+    // Optimistic update BEFORE server call — instant feedback, prevents double-click
+    setValidationState((prev) => ({
+      ...prev,
+      [hypothesisId]: action === 'confirm' ? 'confirmed' : 'declined',
+    }));
+    validateHypothesis.mutate({ slug: prospectSlug, hypothesisId, action });
+  };
 
   const canDownloadReport = Boolean(lossMapId);
   const canBookCall = Boolean(bookingUrl);
@@ -225,6 +258,11 @@ export function DashboardClient({
   };
 
   // ─── Derived data ───────────────────────────────────────────────────────────
+
+  // Show validation section only after first outreach email is sent
+  const showValidation = ['SENT', 'VIEWED', 'ENGAGED', 'CONVERTED'].includes(
+    prospectStatus,
+  );
 
   // Total hours saved from all hypotheses
   const totalHoursSaved = hypotheses.reduce(
@@ -454,88 +492,172 @@ export function DashboardClient({
                 </div>
 
                 {hypotheses.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {hypotheses.map((hypothesis, i) => (
-                      <motion.div
-                        key={hypothesis.id}
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: i * 0.08 }}
-                        className="glass-card glass-card-hover p-6"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <AlertCircle className="w-5 h-5 text-klarifai-blue shrink-0" />
-                          {hypothesis.hoursSavedWeekMid &&
-                            hypothesis.hoursSavedWeekMid > 0 && (
-                              <div className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold">
-                                <Clock className="w-3 h-3" />
-                                {hypothesis.hoursSavedWeekMid}u/week
-                              </div>
-                            )}
-                        </div>
-
-                        <h3 className="font-semibold text-slate-900 mb-2">
-                          {hypothesis.title}
-                        </h3>
-                        <p className="text-sm text-slate-500 mb-3">
-                          {hypothesis.problemStatement}
-                        </p>
-
-                        {/* Metrics row */}
-                        {(hypothesis.hoursSavedWeekLow ||
-                          hypothesis.errorReductionPct ||
-                          hypothesis.handoffSpeedGainPct) && (
-                          <div className="flex flex-wrap gap-3 pt-3 border-t border-slate-100">
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {hypotheses.map((hypothesis, i) => (
+                        <motion.div
+                          key={hypothesis.id}
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: i * 0.08 }}
+                          className="glass-card glass-card-hover p-6"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <AlertCircle className="w-5 h-5 text-klarifai-blue shrink-0" />
                             {hypothesis.hoursSavedWeekMid &&
-                              hypothesis.hoursSavedWeekLow &&
-                              hypothesis.hoursSavedWeekHigh && (
-                                <div className="text-xs text-slate-400">
-                                  <span className="font-semibold text-slate-600">
-                                    {hypothesis.hoursSavedWeekMid}u
-                                  </span>{' '}
-                                  ({hypothesis.hoursSavedWeekLow}–
-                                  {hypothesis.hoursSavedWeekHigh}u) per week
+                              hypothesis.hoursSavedWeekMid > 0 && (
+                                <div className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold">
+                                  <Clock className="w-3 h-3" />
+                                  {hypothesis.hoursSavedWeekMid}u/week
                                 </div>
                               )}
-                            {hypothesis.errorReductionPct && (
-                              <div className="text-xs text-slate-400">
-                                <TrendingUp className="w-3 h-3 inline mr-1" />
-                                <span className="font-semibold text-slate-600">
-                                  {hypothesis.errorReductionPct}%
-                                </span>{' '}
-                                minder fouten
-                              </div>
-                            )}
                           </div>
-                        )}
 
-                        {/* Matched use cases preview */}
-                        {hypothesis.proofMatches.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-slate-100">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                              Bewezen oplossingen
-                            </p>
-                            <div className="space-y-1">
-                              {hypothesis.proofMatches
-                                .filter((pm) => pm.useCase !== null)
-                                .slice(0, 2)
-                                .map((pm) => (
-                                  <div
-                                    key={pm.id}
-                                    className="flex items-center gap-2 text-xs"
-                                  >
-                                    <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
-                                    <span className="text-slate-600">
-                                      {pm.useCase!.title}
-                                    </span>
+                          <h3 className="font-semibold text-slate-900 mb-2">
+                            {hypothesis.title}
+                          </h3>
+                          <p className="text-sm text-slate-500 mb-3">
+                            {hypothesis.problemStatement}
+                          </p>
+
+                          {/* Metrics row */}
+                          {(hypothesis.hoursSavedWeekLow ||
+                            hypothesis.errorReductionPct ||
+                            hypothesis.handoffSpeedGainPct) && (
+                            <div className="flex flex-wrap gap-3 pt-3 border-t border-slate-100">
+                              {hypothesis.hoursSavedWeekMid &&
+                                hypothesis.hoursSavedWeekLow &&
+                                hypothesis.hoursSavedWeekHigh && (
+                                  <div className="text-xs text-slate-400">
+                                    <span className="font-semibold text-slate-600">
+                                      {hypothesis.hoursSavedWeekMid}u
+                                    </span>{' '}
+                                    ({hypothesis.hoursSavedWeekLow}–
+                                    {hypothesis.hoursSavedWeekHigh}u) per week
                                   </div>
-                                ))}
+                                )}
+                              {hypothesis.errorReductionPct && (
+                                <div className="text-xs text-slate-400">
+                                  <TrendingUp className="w-3 h-3 inline mr-1" />
+                                  <span className="font-semibold text-slate-600">
+                                    {hypothesis.errorReductionPct}%
+                                  </span>{' '}
+                                  minder fouten
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        )}
-                      </motion.div>
-                    ))}
-                  </div>
+                          )}
+
+                          {/* Matched use cases preview */}
+                          {hypothesis.proofMatches.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-slate-100">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                                Bewezen oplossingen
+                              </p>
+                              <div className="space-y-1">
+                                {hypothesis.proofMatches
+                                  .filter((pm) => pm.useCase !== null)
+                                  .slice(0, 2)
+                                  .map((pm) => (
+                                    <div
+                                      key={pm.id}
+                                      className="flex items-center gap-2 text-xs"
+                                    >
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                                      <span className="text-slate-600">
+                                        {pm.useCase!.title}
+                                      </span>
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
+                    {/* Hypothesis validation section — only for SENT+ prospects */}
+                    {showValidation && (
+                      <div className="mt-8 space-y-4">
+                        <div className="text-center">
+                          <p className="text-sm font-bold text-slate-700">
+                            Herkent u deze pijnpunten?
+                          </p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            Laat ons weten welke punten bij uw situatie passen
+                          </p>
+                        </div>
+
+                        <div className="space-y-3">
+                          {hypotheses.map((hypothesis) => {
+                            const state = validationState[hypothesis.id];
+                            return (
+                              <motion.div
+                                key={`validate-${hypothesis.id}`}
+                                layout
+                                className={`glass-card p-4 transition-all ${
+                                  state === 'confirmed'
+                                    ? 'border-emerald-200 bg-emerald-50/50'
+                                    : state === 'declined'
+                                      ? 'opacity-50 bg-slate-50'
+                                      : ''
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm font-semibold text-slate-900">
+                                      {hypothesis.title}
+                                    </h4>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                      {hypothesis.problemStatement}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {state === 'confirmed' ? (
+                                      <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 px-3 py-1.5 rounded-lg bg-emerald-100">
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        Bevestigd
+                                      </span>
+                                    ) : state === 'declined' ? (
+                                      <span className="flex items-center gap-1.5 text-xs font-medium text-slate-400 px-3 py-1.5 rounded-lg bg-slate-100">
+                                        Niet van toepassing
+                                      </span>
+                                    ) : (
+                                      <>
+                                        <button
+                                          onClick={() =>
+                                            handleValidate(
+                                              hypothesis.id,
+                                              'confirm',
+                                            )
+                                          }
+                                          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-all"
+                                        >
+                                          <CheckCircle2 className="w-3.5 h-3.5" />
+                                          Ja, herkenbaar
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            handleValidate(
+                                              hypothesis.id,
+                                              'decline',
+                                            )
+                                          }
+                                          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200 transition-all"
+                                        >
+                                          Nee
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   /* Fallback: old JSON data opportunities */
                   <div className="space-y-6">

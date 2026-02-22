@@ -58,6 +58,7 @@ export default async function ProspectDashboardPage({ params }: Props) {
           handoffSpeedGainPct: true,
           errorReductionPct: true,
           revenueLeakageRecoveredMid: true,
+          status: true,
           proofMatches: {
             orderBy: { score: 'desc' },
             take: 3,
@@ -107,6 +108,7 @@ export default async function ProspectDashboardPage({ params }: Props) {
       logoUrl={prospect.logoUrl}
       industry={prospect.industry}
       hypotheses={prospect.workflowHypotheses}
+      prospectStatus={prospect.status}
       lossMapId={prospect.workflowLossMaps[0]?.id ?? null}
       bookingUrl={process.env.NEXT_PUBLIC_CALCOM_BOOKING_URL ?? null}
       whatsappNumber={process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? null}
