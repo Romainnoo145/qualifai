@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 ## Current Position
 
 Phase: 17 — Evidence Pipeline Enrichment
-Plan: —
-Status: Roadmap created, ready to plan Phase 17
-Last activity: 2026-02-22 — v2.0 roadmap created (Phases 17-21)
+Plan: 01 complete, proceeding to Plan 02
+Status: Plan 01 complete — sitemap + Google Search enrichment modules shipped
+Last activity: 2026-02-22 — Phase 17, Plan 01 executed (sitemap URL discovery + Google Search mentions)
 
 ## Performance Metrics
 
@@ -36,6 +36,7 @@ Last activity: 2026-02-22 — v2.0 roadmap created (Phases 17-21)
 | 13. Prospect Story Flow    | 5/5   | ~17 min | ~3.4 min |
 | 14. Campaign Reporting     | 2/2   | ~4 min  | ~2 min   |
 | 15. Action Queue Dashboard | 2/2   | ~2 min  | ~1 min   |
+| 17. Evidence Pipeline      | 1/3   | ~3 min  | ~3 min   |
 
 _Updated after each plan completion_
 
@@ -68,6 +69,10 @@ _Updated after each plan completion_
 - [Phase 15, Plan 02]: getActionQueue.useQuery() is sole data source — getDashboardStats removed from dashboard (vanity KPIs replaced with action queue)
 - [Phase 15, Plan 02]: Hypothesis rows deep-link to /admin/prospects/[id]#analysis; draft/task/reply rows link to /admin/outreach (no tab deep-link support yet)
 - [Phase 15, Plan 02]: CountCard opacity-50 when count is 0 — gives visual clarity on idle action types
+
+- [Phase 17, Plan 01]: Sitemapper catch block omits console.error — sitemap absence is structural for Dutch SMBs, not a warning
+- [Phase 17, Plan 01]: snippet.length > 30 filter in discoverGoogleSearchMentions excludes stub organic results
+- [Phase 17, Plan 01]: SERP_API_KEY guard reads process.env directly (not env.mjs) for testability — consistent with discoverSerpUrls pattern
 
 ### v2.0 Architecture Notes
 
@@ -103,5 +108,5 @@ _Updated after each plan completion_
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: v2.0 roadmap created (Phases 17-21)
-Resume file: None — next step is `/gsd:plan-phase 17`
+Stopped at: Phase 17, Plan 01 complete — sitemap URL discovery + Google Search mention discovery modules
+Resume file: None — next step is Phase 17, Plan 02 (LinkedIn + KvK enrichment sources)
