@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 14 of 16 (Campaign Reporting)
-Plan: 1 of 3
+Plan: 2 of 3
 Status: In progress
-Last activity: 2026-02-22 — Plan 14-01 complete (funnel data layer + campaigns list page)
+Last activity: 2026-02-22 — Plan 14-02 complete (campaign detail page with funnel viz + prospect table)
 
-Progress: [██████░░░░] 60% (v1.2)
+Progress: [███████░░░] 65% (v1.2)
 
 ## Performance Metrics
 
@@ -36,7 +36,7 @@ Progress: [██████░░░░] 60% (v1.2)
 | 11. Prospect Dashboard    | 2/2   | ~6 min  | 3 min    |
 | 12. Navigation & Language | 2/2   | 6 min   | 3 min    |
 | 13. Prospect Story Flow   | 5/5   | ~17 min | ~3.4 min |
-| 14. Campaign Reporting    | 1/3   | 2 min   | 2 min    |
+| 14. Campaign Reporting    | 2/3   | 4 min   | 2 min    |
 
 _Updated after each plan completion_
 
@@ -70,6 +70,8 @@ Recent decisions affecting v1.2 work:
 - [Phase 14, Plan 01]: nicheKey defaults to 'generic_b2b' when segment description field left blank — avoids hardcoded option list
 - [Phase 14, Plan 01]: getWithFunnelData uses two separate groupBy queries (researchRuns + workflowHypotheses) to avoid TS2589 — same pattern as Phase 13
 - [Phase 14, Plan 01]: Campaigns list page removes autopilot and prospect assignment UI — both belong on campaign detail page (Plan 02)
+- [Phase 14, Plan 02]: api.admin.listProspects cast as any + re-typed in AddProspectPanel to avoid TS2589 — consistent with Phase 13 pattern
+- [Phase 14, Plan 02]: Campaign detail page uses STAGE_ORDER array for prospect sort instead of numeric priority map — simpler and avoids duplication with backend stagePriority
 
 ### Pending Todos
 
@@ -92,5 +94,5 @@ None identified for v1.2 phases.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 14-01-PLAN.md — ready for Plan 14-02 (campaign detail page)
+Stopped at: Completed 14-02-PLAN.md — ready for Plan 14-03
 Resume file: None
