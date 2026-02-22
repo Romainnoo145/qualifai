@@ -358,7 +358,12 @@ Plans:
 3. When a prospect validates (confirms or declines) a hypothesis, the result appears in the admin prospect detail Analysis section within the next page load — without the admin having to do anything
 4. The hypothesis validation card presents the pain-point hypothesis statement, not the email message text — the prospect is evaluating whether the pain point applies, not approving the outreach
 
-**Plans:** TBD (run /gsd:plan-phase 19 to break down)
+**Plans:** 2 plans in 2 waves
+
+Plans:
+
+- [ ] 19-01-PLAN.md — Backend: prospectProcedure middleware + validateByProspect mutation + ACCEPTED/PENDING status cleanup (Wave 1)
+- [ ] 19-02-PLAN.md — Frontend: /voor/ validation card UI in Step 1 with optimistic confirm/decline (Wave 2)
 
 ---
 
