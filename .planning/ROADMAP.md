@@ -307,7 +307,13 @@ Plans:
 4. Research includes company data from KvK registry (legal form, SBI sector code, registered address, employee range, financial filings) for Dutch companies
 5. After re-running research on a previously thin prospect, the evidence count is meaningfully higher and the source list includes at least two distinct source types
 
-**Plans:** TBD (run /gsd:plan-phase 17 to break down)
+**Plans:** 3 plans in 2 waves
+
+Plans:
+
+- [ ] 17-01-PLAN.md — Sitemap URL discovery module (EVID-06) + Google search mention discovery (EVID-07) (Wave 1)
+- [ ] 17-02-PLAN.md — REGISTRY schema enum + KVK env vars + KvK registry module (EVID-09) + crawl4ai fallback fix (Wave 1)
+- [ ] 17-03-PLAN.md — Wire all new sources into research executor + LinkedIn evidence (EVID-08) (Wave 2)
 
 ---
 
@@ -405,7 +411,7 @@ Plans:
 | 13. Prospect Story Flow             | v1.2      | 5/5            | Complete    | 2026-02-22 |
 | 14. Campaign Reporting              | v1.2      | 2/2            | Complete    | 2026-02-22 |
 | 15. Action Queue Dashboard          | v1.2      | 2/2            | Complete    | 2026-02-22 |
-| 17. Evidence Pipeline Enrichment    | v2.0      | 0/?            | Not started | -          |
+| 17. Evidence Pipeline Enrichment    | v2.0      | 0/3            | Planned     | -          |
 | 18. Research Quality Gate           | v2.0      | 0/?            | Not started | -          |
 | 19. Client Hypothesis Validation    | v2.0      | 0/?            | Not started | -          |
 | 20. One-Click Send Queue + Pipeline | v2.0      | 0/?            | Not started | -          |
