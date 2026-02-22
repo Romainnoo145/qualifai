@@ -24,23 +24,22 @@ Last activity: 2026-02-22 — Phase 18, Plan 03 executed (hypothesis UI cleanup 
 
 **By Phase (v1.1 + v1.2):**
 
-| Phase                      | Plans | Total    | Avg/Plan |
-| -------------------------- | ----- | -------- | -------- |
-| 6. Use Cases Foundation    | 3/3   | 13 min   | 4.3 min  |
-| 7. Evidence Approval Gate  | 2/2   | 6 min    | 3 min    |
-| 8. Deep Evidence Pipeline  | 3/3   | ~21 min  | ~7 min   |
-| 9. Engagement Triggers     | 2/2   | ~5 min   | ~2.5 min |
-| 10. Cadence Engine         | 4/4   | 7 min    | 1.75 min |
-| 11. Prospect Dashboard     | 2/2   | ~6 min   | 3 min    |
-| 12. Navigation & Language  | 2/2   | 6 min    | 3 min    |
-| 13. Prospect Story Flow    | 5/5   | ~17 min  | ~3.4 min |
-| 14. Campaign Reporting     | 2/2   | ~4 min   | ~2 min   |
-| 15. Action Queue Dashboard | 2/2   | ~2 min   | ~1 min   |
-| 17. Evidence Pipeline      | 3/3   | ~9 min   | ~3 min   |
-| 18. Research Quality Gate  | 3/?   | ~7.5 min | ~2.5 min |
+| Phase                      | Plans | Total     | Avg/Plan |
+| -------------------------- | ----- | --------- | -------- |
+| 6. Use Cases Foundation    | 3/3   | 13 min    | 4.3 min  |
+| 7. Evidence Approval Gate  | 2/2   | 6 min     | 3 min    |
+| 8. Deep Evidence Pipeline  | 3/3   | ~21 min   | ~7 min   |
+| 9. Engagement Triggers     | 2/2   | ~5 min    | ~2.5 min |
+| 10. Cadence Engine         | 4/4   | 7 min     | 1.75 min |
+| 11. Prospect Dashboard     | 2/2   | ~6 min    | 3 min    |
+| 12. Navigation & Language  | 2/2   | 6 min     | 3 min    |
+| 13. Prospect Story Flow    | 5/5   | ~17 min   | ~3.4 min |
+| 14. Campaign Reporting     | 2/2   | ~4 min    | ~2 min   |
+| 15. Action Queue Dashboard | 2/2   | ~2 min    | ~1 min   |
+| 17. Evidence Pipeline      | 3/3   | ~9 min    | ~3 min   |
+| 18. Research Quality Gate  | 3/?   | ~11.5 min | ~3.8 min |
 
 _Updated after each plan completion_
-| Phase 18 P03 | ~2.5 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -88,6 +87,8 @@ _Updated after each plan completion_
 - [Phase 18, Plan 01]: listProspects includes researchRuns with take:1 orderBy createdAt desc — latest run only, no N+1, source type diversity deferred to getRun
 - [Phase 18]: STATUS_LABELS map uses 'Pending validation' for DRAFT/ACCEPTED/PENDING — all three represent the same user-visible state (awaiting prospect confirmation)
 - [Phase 18]: /voor/ filter includes both ACCEPTED (legacy) and PENDING (new) — no data migration required, backward-compatible
+- [Phase 18]: QualityChip fullRun data cast as any via runQuery.data — avoids TS2589 deep Prisma inference, consistent with Phase 13/14 pattern
+- [Phase 18]: Traffic light on list view uses worst-case computeTrafficLight(evidenceCount, 1, 0.65) — source diversity not in list query; list is indicative, detail is definitive
 
 ### v2.0 Architecture Notes
 
