@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { adminProcedure, router } from '../trpc';
+import { TRPCError } from '@trpc/server';
+import { adminProcedure, prospectProcedure, router } from '../trpc';
 import {
   generateHypothesisDrafts,
   generateOpportunityDrafts,
@@ -297,5 +298,39 @@ export const hypothesesRouter = router({
         hypotheses: hypotheses.length,
         opportunities: opportunities.length,
       };
+    }),
+
+  validateByProspect: prospectProcedure
+    .input(
+      z.object({
+        slug: z.string(),
+        hypothesisId: z.string(),
+        action: z.enum(['confirm', 'decline']),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // ctx.prospectId injected by prospectProcedure middleware
+      const hypothesis = await ctx.db.workflowHypothesis.findFirst({
+        where: {
+          id: input.hypothesisId,
+          prospectId: (ctx as unknown as { prospectId: string }).prospectId,
+        },
+        select: { id: true, status: true },
+      });
+      if (!hypothesis) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Hypothesis not found for this prospect',
+        });
+      }
+      // DECLINED is final — no-op on re-submit
+      if (hypothesis.status === 'DECLINED') {
+        return hypothesis;
+      }
+      const newStatus = input.action === 'confirm' ? 'ACCEPTED' : 'DECLINED';
+      return ctx.db.workflowHypothesis.update({
+        where: { id: input.hypothesisId },
+        data: { status: newStatus },
+      });
     }),
 });
