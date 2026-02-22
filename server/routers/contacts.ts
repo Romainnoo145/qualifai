@@ -145,6 +145,34 @@ export const contactsRouter = router({
       };
     }),
 
+  create: adminProcedure
+    .input(
+      z.object({
+        prospectId: z.string(),
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
+        jobTitle: z.string().optional(),
+        seniority: z.string().optional(),
+        primaryEmail: z.string().email().optional(),
+        primaryPhone: z.string().optional(),
+        linkedinUrl: z.string().url().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.contact.create({
+        data: {
+          prospectId: input.prospectId,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          jobTitle: input.jobTitle,
+          seniority: input.seniority,
+          primaryEmail: input.primaryEmail,
+          primaryPhone: input.primaryPhone,
+          linkedinUrl: input.linkedinUrl,
+        },
+      });
+    }),
+
   enrichContact: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {

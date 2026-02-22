@@ -13,11 +13,8 @@ import {
   ArrowLeft,
   Clock,
   Phone,
-  Briefcase,
-  Loader2,
   Calendar,
   Linkedin,
-  AlertTriangle,
 } from 'lucide-react';
 import { useState } from 'react';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -26,43 +23,29 @@ import { EvidenceSection } from '@/components/features/prospects/evidence-sectio
 import { AnalysisSection } from '@/components/features/prospects/analysis-section';
 import { OutreachPreviewSection } from '@/components/features/prospects/outreach-preview-section';
 import { ResultsSection } from '@/components/features/prospects/results-section';
+import { ContactsSection } from '@/components/features/prospects/contacts-section';
 
-type DiscoveryGuardrail = {
-  code: string;
-  title: string;
-  message: string;
-  recommendation?: string;
-};
-
-const SECTION_NAV = [
+const TABS = [
   { id: 'evidence', label: 'Evidence' },
   { id: 'analysis', label: 'Analysis' },
   { id: 'outreach-preview', label: 'Outreach Preview' },
   { id: 'results', label: 'Results' },
-];
+] as const;
+
+type TabId = (typeof TABS)[number]['id'];
 
 export default function ProspectDetail() {
   const params = useParams();
   const id = params.id as string;
   const [copied, setCopied] = useState(false);
-  const [contactDiscoveryGuardrail, setContactDiscoveryGuardrail] =
-    useState<DiscoveryGuardrail | null>(null);
+  const [activeTab, setActiveTab] = useState<TabId>('evidence');
 
   const prospect = api.admin.getProspect.useQuery({ id });
-  const researchRuns = api.research.listRuns.useQuery({ prospectId: id });
-  const utils = api.useUtils();
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const discoverContacts = (api.contacts.discoverForCompany as any).useMutation(
-    {
-      onSuccess: (data: any) => {
-        setContactDiscoveryGuardrail(
-          (data.guardrail as DiscoveryGuardrail | null) ?? null,
-        );
-        utils.admin.getProspect.invalidate({ id });
-      },
-    },
+  const researchRuns = api.research.listRuns.useQuery(
+    { prospectId: id },
+    { enabled: activeTab === 'outreach-preview' },
   );
+  const utils = api.useUtils();
 
   const setHypothesisStatus = api.hypotheses.setStatus.useMutation({
     onSuccess: () =>
@@ -79,10 +62,6 @@ export default function ProspectDetail() {
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const scrollToSection = (sectionId: string) => {
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
   };
 
   if (prospect.isLoading) {
@@ -110,48 +89,48 @@ export default function ProspectDetail() {
   const latestRunId = researchRuns.data?.[0]?.id ?? null;
 
   return (
-    <div className="space-y-10">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-6">
-          <Link
-            href="/admin/prospects"
-            className="ui-tap p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-[#040026] hover:bg-slate-100 border border-slate-100 transition-all"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <StatusBadge status={p.status} />
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
-              {p.companyName ?? p.domain}
-            </h1>
-            {p.description && (
-              <p className="text-sm text-slate-400 mt-2 max-w-2xl">
-                {p.description}
-              </p>
-            )}
-          </div>
-          <button
-            onClick={copyLink}
-            className="ui-tap flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-slate-100 transition-all border border-slate-100 w-fit"
-          >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5" /> Copied
-              </>
-            ) : (
-              <>
-                <ExternalLink className="w-3.5 h-3.5" /> Share
-              </>
-            )}
-          </button>
-        </div>
+    <div className="space-y-8">
+      {/* Back row */}
+      <div className="flex items-center gap-3">
+        <Link
+          href="/admin/prospects"
+          className="ui-tap p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-[#040026] hover:bg-slate-100 border border-slate-100 transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </Link>
+        <StatusBadge status={p.status} />
       </div>
 
-      {/* Company Info */}
-      <section className="glass-card p-6">
+      {/* Hero */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
+            {p.companyName ?? p.domain}
+          </h1>
+          {p.description && (
+            <p className="text-sm text-slate-400 mt-2 max-w-2xl">
+              {p.description}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={copyLink}
+          className="ui-tap flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-slate-100 transition-all border border-slate-100 w-fit"
+        >
+          {copied ? (
+            <>
+              <Check className="w-3.5 h-3.5" /> Copied
+            </>
+          ) : (
+            <>
+              <ExternalLink className="w-3.5 h-3.5" /> Share
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Company metadata — bare row, no card */}
+      <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
           {p.industry && (
             <div className="flex items-center gap-2 text-sm">
@@ -225,175 +204,71 @@ export default function ProspectDetail() {
           )}
         </div>
         {p.technologies?.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-slate-100">
-            <div className="flex flex-wrap gap-1.5">
-              {p.technologies.map((tech: string) => (
-                <span
-                  key={tech}
-                  className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600"
-                >
-                  {tech}
-                </span>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-1.5">
+            {p.technologies.map((tech: string) => (
+              <span
+                key={tech}
+                className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600"
+              >
+                {tech}
+              </span>
+            ))}
           </div>
         )}
         {p.internalNotes && (
-          <div className="mt-4 pt-4 border-t border-slate-100">
-            <p className="text-sm text-slate-600">{p.internalNotes}</p>
-          </div>
+          <p className="text-sm text-slate-600">{p.internalNotes}</p>
         )}
-      </section>
+      </div>
 
       {/* Contacts */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
-            Contacts ({p.contacts?.length ?? 0})
-          </h2>
-          <button
-            onClick={() => {
-              setContactDiscoveryGuardrail(null);
-              discoverContacts.mutate({ prospectId: id });
-            }}
-            disabled={discoverContacts.isPending}
-            className="ui-tap flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-slate-100 transition-all border border-slate-100 disabled:opacity-50"
-          >
-            {discoverContacts.isPending ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Discovering...
-              </>
-            ) : (
-              <>
-                <Users className="w-3.5 h-3.5" /> Discover Contacts
-              </>
-            )}
-          </button>
-        </div>
+      <ContactsSection
+        prospectId={id}
+        contacts={p.contacts}
+        onContactCreated={() => utils.admin.getProspect.invalidate({ id })}
+      />
 
-        {contactDiscoveryGuardrail && (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-5 py-4 mb-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-black text-amber-900">
-                  {contactDiscoveryGuardrail.title}
-                </p>
-                <p className="text-xs font-bold text-amber-800 mt-1">
-                  {contactDiscoveryGuardrail.message}
-                </p>
-                {contactDiscoveryGuardrail.recommendation && (
-                  <p className="text-xs font-semibold text-amber-700 mt-2">
-                    {contactDiscoveryGuardrail.recommendation}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {p.contacts?.length > 0 ? (
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {p.contacts.map((contact: any) => (
-              <Link
-                key={contact.id}
-                href={`/admin/contacts/${contact.id}`}
-                className="glass-card glass-card-hover ui-focus px-4 py-3 flex items-center gap-3 shrink-0"
-              >
-                <div className="w-9 h-9 rounded-full bg-klarifai-indigo/10 flex items-center justify-center">
-                  <span className="text-xs font-semibold text-klarifai-indigo">
-                    {contact.firstName?.[0]}
-                    {contact.lastName?.[0]}
-                  </span>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-klarifai-midnight truncate">
-                    {contact.firstName} {contact.lastName}
-                  </p>
-                  {contact.jobTitle && (
-                    <p className="text-[11px] text-slate-400 truncate flex items-center gap-1">
-                      <Briefcase className="w-3 h-3 shrink-0" />
-                      {contact.jobTitle}
-                    </p>
-                  )}
-                </div>
-                {contact.seniority && (
-                  <span className="text-[9px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
-                    {contact.seniority}
-                  </span>
-                )}
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="glass-card p-6 text-center">
-            <p className="text-sm text-slate-400">
-              No contacts yet. Click &quot;Discover Contacts&quot; to find
-              people at this company.
-            </p>
-          </div>
-        )}
-      </section>
-
-      {/* Sticky Section Nav */}
+      {/* Tab nav — full-width underline tabs */}
       <nav className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm -mx-6 px-6 py-3 border-b border-slate-100">
-        <div className="flex items-center gap-2 p-1.5 bg-slate-50/80 rounded-2xl w-fit border border-slate-100">
-          {SECTION_NAV.map((section) => (
+        <div className="flex">
+          {TABS.map((tab) => (
             <button
-              key={section.id}
-              onClick={() => scrollToSection(section.id)}
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all',
-                'text-slate-400 hover:text-slate-900',
+                'flex-1 pb-2 text-[10px] font-black uppercase tracking-[0.15em] border-b-2 transition-all',
+                activeTab === tab.id
+                  ? 'text-[#040026] border-[#EBCB4B]'
+                  : 'text-slate-400 border-transparent hover:text-slate-600',
               )}
             >
-              {section.label}
+              {tab.label}
             </button>
           ))}
         </div>
       </nav>
 
-      {/* Section 1: Evidence */}
-      <section id="evidence" className="scroll-mt-16">
-        <h2 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">
-          Evidence
-        </h2>
+      {/* Active section only */}
+      {activeTab === 'evidence' && (
         <EvidenceSection prospectId={id} signals={p.signals} />
-      </section>
-
-      {/* Section 2: Analysis */}
-      <section id="analysis" className="scroll-mt-16">
-        <h2 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">
-          Analysis
-        </h2>
+      )}
+      {activeTab === 'analysis' && (
         <AnalysisSection
           prospectId={id}
           onSetStatus={(kind, entryId, status) =>
             setHypothesisStatus.mutate({ kind, id: entryId, status })
           }
         />
-      </section>
-
-      {/* Section 3: Outreach Preview */}
-      <section id="outreach-preview" className="scroll-mt-16">
-        <h2 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">
-          Outreach Preview
-        </h2>
+      )}
+      {activeTab === 'outreach-preview' && (
         <OutreachPreviewSection
           prospectId={id}
           prospect={p}
           latestRunId={latestRunId}
         />
-      </section>
-
-      {/* Section 4: Results */}
-      <section id="results" className="scroll-mt-16">
-        <h2 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">
-          Results
-        </h2>
+      )}
+      {activeTab === 'results' && (
         <ResultsSection prospectId={id} prospect={p} />
-      </section>
+      )}
     </div>
   );
 }
