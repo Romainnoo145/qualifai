@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 14 of 16 (Campaign Reporting)
-Plan: 0 of 3
-Status: Ready to plan
-Last activity: 2026-02-22 — Phase 13 complete (prospect story flow)
+Plan: 1 of 3
+Status: In progress
+Last activity: 2026-02-22 — Plan 14-01 complete (funnel data layer + campaigns list page)
 
 Progress: [██████░░░░] 60% (v1.2)
 
@@ -36,6 +36,7 @@ Progress: [██████░░░░] 60% (v1.2)
 | 11. Prospect Dashboard    | 2/2   | ~6 min  | 3 min    |
 | 12. Navigation & Language | 2/2   | 6 min   | 3 min    |
 | 13. Prospect Story Flow   | 5/5   | ~17 min | ~3.4 min |
+| 14. Campaign Reporting    | 1/3   | 2 min   | 2 min    |
 
 _Updated after each plan completion_
 
@@ -66,6 +67,9 @@ Recent decisions affecting v1.2 work:
 - [Phase 13, Plan 04]: page.tsx at 399 lines (target was 300) — all content is purposeful; no dead code found
 - [Phase 13, Plan 05]: TERM-02 scope follows TERM-01 pattern — only user-visible string literals changed, variable/prop/type names left intact
 - [Phase 13, Plan 05]: Label maps (WORKFLOW_TAG_LABELS, OUTREACH_STATUS_LABELS, OUTREACH_TYPE_LABELS) co-located at file top with ?? fallback for unknown enum values
+- [Phase 14, Plan 01]: nicheKey defaults to 'generic_b2b' when segment description field left blank — avoids hardcoded option list
+- [Phase 14, Plan 01]: getWithFunnelData uses two separate groupBy queries (researchRuns + workflowHypotheses) to avoid TS2589 — same pattern as Phase 13
+- [Phase 14, Plan 01]: Campaigns list page removes autopilot and prospect assignment UI — both belong on campaign detail page (Plan 02)
 
 ### Pending Todos
 
@@ -88,5 +92,5 @@ None identified for v1.2 phases.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Phase 13 complete — ready to plan Phase 14
+Stopped at: Completed 14-01-PLAN.md — ready for Plan 14-02 (campaign detail page)
 Resume file: None
