@@ -362,8 +362,8 @@ Plans:
 
 Plans:
 
-- [ ] 19-01-PLAN.md — Backend: prospectProcedure middleware + validateByProspect mutation + ACCEPTED/PENDING status cleanup (Wave 1)
-- [ ] 19-02-PLAN.md — Frontend: /voor/ validation card UI in Step 1 with optimistic confirm/decline (Wave 2)
+- [x] 19-01-PLAN.md — Backend: prospectProcedure middleware + validateByProspect mutation + ACCEPTED/PENDING status cleanup (Wave 1)
+- [x] 19-02-PLAN.md — Frontend: /voor/ validation card UI in Step 1 with optimistic confirm/decline (Wave 2)
 
 ---
 
@@ -424,6 +424,6 @@ Plans:
 | 15. Action Queue Dashboard          | v1.2      | 2/2            | Complete    | 2026-02-22 |
 | 17. Evidence Pipeline Enrichment    | v2.0      | 3/3            | Complete    | 2026-02-22 |
 | 18. Research Quality Gate           | v2.0      | 3/3            | Complete    | 2026-02-22 |
-| 19. Client Hypothesis Validation    | v2.0      | 0/?            | Not started | -          |
+| 19. Client Hypothesis Validation    | v2.0      | 2/2            | Complete    | 2026-02-23 |
 | 20. One-Click Send Queue + Pipeline | v2.0      | 0/?            | Not started | -          |
 | 21. Prospect Discovery + Cleanup    | v2.0      | 0/?            | Not started | -          |
