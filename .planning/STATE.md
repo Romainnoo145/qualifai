@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 ## Current Position
 
 Phase: 18 — Research Quality Gate
-Plan: 01 complete
-Status: Backend foundation shipped — quality gate schema, computeTrafficLight, approveQuality mutation, listProspects extended
-Last activity: 2026-02-22 — Phase 18, Plan 01 executed (quality gate backend foundation)
+Plan: 03 complete
+Status: Admin hypothesis approval UI removed — read-only status badges, /voor/ filter updated for PENDING
+Last activity: 2026-02-22 — Phase 18, Plan 03 executed (hypothesis UI cleanup + /voor/ filter)
 
 ## Performance Metrics
 
@@ -37,9 +37,10 @@ Last activity: 2026-02-22 — Phase 18, Plan 01 executed (quality gate backend f
 | 14. Campaign Reporting     | 2/2   | ~4 min   | ~2 min   |
 | 15. Action Queue Dashboard | 2/2   | ~2 min   | ~1 min   |
 | 17. Evidence Pipeline      | 3/3   | ~9 min   | ~3 min   |
-| 18. Research Quality Gate  | 1/?   | ~2.5 min | ~2.5 min |
+| 18. Research Quality Gate  | 3/?   | ~7.5 min | ~2.5 min |
 
 _Updated after each plan completion_
+| Phase 18 P03 | ~2.5 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,8 @@ _Updated after each plan completion_
 - [Phase 18, Plan 01]: DB drift prevented prisma migrate dev — applied quality gate fields via docker exec psql + created migration file manually (same pattern as Phase 17 Plan 02)
 - [Phase 18, Plan 01]: computeTrafficLight placed directly after evaluateQualityGate in workflow-engine.ts — natural co-location, both deal with evidence quality thresholds
 - [Phase 18, Plan 01]: listProspects includes researchRuns with take:1 orderBy createdAt desc — latest run only, no N+1, source type diversity deferred to getRun
+- [Phase 18]: STATUS_LABELS map uses 'Pending validation' for DRAFT/ACCEPTED/PENDING — all three represent the same user-visible state (awaiting prospect confirmation)
+- [Phase 18]: /voor/ filter includes both ACCEPTED (legacy) and PENDING (new) — no data migration required, backward-compatible
 
 ### v2.0 Architecture Notes
 
@@ -120,5 +123,5 @@ _Updated after each plan completion_
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Phase 18, Plan 01 complete — quality gate backend foundation shipped
-Resume file: None — next step is Phase 18, Plan 02 (admin UI for traffic-light quality review)
+Stopped at: Phase 18, Plan 03 complete — hypothesis approval UI removed, /voor/ filter updated
+Resume file: None — next step is Phase 19 (client hypothesis validation on /voor/)
