@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v1.2 — Autopilot with Oversight (Phase 14: Campaign Reporting)
+**Current focus:** v1.2 — Autopilot with Oversight (Phase 15: Action Queue Dashboard)
 
 ## Current Position
 
-Phase: 14 of 16 (Campaign Reporting)
-Plan: 2 of 3
-Status: In progress
-Last activity: 2026-02-22 — Plan 14-02 complete (campaign detail page with funnel viz + prospect table)
+Phase: 15 of 16 (Action Queue Dashboard)
+Plan: 0 of 2
+Status: Ready to plan
+Last activity: 2026-02-22 — Phase 14 complete (campaign reporting)
 
-Progress: [███████░░░] 65% (v1.2)
+Progress: [████████░░] 80% (v1.2)
 
 ## Performance Metrics
 
@@ -36,7 +36,7 @@ Progress: [███████░░░] 65% (v1.2)
 | 11. Prospect Dashboard    | 2/2   | ~6 min  | 3 min    |
 | 12. Navigation & Language | 2/2   | 6 min   | 3 min    |
 | 13. Prospect Story Flow   | 5/5   | ~17 min | ~3.4 min |
-| 14. Campaign Reporting    | 2/3   | 4 min   | 2 min    |
+| 14. Campaign Reporting    | 2/2   | ~4 min  | ~2 min   |
 
 _Updated after each plan completion_
 
@@ -94,5 +94,5 @@ None identified for v1.2 phases.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 14-02-PLAN.md — ready for Plan 14-03
+Stopped at: Phase 14 complete — ready to plan Phase 15
 Resume file: None

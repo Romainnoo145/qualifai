@@ -178,7 +178,7 @@ Plans:
 
 - [ ] **Phase 12: Navigation and Language** — Reduce nav from 10 items to 6 and replace internal jargon with plain language throughout
 - [ ] **Phase 13: Prospect Story Flow** — Replace the 7-tab prospect detail with a linear Evidence → Analysis → Outreach Preview → Results flow with full plain-language labels
-- [ ] **Phase 14: Campaign Reporting** — Give campaigns real funnel visibility: create named cohorts, see per-prospect status and conversion metrics
+- [x] **Phase 14: Campaign Reporting** — Give campaigns real funnel visibility: create named cohorts, see per-prospect status and conversion metrics
 - [ ] **Phase 15: Action Queue Dashboard** — Unify all pending decisions into a single dashboard hub that links directly to where the admin acts
 - [ ] **Phase 16: Draft Queue Redesign** — Replace complex outreach approval with one-click-per-action queue (LinkedIn/Gmail/WhatsApp/Call per row)
 
@@ -257,8 +257,8 @@ Plans:
 
 Plans:
 
-- [ ] 14-01-PLAN.md — Campaign funnel data query + list page redesign with creation form and clickable cards (Wave 1)
-- [ ] 14-02-PLAN.md — Campaign detail page with funnel visualization, per-prospect status table, and conversion metrics (Wave 2)
+- [x] 14-01-PLAN.md — Campaign funnel data query + list page redesign with creation form and clickable cards (Wave 1)
+- [x] 14-02-PLAN.md — Campaign detail page with funnel visualization, per-prospect status table, and conversion metrics (Wave 2)
 
 ---
 
@@ -311,6 +311,6 @@ Plans:
 | 11. Prospect Dashboard      | v1.1      | 2/2            | Complete    | 2026-02-21 |
 | 12. Navigation and Language | v1.2      | 2/2            | Complete    | 2026-02-21 |
 | 13. Prospect Story Flow     | v1.2      | 5/5            | Complete    | 2026-02-22 |
-| 14. Campaign Reporting      | v1.2      | 0/2            | Not started | -          |
+| 14. Campaign Reporting      | v1.2      | 2/2            | Complete    | 2026-02-22 |
 | 15. Action Queue Dashboard  | v1.2      | 0/2            | Not started | -          |
 | 16. Draft Queue Redesign    | v1.2      | 0/?            | Not started | -          |
