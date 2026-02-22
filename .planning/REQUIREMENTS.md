@@ -165,17 +165,34 @@ Deferred to future milestones.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement               | Phase | Status |
-| ------------------------- | ----- | ------ |
-| (populated by roadmapper) |       |        |
+| Requirement | Phase                                          | Status  |
+| ----------- | ---------------------------------------------- | ------- |
+| EVID-06     | Phase 17: Evidence Pipeline Enrichment         | Pending |
+| EVID-07     | Phase 17: Evidence Pipeline Enrichment         | Pending |
+| EVID-08     | Phase 17: Evidence Pipeline Enrichment         | Pending |
+| EVID-09     | Phase 17: Evidence Pipeline Enrichment         | Pending |
+| RQUAL-01    | Phase 18: Research Quality Gate                | Pending |
+| RQUAL-02    | Phase 18: Research Quality Gate                | Pending |
+| RQUAL-03    | Phase 18: Research Quality Gate                | Pending |
+| RQUAL-04    | Phase 18: Research Quality Gate                | Pending |
+| HYPO-05     | Phase 18: Research Quality Gate                | Pending |
+| HYPO-06     | Phase 19: Client Hypothesis Validation         | Pending |
+| HYPO-07     | Phase 19: Client Hypothesis Validation         | Pending |
+| SEND-01     | Phase 20: One-Click Send Queue + Pipeline View | Pending |
+| SEND-02     | Phase 20: One-Click Send Queue + Pipeline View | Pending |
+| PIPE-01     | Phase 20: One-Click Send Queue + Pipeline View | Pending |
+| PIPE-02     | Phase 20: One-Click Send Queue + Pipeline View | Pending |
+| PIPE-03     | Phase 20: One-Click Send Queue + Pipeline View | Pending |
+| DISC-01     | Phase 21: Prospect Discovery + Cleanup         | Pending |
+| CLEAN-01    | Phase 21: Prospect Discovery + Cleanup         | Pending |
 
 **Coverage:**
 
 - v2.0 requirements: 18 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 18
+- Mapped to phases: 18
+- Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-02-20_
-_Last updated: 2026-02-22 after v2.0 milestone definition_
+_Last updated: 2026-02-22 after v2.0 roadmap created (Phases 17-21)_

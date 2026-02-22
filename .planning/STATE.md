@@ -2,27 +2,27 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-21)
+See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v2.0 — Streamlined Flow
+**Current focus:** v2.0 — Streamlined Flow (Phase 17: Evidence Pipeline Enrichment)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 17 — Evidence Pipeline Enrichment
 Plan: —
-Status: Defining requirements
-Last activity: 2026-02-22 — Milestone v2.0 started
+Status: Roadmap created, ready to plan Phase 17
+Last activity: 2026-02-22 — v2.0 roadmap created (Phases 17-21)
 
 ## Performance Metrics
 
-**Velocity (v1.1):**
+**Velocity (v1.1 + v1.2):**
 
 - Total plans completed: 16 (v1.1, including quick tasks)
 - Average duration: ~3.5 min
 - Total execution time: ~56 min
 
-**By Phase (v1.1):**
+**By Phase (v1.1 + v1.2):**
 
 | Phase                      | Plans | Total   | Avg/Plan |
 | -------------------------- | ----- | ------- | -------- |
@@ -51,17 +51,8 @@ _Updated after each plan completion_
 - [Phase 13, Plan 01]: EvidenceSection receives signals as prop from parent getProspect query (already loaded) instead of a separate query
 - [Phase 13, Plan 02]: tRPC deep inference TS2589 avoided by casting listByProspect result as any at call site, re-mapped via typed toFinding() helper
 - [Phase 13, Plan 02]: setHypothesisStatus mutation defined in page.tsx (not AnalysisSection) — needs prospectId for cache invalidation, already in page scope
-
-Recent decisions affecting v1.2 work:
-
-- [v1.2 scope]: UI/UX only — no new backend pipeline features, no new DB columns for campaigns (reuse existing Campaign/CampaignProspect models)
-- [v1.2 scope]: TERM cleanup spread across phases (not isolated) — TERM-01 in Phase 12, TERM-02 in Phase 13
-- [Phase 11]: glass-card CSS class overrides Tailwind bg colors — avoid combining with dark backgrounds
-- [Phase 11]: /voor/ and /discover/ routes serve different components — keep both for backward compat
-- [Phase 10]: Email opens excluded from cadence escalation — Apple MPP causes 40-60% false positives
-- [Phase 7]: Hypotheses must be manually approved (DRAFT → ACCEPTED) — auto-accept removed
-- [Phase 13]: OutreachPreviewSection owns all mutations locally (generate, queueDraft, regenerateCallBrief) — page only passes latestRunId + prospect as props
-- [Phase 13]: CallPlanGrid helper component avoids TS2589 deep type inference from Prisma JsonValue
+- [Phase 13, Plan 03]: OutreachPreviewSection owns all mutations locally (generate, queueDraft, regenerateCallBrief) — page only passes latestRunId + prospect as props
+- [Phase 13, Plan 03]: CallPlanGrid helper component avoids TS2589 deep type inference from Prisma JsonValue
 - [Phase 13, Plan 04]: ResultsSection fetches cadence state locally via tRPC; session data passed via prospect prop (already loaded by getProspect)
 - [Phase 13, Plan 04]: page.tsx at 399 lines (target was 300) — all content is purposeful; no dead code found
 - [Phase 13, Plan 05]: TERM-02 scope follows TERM-01 pattern — only user-visible string literals changed, variable/prop/type names left intact
@@ -78,17 +69,29 @@ Recent decisions affecting v1.2 work:
 - [Phase 15, Plan 02]: Hypothesis rows deep-link to /admin/prospects/[id]#analysis; draft/task/reply rows link to /admin/outreach (no tab deep-link support yet)
 - [Phase 15, Plan 02]: CountCard opacity-50 when count is 0 — gives visual clarity on idle action types
 
+### v2.0 Architecture Notes
+
+- Research summary recommends additive-only schema changes: `ResearchRun` gets `qualityApproved Boolean?`, `qualityReviewedAt DateTime?`, `qualityNotes String?`; `HypothesisStatus` enum gets `PENDING` and `DECLINED` values
+- Build order is strict: Phase 17 (evidence) → Phase 18 (quality gate backend + admin UI) → Phase 19 (/voor/ validation) → Phase 20 (send queue + pipeline) → Phase 21 (discovery + cleanup)
+- SEND-01 and SEND-02 must ship in the same phase — idempotency guard is not a follow-up
+- Quality gate must use "proceed anyway" soft override (never a hard blocker) — Dutch SMBs with thin web presence structurally cannot reach green evidence thresholds
+- Client-facing hypothesis validation endpoint must use slug-scoped `prospectProcedure`, not `publicProcedure` — authorization gap risk identified in research
+- Quality thresholds (amber/green) need empirical calibration against existing prospects after Phase 18 ships — do not hard-code
+
 ### Pending Todos
 
-None yet.
+- After Phase 18 ships: run quality scoring against all existing prospects to calibrate amber/green thresholds before surfacing indicator widely
+- After Phase 19 ships: plan a real prospect validation session to test the novel hypothesis confirmation UX before building v2.x features that depend on this signal
 
 ### Roadmap Evolution
 
-- Phase 16 added: Draft Queue Redesign — one-click-per-action outreach queue (user feedback: current Draft Queue is too complex for "autopilot with oversight" vision)
+- Phase 16 (Draft Queue Redesign) from v1.2 absorbed into v2.0 scope as Phase 20 — fundamental rethink needed, not incremental redesign
+- Phases 17-21 created 2026-02-22 for v2.0 milestone
 
 ### Blockers/Concerns
 
-None identified for v1.2 phases.
+- Evidence pool currently thin after EVID-06-09 are unshipped — Phase 17 must complete before Phase 18 quality gate is meaningful
+- Research quality thresholds not yet empirically validated against Qualifai's actual data (noted in research SUMMARY.md gaps)
 
 ### Quick Tasks Completed
 
@@ -100,5 +103,5 @@ None identified for v1.2 phases.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed quick task 2: Improve Add Contact form layout
-Resume file: None
+Stopped at: v2.0 roadmap created (Phases 17-21)
+Resume file: None — next step is `/gsd:plan-phase 17`

@@ -4,7 +4,8 @@
 
 - v1.0 MVP — Phases 1-5 (shipped 2026-02-20)
 - v1.1 Evidence-Backed Multi-Touch Outreach — Phases 6-11 (shipped 2026-02-21)
-- v1.2 Autopilot with Oversight — Phases 12-15 (in progress)
+- v1.2 Autopilot with Oversight — Phases 12-15 (shipped 2026-02-22)
+- v2.0 Streamlined Flow — Phases 17-21 (in progress)
 
 ## Phases
 
@@ -172,19 +173,8 @@ Plans:
 
 ---
 
-### v1.2 Autopilot with Oversight (In Progress)
-
-**Milestone goal:** Transform the admin experience from a collection of disconnected pages into a streamlined oversight dashboard where the system runs automatically and the admin reviews what goes out and why.
-
-- [ ] **Phase 12: Navigation and Language** — Reduce nav from 10 items to 6 and replace internal jargon with plain language throughout
-- [ ] **Phase 13: Prospect Story Flow** — Replace the 7-tab prospect detail with a linear Evidence → Analysis → Outreach Preview → Results flow with full plain-language labels
-- [x] **Phase 14: Campaign Reporting** — Give campaigns real funnel visibility: create named cohorts, see per-prospect status and conversion metrics
-- [x] **Phase 15: Action Queue Dashboard** — Unify all pending decisions into a single dashboard hub that links directly to where the admin acts
-- [ ] **Phase 16: Draft Queue Redesign** — Replace complex outreach approval with one-click-per-action queue (LinkedIn/Gmail/WhatsApp/Call per row)
-
----
-
-## Phase Details
+<details>
+<summary>v1.2 Autopilot with Oversight (Phases 12-15) — SHIPPED 2026-02-22</summary>
 
 ### Phase 12: Navigation and Language
 
@@ -283,34 +273,140 @@ Plans:
 - [x] 15-01-PLAN.md — Action queue data layer: getActionQueue tRPC query aggregating pending decisions across hypothesis, outreach, task, and reply tables (Wave 1)
 - [x] 15-02-PLAN.md — Action queue UI: dashboard page rewrite with grouped action items, count badges, urgency indicators, and direct links (Wave 2)
 
-### Phase 16: Draft Queue Redesign
+</details>
 
-**Goal:** Replace the complex multi-step outreach approval with a simple one-click-per-action queue — each row shows prospect name, channel icon (LinkedIn/Gmail/WhatsApp/Call), content preview, and a single approve button. The system decides what to send and when; the admin just confirms or rejects.
+---
 
-**Depends on:** Phase 13 (prospect detail must be final before linking from queue)
-**Plans:** 0 plans
+### v2.0 Streamlined Flow (In Progress)
 
-Plans:
+**Milestone goal:** Transform the admin from a collection of disconnected pages into a single oversight console where the admin enters prospects, reviews research quality, approves outreach with one click per channel, and tracks status — while prospects validate hypotheses themselves on their dashboard.
 
-- [ ] TBD (run /gsd:plan-phase 16 to break down)
+- [ ] **Phase 17: Evidence Pipeline Enrichment** — Expand evidence sources to sitemap crawling, Google search mentions, LinkedIn company pages, and KvK registry data
+- [ ] **Phase 18: Research Quality Gate** — Admin reviews research sufficiency (not hypothesis content) via traffic-light indicator; hypothesis approve/reject buttons removed from admin UI
+- [ ] **Phase 19: Client Hypothesis Validation** — Prospects confirm or decline hypotheses on their /voor/ dashboard; admin sees results in prospect detail
+- [ ] **Phase 20: One-Click Send Queue + Pipeline View** — Unified per-channel send queue with inline preview; pipeline stage chip on every prospect row; queue filters to actionable stages only with urgency ranking
+- [ ] **Phase 21: Prospect Discovery + Cleanup** — Apollo sector search for batch prospect import; dead admin pages removed
+
+---
+
+## Phase Details
+
+### Phase 17: Evidence Pipeline Enrichment
+
+**Goal:** Research pipeline collects substantially more evidence per prospect so that the quality gate introduced in Phase 18 has meaningful data to assess — not just homepage content.
+
+**Depends on:** Phase 15 (v1.2 complete)
+
+**Requirements:** EVID-06, EVID-07, EVID-08, EVID-09
+
+**Success Criteria** (what must be TRUE when this phase completes):
+
+1. Running research on a prospect with a sitemap.xml discovers and crawls internal pages listed there instead of guessing paths (no more constructed URL 404s)
+2. Research includes Google search results for the company name combined with terms like "reviews", "vacatures", and "nieuws" — surfacing external mentions that homepage crawling would miss
+3. Research includes company profile data from LinkedIn (description, employee count, industry, recent posts) where the page is publicly accessible
+4. Research includes company data from KvK registry (legal form, SBI sector code, registered address, employee range, financial filings) for Dutch companies
+5. After re-running research on a previously thin prospect, the evidence count is meaningfully higher and the source list includes at least two distinct source types
+
+**Plans:** TBD (run /gsd:plan-phase 17 to break down)
+
+---
+
+### Phase 18: Research Quality Gate
+
+**Goal:** Admin reviews whether research is sufficient before approving for outreach — using a traffic-light quality indicator — and hypothesis approve/reject is removed from the admin because prospects will validate hypotheses themselves on /voor/.
+
+**Depends on:** Phase 17 (evidence pipeline must be enriched so quality gate has meaningful data; thin evidence pool makes quality indicator permanently red)
+
+**Requirements:** RQUAL-01, RQUAL-02, RQUAL-03, RQUAL-04, HYPO-05
+
+**Success Criteria** (what must be TRUE when this phase completes):
+
+1. Every prospect row in the admin list shows a traffic-light chip (red/amber/green) derived from evidence count, confidence scores, and source diversity — without opening the prospect
+2. Admin can click the quality chip to see a breakdown: how many evidence items were found, their average confidence, how many source types contributed, and how many hypotheses were generated
+3. Admin can mark research as reviewed (green-lighting it for outreach) or request another research run — the decision is stored and visible on subsequent visits
+4. Admin can proceed with an amber-quality prospect by confirming "proceed with limited research" — the system records this override and does not block outreach
+5. The hypothesis approve/reject buttons are gone from the admin Analysis section; instead hypotheses show their current status (Pending prospect validation, Confirmed, Declined) as read-only badges
+
+**Plans:** TBD (run /gsd:plan-phase 18 to break down)
+
+---
+
+### Phase 19: Client Hypothesis Validation
+
+**Goal:** Prospects can tell Qualifai which pain-point hypotheses apply to their team directly on their /voor/ dashboard — shifting hypothesis validation from admin guesswork to prospect confirmation.
+
+**Depends on:** Phase 18 (HYPO-05 must ship first — admin no longer approves hypothesis content, so PENDING status and the new status enum values must exist before the /voor/ UI can use them)
+
+**Requirements:** HYPO-06, HYPO-07
+
+**Success Criteria** (what must be TRUE when this phase completes):
+
+1. After the first outreach email is sent to a prospect, their /voor/ dashboard shows a section where they can confirm or decline each hypothesis with a single click per hypothesis
+2. A prospect who confirms a hypothesis sees it marked as confirmed on their dashboard; one who declines sees it acknowledged without re-showing
+3. When a prospect validates (confirms or declines) a hypothesis, the result appears in the admin prospect detail Analysis section within the next page load — without the admin having to do anything
+4. The hypothesis validation card presents the pain-point hypothesis statement, not the email message text — the prospect is evaluating whether the pain point applies, not approving the outreach
+
+**Plans:** TBD (run /gsd:plan-phase 19 to break down)
+
+---
+
+### Phase 20: One-Click Send Queue + Pipeline View
+
+**Goal:** Admin can approve and send any outreach channel with a single click from a unified queue that shows only actionable prospects — and every prospect has a visible pipeline stage so the admin knows state at a glance without opening records.
+
+**Depends on:** Phase 18 (queue must filter by quality-approved prospects; quality gate must exist before send queue surfaces only post-gate items)
+
+**Requirements:** SEND-01, SEND-02, PIPE-01, PIPE-02, PIPE-03
+
+**Success Criteria** (what must be TRUE when this phase completes):
+
+1. Admin opens the send queue and sees one row per pending outreach action (email draft, LinkedIn task, WhatsApp task, call task) — each row shows the prospect name, channel icon, and an inline content preview without page navigation required
+2. Clicking the single action button on a queue row sends or marks the action complete; the row disappears from the queue; clicking the same button twice (or in two tabs) does not send the message twice
+3. Every prospect in the Companies list and in the prospect detail header shows a pipeline stage chip with one of: Imported, Researching, Reviewed, Ready, Sending, Engaged, Booked
+4. The action queue dashboard hides prospects that are still in the Researching stage — only actionable-stage prospects appear, eliminating research-in-progress noise
+5. Prospects with recent /voor/ dashboard activity (page visit, PDF download, call booked) appear earlier in the action queue than unengaged prospects at the same stage
+
+**Plans:** TBD (run /gsd:plan-phase 20 to break down)
+
+---
+
+### Phase 21: Prospect Discovery + Cleanup
+
+**Goal:** Admin can find and import new prospects by searching Apollo by sector and location instead of adding them one by one — and dead admin pages that no longer serve any workflow are removed.
+
+**Depends on:** Phase 18 (quality gate must be in place so newly imported prospects flow through the correct review process)
+
+**Requirements:** DISC-01, CLEAN-01
+
+**Success Criteria** (what must be TRUE when this phase completes):
+
+1. Admin can type a sector and location (e.g., "marketingbureaus Amsterdam") into a search form and see a list of Apollo company results with company name, domain, employee count, and industry visible before importing
+2. Admin can select one or more results from the search and import them as prospects in a single action — duplicates (already-imported companies) are skipped with a visible count
+3. The pages /admin/hypotheses, /admin/research, and /admin/briefs return 404 or redirect — no direct URL can reach dead admin pages that are no longer part of any workflow
+
+**Plans:** TBD (run /gsd:plan-phase 21 to break down)
 
 ---
 
 ## Progress
 
-**Execution order:** 12 → 13 → 14 → 15 → 16
+**Execution order (v2.0):** 17 → 18 → 19 → 20 → 21
 
-| Phase                       | Milestone | Plans Complete | Status      | Completed  |
-| --------------------------- | --------- | -------------- | ----------- | ---------- |
-| 1-5. MVP                    | v1.0      | —              | Complete    | 2026-02-20 |
-| 6. Use Cases Foundation     | v1.1      | 3/3            | Complete    | 2026-02-20 |
-| 7. Evidence Approval Gate   | v1.1      | 2/2            | Complete    | 2026-02-20 |
-| 8. Deep Evidence Pipeline   | v1.1      | 3/3            | Complete    | 2026-02-21 |
-| 9. Engagement Triggers      | v1.1      | 2/2            | Complete    | 2026-02-21 |
-| 10. Cadence Engine          | v1.1      | 4/4            | Complete    | 2026-02-21 |
-| 11. Prospect Dashboard      | v1.1      | 2/2            | Complete    | 2026-02-21 |
-| 12. Navigation and Language | v1.2      | 2/2            | Complete    | 2026-02-21 |
-| 13. Prospect Story Flow     | v1.2      | 5/5            | Complete    | 2026-02-22 |
-| 14. Campaign Reporting      | v1.2      | 2/2            | Complete    | 2026-02-22 |
-| 15. Action Queue Dashboard  | v1.2      | 2/2            | Complete    | 2026-02-22 |
-| 16. Draft Queue Redesign    | v1.2      | 0/?            | Not started | -          |
+| Phase                               | Milestone | Plans Complete | Status      | Completed  |
+| ----------------------------------- | --------- | -------------- | ----------- | ---------- |
+| 1-5. MVP                            | v1.0      | —              | Complete    | 2026-02-20 |
+| 6. Use Cases Foundation             | v1.1      | 3/3            | Complete    | 2026-02-20 |
+| 7. Evidence Approval Gate           | v1.1      | 2/2            | Complete    | 2026-02-20 |
+| 8. Deep Evidence Pipeline           | v1.1      | 3/3            | Complete    | 2026-02-21 |
+| 9. Engagement Triggers              | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 10. Cadence Engine                  | v1.1      | 4/4            | Complete    | 2026-02-21 |
+| 11. Prospect Dashboard              | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 12. Navigation and Language         | v1.2      | 2/2            | Complete    | 2026-02-21 |
+| 13. Prospect Story Flow             | v1.2      | 5/5            | Complete    | 2026-02-22 |
+| 14. Campaign Reporting              | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 15. Action Queue Dashboard          | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 17. Evidence Pipeline Enrichment    | v2.0      | 0/?            | Not started | -          |
+| 18. Research Quality Gate           | v2.0      | 0/?            | Not started | -          |
+| 19. Client Hypothesis Validation    | v2.0      | 0/?            | Not started | -          |
+| 20. One-Click Send Queue + Pipeline | v2.0      | 0/?            | Not started | -          |
+| 21. Prospect Discovery + Cleanup    | v2.0      | 0/?            | Not started | -          |
