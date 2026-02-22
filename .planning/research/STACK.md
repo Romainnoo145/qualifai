@@ -1,206 +1,309 @@
-# Technology Stack — Evidence Pipeline & Multi-Touch Cadence
+# Technology Stack — v2.0 UX Redesign (Admin Oversight Console)
 
-**Project:** Qualifai — subsequent milestone additions
-**Researched:** 2026-02-20
-**Scope:** NEW capabilities only. Existing stack (Next.js 16, tRPC, Prisma 7, PostgreSQL, Anthropic Claude SDK, Apollo API, Resend, Cal.com, Zod, Tailwind 4, Playwright in devDependencies) is validated and NOT re-researched here.
-
----
-
-## Capability Area 1: SerpAPI — Google Search Discovery
-
-### Recommended Addition
-
-| Library                        | Version  | Purpose                                   | Why                                                                                                                                                                                          |
-| ------------------------------ | -------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `google-search-results-nodejs` | `^2.2.0` | SerpAPI HTTP client with TypeScript types | Official SerpAPI client. Handles auth, pagination, JSON parsing. Works with the `/search` endpoint for Google Reviews (Maps), Google Jobs, and general search. Zero additional dependencies. |
-
-**Why SerpAPI over scraping directly:**
-Google blocks raw scraping aggressively. SerpAPI is already the industry standard for structured Google data extraction — it returns clean JSON (no HTML parsing), handles CAPTCHAs and rotating proxies, and provides dedicated engines for Maps reviews (`engine: google_maps_reviews`) and Jobs (`engine: google_jobs`). The existing `review-adapters.ts` already handles Trustpilot/Klantenvertellen via raw fetch; SerpAPI fills the Google gap that raw fetch cannot.
-
-**Why this client over writing a raw fetch wrapper:**
-The package ships TypeScript types, handles the `api_key` auth header, and normalises pagination. Writing a raw wrapper saves nothing — SerpAPI's API surface is stable enough that the official package is the right boundary.
-
-**Integration point:** New `lib/enrichment/serp.ts`. Called from `research-executor.ts` alongside the existing `ingestWebsiteEvidenceDrafts` and `ingestReviewEvidenceDrafts`. Results are normalised into `EvidenceDraft[]` using the same interface as the existing adapters. The `EvidenceSourceType` enum already has `REVIEWS` and `JOB_BOARD` values — no schema migration needed for basic integration.
-
-**Confidence:** MEDIUM — official package, well-established in Node.js ecosystem as of August 2025 training cutoff. Verify current version with `npm info google-search-results-nodejs` before installing.
+**Project:** Qualifai — v2.0 milestone additions
+**Researched:** 2026-02-22
+**Scope:** NEW capabilities only. Existing validated stack (Next.js 16, tRPC 11, Prisma 7, PostgreSQL, Anthropic Claude SDK, Apollo API, SerpAPI, Crawl4AI, Resend, Cal.com, Zod 4, Tailwind 4, Framer Motion 12, TanStack Query 5, Lucide React, Playwright in devDependencies) is NOT re-researched here.
+**Confidence:** HIGH for areas verified with multiple sources, MEDIUM for version pinning.
 
 ---
 
-## Capability Area 2: Playwright for Production Content Extraction
+## Capability Area 1: Prospect Pipeline Stage Management
 
-### No New Library Required — Architecture Change Only
+### Decision: No State Machine Library — Use TypeScript Enums + useReducer
 
-`@playwright/test@^1.58.0` is already a devDependency. The `playwright` package (without `@playwright/test`) ships the same browser automation API. However, for production content extraction in a Railway-deployed Next.js app, the approach matters more than the library.
+**Recommendation:** Skip XState entirely for pipeline stage management. Use the existing `ProspectStatus` Prisma enum directly.
 
-**The core decision:**
+**Rationale:**
 
-| Approach                                                       | Trade-off                                                                                                                                                                                               | Recommendation                  |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| Playwright in Next.js process (same Railway service)           | Chromium binary is ~130MB. Railway builds will fail unless `playwright install chromium` runs at build time via a `nixpacks.toml` or custom Dockerfile. Adds ~800MB to container.                       | NOT recommended as default      |
-| Playwright in a separate worker service                        | Clean separation. The existing codebase already has `WORKER_BASE_URL` + `WORKER_SHARED_SECRET` env vars and a `research/callback` internal API — this architecture is pre-wired for an external worker. | RECOMMENDED                     |
-| Playwright via an HTTP scraping API (Browserless, ScrapingBee) | No binary management. Costs ~$30-100/mo at low volume. Eliminates Railway container bloat entirely.                                                                                                     | RECOMMENDED as Phase 1 fallback |
-
-**Recommended stack for production Playwright extraction:**
-
-Option A (self-hosted worker, fits existing architecture):
-
-| What                                                                                          | How                                            |
-| --------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| Deploy a second Railway service (same repo, different start command: `tsx scripts/worker.ts`) | Uses `WORKER_BASE_URL` already in env          |
-| Install: `npx playwright install chromium --with-deps` in worker Dockerfile/nixpacks          | Isolates the 800MB binary from the Next.js app |
-| Next.js calls the worker via existing `WORKER_BASE_URL` + `WORKER_SHARED_SECRET` pattern      | Already used in `research-executor.ts`         |
-
-Option B (managed browser API, lower ops overhead):
-
-| Library            | Version | Purpose                                                 | Why                                                                                                                                        |
-| ------------------ | ------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| No new npm package | N/A     | Use `fetch` against Browserless or ScrapingBee REST API | They accept a URL, return rendered HTML. Drop-in replacement in `ingestWebsiteEvidenceDrafts`. One env var (`BROWSER_API_KEY`), no binary. |
-
-**Recommendation:** Start with Option B (managed API) for Phase 1. Add env var `SCRAPING_API_KEY` and `SCRAPING_API_URL`. Wrap in `lib/enrichment/browser-fetch.ts`. If costs or reliability become an issue, migrate to Option A worker.
-
-**No npm install needed** for Option B. For Option A, no new npm package either — `playwright` is already available via `@playwright/test` in devDependencies; move to a production dependency only for the worker service.
-
-**Confidence:** HIGH for the architectural recommendation (based on direct codebase inspection). MEDIUM for Browserless/ScrapingBee pricing estimates.
-
----
-
-## Capability Area 3: Engagement Tracking (Wizard Views, Email Opens, PDF Downloads)
-
-### What's Already Built
-
-Codebase inspection confirms:
-
-- `WizardSession` model exists with `pdfDownloaded`, `callBooked`, `stepTimes` fields
-- `wizard-client.tsx` calls `api.wizard.startSession`, `trackProgress`, `trackPdfDownload`, `trackCallBooked`
-- `OutreachLog` model has `openedAt` field
-- `WizardSession` + `NotificationLog` exist for event storage
-
-**Gap:** Email open tracking exists as a field but has no pixel or webhook wired to populate `openedAt`. Resend supports email open tracking via webhooks.
-
-### Required Additions
-
-| Library / Service  | Version | Purpose                        | Why                                                                                                                                                                                                     |
-| ------------------ | ------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| No new npm package | N/A     | Resend webhook for email opens | Resend already in stack. Enable open tracking in Resend dashboard, add webhook endpoint at `/api/webhooks/resend`. Parse `email.opened` events, write to `OutreachLog.openedAt`. Zero new dependencies. |
-
-**Engagement event → cadence signal flow:**
+The Prisma schema already defines the pipeline as an explicit state machine:
 
 ```
-WizardSession.pdfDownloaded = true  ─┐
-OutreachLog.openedAt IS NOT NULL    ─┤─► trigger cadence rule evaluation
-WizardSession.callBooked = true     ─┘
+ProspectStatus: DRAFT → ENRICHED → GENERATING → READY → SENT → VIEWED → ENGAGED → CONVERTED → ARCHIVED
 ```
 
-The evaluation logic lives in the cadence engine (see Capability Area 4). No new storage model needed. The `Prospect.status` enum already has `VIEWED` and `ENGAGED` values for prospect-level state.
+XState v5 (`xstate@5.28.0`, `@xstate/react@6.0.0`) is the right tool when you have:
 
-**What to wire:**
+- Guards (conditional transitions)
+- Parallel states
+- Machine-level side effects
+- Visualisation requirements for complex flows
 
-1. Resend webhook at `/api/webhooks/resend/route.ts` — parse `email.opened`, update `OutreachLog.openedAt`, trigger cadence rule check
-2. Resend webhook secret: add `RESEND_WEBHOOK_SECRET` to `env.mjs` (Resend sends HMAC-SHA256 signature)
-3. PDF download: `/api/export/loss-map/[id]/route.ts` already exists — add a `db.wizardSession.update` call there to set `pdfDownloaded = true` and `pdfDownloadedAt`
+For Qualifai's pipeline, transitions are linear and server-authoritative — the DB is the source of truth, not client-side state. The admin console just needs to reflect current DB state and trigger mutations. XState would add ~60KB to the bundle and significant conceptual overhead for what is essentially a read-and-mutate pattern.
 
-**Confidence:** HIGH — Resend webhook support is documented, no new library needed, Prisma schema already has the fields.
+**What to use instead:**
+
+```typescript
+// ProspectStatus already defined in Prisma schema — re-export from there
+// For UI-local state during transitions:
+type PipelineAction =
+  | { type: 'APPROVE'; prospectId: string }
+  | { type: 'REJECT'; prospectId: string }
+  | { type: 'SEND'; prospectId: string };
+
+// useReducer for local multi-step UI states (e.g. confirm → sending → done)
+// tRPC mutation for all actual state changes (server is authoritative)
+```
+
+**When to reconsider XState:** If v3.0 adds branching workflows (e.g. conditional paths based on prospect industry), multi-step approval flows with rollback, or a visual workflow editor — then XState is correct.
+
+**Confidence:** HIGH — architectural decision based on codebase inspection + evidence that XState overhead is unjustified for linear server-driven pipelines.
 
 ---
 
-## Capability Area 4: Multi-Touch Cadence Engine (Scheduled Tasks)
+## Capability Area 2: Optimistic UI for One-Click Queue Actions
 
-### Architecture Assessment
+### Decision: TanStack Query v5 Variables Approach (Already Installed)
 
-The existing codebase has:
+**Recommendation:** No new packages. Use the `variables` approach from `useMutation` already available in `@tanstack/react-query@^5.59.15`.
 
-- `OutreachSequence` + `OutreachStep` models with `plannedAt` timestamp field
-- `SequenceStatus` enum (DRAFTED, QUEUED, SENT, OPENED, REPLIED, BOOKED, CLOSED_LOST)
-- Signal/automation rule evaluation (`lib/automation/rules.ts`, `processor.ts`)
-- Cron pattern already established: `/api/internal/cron/research-refresh` called with `x-cron-secret`
+**Two available approaches in TanStack Query v5:**
 
-**Gap:** No scheduler fires the cron endpoint on a schedule. Steps have `plannedAt` but nothing polls them.
+| Approach                                  | When to Use                                                         | Complexity                           |
+| ----------------------------------------- | ------------------------------------------------------------------- | ------------------------------------ |
+| `mutation.variables` + conditional render | Single location on screen shows optimistic state                    | Low — no rollback logic needed       |
+| `onMutate` + cache manipulation           | Multiple components need to see the optimistic state simultaneously | Medium — requires `onError` rollback |
 
-### Recommended Stack for Scheduling
+**For Qualifai's approval queue, use the variables approach:**
 
-**Approach: Extend existing Railway cron pattern — no new library.**
+```typescript
+// In the queue component:
+const approveHypothesis = api.hypotheses.approve.useMutation()
 
-| Component                                        | What                                                                                   | Why                                                                                                                                                 |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Railway Cron Service                             | Configure in Railway dashboard: `POST /api/internal/cron/cadence` every 15 minutes     | Railway Pro supports cron jobs natively at no extra cost. Follows the exact pattern used for `research-refresh`. No new process, no new dependency. |
-| New route: `/api/internal/cron/cadence/route.ts` | Queries `OutreachStep` where `plannedAt <= now` and `status = QUEUED`, dispatches them | Pure Prisma + existing `sendOutreachEmail`. Under 200 lines.                                                                                        |
+// Optimistic: show "Approved" immediately while mutation is pending
+const isOptimisticallyApproved =
+  approveHypothesis.isPending &&
+  approveHypothesis.variables?.id === hypothesis.id
 
-**What NOT to add:**
-
-- `bull` / `bullmq` / Redis queue — overkill for a single-user outbound tool processing tens of sequences, not thousands
-- `pg-boss` — adds operational complexity; Railway cron + Prisma polling achieves the same at this scale
-- `node-cron` / `node-schedule` — in-process schedulers don't survive Railway container restarts and can't be monitored
-
-**Cadence rule engine for multi-channel steps:**
-
-The `OutreachStep.metadata` JSON field already exists. Store channel type there: `{ channel: "email" | "call" | "linkedin" | "whatsapp" }`. The cadence cron processor dispatches based on channel:
-
-```
-email   → lib/outreach/send-email.ts (already exists)
-call    → write to NotificationLog (admin notification, no API integration needed initially)
-linkedin → write to NotificationLog (admin notification, manual action)
-whatsapp → write to NotificationLog (admin notification, manual action)
+return (
+  <button
+    onClick={() => approveHypothesis.mutate({ id: hypothesis.id })}
+    disabled={approveHypothesis.isPending}
+    className={isOptimisticallyApproved ? 'opacity-50' : ''}
+  >
+    {isOptimisticallyApproved ? 'Approving...' : 'Approve'}
+  </button>
+)
 ```
 
-This defers external API integrations (LinkedIn Sales Navigator, WhatsApp Business API) without blocking the cadence engine itself. The engine is channel-agnostic at the data layer.
+For the send queue where multiple components watch the same mutation state, use `useMutationState` with a `mutationKey`:
 
-**Engagement-triggered cadence changes:**
+```typescript
+// Sender component
+api.outreach.send.useMutation({ mutationKey: ['send-outreach'] });
 
-When a Resend webhook fires `email.opened`, the handler also calls a `evaluateCadenceAcceleration(prospectId)` function that:
+// Any component elsewhere in the tree:
+const pendingSends = useMutationState({
+  filters: { mutationKey: ['send-outreach'], status: 'pending' },
+  select: (m) => m.state.variables,
+});
+```
 
-1. Looks up the prospect's `QUEUED` OutreachStep records
-2. If wizard view + PDF download both true: reschedule the next step from +7d to +2d
-3. Updates `OutreachStep.plannedAt` and `Prospect.status` to `ENGAGED`
+**Integration with tRPC:** tRPC mutations are thin wrappers around React Query — `variables`, `isPending`, `isError`, `onMutate`, `onError` all work exactly as in vanilla React Query. No adapter layer needed.
 
-This logic is pure Prisma — no new library.
-
-**Confidence:** HIGH for architectural approach. HIGH for Railway cron (it is a first-class Railway feature as of August 2025 training knowledge). LOW for LinkedIn/WhatsApp API integrations (deliberately deferred — those require external API approval workflows not suitable for this milestone).
+**Confidence:** HIGH — TanStack Query v5 optimistic update docs verified via search, tRPC v11 + React Query v5 integration confirmed in existing codebase.
 
 ---
 
-## New Environment Variables Required
+## Capability Area 3: Queue Update Freshness (Polling vs Real-Time)
 
-| Variable                | Purpose                                       | Service            |
-| ----------------------- | --------------------------------------------- | ------------------ |
-| `SERP_API_KEY`          | SerpAPI authentication                        | SerpAPI            |
-| `SCRAPING_API_KEY`      | Managed browser API (Browserless/ScrapingBee) | Browser extraction |
-| `SCRAPING_API_URL`      | Base URL for browser API                      | Browser extraction |
-| `RESEND_WEBHOOK_SECRET` | HMAC verification for Resend webhooks         | Resend             |
+### Decision: Polling with refetchInterval — No New Infrastructure
 
-All go into `env.mjs` as optional server-side vars (`.optional()`) to avoid breaking existing deploys.
+**Recommendation:** Use `refetchInterval` on existing tRPC `useQuery` calls. No WebSocket, no SSE, no additional packages.
+
+**Rationale for polling over SSE/WebSocket:**
+
+| Option                    | Setup Cost                                                            | Infra Change                    | Right For                               |
+| ------------------------- | --------------------------------------------------------------------- | ------------------------------- | --------------------------------------- |
+| `refetchInterval: 10_000` | Zero — one option in useQuery                                         | None                            | Admin oversight console, single user    |
+| tRPC SSE subscriptions    | New httpSubscriptionLink in client config, new subscription procedure | Possibly a separate HTTP server | Multi-user realtime collaborative tools |
+| WebSockets                | Separate WS server (or next-ws), ws upgrade handling                  | Significant                     | Chat, live cursors, gaming              |
+
+Qualifai's admin console has one user checking queues. A 10-second poll is indistinguishable from real-time for this use case and adds zero infrastructure. tRPC does support SSE subscriptions natively (example repo: `trpc/examples-next-sse-chat`), but the operational overhead is not justified here.
+
+**Implementation pattern:**
+
+```typescript
+// Dashboard queue query — refreshes every 10 seconds
+const { data: pendingHypotheses } = api.hypotheses.listPending.useQuery(
+  undefined,
+  {
+    refetchInterval: 10_000,
+    // Stop polling when window is not focused (user not looking)
+    refetchIntervalInBackground: false,
+  },
+);
+
+// During active research jobs, poll more aggressively
+const { data: researchStatus } = api.research.status.useQuery(
+  { prospectId },
+  {
+    // Poll every 3s while GENERATING, stop when READY
+    refetchInterval: (query) =>
+      query.state.data?.status === 'GENERATING' ? 3_000 : false,
+  },
+);
+```
+
+**When to upgrade:** If v3.0 adds real-time collaboration (multiple admin users), or if webhook-triggered instant updates become a requirement, switch to tRPC SSE subscriptions. The architectural path is already documented in the tRPC v11 subscriptions docs.
+
+**Confidence:** HIGH — refetchInterval is a first-class TanStack Query v5 feature, confirmed active in search results and official docs. Pattern is already used in this project for other queries.
 
 ---
 
-## Installation
+## Capability Area 4: Drag-and-Drop / Queue Reordering
+
+### Decision: framer-motion Reorder (Already Installed) for Simple Lists; dnd-kit for Cross-Column
+
+**Recommendation:** Start with `framer-motion@^12.29.2` `Reorder` component (already installed). Add `@dnd-kit/core` + `@dnd-kit/sortable` only if cross-column drag (pipeline kanban) is required.
+
+**framer-motion Reorder — what it handles well:**
+
+- Single-column queue reordering (e.g. prioritising items in the Draft Queue)
+- Built-in layout animation when items are added/removed
+- Zero additional installation cost — already in `package.json`
+- Scroll-aware (container scrolls when dragging to edges)
+
+**framer-motion Reorder — hard limits:**
+
+- No drag between columns (e.g. dragging a prospect from "Ready" to "Sent" column)
+- No multi-row sortable grids
+- No keyboard-accessible drag (WCAG non-compliant for complex interactions)
+
+**When to add dnd-kit:**
+
+If the prospect pipeline view becomes a kanban board where the admin drags prospects between stages, add:
 
 ```bash
-# Only one new production dependency
-npm install google-search-results-nodejs
+npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
 ```
 
-Everything else is architecture, configuration, and new route/lib files within the existing stack.
+| Package              | Version   | Purpose                                   |
+| -------------------- | --------- | ----------------------------------------- |
+| `@dnd-kit/core`      | `^6.3.1`  | DnD context, sensors, collision detection |
+| `@dnd-kit/sortable`  | `^10.0.0` | Sortable preset (list + grid)             |
+| `@dnd-kit/utilities` | latest    | CSS transform helpers                     |
+
+dnd-kit works alongside framer-motion without conflict — dnd-kit handles drag logic, framer-motion handles entry/exit animations on the items.
+
+**Keyboard navigation for queue (without drag-drop):** Standard HTML `tabIndex`, `onKeyDown` handlers with arrow key navigation are sufficient for the approval queue use case. No additional library needed. The queue items already use Tailwind and Lucide icons — add `role="list"` / `role="listitem"` + `aria-label` to make it screen-reader-friendly.
+
+**Confidence:** HIGH for framer-motion Reorder (official docs, already installed). MEDIUM for dnd-kit version pins (npm search confirmed `@dnd-kit/core@6.3.1` and `@dnd-kit/sortable@10.0.0` as latest as of research date — verify before installing).
+
+---
+
+## Capability Area 5: Pipeline / Funnel Visualization
+
+### Decision: Tailwind CSS Column Layout — No Chart Library
+
+**Recommendation:** Build the pipeline view as a custom Tailwind grid/flex layout with `ProspectStatus` counts. Do not add Chart.js, Recharts, or Nivo.
+
+**Rationale:**
+
+The v2.0 pipeline view is an oversight console — the admin needs to see "how many prospects are in each stage" and click into filtered lists. This is a count display with navigation, not data visualization requiring axes, tooltips, or animations.
+
+A `grid-cols-8` (one column per ProspectStatus value) with a card per stage is:
+
+- Zero new dependencies
+- Fully styleable with existing Tailwind + `glass-card` design system
+- Faster to build and easier to maintain
+- Already consistent with the existing compact UI preference
+
+**What a "chart library" would add for this use case:** nothing except a bar chart that looks like a Tailwind column layout anyway.
+
+**If actual analytics are needed (v3.0+):** `recharts` is the standard choice for React — it is tree-shakeable, TypeScript-native, and integrates well with TanStack Query data. But do not add it now.
+
+**Implementation pattern:**
+
+```typescript
+// Pipeline counts from existing tRPC query
+const { data: counts } = api.prospects.statusCounts.useQuery();
+
+const stages: { status: ProspectStatus; label: string }[] = [
+  { status: 'DRAFT', label: 'Ingevoerd' },
+  { status: 'ENRICHED', label: 'Verrijkt' },
+  { status: 'READY', label: 'Klaar' },
+  { status: 'SENT', label: 'Verstuurd' },
+  { status: 'VIEWED', label: 'Bekeken' },
+  { status: 'ENGAGED', label: 'Betrokken' },
+  { status: 'CONVERTED', label: 'Gewonnen' },
+];
+
+// Render as overflow-x-auto scrollable row of stage cards
+// Each card: stage label + count badge + click → filtered company list
+```
+
+**Confidence:** HIGH — this is a deliberate "less is more" recommendation based on requirements analysis. No library needed.
+
+---
+
+## Summary: What to Install vs. What to Skip
+
+### Install Only If Building Kanban (Cross-Column Drag)
+
+```bash
+npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+```
+
+### Do NOT Install
+
+| Package                                     | Why Not                                                                                  |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `xstate` + `@xstate/react`                  | Pipeline transitions are server-authoritative; useReducer + tRPC mutations is sufficient |
+| `recharts` / `chart.js` / `nivo`            | Pipeline view is a count display, not data visualization                                 |
+| Any WebSocket library (`ws`, `socket.io`)   | Polling with `refetchInterval` is sufficient for single-user admin console               |
+| `@hello-pangea/dnd` / `react-beautiful-dnd` | dnd-kit is the current standard; framer-motion Reorder handles simple cases              |
+| `react-flow` / `reactflow`                  | Flow diagram visualization is not needed; pipeline is linear                             |
+
+### Everything Else: Already Installed
+
+| Capability             | Existing Dependency              | What to Use                                             |
+| ---------------------- | -------------------------------- | ------------------------------------------------------- |
+| Optimistic UI          | `@tanstack/react-query@^5.59.15` | `mutation.variables` + `isPending`                      |
+| Polling                | `@tanstack/react-query@^5.59.15` | `refetchInterval` option                                |
+| Simple list reordering | `framer-motion@^12.29.2`         | `Reorder.Group` + `Reorder.Item`                        |
+| UI animations          | `framer-motion@^12.29.2`         | `AnimatePresence` + `motion.div`                        |
+| State typing           | `prisma@^7.3.0`                  | `ProspectStatus` enum re-exported from `@prisma/client` |
+| Keyboard navigation    | HTML + React                     | `tabIndex`, `onKeyDown`, ARIA roles                     |
+
+---
+
+## Version Compatibility
+
+| Package                          | Compatible With    | Notes                                          |
+| -------------------------------- | ------------------ | ---------------------------------------------- |
+| `framer-motion@^12.29.2`         | React 19.2.3       | React 19 compatible confirmed                  |
+| `@tanstack/react-query@^5.59.15` | tRPC 11.9.0        | This is exactly what tRPC 11 requires          |
+| `@dnd-kit/core@^6.3.1`           | React 19           | Works alongside framer-motion without conflict |
+| `@dnd-kit/sortable@^10.0.0`      | `@dnd-kit/core@^6` | Peer dependency satisfied                      |
 
 ---
 
 ## Alternatives Considered
 
-| Category                   | Recommended                              | Alternative                   | Why Not                                                                                 |
-| -------------------------- | ---------------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------- |
-| SerpAPI client             | `google-search-results-nodejs`           | Raw `fetch` wrapper           | Duplicates auth/pagination logic already in the package                                 |
-| Browser content extraction | Managed API (Browserless/ScrapingBee)    | Playwright in Next.js process | Railway container bloat, complex nixpacks configuration                                 |
-| Scheduling                 | Railway cron + Prisma polling            | BullMQ + Redis                | Redis is a new infrastructure dependency for a single-user tool; excessive              |
-| Scheduling                 | Railway cron + Prisma polling            | `node-cron` in-process        | Not restart-safe on Railway; no visibility                                              |
-| Email open tracking        | Resend webhook                           | Tracking pixel (self-hosted)  | Resend already in stack; webhook is more reliable than pixel (blocked by email clients) |
-| Multi-channel cadence      | Notification-based (admin manual action) | LinkedIn Sales Navigator API  | LinkedIn API requires partner approval; blocks MVP                                      |
+| Category         | Recommended                   | Alternative              | Why Not                                                                             |
+| ---------------- | ----------------------------- | ------------------------ | ----------------------------------------------------------------------------------- |
+| Pipeline state   | TypeScript enums + useReducer | XState v5                | XState overhead unjustified for server-driven linear pipeline                       |
+| Queue updates    | `refetchInterval` polling     | tRPC SSE subscriptions   | SSE requires new transport config; no multi-user need                               |
+| Queue reordering | framer-motion `Reorder`       | dnd-kit                  | framer-motion already installed; Reorder handles single-column use case             |
+| Pipeline view    | Tailwind custom layout        | recharts bar chart       | Visual requirement is counts + navigation, not charting                             |
+| Optimistic UI    | TanStack Query `variables`    | React 19 `useOptimistic` | TanStack Query already integrated with tRPC; mixing `useOptimistic` adds complexity |
 
 ---
 
 ## Sources
 
-- Codebase inspection: `/home/klarifai/Documents/klarifai/projects/qualifai` — HIGH confidence
-- `@playwright/test` version `^1.58.0` confirmed in `package.json` devDependencies — HIGH confidence
-- `OutreachStep.plannedAt`, `WizardSession` fields confirmed in `prisma/schema.prisma` — HIGH confidence
-- Railway cron support: documented Railway feature as of August 2025 training cutoff — MEDIUM confidence (verify current Railway pricing tier for cron)
-- `google-search-results-nodejs` package: training knowledge August 2025 — MEDIUM confidence (run `npm info google-search-results-nodejs` to verify current version)
-- Resend webhook events and HMAC signing: training knowledge August 2025 — MEDIUM confidence (verify at resend.com/docs/webhooks)
-- Browserless/ScrapingBee as managed browser APIs: training knowledge August 2025 — MEDIUM confidence (pricing/availability may have changed)
+- Codebase inspection: `/home/klarifai/Documents/klarifai/projects/qualifai/package.json` — HIGH confidence (current installed versions)
+- Codebase inspection: `prisma/schema.prisma` — HIGH confidence (ProspectStatus enum, OutreachStatus enum)
+- TanStack Query v5 optimistic updates: `tanstack.com/query/v5/docs/framework/react/guides/optimistic-updates` — HIGH confidence
+- TanStack Query v5 `refetchInterval`: `tanstack.com/query/v5/docs/framework/react/examples/auto-refetching` — HIGH confidence
+- framer-motion Reorder docs: `motion.dev/docs/react-reorder` — HIGH confidence (confirmed single-column limitation)
+- dnd-kit npm versions: npm search confirmed `@dnd-kit/core@6.3.1`, `@dnd-kit/sortable@10.0.0` — MEDIUM confidence (verify before installing)
+- XState v5 npm version `5.28.0`, `@xstate/react@6.0.0`: npm search — MEDIUM confidence
+- State management comparison (XState vs Zustand vs useReducer): `makersden.io/blog/react-state-management-in-2025` — MEDIUM confidence (matches training knowledge)
+- tRPC subscriptions (SSE): `trpc.io/docs/server/subscriptions` — HIGH confidence (official docs)
+- Top 5 DnD libraries 2026: `puckeditor.com/blog/top-5-drag-and-drop-libraries-for-react` — MEDIUM confidence
+
+---
+
+_Stack research for: Qualifai v2.0 UX Redesign — Admin Oversight Console_
+_Researched: 2026-02-22_

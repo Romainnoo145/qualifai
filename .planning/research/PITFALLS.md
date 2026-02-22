@@ -1,297 +1,274 @@
-# Domain Pitfalls
+# Pitfalls Research
 
-**Domain:** B2B outbound sales engine — adding browser scraping, external search API, engagement-driven cadence, and use cases catalog to existing Next.js/Railway app
-**Researched:** 2026-02-20
-**Confidence:** HIGH (derived from existing codebase + established engineering patterns for these specific integrations)
+**Domain:** Admin UX redesign for existing sales automation tool — adding oversight console, research quality gating, client-side approval shift, one-click send queues, and pipeline visualizations on top of a complete backend
+**Researched:** 2026-02-22
+**Confidence:** HIGH (derived from direct codebase analysis — all patterns verified against actual code in `server/routers/`, `app/admin/`, `prisma/schema.prisma`)
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites or major breakage.
+Mistakes that cause rewrites, data corruption, or trust-breaking double-sends.
 
 ---
 
-### Pitfall 1: Playwright Launching Inside Next.js API Routes on Railway
+### Pitfall 1: Double-Send on One-Click Approve (Race Condition via Optimistic UI)
 
-**What goes wrong:** Playwright `chromium.launch()` inside a Next.js API route or tRPC handler hangs, OOMs the Railway container, or never completes. Railway containers default to limited memory (512MB–1GB). A single headless Chromium instance uses 300–500MB minimum. Two concurrent launches = container crash.
+**What goes wrong:** When Phase 16 adds a one-click "Send" button to each draft row, clicking the button fires `approveDraft` and the UI optimistically removes the row. If the user clicks before the tRPC mutation resolves (network latency, slow send), a second click fires a second `approveDraft` call on the same `OutreachLog` ID. The first call deletes the record on success (`ctx.db.outreachLog.delete({ where: { id: input.id } })`). The second call hits `findUniqueOrThrow` and throws a Prisma 404 — but by then the first email already sent. Worse: if two admin tabs are open, both tabs show the same draft and can trigger two sends independently.
 
-**Why it happens:** Next.js API routes are designed for fast I/O, not for spawning browser processes. Railway doesn't pre-install Chromium system deps (`libatk`, `libgbm`, `libasound2`, etc.). The `@playwright/test` devDependency in the current `package.json` installs test binaries, not production ones — `playwright install chromium` must be run explicitly in the Docker build or Railway start command.
+**Why it happens:** The `approveDraft` mutation (line 496 of `server/routers/outreach.ts`) has no idempotency guard. It does not check whether the draft was already sent before calling `sendOutreachEmail`. The ORM-level delete is not a lock — between `findUniqueOrThrow` and `delete`, another request can pass the same `findUniqueOrThrow` and also proceed to send.
 
-**Specific risk for this codebase:** `lib/research-executor.ts` currently calls `ingestWebsiteEvidenceDrafts()` synchronously inside the research run loop. Adding Playwright there means the cron trigger at `/api/internal/cron/research-refresh` launches browser processes inside an HTTP request with a Railway-enforced 60-second timeout for cron endpoints. A 5-URL crawl at 10s per URL = 50 seconds minimum, guaranteed timeout for any real prospect.
+**How to avoid:**
 
-**Consequences:**
+- Add an optimistic lock: before calling `sendOutreachEmail`, update the status from `'draft'` to `'sending'` in a single atomic write. Use `updateMany` with `where: { id, status: 'draft' }` and check `count === 1` before proceeding. If count is 0, a concurrent send already claimed it — return early without sending.
+- Disable the send button on the first click and keep it disabled until the mutation resolves or errors, never re-enabling silently after first submission.
+- Do not delete `OutreachLog` records on send success — change the record to `status: 'sent'` instead. Deletion removes the ability to audit and breaks idempotency.
+- Apply the same guard to `bulkApproveLowRisk`: filter only `status: 'draft'` records, then use a status-update atomic claim before sending.
 
-- Silent hangs in production (Playwright awaits that never resolve, no error surfaced)
-- Railway container OOM kills mid-research-run, leaving `ResearchRun` stuck in `CRAWLING` status forever
-- The existing `isResearchStale()` guard won't detect stuck runs — they have active statuses and will never be re-queued
+**Warning signs:** Resend dashboard shows duplicate messages to the same recipient. `OutreachLog` records show `status: 'retry'` for records that Resend received successfully. Contacts report receiving the same email twice.
 
-**Prevention:**
-
-- Run Playwright in a separate Railway service or background worker, not inside Next.js API routes
-- Use the existing `WORKER_BASE_URL` / `WORKER_SHARED_SECRET` env vars (already in `env.mjs`) — they were clearly designed for this exact separation
-- Add a `BROWSER_CRAWL` `ResearchStatus` enum value and a stuck-run timeout recovery query (e.g., runs in `CRAWLING` for >5 minutes get reset to `FAILED`)
-- If Railway worker separation is deferred, cap Playwright to 1 concurrent page with a 15s timeout and run it only from background cron, never from a user-facing tRPC call
-
-**Detection:** Railway container memory graph spikes to ceiling. `ResearchRun` records stuck in `CRAWLING` for >10 minutes. Next.js logs show no error but the request never returned.
-
-**Phase that must address this:** The Playwright integration phase — do NOT add `chromium.launch()` in API route handlers under any circumstances.
+**Phase to address:** Phase 16 (Draft Queue Redesign) — the idempotency guard and status-machine approach must be designed before any "one-click send" UI is built.
 
 ---
 
-### Pitfall 2: SerpAPI Costs Escalating Without Per-Prospect Deduplication
+### Pitfall 2: Moving Hypothesis Approval to Client Breaks the /voor/ Dashboard Display
 
-**What goes wrong:** SerpAPI charges per search query ($0.005–$0.05 per search depending on plan). The current `research-refresh.ts` refresh sweep checks "stale" prospects every 14 days and re-runs research. If SerpAPI discovery runs 3–5 queries per prospect per refresh, and the campaign has 50 prospects, that's 150–250 queries per sweep, 26 sweeps/year = 3,900–6,500 queries/year minimum. At 50 prospects on a free-tier budget, costs compound fast.
+**What goes wrong:** The `/voor/[slug]` page reads `workflowHypotheses` filtered to `status: 'ACCEPTED'`. Currently, approval lives entirely in admin. If v2.0 adds any mechanism for clients to "confirm" or "acknowledge" pain points on the prospect dashboard, and those interactions mutate hypothesis status or create new display content, the existing filter `where: { status: 'ACCEPTED' }` becomes ambiguous — does `ACCEPTED` mean admin-approved, client-confirmed, or both? Displaying unreviewed AI output on the client dashboard risks surfacing wrong or embarrassing hypotheses to the prospect.
 
-**Why it happens:** The current `buildDefaultReviewSeedUrls()` generates URL seeds for every prospect on every refresh cycle. Adding SerpAPI queries to this loop without caching means every refresh (even when evidence is still valid) burns API credits.
+**Why it happens:** The approval flow is one-sided by design (admin-only), which is stated as the product differentiator in `REQUIREMENTS.md` (`Auto-approval of hypotheses: Out of Scope`). Introducing any client-side acknowledgment mechanism without adding a separate status field creates implicit state coupling between two independent flows.
 
-**Specific risk for this codebase:** The refresh sweep runs with `limit: 25` but there is no SerpAPI result cache. If the SerpAPI integration is added to `ingestWebsiteEvidenceDrafts()` or `executeResearchRun()`, each call will make live API requests regardless of whether the evidence changed.
+**How to avoid:**
 
-**Consequences:**
+- Keep `WorkflowHypothesis.status` values (`DRAFT`, `ACCEPTED`, `REJECTED`) as admin-only. These represent whether admin has reviewed and signed off.
+- If client interaction needs tracking (e.g., "client viewed this pain point"), add a separate model (`HypothesisClientView`) or a boolean column (`clientAcknowledgedAt DateTime?`) — never reuse the admin status enum.
+- The `/voor/` page query must always filter `status: 'ACCEPTED'` and never fall back to `DRAFT` even when no hypotheses are accepted. Show empty state rather than unreviewed content.
+- Audit all query paths that touch `workflowHypothesis` before adding any client-facing interactions.
 
-- Monthly bill spikes invisibly (SerpAPI has no built-in budget cap by default)
-- Research runs become expensive enough to discourage running them
-- No way to audit which prospects consumed credits without separate logging
+**Warning signs:** `/voor/` page shows hypotheses that have not been reviewed by admin. Client receives an email about a pain point that admin never approved. Hypothesis list on admin page and client dashboard show different counts for the same prospect.
 
-**Prevention:**
-
-- Cache SerpAPI results in a new `SerpApiCache` DB model or as a `metadata` JSON field on `EvidenceItem` with a `serpCachedAt` timestamp
-- Add a separate `serpApiQueriesUsed` counter in `CreditUsage` (the model already exists)
-- Set `maxQueriesPerRun: 3` hard cap — good enough for discovery (jobs, reviews, news)
-- Add `SERP_API_KEY` to `env.mjs` with a `SERP_MAX_QUERIES_PER_PROSPECT` env var
-- Do NOT run SerpAPI queries during the auto-refresh sweep — only run them when a human explicitly triggers "deep research" for a specific prospect
-
-**Detection:** SerpAPI dashboard shows usage spike. Monthly cost exceeds budget without corresponding improvement in evidence quality.
-
-**Phase that must address this:** The SerpAPI integration phase — design the quota system before writing a single API call.
+**Phase to address:** Phase 16 if any client-visible approval concept is introduced — enforce the admin-only gate as an explicit constraint at the router level before building client interactions.
 
 ---
 
-### Pitfall 3: Cadence State Stored in JSON Metadata Instead of First-Class DB Fields
+### Pitfall 3: Research Quality Gate Creates Infinite Loop Without Explicit Exit Conditions
 
-**What goes wrong:** The existing `OutreachSequence.status` and `OutreachStep.status` are `SequenceStatus` enums. But the engagement-driven cadence logic (email open detected → escalate to call → LinkedIn → WhatsApp) requires tracking event timestamps, trigger conditions, and next-step scheduling. If these are stored as `metadata: Json?` blobs — as the current `OutreachLog.metadata` does with `kind`, `dueAt`, `priority` etc. — the cadence engine cannot query them reliably with Prisma.
+**What goes wrong:** A "research quality gate" — where admin can mark a prospect's research as insufficient and trigger re-research — has no natural stopping point. The loop is: research runs → admin reviews → marks insufficient → research runs again → admin reviews again → repeat. Without explicit exit criteria (minimum evidence count, maximum re-run attempts, or a "proceed anyway" override), a single difficult prospect blocks the entire pipeline indefinitely. When the 404-skip fix (`commit 1ae3470`) caused thin evidence pools, re-triggering research produces the same thin results, and the gate loops forever.
 
-**Why it happens:** Metadata JSON is the path of least resistance when you don't know exactly what state you need upfront. The existing `queueTouchTask` stores `dueAt` as a JSON field inside `metadata`, then re-parses it with `parseIsoDate()` at query time. This pattern works for simple task tracking but breaks for time-based scheduling queries.
+**Why it happens:** Quality gates are designed around the happy path (research improves on retry). For Dutch SMBs with minimal web presence, the evidence pool is structurally limited — no Glassdoor, few public reviews, constructed URLs 404. Re-running research does not improve evidence when the problem is the source, not the scraper.
 
-**Specific risk for this codebase:** To find "all sequences where the last email was opened 24h ago and no follow-up has been scheduled", you cannot write `WHERE metadata->>'openedAt' < NOW() - INTERVAL '24h'` reliably in Prisma without raw SQL. The existing `OutreachLog.openedAt` field exists as a proper `DateTime?` column — use that model as the pattern for cadence timestamps.
+**How to avoid:**
 
-**Consequences:**
+- Define explicit exit conditions before building the gate UI:
+  - `maxRetries: 3` — after 3 re-runs, the gate auto-approves with a warning that evidence is thin
+  - `proceedAnywayButton` — admin can manually override the gate and mark research "sufficient despite thin evidence"
+  - `minimumEvidenceCount` — what constitutes "sufficient" must be a hard number (e.g., 3 evidence items with `confidenceScore >= 0.5`), not a vague judgment call
+- Store `researchAttempts: Int` on `ResearchRun` or on the prospect — the gate reads this counter before prompting re-run
+- Show the admin exactly why quality is insufficient (e.g., "2 of 5 URLs returned 404, 1 is a cookie wall") so they can make an informed "proceed anyway" decision
+- Do NOT make the gate mandatory on every review — make it opt-in ("flag this research as needing improvement") so that most prospects flow through without blocking
 
-- Cron job that advances the cadence must load all sequences into memory and filter in JS — not scalable
-- Adding an index to accelerate "find sequences ready to advance" requires schema migrations later
-- Debugging cadence state requires JSON parsing in production logs
+**Warning signs:** The same prospect shows up in the hypothesis review queue multiple times with identical (thin) evidence. `ResearchRun` count for a single prospect exceeds 3. Admin is waiting on research that never improves.
 
-**Prevention:**
-
-- Add first-class columns to `OutreachStep`: `scheduledAt DateTime?`, `triggeredBy String?` (enum: `TIME_DELAY`, `EMAIL_OPENED`, `PDF_DOWNLOADED`, `WIZARD_VIEWED`, `MANUAL`)
-- Add `nextStepReadyAt DateTime?` on `OutreachSequence` — this is the column the cron query indexes
-- The cron query becomes: `WHERE status = 'SENT' AND nextStepReadyAt <= NOW()` — fast and indexable
-- Keep `metadata` for unstructured debug info only, never for query predicates
-
-**Detection:** You find yourself writing `JSON_EXTRACT` or loading hundreds of sequences into memory to find ones ready to advance.
-
-**Phase that must address this:** Schema migration phase — must precede any cadence automation code.
+**Phase to address:** Phase 16 or the research quality gate phase — define the exit conditions and counter field in the data model before building any gate UI.
 
 ---
 
-### Pitfall 4: Email Open Tracking Used as Primary Engagement Signal
+### Pitfall 4: Pipeline Stage Counts Show Inflated or Wrong Numbers (Funnel Arithmetic Error)
 
-**What goes wrong:** Email open events from Resend webhooks have a 40–60% false positive rate due to Apple Mail Privacy Protection (MPP), Gmail image pre-fetching, and corporate email security scanners that pre-load images. Building cadence advancement on "email opened = interested" means the cadence escalates based on bot activity, not human intent.
+**What goes wrong:** The campaign funnel in `server/routers/campaigns.ts` uses cumulative counting: a prospect classified as `replied` also counts toward `imported`, `researched`, `approved`, and `emailed`. The code at lines 322–328 implements this correctly. But when Phase 16 adds a "one-click send" queue that creates `OutreachLog` records with `status: 'draft'` before the admin sends, the `funnelStage` logic classifies prospects as `emailed` based on `EMAILED_SEQUENCE_STATUSES` containing `'SENT'`. If a draft exists but is not sent, and the cadence engine has already set the sequence status to `SENT` prematurely (Pitfall 8 from v1.1 research), a prospect appears in `emailed` funnel stage before any email was actually delivered.
 
-**Why it happens:** Open tracking works by embedding a 1x1 tracking pixel. When any email client, security gateway, or privacy proxy fetches images on behalf of the user (without the user opening the email), the open event fires. Apple's MPP (iOS 15+, 2021) routes all email image requests through Apple servers, making every email from Apple Mail appear "opened" regardless of actual open.
+**Why it happens:** Funnel stage is derived from `outreachSequences[].status` and `contacts[].outreachStatus` — both of which can be updated by the cadence engine or by partial approval flows independently of whether Resend actually delivered the email. Sequence status `SENT` is set by `markSequenceStepAfterSend` whenever a step is sent, but the function does not verify delivery — it fires on `result.success` from `sendOutreachEmail`, which itself only checks that the Resend API accepted the request, not that the email was delivered.
 
-**Specific risk for this codebase:** The `OutreachLog.openedAt` field and `OutreachStatus.OPENED` enum are already in the schema. `OutreachSequence.status` has `OPENED`. If the cadence engine advances sequences when `openedAt` is set by a Resend webhook, it will schedule call follow-ups for contacts who never actually opened the email — leading to awkward cold calls ("I'm following up on the email I saw you opened") and no actual engagement signal.
+**How to avoid:**
 
-**Consequences:**
+- Add a `deliveredAt DateTime?` field to `OutreachStep` that is set only after a Resend delivery webhook fires, not after send attempt
+- The funnel's `isEmailed` check should use `deliveredAt IS NOT NULL` not `status IN ('SENT', ...)`
+- Until delivery webhooks are wired, the funnel is technically measuring "send attempts" not "emails received" — document this clearly in the UI ("X emailed (send attempted)") to set correct expectations
+- When redesigning the pipeline view in Phase 16, show draft count separately from sent count so admin can see the distinction
 
-- Cadence escalation based on false opens = spam behavior perceived by prospects
-- Call follow-up for non-opened emails burns relationship capital
-- Open rate metrics become meaningless for measuring campaign performance
+**Warning signs:** Funnel `emailed` count exceeds the number of emails Resend shows delivered. Prospects classified as `emailed` have no record in Resend's dashboard. Campaign response rate shows 0% despite high `emailed` count.
 
-**Prevention:**
-
-- Treat email open as a weak signal only — never advance the cadence to call/LinkedIn based on open alone
-- Use click events (link clicks in email body), wizard views (`WizardSession` already tracks this), PDF downloads (`pdfDownloaded` on `WizardSession`) as real engagement signals
-- Design cadence triggers in priority order: PDF download > Wizard step 3+ reached > email reply > booking event > email link click > time delay. Email open should only advance cadence from step 3 to step 3b (a softer follow-up), never to call
-- Add a `WIZARD_VIEWED` signal type to `SignalType` enum — the wizard already fires session events, wire them to the engagement engine
-
-**Detection:** Call task queue fills up immediately after bulk outreach. Contacts receiving calls have no wizard sessions and no PDF downloads.
-
-**Phase that must address this:** Cadence design phase — before building the trigger system, define which events are valid engagement signals.
+**Phase to address:** Phase 16 (Draft Queue Redesign) — the funnel query and draft/sent distinction must be resolved before the queue redesign makes the distinction meaningful.
 
 ---
 
-## Moderate Pitfalls
+### Pitfall 5: UX Redesign Breaks Hidden Backend State That Pages Implicitly Depend On
+
+**What goes wrong:** When admin pages are restructured (Phase 13 replaced 7 tabs with 4 sections), each section imports a separate component (`EvidenceSection`, `AnalysisSection`, `OutreachPreviewSection`, `ResultsSection`). The original 7-tab implementation may have mounted components eagerly on page load — sharing state between tabs via a single tRPC query result. The new implementation uses `hidden` CSS (`display: none`) on inactive sections, which keeps all sections mounted. This means 4 tRPC queries fire on every page load instead of lazily on tab switch. If any query has side effects (e.g., marking items as "viewed" on fetch), those side effects fire immediately on page open regardless of which section is active.
+
+**Why it happens:** Restructuring page layout changes the React mount lifecycle. Moving from lazy-mounted tabs to always-mounted-but-hidden sections changes when queries fire. Developers focus on the visual layout change and miss the implicit timing assumptions in the data layer.
+
+**How to avoid:**
+
+- Audit every tRPC query in each section component for side effects before merging section components into an always-mounted layout
+- If any query has a mutation as a side effect (e.g., `markAsViewed` called from `useEffect` on mount), wrap it with a condition checking whether the section is actually visible (`isVisible` prop) before firing
+- The current Phase 13 implementation uses `hidden` CSS (`activeTab === 'evidence' ? '' : 'hidden'`), which mounts all 4 sections on page load — verify that all 4 section queries are read-only and have no mount-time mutations
+
+**Warning signs:** Prospects show `status: 'VIEWED'` in the admin list immediately after being opened, before the admin actually reads anything. Signal counts change unexpectedly after a page reload. Notification logs show events that should only trigger on explicit action.
+
+**Phase to address:** Phase 13 is already shipped; this pitfall is a verification task. Any future page restructure must include an audit of query side effects.
 
 ---
 
-### Pitfall 5: Use Cases Catalog Matching Uses Keyword Overlap Against Evidence Snippets
+### Pitfall 6: Approval Responsibility Shift Creates Authorization Gap
 
-**What goes wrong:** The existing `matchProofs()` function in `workflow-engine.ts` uses token overlap between query string and `ProofCandidate.keywords`. This works as a fallback but scores poorly: a use case about "invoice automation" will not match an evidence snippet about "facturatie vertraging" (Dutch: invoice delay) because the tokenizer splits on whitespace and strips special chars, never mapping synonyms or cross-language terms.
+**What goes wrong:** If v2.0 moves hypothesis approval from admin-only (guarded by `adminProcedure`) to an endpoint that clients can reach (e.g., a prospect clicking "Yes, this is a pain point I recognize"), the authorization model changes. The `hypotheses.setStatus` mutation currently uses `adminProcedure`, which checks for admin session. If a new client-facing endpoint is added that calls the same mutation without admin auth, or calls a new endpoint that modifies hypothesis status, any person who knows the prospect's URL can approve or reject hypotheses without admin oversight.
 
-**Why it happens:** The current system reads from Obsidian JSON files (`OBSIDIAN_INVENTORY_JSON_PATH`). The new Use Cases catalog will be in PostgreSQL with English/Dutch service descriptions matched against Dutch-language evidence snippets extracted from NL prospect websites. Token overlap without stemming or translation misses most relevant matches.
+**Why it happens:** The `/voor/[slug]` page is public — no authentication required. The slug is a random ID but is shared with the prospect via email. If client-confirmation calls an unauthenticated tRPC procedure that modifies `WorkflowHypothesis.status`, it bypasses the entire admin approval gate.
 
-**Specific risk for this codebase:** The `toTokens()` function lowercases and filters to 3+ char alpha strings. Dutch compound words ("factuurverwerking") don't split into meaningful tokens this way. A use case titled "Automated Invoice Processing" tokenizes to `["automated", "invoice", "processing"]`. An evidence snippet containing "facturering" scores 0.
+**How to avoid:**
 
-**Consequences:**
+- Client-facing procedures that affect hypothesis display must use a separate procedure type (not `adminProcedure` and not `publicProcedure`) — create a `prospectProcedure` that validates the slug against a prospect record and checks that the caller is the intended recipient
+- Never expose `hypotheses.setStatus` to client routes, even read-only variants — create a separate `clientFeedback` router with its own schema and authorization
+- Rate-limit client-facing state-mutation endpoints — slugs are guessable if the random namespace is small, and a brute-force attempt could mass-approve hypotheses
 
-- Smart proof matching returns empty or wrong results for Dutch-language prospects
-- Fallback "Custom build plan" fires for every prospect, defeating the purpose of the use cases catalog
-- Sales emails cite irrelevant use cases, damaging credibility
+**Warning signs:** Hypothesis status changes without any admin action recorded in the admin audit trail. Prospects receive content that admin did not explicitly approve. `WorkflowHypothesis.status` shows `ACCEPTED` for records where no admin user session touched the mutation.
 
-**Prevention:**
-
-- Add a `tags: String[]` field to the Use Case model — manually tag each use case with NL synonyms (e.g., `["factuur", "invoice", "billing", "facturering"]`)
-- Use these tags as the matching vocabulary, not the title/description tokens
-- Alternatively, use the Claude API for semantic matching: pass evidence snippets + use case descriptions and ask for relevance score — already have `ANTHROPIC_API_KEY` in the stack, cost per matching call is under $0.01
-- Claude-based matching is the correct long-term approach; keyword matching is acceptable for MVP if tags are manually maintained
-
-**Detection:** `matchProofs()` returns `isCustomPlan: true` for >50% of Dutch prospects with good evidence.
-
-**Phase that must address this:** Use Cases catalog implementation phase.
+**Phase to address:** Any phase that adds client-interaction to hypothesis data — must be gated behind explicit authorization design before implementation begins.
 
 ---
 
-### Pitfall 6: Manual Evidence Approval Becomes a Bottleneck That Blocks Outreach
+### Pitfall 7: Prospect Pipeline View Stage Transitions Are Not Reversible (One-Way Ratchet)
 
-**What goes wrong:** The intent is that a human approves evidence before outreach is generated. If the approval UX requires reviewing 12–24 evidence items per prospect (the current `slice(0, 24)` cap in `research-executor.ts`) before a sequence can be drafted, and campaigns run 50+ prospects, the approval queue grows faster than one person can clear it.
+**What goes wrong:** The funnel stage logic in `campaigns.ts` is purely additive — once a prospect is classified as `emailed`, it stays `emailed` even if the outreach sequence fails, the email bounces, or the admin deletes the draft. There is no downgrade path. A prospect in `replied` stage cannot move back to `approved` if the reply is marked as unsubscribe. This makes the funnel view misleading during a campaign cleanup where admin removes failed sequences.
 
-**Why it happens:** Evidence approval is designed to ensure quality — but the volume/granularity tradeoff is wrong if it requires per-item approval for evidence that is structurally always-valid (e.g., the company's own website homepage is always an acceptable evidence source).
+**Why it happens:** Funnel stage is computed from the presence of records (`outreachSequences.some(...)`, `contacts.some(...)`), not from an explicit stage field. Deleting a sequence removes the evidence for `emailed` stage but the admin rarely deletes sequences — they mark them `CLOSED_LOST`. `CLOSED_LOST` is not in `EMAILED_SEQUENCE_STATUSES`, so a `CLOSED_LOST` sequence correctly removes the prospect from `emailed` stage. But this creates a different problem: admin closing out a lost sequence moves a prospect backward in the funnel unexpectedly.
 
-**Specific risk for this codebase:** The `EvidenceItem.isApproved` field defaults to `false`. If the cadence engine requires `isApproved: true` on a minimum number of items before generating a `WorkflowLossMap`, every new research run stalls until manually reviewed. At 15 min/prospect for review + 50 prospects, that's 12+ hours of bottleneck before a single email goes out.
+**How to avoid:**
 
-**Consequences:**
+- Add explicit documentation in the funnel UI explaining what each stage means and that stages can move backward when sequences are closed
+- The current funnel stages are: `imported → researched → approved → emailed → replied → booked`. Add a `lost` stage that is separate from downgrading — a prospect that replied with "not interested" should show as `replied/lost` not fall back to `emailed`
+- Do not add new pipeline stages without also defining how transitions work bidirectionally — each new stage needs both promotion and demotion logic
 
-- Outreach pipeline stalls completely for days when workload increases
-- Approval fatigue leads to rubber-stamping — defeating the purpose of the gate
-- No emails go out during vacation or high-priority work periods
+**Warning signs:** Campaign funnel count decreases unexpectedly after admin marks sequences as `CLOSED_LOST`. Admin reports that a prospect "disappeared from the funnel" after closing a lost opportunity. Funnel count is lower than expected after a batch cleanup.
 
-**Prevention:**
-
-- Auto-approve evidence from `WEBSITE` and `CAREERS` sourceTypes (company's own content — always valid as a signal source)
-- Only require manual approval for `REVIEWS` (user-submitted content can be misleading), `SERP_RESULT` (SerpAPI results need human curation), and any evidence with `confidenceScore < 0.65`
-- Design the approval UI as a batch review (approve/reject all visible at once with one-click) not individual item-by-item
-- Add a `skipApprovalGate` flag per campaign for trusted research sources
-
-**Detection:** Decision inbox shows 0 low-risk drafts even when research runs completed successfully. Research runs have completed status but `isApproved` count < minimum threshold.
-
-**Phase that must address this:** Evidence approval gate design phase — before building approval UI.
+**Phase to address:** Phase 14 is already shipped with the current logic; this is a design constraint for any future pipeline stage additions.
 
 ---
 
-### Pitfall 7: Playwright Crawling Blocked by Dutch/BE Target Websites
+## Technical Debt Patterns
 
-**What goes wrong:** Dutch and Belgian B2B SMB websites (marketing agencies, construction companies, installers) commonly use cookie consent managers (Cookiebot, Didomi, UserCentrics) that block page rendering until consent is given. Playwright without consent handling fetches the consent overlay, not the page content. Additionally, sites using Cloudflare bot protection will 403 Playwright by default.
+Shortcuts that seem reasonable but create long-term problems.
 
-**Why it happens:** GDPR enforcement in NL/BE is among the strictest in Europe. Virtually every Dutch B2B site has a CMP (Consent Management Platform) by legal requirement. Playwright's default browser fingerprint is well-known to Cloudflare's bot detection heuristics.
-
-**Specific risk for this codebase:** The existing `ingestWebsiteEvidenceDrafts()` already handles fetch failures by returning `fallbackDraft()` with `confidenceScore - 0.1`. Playwright adding a `browser.newPage()` → `page.goto()` pattern without CMP handling will hit the same wall — but worse, because it might block for the full 15s timeout before failing.
-
-**Consequences:**
-
-- Playwright fetches cookie banners instead of page content — evidence snippet is "Accept cookies" or "Wij gebruiken cookies"
-- `extractWebsiteEvidenceFromHtml()` extracts the consent notice text as the primary snippet
-- Evidence quality gate passes with garbage evidence that mentions only cookies
-
-**Prevention:**
-
-- Handle Cookiebot specifically: after `page.goto()`, check for `#CybotCookiebotDialog` and click the reject/accept button before scraping
-- Use `page.waitForLoadState('domcontentloaded')` not `'networkidle'` — most Dutch sites load trackers that keep the network busy indefinitely
-- Set `page.setExtraHTTPHeaders()` with a realistic desktop user-agent and accept-language `nl-NL,nl;q=0.9`
-- Add a content validity check: if the extracted text contains "cookie" >3 times and the page text is <200 chars of non-cookie content, treat as a failed fetch
-
-**Detection:** Evidence snippets contain "cookies", "cookie-instellingen", or "privacybeleid" as the primary text. Evidence titles extracted as "Cookie-instellingen | [Company Name]".
-
-**Phase that must address this:** Playwright integration phase — must be implemented before any production crawls.
+| Shortcut                                                                                     | Immediate Benefit                                    | Long-term Cost                                                        | When Acceptable                                                                                                             |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Delete `OutreachLog` after send success (current in `approveDraft`)                          | Simple — no status management                        | No audit trail, breaks idempotency, double-send risk                  | Never — change to status update                                                                                             |
+| Store `dueAt` in JSON metadata (current touch task pattern)                                  | Fast to implement                                    | Cannot index for cron queries, must parse in application              | Acceptable until cadence volume requires indexed queries (already migrated for cadence — apply same pattern to touch tasks) |
+| Use CSS `hidden` on inactive tab sections (current Phase 13)                                 | All sections stay mounted, no re-fetch on tab switch | All 4 queries fire on page load — 4x DB cost per prospect open        | Acceptable for admin-only pages with small user count                                                                       |
+| Funnel stage derived from record presence not explicit field                                 | No schema migration needed                           | Cannot ratchet, no bidirectional transitions, stage is fragile        | Acceptable for MVP campaign reporting; will break at scale                                                                  |
+| `any` type casts on prospect data in prospect detail page (`const p = prospect.data as any`) | Avoids typing complex Prisma includes                | TypeScript cannot catch field renames, breaking changes at type level | Acceptable as technical debt, must be addressed before major page restructure                                               |
 
 ---
 
-### Pitfall 8: OutreachSequence Status and OutreachStep Status Drift Out of Sync
+## Integration Gotchas
 
-**What goes wrong:** The existing `markSequenceStepAfterSend()` function updates the step to `SENT` and the sequence to `SENT`. But when the cadence engine advances to step 2, it needs to know the step 1 was actually sent (not just queued). If step 1's `OutreachLog` record is deleted on success (as `approveDraft` does with `ctx.db.outreachLog.delete()`), the step-to-log linkage via `OutreachStep.outreachLogId` becomes null, and step status reconstruction requires checking multiple tables.
+Common mistakes when connecting to external services or internal APIs during the redesign.
 
-**Why it happens:** The current design deletes the draft `OutreachLog` after sending and creates a new one for the sent email. The `OutreachStep.outreachLogId` FK can go null. For cadence advancement, you need to know "was step 1 sent, and when?" — which requires the log to persist or the timestamp to be on the step.
-
-**Specific risk for this codebase:** `OutreachStep` already has `sentAt DateTime?`. But `markSequenceStepAfterSend()` only sets `status: 'SENT'` and `sentAt: new Date()`. If the cadence cron runs and tries to query `OutreachStep.outreachLog` for step 1, it will find null and may incorrectly treat it as unsent.
-
-**Consequences:**
-
-- Cadence engine sends step 2 before step 1 was actually delivered
-- Duplicate outreach: step 1 draft approved manually AND cadence cron queues step 2
-- Sequence status shows `SENT` but no email in the contact's inbox
-
-**Prevention:**
-
-- Never delete `OutreachLog` records — change `approveDraft` to set `status: 'sent'` instead of deleting
-- Add a `isDeliveryRecord` boolean to `OutreachLog` to distinguish "draft to review" from "delivery record"
-- Use `OutreachStep.sentAt` as the authoritative timestamp for cadence advancement, not `OutreachLog` presence
-- The cadence cron query: `WHERE sentAt IS NOT NULL AND status = 'SENT'` — fully reliable
-
-**Detection:** Contacts receive step 2 emails without receiving step 1. Sequence status shows `SENT` but step 1 `OutreachLog` is null.
-
-**Phase that must address this:** Cadence state machine phase — must be resolved before building the advancement cron.
+| Integration                                  | Common Mistake                                                                                                            | Correct Approach                                                                                                               |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| tRPC cache invalidation after batch approve  | Invalidate only `outreachLog` queries but forget `admin.getActionQueue` — dashboard count badge stays stale               | After any mutation that changes OutreachLog status, invalidate both `outreach.*` and `admin.getActionQueue`                    |
+| Resend delivery webhook for funnel accuracy  | Using API response `success` as delivery confirmation                                                                     | Resend sends `email.delivered` webhook events — wire these to update `OutreachStep.deliveredAt` before trusting funnel counts  |
+| Cal.com booking as pipeline signal           | Cal.com fires booking webhook to `/api/webhooks/calcom` — sequence status must be updated there                           | Verify that `outreachSequence.status = 'BOOKED'` is set inside the Cal.com webhook handler, not just on wizard session         |
+| Multi-tab admin sessions                     | Two tabs open, both show same draft queue — first tab sends, second tab shows stale list                                  | Use `useQuery` with `refetchOnWindowFocus: true` (tRPC React Query default) and ensure mutation invalidates shared queries     |
+| Deep links from dashboard to prospect detail | Dashboard links to `/admin/prospects/${id}#analysis` — fragment routing is client-side only, page loads on `evidence` tab | Phase 13 implementation uses `useState('evidence')` — hash-based deep linking requires reading `window.location.hash` on mount |
 
 ---
 
-## Minor Pitfalls
+## Performance Traps
+
+Patterns that work at small scale but fail as usage grows.
+
+| Trap                                                                                                        | Symptoms                                                           | Prevention                                                                                                                                 | When It Breaks                    |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
+| `getActionQueue` runs 4 parallel queries each fetching up to 50 records with full contact+prospect includes | Dashboard loads slowly as prospect count grows                     | Add `select` clauses to limit fields fetched — currently fetches entire contact records when only `companyName` and `domain` are displayed | At ~500 active outreach records   |
+| Campaign funnel query fetches all contacts and sequences per prospect to derive stage                       | `getCampaignFunnel` slow as contacts per prospect grows            | Move funnel stage derivation to a DB view or materialized column rather than application-side computation                                  | At ~1000 contacts per campaign    |
+| `bulkApproveLowRisk` loops sequentially through drafts calling `sendOutreachEmail` per draft                | Approval of 20 drafts takes 20 × network round-trip time to Resend | Batch the Resend API calls or run with `Promise.all` with concurrency limit (3-5 simultaneous)                                             | At 20+ drafts in a bulk approval  |
+| All sections mounted on prospect detail page loads 4 queries simultaneously                                 | Each prospect open fires 4 parallel DB queries                     | Convert inactive sections to lazy-mounted (only mount when tab is first clicked, then keep mounted)                                        | At ~100 concurrent admin sessions |
 
 ---
 
-### Pitfall 9: SerpAPI Returns SERP Results for Wrong Country/Language
+## Security Mistakes
 
-**What goes wrong:** SerpAPI defaults to `gl=us` (US locale) and `hl=en` (English). Dutch prospects queried without `gl=nl&hl=nl` return English Wikipedia results, US company profiles, and international news instead of NL job listings, Dutch review sites (klantenvertellen.nl, feedbackcompany.com), or Dutch news.
+Domain-specific security issues beyond general web security.
 
-**Prevention:** Always pass `gl=nl&hl=nl&lr=lang_nl` parameters for NL/BE prospects. For BE, use `gl=be`. Hardcode these as defaults in the SerpAPI client wrapper. Never use the SerpAPI default locale.
-
----
-
-### Pitfall 10: Playwright Binary Not Installed in Railway Production Build
-
-**What goes wrong:** `@playwright/test` is a devDependency. In production builds, `npm install --production` skips it. Even if installed, `playwright install chromium` must run separately to download the Chromium binary. Railway's Nixpacks build does not run this automatically.
-
-**Prevention:** Move `playwright` to production dependencies (not `@playwright/test` — just `playwright`). Add `RUN npx playwright install chromium --with-deps` to the Dockerfile or Railway build command. Verify with a health check endpoint that returns Playwright version on startup.
+| Mistake                                                            | Risk                                                                        | Prevention                                                                                                  |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Adding client-acknowledgment endpoint without prospect-scoped auth | Any public user who knows the slug can mutate hypothesis display state      | Create `prospectProcedure` that validates slug ownership before any write                                   |
+| One-click send endpoint without idempotency key                    | Duplicate emails to same prospect — relationship damage, spam reports       | Add optimistic-lock status transition (`draft → sending`) before calling Resend                             |
+| Exposing `admin.getActionQueue` data in client-facing pages        | Admin outreach context (company analysis, internal notes) leaks to prospect | Keep `adminProcedure` on all queue endpoints — never downgrade to `publicProcedure` for admin routes        |
+| Deep link to prospect detail includes `id` in URL                  | Prospect ID is a cuid — low risk but not semantic; readable slug is better  | Already partially solved with `readableSlug` for `/voor/` — admin internal URLs using raw id are acceptable |
 
 ---
 
-### Pitfall 11: Use Cases Catalog Without Versioning Breaks Existing Proof Matches
+## UX Pitfalls
 
-**What goes wrong:** `ProofMatch` records store `proofId` as a string referencing the Obsidian JSON item_id. When Use Cases move to DB, the proofId format changes. Existing `ProofMatch` records reference IDs that no longer resolve.
+Common user experience mistakes in this domain's admin console redesign.
 
-**Prevention:** Add a `sourceVersion` field to `ProofMatch` (e.g., `'obsidian_v1'` vs `'usecase_db_v1'`). Run a migration script that marks existing Obsidian-sourced matches. Do not delete old matches — they are historical evidence of what was matched for already-sent outreach.
-
----
-
-### Pitfall 12: Resend Webhook Signature Verification Missing for Engagement Events
-
-**What goes wrong:** If the engagement webhook endpoint (`/api/webhooks/resend`) that receives open/click events doesn't verify the Resend webhook signature, it's open to spoofed requests that artificially trigger cadence advancement.
-
-**Specific risk for this codebase:** The existing `/api/outreach/unsubscribe` handler uses a token-based approach. But engagement webhooks (open tracking) coming from Resend need HMAC signature verification with the `svix-signature` header. Missing this means anyone who knows the endpoint URL can fake an open event and trigger a call task for any contact.
-
-**Prevention:** Use Resend's webhook signature verification. Store the webhook signing secret in env. Reject all webhook payloads without valid signatures before processing any engagement state changes.
+| Pitfall                                                                    | User Impact                                                           | Better Approach                                                                                  |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Approval button active while mutation is in-flight                         | Admin clicks twice, sees confusing error or sends twice               | Disable button on first click, re-enable only on error, never on success (row should disappear)  |
+| Research quality gate with no "proceed anyway" option                      | Admin blocked indefinitely on thin-evidence prospects                 | Always provide override path with a warning: "Research is thin — proceed anyway?"                |
+| Pipeline funnel shows percentages at early stage when denominator is tiny  | "100% booked rate" when only 1 prospect has been emailed — misleading | Hide percentage metrics until denominator ≥ 5 prospects at that stage                            |
+| Dashboard action queue mixes urgency levels without clear visual hierarchy | Admin misses overdue calls buried among normal drafts                 | Sort order: overdue first (red indicator), then by age; group by type with visual section breaks |
+| One-click send shows no preview of what will be sent                       | Admin approves without seeing content — mistakes go out               | Show subject line and first 100 chars of body in the row before the send button                  |
+| Stage transition not confirmed to admin after one-click action             | Admin unsure if action succeeded; may click again                     | Show inline success state ("Sent") on the row for 2 seconds before removing it from the queue    |
 
 ---
 
-## Phase-Specific Warnings
+## "Looks Done But Isn't" Checklist
 
-| Phase Topic            | Likely Pitfall                                 | Mitigation                                                                  |
-| ---------------------- | ---------------------------------------------- | --------------------------------------------------------------------------- |
-| Playwright integration | Browser in API route hangs Railway container   | Separate worker service, use existing WORKER_BASE_URL pattern               |
-| Playwright integration | Cookie consent walls blocking NL/BE sites      | Implement Cookiebot handler, validate extracted text length                 |
-| Playwright integration | Binary missing in production                   | Add to production deps + Railway build step                                 |
-| SerpAPI integration    | Cost accumulation without cache                | DB cache + manual-only trigger + `CreditUsage` counter                      |
-| SerpAPI integration    | Wrong country/language in results              | Hardcode `gl=nl&hl=nl` defaults                                             |
-| Use Cases catalog      | Dutch-English mismatch in proof matching       | Tag-based matching with NL synonyms or Claude API semantic matching         |
-| Use Cases catalog      | Obsidian proofId orphans                       | Add sourceVersion to ProofMatch before migration                            |
-| Cadence state machine  | Timestamps in JSON metadata instead of columns | Schema migration first: add `scheduledAt`, `triggeredBy`, `nextStepReadyAt` |
-| Cadence state machine  | Step/sequence status drift                     | Never delete OutreachLog, use OutreachStep.sentAt as source of truth        |
-| Cadence state machine  | False email open signals driving call tasks    | Only advance to call on click/wizard/PDF events, not opens                  |
-| Evidence approval      | Per-item approval bottleneck                   | Auto-approve own-website sources, batch approval UI                         |
-| Engagement tracking    | No Resend webhook signature verification       | Add svix-signature verification before any engagement event processing      |
+Things that appear complete in the UI but are missing critical backend pieces.
+
+- [ ] **One-click send queue:** Often missing idempotency guard — verify that rapid double-clicks or multi-tab sessions cannot send the same email twice
+- [ ] **Research quality gate:** Often missing exit conditions — verify that `maxRetries` counter exists in DB and "proceed anyway" override is implemented before shipping the gate UI
+- [ ] **Pipeline stage visualization:** Often missing "send attempted vs. delivered" distinction — verify that funnel `emailed` count reflects Resend delivery confirmations, not just API acceptance
+- [ ] **Dashboard deep links:** Often missing hash fragment handling — verify that `/admin/prospects/${id}#analysis` actually opens the Analysis section on load, not just the default Evidence section
+- [ ] **Client-side hypothesis acknowledgment:** Often missing authorization scope — verify that any client-facing endpoint that reads or writes hypothesis data uses slug-scoped authorization, not admin auth
+- [ ] **Cache invalidation after bulk send:** Often missing cross-router invalidation — verify that `bulkApproveLowRisk` success invalidates both `outreach.listDrafts` and `admin.getActionQueue` so count badges update
+- [ ] **Empty state on quality gate:** Often shown as generic "No data" — verify that the gate distinguishes between "research not run yet", "research ran but thin", and "research sufficient" as three distinct states
+- [ ] **Funnel stage after sequence closure:** Often not tested — verify that marking a sequence `CLOSED_LOST` correctly removes the prospect from `emailed` funnel stage, not from `replied` or `booked`
+
+---
+
+## Recovery Strategies
+
+When pitfalls occur despite prevention, how to recover.
+
+| Pitfall                                                 | Recovery Cost | Recovery Steps                                                                                                                                         |
+| ------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Double-send email delivered to prospect                 | HIGH          | Contact prospect to apologize, mark sequence `CLOSED_LOST`, investigate `OutreachLog` for duplicate records and add idempotency guard                  |
+| Research quality gate in infinite loop                  | MEDIUM        | Add `force_proceed` flag directly in DB for affected prospect, then fix exit conditions in code                                                        |
+| Wrong funnel counts visible in campaign reporting       | LOW           | Funnel is read-only computed data — fix the query logic and refresh, no data migration needed                                                          |
+| Client-side approval exposed unauthorized state changes | HIGH          | Immediately restrict endpoint to admin auth, audit all `WorkflowHypothesis` records for unauthorized status changes, revert affected records           |
+| Dashboard deep link opens wrong section                 | LOW           | Add `useEffect` to read `window.location.hash` on mount and set `activeTab` accordingly                                                                |
+| Bulk approve sends to blocked contacts                  | MEDIUM        | Resend accepts but bounces — check `contact.outreachStatus` filter in `bulkApproveLowRisk` includes `QUEUED` only, audit sent log for blocked contacts |
+
+---
+
+## Pitfall-to-Phase Mapping
+
+How roadmap phases should address these pitfalls.
+
+| Pitfall                                         | Prevention Phase                              | Verification                                                                                      |
+| ----------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Double-send race condition                      | Phase 16 (Draft Queue Redesign)               | Verify: rapid double-click on send button in dev tools does not produce two Resend API calls      |
+| Hypothesis approval shift auth gap              | Phase 16 or any client-interaction phase      | Verify: unauthenticated POST to any hypothesis mutation endpoint returns 401                      |
+| Research quality gate infinite loop             | Research quality gate phase (not yet planned) | Verify: prospect with 0 evidence items hits "proceed anyway" after 3 re-runs                      |
+| Inflated funnel counts from draft-not-sent      | Phase 16 (Draft Queue Redesign)               | Verify: funnel `emailed` count matches Resend delivered count within 5%                           |
+| UX redesign breaks mounted-section side effects | Phase 13 (shipped) — retroactive verification | Verify: opening prospect detail does not set `status: 'VIEWED'` without admin viewing the content |
+| Authorization gap on client-facing procedures   | Any client-interaction phase                  | Verify: public slug URL cannot call any `adminProcedure` endpoint                                 |
+| Pipeline stage backward transition on closure   | Phase 14 (shipped) — design constraint        | Verify: campaign funnel correctly decrements `emailed` count when sequence is closed              |
+| Hash deep link not handled on page load         | Phase 16 or next prospect detail work         | Verify: `/admin/prospects/[id]#analysis` loads with Analysis section visible, not Evidence        |
 
 ---
 
 ## Sources
 
-- Codebase analysis: `lib/workflow-engine.ts`, `lib/research-executor.ts`, `lib/research-refresh.ts`, `lib/outreach/send-email.ts`, `server/routers/outreach.ts`, `server/routers/sequences.ts`, `prisma/schema.prisma`, `env.mjs`
-- Domain knowledge: Railway container constraints (512MB–1GB default), Playwright production deployment requirements, SerpAPI pricing model, Apple Mail Privacy Protection (MPP) iOS 15+, Dutch GDPR/CMP compliance requirements, Cookiebot prevalence in NL/BE B2B sites
-- Pattern analysis: Existing `WORKER_BASE_URL`/`WORKER_SHARED_SECRET` env vars indicate prior intent for worker separation; `CreditUsage` model indicates prior cost-tracking intent; `OutreachStep.sentAt` exists as correct pattern for temporal state
+- Codebase analysis (direct): `server/routers/outreach.ts` (approveDraft, bulkApproveLowRisk, markSequenceStepAfterSend), `server/routers/admin.ts` (getActionQueue, getDashboardStats), `server/routers/campaigns.ts` (getCampaignFunnel, funnelStage derivation), `server/routers/hypotheses.ts` (setStatus mutation, authorization pattern), `app/admin/prospects/[id]/page.tsx` (hidden section pattern, activeTab state), `app/voor/[slug]/page.tsx` (hypothesis filter: status ACCEPTED only), `prisma/schema.prisma` (OutreachLog model, ResearchRun status enum)
+- Project memory: Known issues — `commit 1ae3470` (404 pages skipped, thin evidence pool), session memory (user wants "autopilot with oversight", manual approval gates are the product differentiator)
+- Engineering patterns: Optimistic locking via status-transition in distributed send queues; idempotency via pre-claim atomic writes; React mount lifecycle effects on always-mounted vs. lazy-mounted sections
+- Domain knowledge: Sales automation UX — one-click approval queues require idempotency; B2B Dutch SMB evidence is structurally thin (minimal web presence); funnel arithmetic errors common when stage is derived from record presence not explicit state field
+
+---
+
+_Pitfalls research for: Qualifai v2.0 admin UX redesign — oversight console, research quality gating, client-side approval, one-click send queues, pipeline visualization_
+_Researched: 2026-02-22_
