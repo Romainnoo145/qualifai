@@ -75,6 +75,8 @@ enum HypothesisStatus {
   DRAFT
   ACCEPTED
   REJECTED
+  PENDING   // quality-approved, awaiting client validation on /voor/
+  DECLINED  // client declined the hypothesis on /voor/ (Phase 19)
 }
 
 enum SequenceStatus {
@@ -332,6 +334,11 @@ model ResearchRun {
   workerId      String?
   inputSnapshot Json?
   summary       Json?
+
+  // Quality gate fields (Phase 18)
+  qualityApproved    Boolean?   // null = not reviewed, true = approved, false = needs more research
+  qualityReviewedAt  DateTime?  // when the admin reviewed
+  qualityNotes       String?    // free-text override reason (e.g., "proceeding, thin market")
 
   prospectId String
   prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
