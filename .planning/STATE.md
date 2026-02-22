@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 
 ## Current Position
 
-Phase: 18 — Research Quality Gate — COMPLETE
-Plan: 03 complete — Phase 18 COMPLETE
-Status: All 3 plans complete — quality gate schema, QualityChip UI, hypothesis button removal
-Last activity: 2026-02-22 — Phase 18 verified (5/5 must-haves passed)
+Phase: 19 — Client Hypothesis Validation — IN PROGRESS
+Plan: 01 complete
+Status: Plan 01 complete — backend infrastructure (prospectProcedure, validateByProspect, status gate updates)
+Last activity: 2026-02-22 — Phase 19 Plan 01 executed
 
 ## Performance Metrics
 
@@ -38,6 +38,7 @@ Last activity: 2026-02-22 — Phase 18 verified (5/5 must-haves passed)
 | 15. Action Queue Dashboard | 2/2   | ~2 min    | ~1 min   |
 | 17. Evidence Pipeline      | 3/3   | ~9 min    | ~3 min   |
 | 18. Research Quality Gate  | 3/3   | ~11.5 min | ~3.8 min |
+| 19. Client Hypothesis Val. | 1/?   | ~2 min    | ~2 min   |
 
 _Updated after each plan completion_
 
@@ -90,6 +91,11 @@ _Updated after each plan completion_
 - [Phase 18]: QualityChip fullRun data cast as any via runQuery.data — avoids TS2589 deep Prisma inference, consistent with Phase 13/14 pattern
 - [Phase 18]: Traffic light on list view uses worst-case computeTrafficLight(evidenceCount, 1, 0.65) — source diversity not in list query; list is indicative, detail is definitive
 
+- [Phase 19, Plan 01]: prospectProcedure uses getRawInput() async function (not rawInput property) — tRPC v11 middleware API changed from v10; must await before reading slug
+- [Phase 19, Plan 01]: validateByProspect uses (ctx as unknown as { prospectId: string }).prospectId cast — base TRPCContext type doesn't include prospectId, middleware injects at runtime; same pattern as Phase 13 enriched context
+- [Phase 19, Plan 01]: DECLINED is final state — no-op on re-submit prevents accidental reversal
+- [Phase 19, Plan 01]: PENDING hypotheses accepted in all outreach gates (assets.ts x5, wizard.ts x1) — quality-approved hypotheses are outreach-eligible without prospect confirmation
+
 ### v2.0 Architecture Notes
 
 - Research summary recommends additive-only schema changes: `ResearchRun` gets `qualityApproved Boolean?`, `qualityReviewedAt DateTime?`, `qualityNotes String?`; `HypothesisStatus` enum gets `PENDING` and `DECLINED` values
@@ -124,5 +130,5 @@ _Updated after each plan completion_
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Phase 18 COMPLETE — all 3 plans executed, verified 5/5 must-haves
-Resume file: None — next step is Phase 19 (Client Hypothesis Validation)
+Stopped at: Phase 19 Plan 01 COMPLETE — backend infrastructure for hypothesis validation
+Resume file: None — next step is Phase 19 Plan 02 (Client /voor/ dashboard UI)
