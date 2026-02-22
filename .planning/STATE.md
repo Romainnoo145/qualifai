@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 15 of 16 (Action Queue Dashboard)
-Plan: 0 of 2
-Status: Ready to plan
-Last activity: 2026-02-22 — Phase 14 complete (campaign reporting)
+Plan: 1 of 2
+Status: In progress
+Last activity: 2026-02-22 — Plan 15-01 complete (action queue data layer)
 
 Progress: [████████░░] 80% (v1.2)
 
@@ -72,6 +72,9 @@ Recent decisions affecting v1.2 work:
 - [Phase 14, Plan 01]: Campaigns list page removes autopilot and prospect assignment UI — both belong on campaign detail page (Plan 02)
 - [Phase 14, Plan 02]: api.admin.listProspects cast as any + re-typed in AddProspectPanel to avoid TS2589 — consistent with Phase 13 pattern
 - [Phase 14, Plan 02]: Campaign detail page uses STAGE_ORDER array for prospect sort instead of numeric priority map — simpler and avoids duplication with backend stagePriority
+- [Phase 15, Plan 01]: parseDueAt helper duplicated in admin.ts (not imported from outreach.ts) to avoid circular dependency
+- [Phase 15, Plan 01]: getActionQueue uses Promise.all for four parallel Prisma queries — single tRPC call for dashboard, no waterfall
+- [Phase 15, Plan 01]: Items sorted overdue-first then oldest createdAt — matches autopilot with oversight where overdue tasks need immediate attention
 
 ### Pending Todos
 
@@ -94,5 +97,5 @@ None identified for v1.2 phases.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Phase 14 complete — ready to plan Phase 15
+Stopped at: Completed 15-01-PLAN.md (getActionQueue tRPC query)
 Resume file: None
