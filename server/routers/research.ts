@@ -186,4 +186,23 @@ export const researchRouter = router({
         data: { isApproved: false },
       });
     }),
+
+  approveQuality: adminProcedure
+    .input(
+      z.object({
+        runId: z.string(),
+        approved: z.boolean(),
+        notes: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.researchRun.update({
+        where: { id: input.runId },
+        data: {
+          qualityApproved: input.approved,
+          qualityReviewedAt: new Date(),
+          qualityNotes: input.notes ?? null,
+        },
+      });
+    }),
 });

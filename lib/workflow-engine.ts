@@ -390,6 +390,37 @@ export function evaluateQualityGate(items: EvidenceInput[]): QualityGateResult {
   };
 }
 
+export type TrafficLight = 'red' | 'amber' | 'green';
+
+export interface QualityBreakdown {
+  trafficLight: TrafficLight;
+  evidenceCount: number;
+  averageConfidence: number;
+  sourceTypeCount: number;
+  hypothesisCount: number;
+  reasons: string[];
+}
+
+/**
+ * computeTrafficLight — pure function mapping evidence metrics to a traffic light.
+ *
+ * Red:   critically thin evidence (< 3 items) — definitely needs attention
+ * Amber: minor shortfall (low source diversity OR low confidence) — warn + allow proceed
+ * Green: all thresholds met — good to go
+ *
+ * Mirrors the thresholds from evaluateQualityGate but returns three states
+ * instead of binary pass/fail. The soft-gate principle means amber never blocks.
+ */
+export function computeTrafficLight(
+  evidenceCount: number,
+  sourceTypeCount: number,
+  averageConfidence: number,
+): TrafficLight {
+  if (evidenceCount < 3) return 'red';
+  if (sourceTypeCount < 2 || averageConfidence < 0.65) return 'amber';
+  return 'green';
+}
+
 function selectEvidenceIdsByTag(
   evidence: EvidenceInput[],
   tag: string,
