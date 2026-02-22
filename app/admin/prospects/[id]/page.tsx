@@ -228,7 +228,7 @@ export default function ProspectDetail() {
       />
 
       {/* Tab nav — full-width underline tabs */}
-      <nav className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm -mx-6 px-6 py-3 border-b border-slate-100">
+      <nav className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm py-3 border-b border-slate-100">
         <div className="flex">
           {TABS.map((tab) => (
             <button
