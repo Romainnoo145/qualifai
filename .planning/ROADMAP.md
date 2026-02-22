@@ -179,7 +179,7 @@ Plans:
 - [ ] **Phase 12: Navigation and Language** — Reduce nav from 10 items to 6 and replace internal jargon with plain language throughout
 - [ ] **Phase 13: Prospect Story Flow** — Replace the 7-tab prospect detail with a linear Evidence → Analysis → Outreach Preview → Results flow with full plain-language labels
 - [x] **Phase 14: Campaign Reporting** — Give campaigns real funnel visibility: create named cohorts, see per-prospect status and conversion metrics
-- [ ] **Phase 15: Action Queue Dashboard** — Unify all pending decisions into a single dashboard hub that links directly to where the admin acts
+- [x] **Phase 15: Action Queue Dashboard** — Unify all pending decisions into a single dashboard hub that links directly to where the admin acts
 - [ ] **Phase 16: Draft Queue Redesign** — Replace complex outreach approval with one-click-per-action queue (LinkedIn/Gmail/WhatsApp/Call per row)
 
 ---
@@ -280,8 +280,8 @@ Plans:
 
 Plans:
 
-- [ ] 15-01-PLAN.md — Action queue data layer: getActionQueue tRPC query aggregating pending decisions across hypothesis, outreach, task, and reply tables (Wave 1)
-- [ ] 15-02-PLAN.md — Action queue UI: dashboard page rewrite with grouped action items, count badges, urgency indicators, and direct links (Wave 2)
+- [x] 15-01-PLAN.md — Action queue data layer: getActionQueue tRPC query aggregating pending decisions across hypothesis, outreach, task, and reply tables (Wave 1)
+- [x] 15-02-PLAN.md — Action queue UI: dashboard page rewrite with grouped action items, count badges, urgency indicators, and direct links (Wave 2)
 
 ### Phase 16: Draft Queue Redesign
 
@@ -312,5 +312,5 @@ Plans:
 | 12. Navigation and Language | v1.2      | 2/2            | Complete    | 2026-02-21 |
 | 13. Prospect Story Flow     | v1.2      | 5/5            | Complete    | 2026-02-22 |
 | 14. Campaign Reporting      | v1.2      | 2/2            | Complete    | 2026-02-22 |
-| 15. Action Queue Dashboard  | v1.2      | 0/2            | Not started | -          |
+| 15. Action Queue Dashboard  | v1.2      | 2/2            | Complete    | 2026-02-22 |
 | 16. Draft Queue Redesign    | v1.2      | 0/?            | Not started | -          |
