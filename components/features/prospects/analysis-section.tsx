@@ -18,7 +18,7 @@ type Finding = {
   kind: 'hypothesis' | 'opportunity';
   title: string;
   summary: string;
-  status: 'DRAFT' | 'ACCEPTED' | 'REJECTED';
+  status: 'DRAFT' | 'ACCEPTED' | 'REJECTED' | 'PENDING' | 'DECLINED';
   confidenceScore: number;
   evidenceItems: Array<{
     id: string;
@@ -35,41 +35,34 @@ type Finding = {
   }>;
 };
 
-const STATUS_PILL: Record<string, string> = {
-  ACCEPTED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  REJECTED: 'bg-red-50 text-red-700 border-red-200',
-  DRAFT: 'bg-slate-100 text-slate-600 border-slate-200',
+const STATUS_LABELS: Record<string, string> = {
+  DRAFT: 'Pending validation',
+  ACCEPTED: 'Pending validation', // Legacy admin-accepted, same display as PENDING
+  PENDING: 'Pending validation',
+  REJECTED: 'Skipped', // Legacy admin-rejected
+  DECLINED: 'Declined by prospect',
 };
 
-const BTN =
-  'text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg transition-colors border';
+const STATUS_PILL: Record<string, string> = {
+  ACCEPTED: 'bg-blue-50 text-blue-700 border-blue-200', // Changed from emerald — no longer means "admin approved"
+  REJECTED: 'bg-slate-100 text-slate-500 border-slate-200', // Dimmed — legacy
+  DRAFT: 'bg-blue-50 text-blue-700 border-blue-200', // Same as PENDING
+  PENDING: 'bg-blue-50 text-blue-700 border-blue-200',
+  DECLINED: 'bg-red-50 text-red-600 border-red-200',
+};
 
-type SetStatus = (
-  kind: 'hypothesis' | 'opportunity',
-  id: string,
-  status: 'DRAFT' | 'ACCEPTED' | 'REJECTED',
-) => void;
-
-function FindingCard({
-  finding,
-  onSetStatus,
-}: {
-  finding: Finding;
-  onSetStatus: SetStatus;
-}) {
+function FindingCard({ finding }: { finding: Finding }) {
   const visible = finding.evidenceItems.slice(0, 4);
   const more = finding.evidenceItems.length - visible.length;
-  const set = (s: 'DRAFT' | 'ACCEPTED' | 'REJECTED') =>
-    onSetStatus(finding.kind, finding.id, s);
 
   return (
     <div className="glass-card p-6 space-y-4 rounded-2xl">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 min-w-0">
           <span
-            className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border shrink-0 ${STATUS_PILL[finding.status]}`}
+            className={`text-[10px] font-medium px-2 py-0.5 rounded-full border shrink-0 ${STATUS_PILL[finding.status] ?? STATUS_PILL.DRAFT}`}
           >
-            {finding.status}
+            {STATUS_LABELS[finding.status] ?? 'Pending validation'}
           </span>
           <div className="min-w-0">
             <h3 className="text-sm font-bold text-klarifai-midnight leading-snug">
@@ -79,32 +72,6 @@ function FindingCard({
               {finding.kind === 'hypothesis' ? 'Challenge' : 'Improvement'}
             </span>
           </div>
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          {finding.status !== 'ACCEPTED' && (
-            <button
-              onClick={() => set('ACCEPTED')}
-              className={`${BTN} bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200`}
-            >
-              Accept
-            </button>
-          )}
-          {finding.status !== 'REJECTED' && (
-            <button
-              onClick={() => set('REJECTED')}
-              className={`${BTN} bg-red-50 text-red-600 hover:bg-red-100 border-red-200`}
-            >
-              Reject
-            </button>
-          )}
-          {finding.status !== 'DRAFT' && (
-            <button
-              onClick={() => set('DRAFT')}
-              className={`${BTN} bg-slate-50 text-slate-500 hover:bg-slate-100 border-slate-200`}
-            >
-              Reset
-            </button>
-          )}
         </div>
       </div>
 
@@ -217,15 +184,15 @@ function toFinding(raw: any, kind: 'hypothesis' | 'opportunity'): Finding {
   };
 }
 
-const ORDER: Record<string, number> = { ACCEPTED: 0, DRAFT: 1, REJECTED: 2 };
+const ORDER: Record<string, number> = {
+  PENDING: 0,
+  ACCEPTED: 0,
+  DRAFT: 1,
+  DECLINED: 2,
+  REJECTED: 3,
+};
 
-export function AnalysisSection({
-  prospectId,
-  onSetStatus,
-}: {
-  prospectId: string;
-  onSetStatus: SetStatus;
-}) {
+export function AnalysisSection({ prospectId }: { prospectId: string }) {
   const { data, isLoading } = api.hypotheses.listByProspect.useQuery({
     prospectId,
   }) as { data: any; isLoading: boolean };
@@ -259,8 +226,6 @@ export function AnalysisSection({
     return d !== 0 ? d : b.confidenceScore - a.confidenceScore;
   });
 
-  const accepted = findings.filter((f) => f.status === 'ACCEPTED').length;
-
   if (findings.length === 0) {
     return (
       <div className="glass-card p-8 text-center rounded-[2.5rem]">
@@ -276,15 +241,10 @@ export function AnalysisSection({
   return (
     <div className="space-y-4">
       <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
-        Analysis ({findings.length} finding{findings.length !== 1 ? 's' : ''}
-        {accepted > 0 ? `, ${accepted} accepted` : ''})
+        Analysis ({findings.length} finding{findings.length !== 1 ? 's' : ''})
       </p>
       {findings.map((f) => (
-        <FindingCard
-          key={`${f.kind}-${f.id}`}
-          finding={f}
-          onSetStatus={onSetStatus}
-        />
+        <FindingCard key={`${f.kind}-${f.id}`} finding={f} />
       ))}
     </div>
   );

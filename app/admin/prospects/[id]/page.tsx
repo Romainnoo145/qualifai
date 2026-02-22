@@ -44,11 +44,6 @@ export default function ProspectDetail() {
   const researchRuns = api.research.listRuns.useQuery({ prospectId: id });
   const utils = api.useUtils();
 
-  const setHypothesisStatus = api.hypotheses.setStatus.useMutation({
-    onSuccess: () =>
-      utils.hypotheses.listByProspect.invalidate({ prospectId: id }),
-  });
-
   const copyLink = () => {
     if (!prospect.data) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -249,12 +244,7 @@ export default function ProspectDetail() {
         <EvidenceSection prospectId={id} signals={p.signals} />
       </div>
       <div className={activeTab === 'analysis' ? '' : 'hidden'}>
-        <AnalysisSection
-          prospectId={id}
-          onSetStatus={(kind, entryId, status) =>
-            setHypothesisStatus.mutate({ kind, id: entryId, status })
-          }
-        />
+        <AnalysisSection prospectId={id} />
       </div>
       <div className={activeTab === 'outreach-preview' ? '' : 'hidden'}>
         <OutreachPreviewSection
