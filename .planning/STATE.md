@@ -62,6 +62,8 @@ Recent decisions affecting v1.2 work:
 - [Phase 7]: Hypotheses must be manually approved (DRAFT → ACCEPTED) — auto-accept removed
 - [Phase 13]: OutreachPreviewSection owns all mutations locally (generate, queueDraft, regenerateCallBrief) — page only passes latestRunId + prospect as props
 - [Phase 13]: CallPlanGrid helper component avoids TS2589 deep type inference from Prisma JsonValue
+- [Phase 13, Plan 04]: ResultsSection fetches cadence state locally via tRPC; session data passed via prospect prop (already loaded by getProspect)
+- [Phase 13, Plan 04]: page.tsx at 399 lines (target was 300) — all content is purposeful; no dead code found
 - [Phase 13, Plan 05]: TERM-02 scope follows TERM-01 pattern — only user-visible string literals changed, variable/prop/type names left intact
 - [Phase 13, Plan 05]: Label maps (WORKFLOW_TAG_LABELS, OUTREACH_STATUS_LABELS, OUTREACH_TYPE_LABELS) co-located at file top with ?? fallback for unknown enum values
 
@@ -86,5 +88,5 @@ None identified for v1.2 phases.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 13-05-PLAN.md (TERM-02 terminology sweep — Phase 13 complete)
+Stopped at: Completed 13-04-PLAN.md (ResultsSection — story flow complete)
 Resume file: None
