@@ -187,7 +187,8 @@ function FindingCard({
             </div>
           ) : (
             <p className="text-xs text-slate-400">
-              No services matched yet — run proof matching
+              {/* TERM-02: "proof matching" replaced with plain language */}
+              No services matched yet — run service matching
             </p>
           )}
         </div>
@@ -225,7 +226,6 @@ export function AnalysisSection({
   prospectId: string;
   onSetStatus: SetStatus;
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, isLoading } = api.hypotheses.listByProspect.useQuery({
     prospectId,
   }) as { data: any; isLoading: boolean };
@@ -262,8 +262,9 @@ export function AnalysisSection({
     return (
       <div className="glass-card p-8 text-center">
         <p className="text-sm text-slate-400">
-          No analysis available yet. Run research and proof matching to generate
-          findings.
+          {/* TERM-02: "proof matching" replaced with plain language */}
+          No analysis available yet. Run research and service matching to
+          generate findings.
         </p>
       </div>
     );

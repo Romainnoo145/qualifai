@@ -13,6 +13,16 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
   MANUAL_URL: 'Manually Added',
 };
 
+// TERM-02: workflowTag enum values mapped to plain-language labels
+const WORKFLOW_TAG_LABELS: Record<string, string> = {
+  lead_qualification: 'Lead Quality',
+  workflow_bottleneck: 'Process Bottleneck',
+  tech_stack_gap: 'Technology Gap',
+  hiring_signal: 'Hiring Activity',
+  customer_sentiment: 'Customer Feedback',
+  automation_potential: 'Improvement Area',
+};
+
 function toSentenceCase(str: string): string {
   if (!str) return str;
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -174,7 +184,9 @@ export function EvidenceSection({
                     </a>
                     {item.workflowTag && (
                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 shrink-0">
-                        {toSentenceCase(item.workflowTag.replace(/_/g, ' '))}
+                        {/* TERM-02: workflowTag displayed as plain label */}
+                        {WORKFLOW_TAG_LABELS[item.workflowTag] ??
+                          toSentenceCase(item.workflowTag.replace(/_/g, ' '))}
                       </span>
                     )}
                   </div>
