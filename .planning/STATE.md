@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v2.0 — Streamlined Flow (Phase 17: Evidence Pipeline Enrichment)
+**Current focus:** v2.0 — Streamlined Flow (Phase 18: Research Quality Gate)
 
 ## Current Position
 
-Phase: 17 — Evidence Pipeline Enrichment
-Plan: 03 complete — Phase 17 COMPLETE
-Status: All 3 plans complete — sitemap, Google Search, KvK, LinkedIn wired into executeResearchRun
-Last activity: 2026-02-22 — Phase 17, Plan 03 executed (research pipeline integration)
+Phase: 18 — Research Quality Gate
+Plan: 01 complete
+Status: Backend foundation shipped — quality gate schema, computeTrafficLight, approveQuality mutation, listProspects extended
+Last activity: 2026-02-22 — Phase 18, Plan 01 executed (quality gate backend foundation)
 
 ## Performance Metrics
 
@@ -24,19 +24,20 @@ Last activity: 2026-02-22 — Phase 17, Plan 03 executed (research pipeline inte
 
 **By Phase (v1.1 + v1.2):**
 
-| Phase                      | Plans | Total   | Avg/Plan |
-| -------------------------- | ----- | ------- | -------- |
-| 6. Use Cases Foundation    | 3/3   | 13 min  | 4.3 min  |
-| 7. Evidence Approval Gate  | 2/2   | 6 min   | 3 min    |
-| 8. Deep Evidence Pipeline  | 3/3   | ~21 min | ~7 min   |
-| 9. Engagement Triggers     | 2/2   | ~5 min  | ~2.5 min |
-| 10. Cadence Engine         | 4/4   | 7 min   | 1.75 min |
-| 11. Prospect Dashboard     | 2/2   | ~6 min  | 3 min    |
-| 12. Navigation & Language  | 2/2   | 6 min   | 3 min    |
-| 13. Prospect Story Flow    | 5/5   | ~17 min | ~3.4 min |
-| 14. Campaign Reporting     | 2/2   | ~4 min  | ~2 min   |
-| 15. Action Queue Dashboard | 2/2   | ~2 min  | ~1 min   |
-| 17. Evidence Pipeline      | 3/3   | ~9 min  | ~3 min   |
+| Phase                      | Plans | Total    | Avg/Plan |
+| -------------------------- | ----- | -------- | -------- |
+| 6. Use Cases Foundation    | 3/3   | 13 min   | 4.3 min  |
+| 7. Evidence Approval Gate  | 2/2   | 6 min    | 3 min    |
+| 8. Deep Evidence Pipeline  | 3/3   | ~21 min  | ~7 min   |
+| 9. Engagement Triggers     | 2/2   | ~5 min   | ~2.5 min |
+| 10. Cadence Engine         | 4/4   | 7 min    | 1.75 min |
+| 11. Prospect Dashboard     | 2/2   | ~6 min   | 3 min    |
+| 12. Navigation & Language  | 2/2   | 6 min    | 3 min    |
+| 13. Prospect Story Flow    | 5/5   | ~17 min  | ~3.4 min |
+| 14. Campaign Reporting     | 2/2   | ~4 min   | ~2 min   |
+| 15. Action Queue Dashboard | 2/2   | ~2 min   | ~1 min   |
+| 17. Evidence Pipeline      | 3/3   | ~9 min   | ~3 min   |
+| 18. Research Quality Gate  | 1/?   | ~2.5 min | ~2.5 min |
 
 _Updated after each plan completion_
 
@@ -81,6 +82,10 @@ _Updated after each plan completion_
 - [Phase 17, Plan 03]: evidence cap raised from 24 to 36 — new sources add 15+ drafts, old cap would drop useful evidence
 - [Phase 17, Plan 03]: Apollo-derived LinkedIn always runs (no deepCrawl gate) — uses existing DB data, zero API cost
 
+- [Phase 18, Plan 01]: DB drift prevented prisma migrate dev — applied quality gate fields via docker exec psql + created migration file manually (same pattern as Phase 17 Plan 02)
+- [Phase 18, Plan 01]: computeTrafficLight placed directly after evaluateQualityGate in workflow-engine.ts — natural co-location, both deal with evidence quality thresholds
+- [Phase 18, Plan 01]: listProspects includes researchRuns with take:1 orderBy createdAt desc — latest run only, no N+1, source type diversity deferred to getRun
+
 ### v2.0 Architecture Notes
 
 - Research summary recommends additive-only schema changes: `ResearchRun` gets `qualityApproved Boolean?`, `qualityReviewedAt DateTime?`, `qualityNotes String?`; `HypothesisStatus` enum gets `PENDING` and `DECLINED` values
@@ -115,5 +120,5 @@ _Updated after each plan completion_
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Phase 17, Plan 03 complete — all 4 enrichment sources wired into executeResearchRun
-Resume file: None — next step is Phase 18 (Research Quality Gate)
+Stopped at: Phase 18, Plan 01 complete — quality gate backend foundation shipped
+Resume file: None — next step is Phase 18, Plan 02 (admin UI for traffic-light quality review)
