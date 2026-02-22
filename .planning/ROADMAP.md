@@ -230,11 +230,11 @@ Plans:
 
 Plans:
 
-- [ ] 13-01-PLAN.md — Page restructure (tabs to vertical sections) + Evidence section with source URL display (Wave 1)
-- [ ] 13-02-PLAN.md — Analysis section: hypothesis reasoning chain with matched services (Wave 2)
-- [ ] 13-03-PLAN.md — Outreach Preview section: email content, dashboard link, call brief (Wave 2)
-- [ ] 13-04-PLAN.md — Results section: engagement metrics, cadence timeline, dashboard activity (Wave 3)
-- [ ] 13-05-PLAN.md — TERM-02: full terminology sweep replacing remaining internal terms (Wave 3)
+- [x] 13-01-PLAN.md — Page restructure (tabs to vertical sections) + Evidence section with source URL display (Wave 1)
+- [x] 13-02-PLAN.md — Analysis section: hypothesis reasoning chain with matched services (Wave 2)
+- [x] 13-03-PLAN.md — Outreach Preview section: email content, dashboard link, call brief (Wave 2)
+- [x] 13-04-PLAN.md — Results section: engagement metrics, cadence timeline, dashboard activity (Wave 3)
+- [x] 13-05-PLAN.md — TERM-02: full terminology sweep replacing remaining internal terms (Wave 3)
 
 ---
 
@@ -311,7 +311,7 @@ Plans:
 | 10. Cadence Engine          | v1.1      | 4/4            | Complete    | 2026-02-21 |
 | 11. Prospect Dashboard      | v1.1      | 2/2            | Complete    | 2026-02-21 |
 | 12. Navigation and Language | v1.2      | 2/2            | Complete    | 2026-02-21 |
-| 13. Prospect Story Flow     | v1.2      | 0/5            | Planned     | -          |
+| 13. Prospect Story Flow     | v1.2      | 5/5            | Complete    | 2026-02-22 |
 | 14. Campaign Reporting      | v1.2      | 0/3            | Not started | -          |
 | 15. Action Queue Dashboard  | v1.2      | 0/2            | Not started | -          |
 | 16. Draft Queue Redesign    | v1.2      | 0/?            | Not started | -          |
