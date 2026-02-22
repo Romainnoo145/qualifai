@@ -253,13 +253,12 @@ Plans:
 3. Campaign view lists every prospect with their current funnel stage visible at a glance
 4. Campaign view shows conversion metrics: response rate and booking rate calculated from funnel counts
 
-**Plans:** TBD
+**Plans:** 2 plans in 2 waves
 
 Plans:
 
-- [ ] 14-01-PLAN.md — Campaign creation UI and prospect assignment
-- [ ] 14-02-PLAN.md — Funnel visualization and per-prospect status display
-- [ ] 14-03-PLAN.md — Conversion metrics (response rate, booking rate)
+- [ ] 14-01-PLAN.md — Campaign funnel data query + list page redesign with creation form and clickable cards (Wave 1)
+- [ ] 14-02-PLAN.md — Campaign detail page with funnel visualization, per-prospect status table, and conversion metrics (Wave 2)
 
 ---
 
@@ -312,6 +311,6 @@ Plans:
 | 11. Prospect Dashboard      | v1.1      | 2/2            | Complete    | 2026-02-21 |
 | 12. Navigation and Language | v1.2      | 2/2            | Complete    | 2026-02-21 |
 | 13. Prospect Story Flow     | v1.2      | 5/5            | Complete    | 2026-02-22 |
-| 14. Campaign Reporting      | v1.2      | 0/3            | Not started | -          |
+| 14. Campaign Reporting      | v1.2      | 0/2            | Not started | -          |
 | 15. Action Queue Dashboard  | v1.2      | 0/2            | Not started | -          |
 | 16. Draft Queue Redesign    | v1.2      | 0/?            | Not started | -          |
