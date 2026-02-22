@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 ## Current Position
 
 Phase: 17 — Evidence Pipeline Enrichment
-Plan: 02 complete, proceeding to Plan 03
-Status: Plans 01 and 02 complete — sitemap, Google Search, KvK enrichment modules shipped
-Last activity: 2026-02-22 — Phase 17, Plan 02 executed (KvK registry enrichment + REGISTRY enum + crawl4ai fallback fix)
+Plan: 03 complete — Phase 17 COMPLETE
+Status: All 3 plans complete — sitemap, Google Search, KvK, LinkedIn wired into executeResearchRun
+Last activity: 2026-02-22 — Phase 17, Plan 03 executed (research pipeline integration)
 
 ## Performance Metrics
 
@@ -36,7 +36,7 @@ Last activity: 2026-02-22 — Phase 17, Plan 02 executed (KvK registry enrichmen
 | 13. Prospect Story Flow    | 5/5   | ~17 min | ~3.4 min |
 | 14. Campaign Reporting     | 2/2   | ~4 min  | ~2 min   |
 | 15. Action Queue Dashboard | 2/2   | ~2 min  | ~1 min   |
-| 17. Evidence Pipeline      | 2/3   | ~7 min  | ~3.5 min |
+| 17. Evidence Pipeline      | 3/3   | ~9 min  | ~3 min   |
 
 _Updated after each plan completion_
 
@@ -76,6 +76,10 @@ _Updated after each plan completion_
 - [Phase 17, Plan 02]: DB drift prevented prisma migrate dev — applied REGISTRY enum via docker exec psql + created migration file manually
 - [Phase 17, Plan 02]: KvK module uses process.env directly (not env.mjs) — matches serp.ts and crawl4ai.ts pattern for testability
 - [Phase 17, Plan 02]: crawl4ai fallback stub (0.55 confidence) preferred over silent skip — enables EVID-08 LinkedIn placeholders
+- [Phase 17, Plan 03]: priorSnapshot must be read BEFORE run create/update — update overwrites inputSnapshot, losing cached sitemap URLs
+- [Phase 17, Plan 03]: freshSitemapCache stored as undefined (not null) when sitemap empty — avoids writing zero-URL cache entry
+- [Phase 17, Plan 03]: evidence cap raised from 24 to 36 — new sources add 15+ drafts, old cap would drop useful evidence
+- [Phase 17, Plan 03]: Apollo-derived LinkedIn always runs (no deepCrawl gate) — uses existing DB data, zero API cost
 
 ### v2.0 Architecture Notes
 
@@ -98,7 +102,7 @@ _Updated after each plan completion_
 
 ### Blockers/Concerns
 
-- Evidence pool currently thin after EVID-06-09 are unshipped — Phase 17 must complete before Phase 18 quality gate is meaningful
+- RESOLVED: Evidence pool enriched — EVID-06-09 all shipped in Phase 17, Plans 01-03
 - Research quality thresholds not yet empirically validated against Qualifai's actual data (noted in research SUMMARY.md gaps)
 
 ### Quick Tasks Completed
@@ -111,5 +115,5 @@ _Updated after each plan completion_
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Phase 17, Plan 02 complete — KvK registry enrichment + REGISTRY enum + crawl4ai fallback fix
-Resume file: None — next step is Phase 17, Plan 03 (workflow engine integration)
+Stopped at: Phase 17, Plan 03 complete — all 4 enrichment sources wired into executeResearchRun
+Resume file: None — next step is Phase 18 (Research Quality Gate)
