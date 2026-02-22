@@ -10,9 +10,18 @@ import { ingestReviewEvidenceDrafts } from '@/lib/review-adapters';
 import { ingestWebsiteEvidenceDrafts } from '@/lib/web-evidence-adapter';
 import {
   discoverSerpUrls,
+  discoverGoogleSearchMentions,
   type SerpDiscoveryResult,
 } from '@/lib/enrichment/serp';
-import { ingestCrawl4aiEvidenceDrafts } from '@/lib/enrichment/crawl4ai';
+import {
+  ingestCrawl4aiEvidenceDrafts,
+  extractMarkdown,
+} from '@/lib/enrichment/crawl4ai';
+import {
+  discoverSitemapUrls,
+  type SitemapCache,
+} from '@/lib/enrichment/sitemap';
+import { fetchKvkData, kvkDataToEvidenceDraft } from '@/lib/enrichment/kvk';
 import type { Prisma, PrismaClient } from '@prisma/client';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
@@ -46,6 +55,12 @@ function extractSerpCache(snapshot: unknown): SerpDiscoveryResult | null {
   const payload = snapshot as { serpCache?: SerpDiscoveryResult } | null;
   if (!payload?.serpCache?.discoveredAt) return null;
   return payload.serpCache;
+}
+
+function extractSitemapCache(snapshot: unknown): SitemapCache | null {
+  const payload = snapshot as { sitemapCache?: SitemapCache } | null;
+  if (!payload?.sitemapCache?.discoveredAt) return null;
+  return payload.sitemapCache;
 }
 
 function dedupeEvidenceDrafts<
@@ -83,8 +98,24 @@ export async function executeResearchRun(
       description: true,
       technologies: true,
       specialties: true,
+      linkedinUrl: true, // for EVID-08 LinkedIn evidence
     },
   });
+
+  // Pre-read existing snapshot for sitemap cache BEFORE run create/update overwrites it
+  const priorSnapshot = input.existingRunId
+    ? (
+        await db.researchRun.findUnique({
+          where: { id: input.existingRunId },
+          select: { inputSnapshot: true },
+        })
+      )?.inputSnapshot
+    : null;
+  const sitemapCache = extractSitemapCache(priorSnapshot);
+  const isSitemapCacheValid =
+    sitemapCache &&
+    Date.now() - new Date(sitemapCache.discoveredAt).getTime() <
+      24 * 60 * 60 * 1000;
 
   const campaign = input.campaignId
     ? await db.campaign.findUnique({
@@ -100,6 +131,18 @@ export async function executeResearchRun(
       })
     : null;
 
+  // Sitemap discovery — always runs (zero API cost)
+  // Cache was pre-read before run create/update
+  const sitemapUrls = isSitemapCacheValid
+    ? sitemapCache.urls
+    : await discoverSitemapUrls(prospect.domain);
+
+  // Build fresh cache object when we actually fetched sitemap
+  const freshSitemapCache: SitemapCache | undefined =
+    !isSitemapCacheValid && sitemapUrls.length > 0
+      ? { discoveredAt: new Date().toISOString(), urls: sitemapUrls }
+      : undefined;
+
   const run = input.existingRunId
     ? await db.researchRun.update({
         where: { id: input.existingRunId },
@@ -112,6 +155,7 @@ export async function executeResearchRun(
             manualUrls: input.manualUrls,
             campaignId: input.campaignId,
             deepCrawl: input.deepCrawl ?? false,
+            ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
           }),
         },
       })
@@ -125,6 +169,7 @@ export async function executeResearchRun(
             manualUrls: input.manualUrls,
             campaignId: input.campaignId,
             deepCrawl: input.deepCrawl ?? false,
+            ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
           }),
         },
       });
@@ -135,10 +180,14 @@ export async function executeResearchRun(
   const nonReviewManualUrls = input.manualUrls.filter(
     (url) => inferSourceType(url) !== 'REVIEWS',
   );
-  const researchUrls = uniqueUrls([
-    ...defaultResearchUrls(prospect.domain),
-    ...nonReviewManualUrls,
-  ]);
+
+  // Use sitemap URLs if available, fall back to guessed paths
+  const researchUrls = uniqueUrls(
+    sitemapUrls.length > 0
+      ? [...sitemapUrls, ...nonReviewManualUrls]
+      : [...defaultResearchUrls(prospect.domain), ...nonReviewManualUrls],
+  );
+
   const websiteEvidenceDrafts = await ingestWebsiteEvidenceDrafts(researchUrls);
   const baseEvidenceDrafts = generateEvidenceDrafts(
     prospect,
@@ -185,6 +234,7 @@ export async function executeResearchRun(
             campaignId: input.campaignId,
             deepCrawl: true,
             serpCache: serpResult,
+            ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
           }),
         },
       });
@@ -196,9 +246,102 @@ export async function executeResearchRun(
       const serpEvidenceDrafts = await ingestCrawl4aiEvidenceDrafts(serpUrls);
       allDrafts.push(...serpEvidenceDrafts);
     }
+
+    // Google search mentions (EVID-07) — 3 queries, gated behind deepCrawl
+    try {
+      const googleMentions = await discoverGoogleSearchMentions({
+        companyName: prospect.companyName,
+        domain: prospect.domain,
+      });
+      for (const mention of googleMentions) {
+        allDrafts.push({
+          sourceType: 'WEBSITE',
+          sourceUrl: mention.url,
+          title: mention.title,
+          snippet: mention.snippet.slice(0, 240),
+          workflowTag: 'workflow-context',
+          confidenceScore: 0.71,
+          metadata: { adapter: 'serp-google-search', source: 'google-mention' },
+        });
+      }
+    } catch (err) {
+      console.error('[Google Search] mention discovery failed:', err);
+    }
   }
 
-  const evidenceDrafts = dedupeEvidenceDrafts(allDrafts).slice(0, 24);
+  // KvK registry enrichment (EVID-09) — runs for all Dutch prospects with a companyName
+  if (prospect.companyName) {
+    try {
+      const kvkData = await fetchKvkData(prospect.companyName);
+      if (kvkData) {
+        allDrafts.push(kvkDataToEvidenceDraft(kvkData));
+      }
+    } catch (err) {
+      console.error('[KvK] enrichment failed, continuing without:', err);
+    }
+  }
+
+  // LinkedIn profile evidence from Apollo-derived data (EVID-08 — reliable, no network call)
+  const linkedinSnippet = [
+    prospect.description,
+    prospect.specialties.length > 0
+      ? `Specialiteiten: ${prospect.specialties.join(', ')}`
+      : null,
+    prospect.industry ? `Sector: ${prospect.industry}` : null,
+  ]
+    .filter(Boolean)
+    .join(' | ');
+
+  if (linkedinSnippet.length > 0) {
+    allDrafts.push({
+      sourceType: 'WEBSITE',
+      sourceUrl:
+        prospect.linkedinUrl ??
+        `https://www.linkedin.com/company/${prospect.domain.split('.')[0]}`,
+      title: `${prospect.companyName ?? prospect.domain} - Bedrijfsprofiel`,
+      snippet: linkedinSnippet.slice(0, 240),
+      workflowTag: 'workflow-context',
+      confidenceScore: 0.74,
+      metadata: { adapter: 'apollo-derived', source: 'linkedin-profile' },
+    });
+  }
+
+  // LinkedIn browser extraction attempt (EVID-08 — best-effort, often blocked by authwall)
+  if (input.deepCrawl && prospect.linkedinUrl) {
+    try {
+      const { markdown, title } = await extractMarkdown(prospect.linkedinUrl);
+
+      // Detect LinkedIn authwall redirect
+      const isAuthwall =
+        !markdown ||
+        markdown.length < 200 ||
+        [
+          'authwall',
+          'log in to linkedin',
+          'join linkedin',
+          'sign in',
+          'leden login',
+        ].some((phrase) => markdown.toLowerCase().includes(phrase));
+
+      if (!isAuthwall) {
+        allDrafts.push({
+          sourceType: 'WEBSITE',
+          sourceUrl: prospect.linkedinUrl,
+          title:
+            title || `${prospect.companyName ?? prospect.domain} - LinkedIn`,
+          snippet: markdown.slice(0, 240).replace(/\n+/g, ' ').trim(),
+          workflowTag: 'workflow-context',
+          confidenceScore: 0.72,
+          metadata: { adapter: 'crawl4ai', source: 'linkedin' },
+        });
+      }
+      // If authwall: skip silently — don't create fallback for LinkedIn
+    } catch {
+      // LinkedIn extraction failure is expected — skip silently
+    }
+  }
+
+  const evidenceDrafts = dedupeEvidenceDrafts(allDrafts).slice(0, 36);
 
   const evidenceRecords: Array<{
     id: string;
