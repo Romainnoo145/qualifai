@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 ## Current Position
 
 Phase: 17 — Evidence Pipeline Enrichment
-Plan: 01 complete, proceeding to Plan 02
-Status: Plan 01 complete — sitemap + Google Search enrichment modules shipped
-Last activity: 2026-02-22 — Phase 17, Plan 01 executed (sitemap URL discovery + Google Search mentions)
+Plan: 02 complete, proceeding to Plan 03
+Status: Plans 01 and 02 complete — sitemap, Google Search, KvK enrichment modules shipped
+Last activity: 2026-02-22 — Phase 17, Plan 02 executed (KvK registry enrichment + REGISTRY enum + crawl4ai fallback fix)
 
 ## Performance Metrics
 
@@ -36,7 +36,7 @@ Last activity: 2026-02-22 — Phase 17, Plan 01 executed (sitemap URL discovery 
 | 13. Prospect Story Flow    | 5/5   | ~17 min | ~3.4 min |
 | 14. Campaign Reporting     | 2/2   | ~4 min  | ~2 min   |
 | 15. Action Queue Dashboard | 2/2   | ~2 min  | ~1 min   |
-| 17. Evidence Pipeline      | 1/3   | ~3 min  | ~3 min   |
+| 17. Evidence Pipeline      | 2/3   | ~7 min  | ~3.5 min |
 
 _Updated after each plan completion_
 
@@ -73,6 +73,9 @@ _Updated after each plan completion_
 - [Phase 17, Plan 01]: Sitemapper catch block omits console.error — sitemap absence is structural for Dutch SMBs, not a warning
 - [Phase 17, Plan 01]: snippet.length > 30 filter in discoverGoogleSearchMentions excludes stub organic results
 - [Phase 17, Plan 01]: SERP_API_KEY guard reads process.env directly (not env.mjs) for testability — consistent with discoverSerpUrls pattern
+- [Phase 17, Plan 02]: DB drift prevented prisma migrate dev — applied REGISTRY enum via docker exec psql + created migration file manually
+- [Phase 17, Plan 02]: KvK module uses process.env directly (not env.mjs) — matches serp.ts and crawl4ai.ts pattern for testability
+- [Phase 17, Plan 02]: crawl4ai fallback stub (0.55 confidence) preferred over silent skip — enables EVID-08 LinkedIn placeholders
 
 ### v2.0 Architecture Notes
 
@@ -108,5 +111,5 @@ _Updated after each plan completion_
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Phase 17, Plan 01 complete — sitemap URL discovery + Google Search mention discovery modules
-Resume file: None — next step is Phase 17, Plan 02 (LinkedIn + KvK enrichment sources)
+Stopped at: Phase 17, Plan 02 complete — KvK registry enrichment + REGISTRY enum + crawl4ai fallback fix
+Resume file: None — next step is Phase 17, Plan 03 (workflow engine integration)
