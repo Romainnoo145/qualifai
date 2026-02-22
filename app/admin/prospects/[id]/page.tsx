@@ -24,6 +24,7 @@ import { AnalysisSection } from '@/components/features/prospects/analysis-sectio
 import { OutreachPreviewSection } from '@/components/features/prospects/outreach-preview-section';
 import { ResultsSection } from '@/components/features/prospects/results-section';
 import { ContactsSection } from '@/components/features/prospects/contacts-section';
+import { QualityChip } from '@/components/features/prospects/quality-chip';
 
 const TABS = [
   { id: 'evidence', label: 'Evidence' },
@@ -91,6 +92,22 @@ export default function ProspectDetail() {
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <StatusBadge status={p.status} />
+        {researchRuns.data?.[0] && (
+          <QualityChip
+            runId={researchRuns.data[0].id}
+            evidenceCount={researchRuns.data[0]._count.evidenceItems}
+            hypothesisCount={researchRuns.data[0]._count.workflowHypotheses}
+            qualityApproved={
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (researchRuns.data[0] as any).qualityApproved ?? null
+            }
+            qualityReviewedAt={
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (researchRuns.data[0] as any).qualityReviewedAt ?? null
+            }
+            runStatus={researchRuns.data[0].status}
+          />
+        )}
       </div>
 
       {/* Hero */}

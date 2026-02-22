@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { QualityChip } from '@/components/features/prospects/quality-chip';
 
 type View = 'all' | 'search-companies' | 'search-contacts';
 type SearchGuardrail = {
@@ -186,6 +187,18 @@ function AllCompanies() {
                 >
                   {prospect.status}
                 </span>
+                {(() => {
+                  const run = prospect.researchRuns?.[0];
+                  return run ? (
+                    <QualityChip
+                      runId={run.id}
+                      evidenceCount={run._count.evidenceItems}
+                      hypothesisCount={run._count.workflowHypotheses}
+                      qualityApproved={run.qualityApproved}
+                      qualityReviewedAt={run.qualityReviewedAt}
+                    />
+                  ) : null;
+                })()}
               </div>
               <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-400 mt-2">
                 <span className="flex items-center gap-2">
