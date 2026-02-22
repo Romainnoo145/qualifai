@@ -155,6 +155,8 @@ function baseConfidence(sourceType: EvidenceSourceType): number {
       return 0.68;
     case 'REVIEWS':
       return 0.78;
+    case 'REGISTRY':
+      return 0.82;
     default:
       return 0.68;
   }

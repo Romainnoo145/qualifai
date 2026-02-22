@@ -37,6 +37,8 @@ export const env = createEnv({
     PDF_STORAGE_VOLUME_PATH: z.string().optional(),
     SERP_API_KEY: z.string().min(1).optional(),
     CRAWL4AI_BASE_URL: z.string().url().optional(),
+    KVK_API_KEY: z.string().min(1).optional(),
+    KVK_TEST_MODE: z.enum(["true", "false"]).optional(),
   },
 
   client: {
@@ -82,6 +84,8 @@ export const env = createEnv({
     PDF_STORAGE_VOLUME_PATH: process.env.PDF_STORAGE_VOLUME_PATH,
     SERP_API_KEY: process.env.SERP_API_KEY,
     CRAWL4AI_BASE_URL: process.env.CRAWL4AI_BASE_URL,
+    KVK_API_KEY: process.env.KVK_API_KEY,
+    KVK_TEST_MODE: process.env.KVK_TEST_MODE,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_CALCOM_BOOKING_URL: process.env.NEXT_PUBLIC_CALCOM_BOOKING_URL,
     NEXT_PUBLIC_WHATSAPP_NUMBER: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER,
