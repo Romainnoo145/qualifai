@@ -88,8 +88,21 @@ export async function ingestCrawl4aiEvidenceDrafts(
   for (const url of capped) {
     const { markdown, title } = await extractMarkdown(url);
 
-    // Empty/minimal content = page doesn't exist or is useless — skip entirely
+    // Minimal content — page exists but browser extraction failed; create fallback stub
     if (!markdown || markdown.length < 80) {
+      const sourceType = url.includes('google.com/maps')
+        ? 'REVIEWS'
+        : 'JOB_BOARD';
+      drafts.push({
+        sourceType,
+        sourceUrl: url,
+        title: 'Bron (browser-extractie mislukt)',
+        snippet:
+          'Pagina bestaat maar leverde minimale inhoud op bij browser-extractie.',
+        workflowTag: 'workflow-context',
+        confidenceScore: 0.55,
+        metadata: { adapter: 'crawl4ai', fallback: true },
+      });
       continue;
     }
 
