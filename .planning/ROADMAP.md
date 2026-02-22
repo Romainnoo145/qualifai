@@ -311,9 +311,9 @@ Plans:
 
 Plans:
 
-- [ ] 17-01-PLAN.md — Sitemap URL discovery module (EVID-06) + Google search mention discovery (EVID-07) (Wave 1)
-- [ ] 17-02-PLAN.md — REGISTRY schema enum + KVK env vars + KvK registry module (EVID-09) + crawl4ai fallback fix (Wave 1)
-- [ ] 17-03-PLAN.md — Wire all new sources into research executor + LinkedIn evidence (EVID-08) (Wave 2)
+- [x] 17-01-PLAN.md — Sitemap URL discovery module (EVID-06) + Google search mention discovery (EVID-07) (Wave 1)
+- [x] 17-02-PLAN.md — REGISTRY schema enum + KVK env vars + KvK registry module (EVID-09) + crawl4ai fallback fix (Wave 1)
+- [x] 17-03-PLAN.md — Wire all new sources into research executor + LinkedIn evidence (EVID-08) (Wave 2)
 
 ---
 
@@ -411,7 +411,7 @@ Plans:
 | 13. Prospect Story Flow             | v1.2      | 5/5            | Complete    | 2026-02-22 |
 | 14. Campaign Reporting              | v1.2      | 2/2            | Complete    | 2026-02-22 |
 | 15. Action Queue Dashboard          | v1.2      | 2/2            | Complete    | 2026-02-22 |
-| 17. Evidence Pipeline Enrichment    | v2.0      | 0/3            | Planned     | -          |
+| 17. Evidence Pipeline Enrichment    | v2.0      | 3/3            | Complete    | 2026-02-22 |
 | 18. Research Quality Gate           | v2.0      | 0/?            | Not started | -          |
 | 19. Client Hypothesis Validation    | v2.0      | 0/?            | Not started | -          |
 | 20. One-Click Send Queue + Pipeline | v2.0      | 0/?            | Not started | -          |
