@@ -41,10 +41,7 @@ export default function ProspectDetail() {
   const [activeTab, setActiveTab] = useState<TabId>('evidence');
 
   const prospect = api.admin.getProspect.useQuery({ id });
-  const researchRuns = api.research.listRuns.useQuery(
-    { prospectId: id },
-    { enabled: activeTab === 'outreach-preview' },
-  );
+  const researchRuns = api.research.listRuns.useQuery({ prospectId: id });
   const utils = api.useUtils();
 
   const setHypothesisStatus = api.hypotheses.setStatus.useMutation({
@@ -247,28 +244,28 @@ export default function ProspectDetail() {
         </div>
       </nav>
 
-      {/* Active section only */}
-      {activeTab === 'evidence' && (
+      {/* All sections stay mounted, inactive ones hidden via CSS */}
+      <div className={activeTab === 'evidence' ? '' : 'hidden'}>
         <EvidenceSection prospectId={id} signals={p.signals} />
-      )}
-      {activeTab === 'analysis' && (
+      </div>
+      <div className={activeTab === 'analysis' ? '' : 'hidden'}>
         <AnalysisSection
           prospectId={id}
           onSetStatus={(kind, entryId, status) =>
             setHypothesisStatus.mutate({ kind, id: entryId, status })
           }
         />
-      )}
-      {activeTab === 'outreach-preview' && (
+      </div>
+      <div className={activeTab === 'outreach-preview' ? '' : 'hidden'}>
         <OutreachPreviewSection
           prospectId={id}
           prospect={p}
           latestRunId={latestRunId}
         />
-      )}
-      {activeTab === 'results' && (
+      </div>
+      <div className={activeTab === 'results' ? '' : 'hidden'}>
         <ResultsSection prospectId={id} prospect={p} />
-      )}
+      </div>
     </div>
   );
 }
