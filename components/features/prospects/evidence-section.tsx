@@ -1,7 +1,8 @@
 'use client';
 
 import { api } from '@/components/providers';
-import { ExternalLink, Zap, Clock, Database } from 'lucide-react';
+import { ExternalLink, Zap, Clock, Database, FileText } from 'lucide-react';
+import { useState } from 'react';
 
 const SOURCE_TYPE_LABELS: Record<string, string> = {
   WEBSITE: 'Website Pages',
@@ -28,24 +29,13 @@ function toSentenceCase(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
-function truncateUrl(url: string, maxLen = 60): string {
-  if (url.length <= maxLen) return url;
-  return url.slice(0, maxLen) + '…';
-}
-
-function ConfidenceDot({ score }: { score: number }) {
-  const color =
-    score >= 0.7
-      ? 'bg-emerald-400'
-      : score >= 0.4
-        ? 'bg-amber-400'
-        : 'bg-slate-300';
-  return (
-    <span
-      className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${color}`}
-      title={`Confidence: ${(score * 100).toFixed(0)}%`}
-    />
-  );
+function formatDomain(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.hostname.replace(/^www\./, '') + u.pathname.replace(/\/$/, '');
+  } catch {
+    return url.length > 50 ? url.slice(0, 50) + '…' : url;
+  }
 }
 
 type Signal = {
@@ -65,6 +55,55 @@ type EvidenceItem = {
   workflowTag: string;
   confidenceScore: number;
 };
+
+function EvidenceCard({ item }: { item: EvidenceItem }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="rounded-xl border border-slate-100 px-4 py-3 hover:border-slate-200 transition-colors">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-[#040026] leading-snug">
+            {item.title ?? formatDomain(item.sourceUrl)}
+          </p>
+          <a
+            href={item.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] text-slate-400 hover:text-slate-500 flex items-center gap-1 mt-0.5"
+          >
+            <ExternalLink className="w-3 h-3 shrink-0" />
+            <span className="truncate">{formatDomain(item.sourceUrl)}</span>
+          </a>
+        </div>
+        {item.workflowTag && (
+          <span className="text-[9px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0 mt-0.5">
+            {/* TERM-02: workflowTag displayed as plain label */}
+            {WORKFLOW_TAG_LABELS[item.workflowTag] ??
+              toSentenceCase(item.workflowTag.replace(/_/g, ' '))}
+          </span>
+        )}
+      </div>
+      {item.snippet && (
+        <>
+          <p
+            className={`text-xs text-slate-400 mt-2 leading-relaxed ${expanded ? '' : 'line-clamp-1'}`}
+          >
+            {item.snippet.slice(0, 300)}
+          </p>
+          {item.snippet.length > 80 && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="text-[10px] text-slate-400 hover:text-slate-600 mt-1"
+            >
+              {expanded ? 'Less' : 'More'}
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 export function EvidenceSection({
   prospectId,
@@ -87,17 +126,17 @@ export function EvidenceSection({
     }
   }
 
-  const totalCount = items.length + (signals?.length ?? 0);
-
   if (evidence.isLoading) {
     return (
-      <div className="glass-card p-6 space-y-3 animate-pulse">
-        <div className="h-4 bg-slate-200 rounded w-48" />
-        <div className="h-3 bg-slate-100 rounded w-full" />
-        <div className="h-3 bg-slate-100 rounded w-3/4" />
+      <div className="space-y-3 animate-pulse">
+        <div className="h-16 bg-slate-100 rounded-xl" />
+        <div className="h-16 bg-slate-50 rounded-xl" />
+        <div className="h-16 bg-slate-50 rounded-xl" />
       </div>
     );
   }
+
+  const totalCount = items.length + (signals?.length ?? 0);
 
   if (totalCount === 0) {
     return (
@@ -111,39 +150,35 @@ export function EvidenceSection({
   }
 
   return (
-    <div className="glass-card p-6 space-y-6">
-      <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
-        Evidence ({totalCount} sources)
-      </p>
-
-      {/* Buying Signals group */}
+    <div className="space-y-6">
+      {/* Buying Signals */}
       {signals && signals.length > 0 && (
         <div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-3">
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.15em] mb-3">
             Buying Signals
           </p>
           <div className="space-y-2">
             {signals.map((signal) => (
               <div
                 key={signal.id}
-                className="flex items-start gap-3 py-2 border-b border-slate-50 last:border-0"
+                className="rounded-xl border border-slate-100 px-4 py-3 flex items-start gap-3"
               >
-                <Zap className="w-3.5 h-3.5 text-klarifai-yellow-dark shrink-0 mt-0.5" />
+                <Zap className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <span className="text-xs font-medium text-slate-600">
+                  <p className="text-sm font-medium text-[#040026]">
+                    {signal.title}
+                  </p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-[10px] text-slate-400">
                       {signal.signalType.replace(/_/g, ' ')}
                     </span>
-                    <span className="text-[10px] text-slate-400 flex items-center gap-1 ml-auto">
+                    <span className="text-[10px] text-slate-300 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {new Date(signal.detectedAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="text-sm font-medium text-klarifai-midnight">
-                    {signal.title}
-                  </p>
                   {signal.description && (
-                    <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">
+                    <p className="text-xs text-slate-400 mt-1 line-clamp-1">
                       {signal.description}
                     </p>
                   )}
@@ -157,46 +192,16 @@ export function EvidenceSection({
       {/* Evidence groups by source type */}
       {Object.entries(groups).map(([sourceType, groupItems]) => (
         <div key={sourceType}>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-3">
-            {SOURCE_TYPE_LABELS[sourceType] ?? toSentenceCase(sourceType)} (
-            {groupItems.length})
-          </p>
+          <div className="flex items-center gap-2 mb-3">
+            <FileText className="w-3.5 h-3.5 text-slate-300" />
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.15em]">
+              {SOURCE_TYPE_LABELS[sourceType] ?? toSentenceCase(sourceType)} (
+              {groupItems.length})
+            </p>
+          </div>
           <div className="space-y-2">
             {groupItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-start gap-3 py-2 border-b border-slate-50 last:border-0"
-              >
-                <ConfidenceDot score={item.confidenceScore} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start gap-2 flex-wrap mb-1">
-                    <a
-                      href={item.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={item.sourceUrl}
-                      className="text-xs font-medium text-klarifai-blue hover:underline flex items-center gap-1 min-w-0"
-                    >
-                      <ExternalLink className="w-3 h-3 shrink-0" />
-                      <span className="truncate max-w-[340px]">
-                        {item.title ?? truncateUrl(item.sourceUrl)}
-                      </span>
-                    </a>
-                    {item.workflowTag && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 shrink-0">
-                        {/* TERM-02: workflowTag displayed as plain label */}
-                        {WORKFLOW_TAG_LABELS[item.workflowTag] ??
-                          toSentenceCase(item.workflowTag.replace(/_/g, ' '))}
-                      </span>
-                    )}
-                  </div>
-                  {item.snippet && (
-                    <p className="text-xs text-slate-400 line-clamp-2">
-                      {item.snippet.slice(0, 200)}
-                    </p>
-                  )}
-                </div>
-              </div>
+              <EvidenceCard key={item.id} item={item} />
             ))}
           </div>
         </div>

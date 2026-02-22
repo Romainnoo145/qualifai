@@ -230,13 +230,11 @@ export function ContactsSection({
             </Link>
           ))}
         </div>
-      ) : (
-        <div className="glass-card p-6 text-center">
-          <p className="text-sm text-slate-400">
-            No contacts yet. Add manually or discover via Apollo.
-          </p>
-        </div>
-      )}
+      ) : !showAddContact ? (
+        <p className="text-xs text-slate-300 italic">
+          No contacts yet — use the buttons above to add or discover.
+        </p>
+      ) : null}
     </section>
   );
 }
