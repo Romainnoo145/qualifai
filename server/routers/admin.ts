@@ -18,6 +18,17 @@ function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
 }
 
+// Helper: parse an ISO date string from unknown metadata JSON
+function parseDueAt(metadata: unknown): Date | null {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata))
+    return null;
+  const value = (metadata as Record<string, unknown>).dueAt;
+  if (typeof value !== 'string' || !value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
 function buildEnrichmentData(
   enriched: Awaited<ReturnType<typeof enrichCompany>>,
 ) {
@@ -461,6 +472,165 @@ export const adminRouter = router({
         },
       });
     }),
+
+  getActionQueue: adminProcedure.query(async ({ ctx }) => {
+    const now = new Date();
+
+    const [hypotheses, draftLogs, touchTasks, replies] = await Promise.all([
+      // 1. DRAFT hypotheses needing review
+      ctx.db.workflowHypothesis.findMany({
+        where: { status: 'DRAFT' },
+        orderBy: { createdAt: 'asc' },
+        take: 50,
+        include: {
+          prospect: { select: { id: true, companyName: true, domain: true } },
+        },
+      }),
+
+      // 2. Draft outreach logs awaiting approval
+      ctx.db.outreachLog.findMany({
+        where: { status: 'draft' },
+        orderBy: { createdAt: 'asc' },
+        take: 50,
+        include: {
+          contact: {
+            include: {
+              prospect: {
+                select: { id: true, companyName: true, domain: true },
+              },
+            },
+          },
+        },
+      }),
+
+      // 3. Open touch tasks (calls, LinkedIn, WhatsApp, email)
+      ctx.db.outreachLog.findMany({
+        where: {
+          status: 'touch_open',
+          channel: { in: ['call', 'linkedin', 'whatsapp', 'email'] },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 50,
+        include: {
+          contact: {
+            include: {
+              prospect: {
+                select: { id: true, companyName: true, domain: true },
+              },
+            },
+          },
+        },
+      }),
+
+      // 4. Pending inbound replies
+      ctx.db.outreachLog.findMany({
+        where: { type: 'FOLLOW_UP', status: 'received' },
+        orderBy: { createdAt: 'asc' },
+        take: 50,
+        include: {
+          contact: {
+            include: {
+              prospect: {
+                select: { id: true, companyName: true, domain: true },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    // Map hypotheses
+    const hypothesisItems = hypotheses.map((h) => ({
+      id: h.id,
+      type: 'hypothesis' as const,
+      prospectId: h.prospect.id,
+      prospectName: h.prospect.companyName ?? h.prospect.domain,
+      title: h.title,
+      createdAt: h.createdAt,
+      urgency: 'normal' as const,
+      channel: undefined,
+      dueAt: undefined,
+    }));
+
+    // Map draft outreach logs
+    const draftItems = draftLogs.map((log) => ({
+      id: log.id,
+      type: 'draft' as const,
+      prospectId: log.contact.prospect.id,
+      prospectName:
+        log.contact.prospect.companyName ?? log.contact.prospect.domain,
+      title: log.subject ?? 'Untitled draft',
+      createdAt: log.createdAt,
+      urgency: 'normal' as const,
+      channel: undefined,
+      dueAt: undefined,
+    }));
+
+    // Map touch tasks with overdue detection
+    const taskItems = touchTasks.map((log) => {
+      const dueAtDate = parseDueAt(log.metadata);
+      const isOverdue =
+        dueAtDate !== null && dueAtDate.getTime() < now.getTime();
+      return {
+        id: log.id,
+        type: 'task' as const,
+        prospectId: log.contact.prospect.id,
+        prospectName:
+          log.contact.prospect.companyName ?? log.contact.prospect.domain,
+        title: log.subject ?? 'Follow-up task',
+        createdAt: log.createdAt,
+        urgency: (isOverdue ? 'overdue' : 'normal') as 'overdue' | 'normal',
+        channel: log.channel,
+        dueAt: dueAtDate?.toISOString() ?? null,
+      };
+    });
+
+    // Map pending replies
+    const replyItems = replies.map((log) => ({
+      id: log.id,
+      type: 'reply' as const,
+      prospectId: log.contact.prospect.id,
+      prospectName:
+        log.contact.prospect.companyName ?? log.contact.prospect.domain,
+      title: log.subject ?? 'Inbound reply',
+      createdAt: log.createdAt,
+      urgency: 'normal' as const,
+      channel: undefined,
+      dueAt: undefined,
+    }));
+
+    // Merge and sort: overdue first, then oldest first
+    const items = [
+      ...hypothesisItems,
+      ...draftItems,
+      ...taskItems,
+      ...replyItems,
+    ].sort((a, b) => {
+      if (a.urgency === 'overdue' && b.urgency !== 'overdue') return -1;
+      if (a.urgency !== 'overdue' && b.urgency === 'overdue') return 1;
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    });
+
+    const overdueTasks = taskItems.filter(
+      (item) => item.urgency === 'overdue',
+    ).length;
+
+    return {
+      items,
+      counts: {
+        hypotheses: hypothesisItems.length,
+        drafts: draftItems.length,
+        tasks: taskItems.length,
+        overdueTasks,
+        replies: replyItems.length,
+        total:
+          hypothesisItems.length +
+          draftItems.length +
+          taskItems.length +
+          replyItems.length,
+      },
+    };
+  }),
 
   getDashboardStats: adminProcedure.query(async ({ ctx }) => {
     const [
