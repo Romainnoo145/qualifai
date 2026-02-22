@@ -138,9 +138,9 @@ export function ResultsSection({
   prospect,
 }: {
   prospectId: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   prospect: any;
 }) {
-  // eslint-disable-line @typescript-eslint/no-explicit-any
   const cadence = api.sequences.getCadenceState.useQuery({ prospectId });
 
   if (cadence.isLoading) {

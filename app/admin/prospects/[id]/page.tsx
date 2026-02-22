@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { EvidenceSection } from '@/components/features/prospects/evidence-section';
 import { AnalysisSection } from '@/components/features/prospects/analysis-section';
 import { OutreachPreviewSection } from '@/components/features/prospects/outreach-preview-section';
+import { ResultsSection } from '@/components/features/prospects/results-section';
 
 type DiscoveryGuardrail = {
   code: string;
@@ -391,11 +392,7 @@ export default function ProspectDetail() {
         <h2 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">
           Results
         </h2>
-        <div className="glass-card p-8 text-center">
-          <p className="text-sm text-slate-400">
-            Results section — coming in plan 13-04
-          </p>
-        </div>
+        <ResultsSection prospectId={id} prospect={p} />
       </section>
     </div>
   );
