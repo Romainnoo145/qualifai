@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v1.2 — Autopilot with Oversight (Phase 15: Action Queue Dashboard)
+**Current focus:** v1.2 — Autopilot with Oversight (Phase 16: Draft Queue Redesign)
 
 ## Current Position
 
-Phase: 15 of 16 (Action Queue Dashboard)
-Plan: 1 of 2
+Phase: 16 of 16 (Draft Queue Redesign)
+Plan: 1 of N
 Status: In progress
-Last activity: 2026-02-22 — Plan 15-01 complete (action queue data layer)
+Last activity: 2026-02-22 — Plan 15-02 complete (action queue dashboard UI)
 
-Progress: [████████░░] 80% (v1.2)
+Progress: [█████████░] 90% (v1.2)
 
 ## Performance Metrics
 
@@ -26,17 +26,18 @@ Progress: [████████░░] 80% (v1.2)
 
 **By Phase (v1.1):**
 
-| Phase                     | Plans | Total   | Avg/Plan |
-| ------------------------- | ----- | ------- | -------- |
-| 6. Use Cases Foundation   | 3/3   | 13 min  | 4.3 min  |
-| 7. Evidence Approval Gate | 2/2   | 6 min   | 3 min    |
-| 8. Deep Evidence Pipeline | 3/3   | ~21 min | ~7 min   |
-| 9. Engagement Triggers    | 2/2   | ~5 min  | ~2.5 min |
-| 10. Cadence Engine        | 4/4   | 7 min   | 1.75 min |
-| 11. Prospect Dashboard    | 2/2   | ~6 min  | 3 min    |
-| 12. Navigation & Language | 2/2   | 6 min   | 3 min    |
-| 13. Prospect Story Flow   | 5/5   | ~17 min | ~3.4 min |
-| 14. Campaign Reporting    | 2/2   | ~4 min  | ~2 min   |
+| Phase                      | Plans | Total   | Avg/Plan |
+| -------------------------- | ----- | ------- | -------- |
+| 6. Use Cases Foundation    | 3/3   | 13 min  | 4.3 min  |
+| 7. Evidence Approval Gate  | 2/2   | 6 min   | 3 min    |
+| 8. Deep Evidence Pipeline  | 3/3   | ~21 min | ~7 min   |
+| 9. Engagement Triggers     | 2/2   | ~5 min  | ~2.5 min |
+| 10. Cadence Engine         | 4/4   | 7 min   | 1.75 min |
+| 11. Prospect Dashboard     | 2/2   | ~6 min  | 3 min    |
+| 12. Navigation & Language  | 2/2   | 6 min   | 3 min    |
+| 13. Prospect Story Flow    | 5/5   | ~17 min | ~3.4 min |
+| 14. Campaign Reporting     | 2/2   | ~4 min  | ~2 min   |
+| 15. Action Queue Dashboard | 2/2   | ~2 min  | ~1 min   |
 
 _Updated after each plan completion_
 
@@ -75,6 +76,9 @@ Recent decisions affecting v1.2 work:
 - [Phase 15, Plan 01]: parseDueAt helper duplicated in admin.ts (not imported from outreach.ts) to avoid circular dependency
 - [Phase 15, Plan 01]: getActionQueue uses Promise.all for four parallel Prisma queries — single tRPC call for dashboard, no waterfall
 - [Phase 15, Plan 01]: Items sorted overdue-first then oldest createdAt — matches autopilot with oversight where overdue tasks need immediate attention
+- [Phase 15, Plan 02]: getActionQueue.useQuery() is sole data source — getDashboardStats removed from dashboard (vanity KPIs replaced with action queue)
+- [Phase 15, Plan 02]: Hypothesis rows deep-link to /admin/prospects/[id]#analysis; draft/task/reply rows link to /admin/outreach (no tab deep-link support yet)
+- [Phase 15, Plan 02]: CountCard opacity-50 when count is 0 — gives visual clarity on idle action types
 
 ### Pending Todos
 
@@ -97,5 +101,5 @@ None identified for v1.2 phases.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 15-01-PLAN.md (getActionQueue tRPC query)
+Stopped at: Completed 15-02-PLAN.md (action queue dashboard UI)
 Resume file: None
