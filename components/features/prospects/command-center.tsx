@@ -23,7 +23,6 @@ export function CommandCenter({
   latestCallPrep: _latestCallPrep,
   onStartResearch,
   onMatchProof: _onMatchProof,
-  onSetHypothesisStatus,
   onGenerateLossMap,
   onQueueOutreach: _onQueueOutreach,
   isResearching,
@@ -35,8 +34,8 @@ export function CommandCenter({
   const runs = researchRuns || [];
   const latestRun = runs[0];
   const hypotheses = hypothesisData?.hypotheses || [];
-  const acceptedCount = hypotheses.filter(
-    (h: any) => h.status === 'ACCEPTED',
+  const pendingCount = hypotheses.filter(
+    (h: any) => h.status === 'ACCEPTED' || h.status === 'PENDING',
   ).length;
 
   return (
@@ -135,13 +134,13 @@ export function CommandCenter({
           <div className="flex items-center gap-2">
             <Target className="w-4 h-4 text-slate-400" />
             <span className="text-sm text-slate-600">
-              {acceptedCount > 0 ? (
+              {pendingCount > 0 ? (
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                  {acceptedCount} hypotheses accepted
+                  {pendingCount} hypotheses pending validation
                 </span>
               ) : hypotheses.length > 0 ? (
-                `${hypotheses.length} hypotheses (none accepted)`
+                `${hypotheses.length} hypotheses`
               ) : (
                 'No hypotheses'
               )}
@@ -192,7 +191,7 @@ export function CommandCenter({
       {hypotheses.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-            Hypotheses ({acceptedCount}/{hypotheses.length} accepted)
+            Hypotheses ({hypotheses.length})
           </h3>
           {hypotheses.slice(0, 6).map((h: any) => (
             <div
@@ -221,28 +220,9 @@ export function CommandCenter({
                   {h.problemStatement}
                 </p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {h.status !== 'ACCEPTED' && (
-                  <button
-                    onClick={() =>
-                      onSetHypothesisStatus('hypothesis', h.id, 'ACCEPTED')
-                    }
-                    className="text-[10px] font-black px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
-                  >
-                    Accept
-                  </button>
-                )}
-                {h.status !== 'REJECTED' && (
-                  <button
-                    onClick={() =>
-                      onSetHypothesisStatus('hypothesis', h.id, 'REJECTED')
-                    }
-                    className="text-[10px] font-black px-3 py-1 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                  >
-                    Reject
-                  </button>
-                )}
-              </div>
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border bg-blue-50 text-blue-700 border-blue-200 shrink-0">
+                {h.status === 'DECLINED' ? 'Declined' : 'Pending validation'}
+              </span>
             </div>
           ))}
         </div>

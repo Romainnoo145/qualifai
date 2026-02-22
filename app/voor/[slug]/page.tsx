@@ -42,9 +42,9 @@ export default async function ProspectDashboardPage({ params }: Props) {
       industry: true,
       logoUrl: true,
       status: true,
-      // Evidence-backed content from ACCEPTED hypotheses
+      // Evidence-backed content from quality-approved hypotheses
       workflowHypotheses: {
-        where: { status: 'ACCEPTED' },
+        where: { status: { in: ['ACCEPTED', 'PENDING'] } },
         orderBy: { confidenceScore: 'desc' },
         take: 6,
         select: {
