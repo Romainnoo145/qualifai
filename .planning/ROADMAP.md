@@ -282,7 +282,7 @@ Plans:
 **Milestone goal:** Transform the admin from a collection of disconnected pages into a single oversight console where the admin enters prospects, reviews research quality, approves outreach with one click per channel, and tracks status — while prospects validate hypotheses themselves on their dashboard.
 
 - [ ] **Phase 17: Evidence Pipeline Enrichment** — Expand evidence sources to sitemap crawling, Google search mentions, LinkedIn company pages, and KvK registry data
-- [ ] **Phase 18: Research Quality Gate** — Admin reviews research sufficiency (not hypothesis content) via traffic-light indicator; hypothesis approve/reject buttons removed from admin UI
+- [x] **Phase 18: Research Quality Gate** — Admin reviews research sufficiency (not hypothesis content) via traffic-light indicator; hypothesis approve/reject buttons removed from admin UI
 - [ ] **Phase 19: Client Hypothesis Validation** — Prospects confirm or decline hypotheses on their /voor/ dashboard; admin sees results in prospect detail
 - [ ] **Phase 20: One-Click Send Queue + Pipeline View** — Unified per-channel send queue with inline preview; pipeline stage chip on every prospect row; queue filters to actionable stages only with urgency ranking
 - [ ] **Phase 21: Prospect Discovery + Cleanup** — Apollo sector search for batch prospect import; dead admin pages removed
@@ -337,9 +337,9 @@ Plans:
 
 Plans:
 
-- [ ] 18-01-PLAN.md — Schema migration (quality fields on ResearchRun, PENDING/DECLINED enum) + tRPC approveQuality + extend listProspects + computeTrafficLight helper (Wave 1)
-- [ ] 18-02-PLAN.md — QualityChip component + wire into prospect list and detail header (Wave 2)
-- [ ] 18-03-PLAN.md — Remove hypothesis accept/reject buttons from admin, add read-only badges, fix /voor/ filter (Wave 2)
+- [x] 18-01-PLAN.md — Schema migration (quality fields on ResearchRun, PENDING/DECLINED enum) + tRPC approveQuality + extend listProspects + computeTrafficLight helper (Wave 1)
+- [x] 18-02-PLAN.md — QualityChip component + wire into prospect list and detail header (Wave 2)
+- [x] 18-03-PLAN.md — Remove hypothesis accept/reject buttons from admin, add read-only badges, fix /voor/ filter (Wave 2)
 
 ---
 
@@ -418,7 +418,7 @@ Plans:
 | 14. Campaign Reporting              | v1.2      | 2/2            | Complete    | 2026-02-22 |
 | 15. Action Queue Dashboard          | v1.2      | 2/2            | Complete    | 2026-02-22 |
 | 17. Evidence Pipeline Enrichment    | v2.0      | 3/3            | Complete    | 2026-02-22 |
-| 18. Research Quality Gate           | v2.0      | 0/?            | Not started | -          |
+| 18. Research Quality Gate           | v2.0      | 3/3            | Complete    | 2026-02-22 |
 | 19. Client Hypothesis Validation    | v2.0      | 0/?            | Not started | -          |
 | 20. One-Click Send Queue + Pipeline | v2.0      | 0/?            | Not started | -          |
 | 21. Prospect Discovery + Cleanup    | v2.0      | 0/?            | Not started | -          |
