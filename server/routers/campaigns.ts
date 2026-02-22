@@ -170,6 +170,176 @@ export const campaignsRouter = router({
       return { success: true };
     }),
 
+  getWithFunnelData: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const campaign = await ctx.db.campaign.findUniqueOrThrow({
+        where: { id: input.id },
+      });
+
+      const campaignProspects = await ctx.db.campaignProspect.findMany({
+        where: { campaignId: input.id },
+        include: {
+          prospect: {
+            select: {
+              id: true,
+              companyName: true,
+              domain: true,
+              status: true,
+              logoUrl: true,
+              industry: true,
+              outreachSequences: {
+                select: { status: true },
+              },
+              contacts: {
+                select: { outreachStatus: true },
+              },
+              sessions: {
+                select: { callBooked: true },
+              },
+            },
+          },
+        },
+      });
+
+      const prospectIds = campaignProspects.map((cp) => cp.prospect.id);
+
+      // Fetch research run counts (completed) per prospect
+      const researchCounts = await ctx.db.researchRun.groupBy({
+        by: ['prospectId'],
+        where: {
+          prospectId: { in: prospectIds },
+          status: 'COMPLETED',
+        },
+        _count: { id: true },
+      });
+      const researchCountMap = new Map<string, number>(
+        researchCounts.map((r) => [r.prospectId, r._count.id]),
+      );
+
+      // Fetch approved hypothesis counts per prospect
+      const hypothesisCounts = await ctx.db.workflowHypothesis.groupBy({
+        by: ['prospectId'],
+        where: {
+          prospectId: { in: prospectIds },
+          status: 'ACCEPTED',
+        },
+        _count: { id: true },
+      });
+      const hypothesisCountMap = new Map<string, number>(
+        hypothesisCounts.map((h) => [h.prospectId, h._count.id]),
+      );
+
+      type FunnelStage =
+        | 'booked'
+        | 'replied'
+        | 'emailed'
+        | 'approved'
+        | 'researched'
+        | 'imported';
+
+      type ProspectWithStage = {
+        id: string;
+        companyName: string | null;
+        domain: string;
+        status: string;
+        logoUrl: string | null;
+        industry: string | null;
+        funnelStage: FunnelStage;
+      };
+
+      const EMAILED_SEQUENCE_STATUSES = new Set([
+        'SENT',
+        'OPENED',
+        'REPLIED',
+        'BOOKED',
+      ]);
+      const EMAILED_CONTACT_STATUSES = new Set([
+        'EMAIL_SENT',
+        'OPENED',
+        'REPLIED',
+        'CONVERTED',
+      ]);
+
+      const prospects: ProspectWithStage[] = campaignProspects.map((cp) => {
+        const p = cp.prospect;
+        const completedResearchCount = researchCountMap.get(p.id) ?? 0;
+        const approvedHypothesisCount = hypothesisCountMap.get(p.id) ?? 0;
+
+        let funnelStage: FunnelStage = 'imported';
+
+        if (completedResearchCount > 0) funnelStage = 'researched';
+        if (approvedHypothesisCount > 0) funnelStage = 'approved';
+
+        const isEmailed =
+          p.outreachSequences.some((s) =>
+            EMAILED_SEQUENCE_STATUSES.has(s.status),
+          ) ||
+          p.contacts.some((c) =>
+            EMAILED_CONTACT_STATUSES.has(c.outreachStatus),
+          );
+
+        if (isEmailed) funnelStage = 'emailed';
+
+        const isReplied =
+          p.outreachSequences.some((s) => s.status === 'REPLIED') ||
+          p.contacts.some((c) => c.outreachStatus === 'REPLIED');
+
+        if (isReplied) funnelStage = 'replied';
+
+        const isBooked =
+          p.sessions.some((s) => s.callBooked) ||
+          p.outreachSequences.some((s) => s.status === 'BOOKED') ||
+          p.status === 'CONVERTED';
+
+        if (isBooked) funnelStage = 'booked';
+
+        return {
+          id: p.id,
+          companyName: p.companyName,
+          domain: p.domain,
+          status: p.status,
+          logoUrl: p.logoUrl,
+          industry: p.industry,
+          funnelStage,
+        };
+      });
+
+      // Compute cumulative funnel counts (each stage includes all higher stages)
+      const stagePriority: Record<FunnelStage, number> = {
+        imported: 0,
+        researched: 1,
+        approved: 2,
+        emailed: 3,
+        replied: 4,
+        booked: 5,
+      };
+
+      const stageCountPerProspect = prospects.map(
+        (p) => stagePriority[p.funnelStage],
+      );
+
+      const funnel = {
+        imported: stageCountPerProspect.filter((s) => s >= 0).length,
+        researched: stageCountPerProspect.filter((s) => s >= 1).length,
+        approved: stageCountPerProspect.filter((s) => s >= 2).length,
+        emailed: stageCountPerProspect.filter((s) => s >= 3).length,
+        replied: stageCountPerProspect.filter((s) => s >= 4).length,
+        booked: stageCountPerProspect.filter((s) => s >= 5).length,
+      };
+
+      const metrics = {
+        responseRate:
+          funnel.emailed > 0
+            ? ((funnel.replied + funnel.booked) / funnel.emailed) * 100
+            : 0,
+        bookingRate:
+          funnel.emailed > 0 ? (funnel.booked / funnel.emailed) * 100 : 0,
+      };
+
+      return { campaign, prospects, funnel, metrics };
+    }),
+
   runAutopilot: adminProcedure
     .input(
       z.object({
