@@ -63,7 +63,7 @@ function FindingCard({
     onSetStatus(finding.kind, finding.id, s);
 
   return (
-    <div className="glass-card p-6 space-y-4">
+    <div className="glass-card p-6 space-y-4 rounded-2xl">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 min-w-0">
           <span
@@ -234,7 +234,10 @@ export function AnalysisSection({
     return (
       <div className="space-y-4">
         {[1, 2].map((n) => (
-          <div key={n} className="glass-card p-6 animate-pulse space-y-3">
+          <div
+            key={n}
+            className="glass-card p-6 animate-pulse space-y-3 rounded-2xl"
+          >
             <div className="h-4 bg-slate-200 rounded w-64" />
             <div className="h-3 bg-slate-100 rounded w-full" />
             <div className="h-3 bg-slate-100 rounded w-3/4" />
@@ -260,7 +263,7 @@ export function AnalysisSection({
 
   if (findings.length === 0) {
     return (
-      <div className="glass-card p-8 text-center">
+      <div className="glass-card p-8 text-center rounded-[2.5rem]">
         <p className="text-sm text-slate-400">
           {/* TERM-02: "proof matching" replaced with plain language */}
           No analysis available yet. Run research and service matching to

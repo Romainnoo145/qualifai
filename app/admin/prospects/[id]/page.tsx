@@ -67,10 +67,10 @@ export default function ProspectDetail() {
   if (prospect.isLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 bg-slate-200 rounded w-48 animate-pulse" />
-        <div className="glass-card p-8 animate-pulse">
-          <div className="h-6 bg-slate-200 rounded w-64 mb-4" />
-          <div className="h-4 bg-slate-200 rounded w-full" />
+        <div className="h-8 bg-slate-200 rounded-2xl w-48 animate-pulse" />
+        <div className="glass-card p-8 rounded-[2.5rem] animate-pulse">
+          <div className="h-6 bg-slate-200 rounded-xl w-64 mb-4" />
+          <div className="h-4 bg-slate-200 rounded-xl w-full" />
         </div>
       </div>
     );
@@ -78,7 +78,7 @@ export default function ProspectDetail() {
 
   if (!prospect.data) {
     return (
-      <div className="glass-card p-12 text-center">
+      <div className="glass-card p-12 text-center rounded-[2.5rem]">
         <p className="text-slate-500">Prospect not found</p>
       </div>
     );

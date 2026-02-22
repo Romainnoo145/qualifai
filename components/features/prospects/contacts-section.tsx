@@ -115,7 +115,7 @@ export function ContactsSection({
       </div>
 
       {showAddContact && (
-        <div className="glass-card p-5 mb-4 space-y-4">
+        <div className="glass-card p-5 mb-4 space-y-4 rounded-2xl">
           <div className="grid grid-cols-2 gap-3">
             <input
               type="text"
@@ -203,7 +203,7 @@ export function ContactsSection({
             <Link
               key={contact.id}
               href={`/admin/contacts/${contact.id}`}
-              className="glass-card glass-card-hover ui-focus px-4 py-3 flex items-center gap-3 shrink-0"
+              className="glass-card glass-card-hover ui-focus px-4 py-3 rounded-2xl flex items-center gap-3 shrink-0"
             >
               <div className="w-9 h-9 rounded-full bg-klarifai-indigo/10 flex items-center justify-center">
                 <span className="text-xs font-semibold text-klarifai-indigo">

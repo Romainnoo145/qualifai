@@ -107,7 +107,7 @@ export function OutreachPreviewSection({
 
   if (isLoading) {
     return (
-      <div className="glass-card p-6 space-y-4 animate-pulse">
+      <div className="glass-card p-6 space-y-4 animate-pulse rounded-2xl">
         <div className="h-4 bg-slate-200 rounded w-40" />
         <div className="h-3 bg-slate-100 rounded w-full" />
         <div className="h-3 bg-slate-100 rounded w-3/4" />
@@ -129,7 +129,7 @@ export function OutreachPreviewSection({
       )}
 
       {/* 1. Email Content */}
-      <div className="glass-card p-6 space-y-4">
+      <div className="glass-card p-6 space-y-4 rounded-2xl">
         <div className="flex items-center justify-between">
           <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center gap-2">
             <Mail className="w-3.5 h-3.5 text-slate-300" />
@@ -219,7 +219,7 @@ export function OutreachPreviewSection({
       </div>
 
       {/* 2. Prospect Dashboard */}
-      <div className="glass-card p-6 space-y-3">
+      <div className="glass-card p-6 space-y-3 rounded-2xl">
         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center gap-2">
           <ExternalLink className="w-3.5 h-3.5 text-slate-300" />
           Prospect Dashboard
@@ -243,7 +243,7 @@ export function OutreachPreviewSection({
       </div>
 
       {/* 3. Call Brief */}
-      <div className="glass-card p-6 space-y-4">
+      <div className="glass-card p-6 space-y-4 rounded-2xl">
         <div className="flex items-center justify-between">
           <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center gap-2">
             <FileText className="w-3.5 h-3.5 text-slate-300" />

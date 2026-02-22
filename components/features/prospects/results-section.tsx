@@ -145,7 +145,7 @@ export function ResultsSection({
 
   if (cadence.isLoading) {
     return (
-      <div className="glass-card p-8 space-y-4 animate-pulse">
+      <div className="glass-card p-8 space-y-4 animate-pulse rounded-2xl">
         <div className="h-4 bg-slate-200 rounded w-40" />
         <div className="grid grid-cols-4 gap-3">
           {[...Array(4)].map((_, i) => (
@@ -207,7 +207,7 @@ export function ResultsSection({
   return (
     <div className="space-y-6">
       {/* 1. Engagement Summary */}
-      <div className="glass-card p-6 space-y-4">
+      <div className="glass-card p-6 space-y-4 rounded-2xl">
         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
           Engagement Summary
         </p>
@@ -229,7 +229,7 @@ export function ResultsSection({
       </div>
 
       {/* 2. Dashboard Activity */}
-      <div className="glass-card p-6 space-y-4">
+      <div className="glass-card p-6 space-y-4 rounded-2xl">
         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center gap-2">
           <Calendar className="w-3.5 h-3.5 text-slate-300" /> Dashboard Activity
         </p>
@@ -290,7 +290,7 @@ export function ResultsSection({
       </div>
 
       {/* 3. Outreach Timeline */}
-      <div className="glass-card p-6 space-y-6">
+      <div className="glass-card p-6 space-y-6 rounded-2xl">
         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
           Outreach Timeline
         </p>

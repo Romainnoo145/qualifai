@@ -60,7 +60,7 @@ function EvidenceCard({ item }: { item: EvidenceItem }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="rounded-xl border border-slate-100 px-4 py-3 hover:border-slate-200 transition-colors">
+    <div className="glass-card px-5 py-4 rounded-2xl hover:border-slate-200 transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-[#040026] leading-snug">
@@ -129,9 +129,9 @@ export function EvidenceSection({
   if (evidence.isLoading) {
     return (
       <div className="space-y-3 animate-pulse">
-        <div className="h-16 bg-slate-100 rounded-xl" />
-        <div className="h-16 bg-slate-50 rounded-xl" />
-        <div className="h-16 bg-slate-50 rounded-xl" />
+        <div className="h-16 bg-slate-100 rounded-2xl" />
+        <div className="h-16 bg-slate-50 rounded-2xl" />
+        <div className="h-16 bg-slate-50 rounded-2xl" />
       </div>
     );
   }
@@ -140,7 +140,7 @@ export function EvidenceSection({
 
   if (totalCount === 0) {
     return (
-      <div className="glass-card p-8 text-center">
+      <div className="glass-card p-8 text-center rounded-[2.5rem]">
         <Database className="w-10 h-10 text-slate-300 mx-auto mb-3" />
         <p className="text-sm text-slate-400">
           No evidence collected yet. Run research to gather sources.
@@ -161,7 +161,7 @@ export function EvidenceSection({
             {signals.map((signal) => (
               <div
                 key={signal.id}
-                className="rounded-xl border border-slate-100 px-4 py-3 flex items-start gap-3"
+                className="glass-card px-5 py-4 rounded-2xl flex items-start gap-3"
               >
                 <Zap className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                 <div className="min-w-0 flex-1">

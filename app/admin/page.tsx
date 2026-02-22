@@ -64,7 +64,7 @@ const CountCard = ({
   <Link
     href={href}
     className={cn(
-      'glass-card p-4 block transition-all hover:border-[#EBCB4B]/30',
+      'glass-card p-6 rounded-[2rem] block transition-all hover:border-[#EBCB4B]/30',
       count === 0 && 'opacity-50',
     )}
   >
@@ -100,7 +100,7 @@ const ActionRow = ({ item }: { item: ActionItem }) => {
     <Link
       href={href}
       className={cn(
-        'glass-card p-4 mb-2 flex items-center justify-between hover:border-[#EBCB4B]/30 transition-all',
+        'glass-card p-5 mb-2 rounded-2xl flex items-center justify-between hover:border-[#EBCB4B]/30 transition-all',
         isOverdue && 'border-l-4 border-red-500',
       )}
     >
@@ -176,12 +176,12 @@ export default function AdminDashboard() {
         <div className="h-10 w-48 bg-slate-100 rounded-xl" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-slate-100 rounded-2xl h-20" />
+            <div key={i} className="bg-slate-100 rounded-[2rem] h-24" />
           ))}
         </div>
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-slate-50 rounded-xl h-14" />
+            <div key={i} className="bg-slate-50 rounded-2xl h-16" />
           ))}
         </div>
       </div>
@@ -190,7 +190,7 @@ export default function AdminDashboard() {
 
   if (queue.error) {
     return (
-      <div className="glass-card p-12 text-center text-red-500 font-bold">
+      <div className="glass-card p-12 text-center text-red-500 font-bold rounded-[2.5rem]">
         Failed to load dashboard. Check connection.
       </div>
     );
@@ -269,7 +269,7 @@ export default function AdminDashboard() {
 
       {/* Empty state */}
       {counts.total === 0 && (
-        <div className="glass-card p-12 text-center">
+        <div className="glass-card p-12 text-center rounded-[2.5rem]">
           <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-[#040026]">All caught up!</h2>
           <p className="text-sm text-slate-400 mt-1">
