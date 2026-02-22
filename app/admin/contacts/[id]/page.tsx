@@ -16,6 +16,15 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// TERM-02: OutreachType enum values mapped to plain-language labels
+const OUTREACH_TYPE_LABELS: Record<string, string> = {
+  INTRO_EMAIL: 'Intro Email',
+  WIZARD_LINK: 'Dashboard Link',
+  PDF_REPORT: 'PDF Report',
+  FOLLOW_UP: 'Follow-up',
+  SIGNAL_TRIGGERED: 'Signal-triggered',
+};
+
 const outreachColors: Record<string, string> = {
   NONE: 'bg-slate-100 text-slate-500',
   QUEUED: 'bg-amber-50 text-amber-600',
@@ -24,6 +33,17 @@ const outreachColors: Record<string, string> = {
   REPLIED: 'bg-purple-50 text-purple-600',
   CONVERTED: 'bg-emerald-50 text-emerald-600',
   OPTED_OUT: 'bg-red-50 text-red-500',
+};
+
+// TERM-02: outreachStatus enum values mapped to plain-language labels
+const OUTREACH_STATUS_LABELS: Record<string, string> = {
+  NONE: 'No Outreach',
+  QUEUED: 'Queued',
+  EMAIL_SENT: 'Email Sent',
+  OPENED: 'Opened',
+  REPLIED: 'Replied',
+  CONVERTED: 'Converted',
+  OPTED_OUT: 'Opted Out',
 };
 
 export default function ContactDetail() {
@@ -119,7 +139,8 @@ export default function ContactDetail() {
                       'bg-slate-50 text-slate-400 border-slate-100',
                   )}
                 >
-                  {c.outreachStatus}
+                  {/* TERM-02: outreachStatus displayed as plain label */}
+                  {OUTREACH_STATUS_LABELS[c.outreachStatus] ?? c.outreachStatus}
                 </span>
               </div>
               {c.jobTitle && (
@@ -276,7 +297,8 @@ export default function ContactDetail() {
                   >
                     <div>
                       <span className="text-sm font-medium text-slate-700">
-                        {log.type}
+                        {/* TERM-02: OutreachType displayed as plain label */}
+                        {OUTREACH_TYPE_LABELS[log.type] ?? log.type}
                       </span>
                       {log.subject && (
                         <span className="text-xs text-slate-400 ml-2">
@@ -316,7 +338,15 @@ export default function ContactDetail() {
                     <div className="flex items-center gap-2 mb-1">
                       <Zap className="w-3 h-3 text-klarifai-yellow-dark" />
                       <span className="text-xs font-medium text-slate-600">
-                        {signal.signalType}
+                        {/* TERM-02: signalType formatted as plain label */}
+                        {signal.signalType
+                          .replace(/_/g, ' ')
+                          .replace(
+                            /\w\S*/g,
+                            (w: string) =>
+                              w.charAt(0).toUpperCase() +
+                              w.slice(1).toLowerCase(),
+                          )}
                       </span>
                     </div>
                     <p className="text-sm text-slate-700">{signal.title}</p>

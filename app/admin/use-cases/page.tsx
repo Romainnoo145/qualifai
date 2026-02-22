@@ -144,7 +144,9 @@ export default function UseCasesPage() {
             Use Cases
           </h1>
           <p className="mt-1 text-sm text-slate-500 font-medium">
-            Service catalog — evidence-backed offerings for proof matching
+            {/* TERM-02: "proof matching" replaced with plain description */}
+            Service catalog — evidence-backed offerings that can be matched to
+            prospect needs
           </p>
         </div>
         <div className="flex items-center gap-3">
