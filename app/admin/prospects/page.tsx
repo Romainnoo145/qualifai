@@ -126,8 +126,8 @@ function AllCompanies() {
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="glass-card p-4 animate-pulse">
-            <div className="h-5 bg-slate-200 rounded w-48" />
+          <div key={i} className="glass-card p-6 animate-pulse">
+            <div className="h-5 bg-slate-200 rounded-xl w-48" />
           </div>
         ))}
       </div>

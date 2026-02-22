@@ -183,7 +183,7 @@ export default function UseCasesPage() {
 
       {/* Create form */}
       {showCreateForm && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-4">
+        <div className="glass-card p-6 space-y-4">
           <h2 className="text-sm font-black text-[#040026] uppercase tracking-wider">
             New Use Case
           </h2>
@@ -206,7 +206,7 @@ export default function UseCasesPage() {
 
       {/* Empty state */}
       {!useCases.isLoading && list.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-12 shadow-sm text-center">
+        <div className="glass-card p-12 text-center rounded-[2.5rem]">
           <BookOpen className="w-10 h-10 text-slate-200 mx-auto mb-4" />
           <p className="text-sm font-medium text-slate-400">
             No use cases yet. Create one or import from Obsidian.
@@ -218,10 +218,7 @@ export default function UseCasesPage() {
       {list.length > 0 && (
         <div className="space-y-4">
           {list.map((uc) => (
-            <div
-              key={uc.id}
-              className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
-            >
+            <div key={uc.id} className="glass-card p-6">
               {editingId === uc.id ? (
                 <div className="space-y-4">
                   <h3 className="text-sm font-black text-[#040026] uppercase tracking-wider">

@@ -100,7 +100,7 @@ export default function HypothesesPage() {
 
       {/* Empty state */}
       {!hypotheses.isLoading && list.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-12 shadow-sm text-center">
+        <div className="glass-card p-12 text-center rounded-[2.5rem]">
           <Lightbulb className="w-10 h-10 text-slate-200 mx-auto mb-4" />
           <p className="text-sm font-medium text-slate-400">
             No hypotheses match this filter.
@@ -112,10 +112,7 @@ export default function HypothesesPage() {
       {list.length > 0 && (
         <div className="space-y-4">
           {list.map((h: any) => (
-            <div
-              key={h.id}
-              className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm card-interactive"
-            >
+            <div key={h.id} className="glass-card p-6 card-interactive">
               {/* Header row: prospect name + status pill */}
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2 text-sm">

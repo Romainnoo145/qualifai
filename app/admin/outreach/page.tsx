@@ -157,7 +157,7 @@ function DraftQueue() {
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="glass-card p-6 animate-pulse">
-            <div className="h-5 bg-slate-200 rounded w-64" />
+            <div className="h-5 bg-slate-200 rounded-xl w-64" />
           </div>
         ))}
       </div>
@@ -182,7 +182,7 @@ function DraftQueue() {
 
   return (
     <div className="space-y-4">
-      <div className="glass-card p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="glass-card p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
           <span>
             Total drafts: <strong>{queueData.summary.total}</strong>
@@ -413,7 +413,7 @@ function TouchTaskQueue() {
 
   return (
     <div className="space-y-4">
-      <div className="glass-card p-4 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+      <div className="glass-card p-5 flex flex-wrap items-center gap-3 text-xs text-slate-600">
         <span>
           Open tasks: <strong>{tasks.data?.summary.open ?? 0}</strong>
         </span>
@@ -823,8 +823,8 @@ function SentHistory() {
     return (
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="glass-card p-4 animate-pulse">
-            <div className="h-5 bg-slate-200 rounded w-64" />
+          <div key={i} className="glass-card p-6 animate-pulse">
+            <div className="h-5 bg-slate-200 rounded-xl w-64" />
           </div>
         ))}
       </div>
@@ -848,7 +848,7 @@ function SentHistory() {
       {logs.map((log: any) => (
         <div
           key={log.id}
-          className="glass-card card-interactive p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+          className="glass-card card-interactive p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="flex items-center gap-3">
             <div
