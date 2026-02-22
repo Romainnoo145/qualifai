@@ -63,3 +63,31 @@
 - Cal.com embed React SDK needs both light and dark cssVarsPerTheme keys
 - Crawl4AI REST API requires {type: ClassName, params: {...}} wrapping — not optional
 - Email opens excluded from cadence (Apple MPP false positives) — enforced at type level
+
+---
+
+## v1.2 — Autopilot with Oversight (Completed)
+
+**Started:** 2026-02-21
+**Shipped:** 2026-02-22
+**Phases:** 12–15 (Phase 16 absorbed into v2.0)
+
+### What shipped:
+
+- Navigation simplified: 10 → 6 sidebar items (Dashboard, Companies, Campaigns, Draft Queue, Use Cases, Signals) (Phase 12)
+- Terminology cleanup: Loss Map → Workflow Report, Call Prep → Meeting Brief, etc. (Phase 12)
+- Prospect detail: 7-tab → 4-section story flow (Evidence → Analysis → Outreach Preview → Results) (Phase 13)
+- Prospect detail redesign: hero company layout, real tabs, manual contact creation, CSS hidden mounting (Phase 13)
+- Campaign reporting: named cohorts, funnel metrics, per-prospect status, conversion rates (Phase 14)
+- Action queue dashboard: unified hub with hypotheses, drafts, calls, replies grouped by urgency (Phase 15)
+- UI consistency pass: glass-card border-radius fix, input-minimal font fix, rounded corners app-wide (Quick tasks)
+
+### Key learnings:
+
+- glass-card CSS class needs border-radius in the class itself, not per-instance — prevents inconsistency
+- Tab sections should stay mounted (CSS hidden) to avoid refetch/loading flash on switch
+- input-minimal needs font-family: inherit to match app typography
+- Conditional rendering vs CSS visibility: use CSS hidden for tabs with tRPC queries
+- Hypothesis approval is in the wrong place — admin can't judge hypotheses for unknown prospects; client should validate via /voor/ dashboard
+- Too many disconnected screens — user wants a simple flow: enter prospect → review research quality → send → track
+- Draft Queue redesign (Phase 16) was too incremental — needs fundamental rethink as part of v2.0

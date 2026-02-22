@@ -36,14 +36,19 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - ✓ **Cadence engine** (engagement-driven multi-touch scheduling across 4 channels) — v1.1
 - ✓ **Prospect dashboard** (/voor/bedrijfsnaam with evidence-backed content + multi-channel contact) — v1.1
 - ✓ **One-click quote request** (admin notification with matched use cases) — v1.1
+- ✓ **Action queue dashboard** (unified hub: hypotheses, drafts, calls, replies) — v1.2
+- ✓ **Nav simplification** (10 → 6 sidebar items) — v1.2
+- ✓ **Prospect detail story flow** (Evidence → Analysis → Outreach Preview → Results) — v1.2
+- ✓ **Campaign cohort reporting** (funnel metrics, per-prospect status) — v1.2
+- ✓ **Terminology cleanup** (plain language throughout) — v1.2
 
 ### Active
 
-- [ ] **Action queue dashboard** — unified hub showing hypotheses to review, drafts to approve, calls to make, replies to handle
-- [ ] **Nav simplification** — 10 nav items → 6 (Dashboard, Companies, Campaigns, Draft Queue, Use Cases, Signals)
-- [ ] **Prospect detail story flow** — replace 7 tabs with Evidence → Analysis → Outreach Preview → Results
-- [ ] **Campaign cohort reporting** — funnel metrics, per-prospect status, group performance by segment
-- [ ] **Terminology cleanup** — replace jargon (Loss Map, Call Prep, Nodes, Sprint Intelligence) with plain language
+- [ ] **Admin oversight console** — single-flow admin experience: enter prospects → review research quality → approve/send outreach → track status
+- [ ] **Research quality gate** — admin reviews whether research is sufficient (not hypothesis content) and can request more research
+- [ ] **Client-facing hypothesis validation** — hypotheses approved by the prospect on /voor/ dashboard, not by admin
+- [ ] **One-click send queue** — per-channel send buttons (Gmail/LinkedIn/WhatsApp/Call) with content preview, one click per action
+- [ ] **Prospect pipeline view** — see every prospect's stage at a glance: researching → reviewed → sending → engaged → booked
 
 ### Out of Scope
 
@@ -78,17 +83,17 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - **Multi-tenant**: All models need organization_id (NOT NULL, indexed)
 - **Port**: App runs on 9200
 
-## Current Milestone: v1.2 — Autopilot with Oversight
+## Current Milestone: v2.0 — Streamlined Flow
 
-**Goal:** Transform the admin experience from a collection of disconnected pages into a streamlined oversight dashboard where the system runs automatically and the admin reviews what goes out and why.
+**Goal:** Transform the admin from a collection of disconnected pages into a single oversight console where the admin enters prospects, reviews research quality, approves outreach with one click per channel, and tracks status — while prospects validate hypotheses themselves on their dashboard.
 
 **Target features:**
 
-- Action queue dashboard (unified decision hub)
-- Simplified navigation (6 items, clear grouping)
-- Prospect detail as story flow (evidence → analysis → outreach → results)
-- Campaign cohort reporting (funnel metrics, group performance)
-- Terminology cleanup (plain language, no internal jargon)
+- Admin oversight console (single flow: enter → review → send → track)
+- Research quality gate (admin checks research sufficiency, not hypothesis accuracy)
+- Client-side hypothesis validation (prospect approves on /voor/ dashboard)
+- One-click send queue (Gmail/LinkedIn/WhatsApp/Call per row)
+- Prospect pipeline view (stage visibility at a glance)
 
 ## Key Decisions
 
@@ -102,4 +107,4 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ---
 
-_Last updated: 2026-02-21 after milestone v1.2 kickoff_
+_Last updated: 2026-02-22 after milestone v2.0 kickoff_

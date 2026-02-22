@@ -5,16 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v1.2 — Autopilot with Oversight (Phase 16: Draft Queue Redesign)
+**Current focus:** v2.0 — Streamlined Flow
 
 ## Current Position
 
-Phase: 16 of 16 (Draft Queue Redesign)
-Plan: 1 of N
-Status: In progress
-Last activity: 2026-02-22 — Completed quick task 2: Improve Add Contact form layout
-
-Progress: [█████████░] 90% (v1.2)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-22 — Milestone v2.0 started
 
 ## Performance Metrics
 
