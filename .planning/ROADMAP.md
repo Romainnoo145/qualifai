@@ -276,12 +276,12 @@ Plans:
 2. Each item in the queue links directly to the page where the admin takes action — no extra navigation steps
 3. Dashboard shows a count per action type with urgency indicators (e.g., overdue calls, unread replies)
 
-**Plans:** TBD
+**Plans:** 2 plans in 2 waves
 
 Plans:
 
-- [ ] 15-01-PLAN.md — Action queue data layer: tRPC queries aggregating pending decisions across hypothesis, outreach, task, and reply tables
-- [ ] 15-02-PLAN.md — Action queue UI: dashboard page with grouped action items, counts, urgency indicators, and direct links
+- [ ] 15-01-PLAN.md — Action queue data layer: getActionQueue tRPC query aggregating pending decisions across hypothesis, outreach, task, and reply tables (Wave 1)
+- [ ] 15-02-PLAN.md — Action queue UI: dashboard page rewrite with grouped action items, count badges, urgency indicators, and direct links (Wave 2)
 
 ### Phase 16: Draft Queue Redesign
 
