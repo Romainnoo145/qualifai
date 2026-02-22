@@ -383,7 +383,13 @@ Plans:
 4. The action queue dashboard hides prospects that are still in the Researching stage — only actionable-stage prospects appear, eliminating research-in-progress noise
 5. Prospects with recent /voor/ dashboard activity (page visit, PDF download, call booked) appear earlier in the action queue than unengaged prospects at the same stage
 
-**Plans:** TBD (run /gsd:plan-phase 20 to break down)
+**Plans:** 3 plans in 2 waves
+
+Plans:
+
+- [ ] 20-01-PLAN.md — Idempotency guard on approveDraft + bulkApproveLowRisk (Wave 1)
+- [ ] 20-02-PLAN.md — Pipeline stage helper + PipelineChip component + wire to list/detail (Wave 1)
+- [ ] 20-03-PLAN.md — getActionQueue enhancements (filter + ranking + preview) + dashboard inline send (Wave 2)
 
 ---
 
