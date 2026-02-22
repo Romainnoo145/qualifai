@@ -333,7 +333,13 @@ Plans:
 4. Admin can proceed with an amber-quality prospect by confirming "proceed with limited research" — the system records this override and does not block outreach
 5. The hypothesis approve/reject buttons are gone from the admin Analysis section; instead hypotheses show their current status (Pending prospect validation, Confirmed, Declined) as read-only badges
 
-**Plans:** TBD (run /gsd:plan-phase 18 to break down)
+**Plans:** 3 plans in 2 waves
+
+Plans:
+
+- [ ] 18-01-PLAN.md — Schema migration (quality fields on ResearchRun, PENDING/DECLINED enum) + tRPC approveQuality + extend listProspects + computeTrafficLight helper (Wave 1)
+- [ ] 18-02-PLAN.md — QualityChip component + wire into prospect list and detail header (Wave 2)
+- [ ] 18-03-PLAN.md — Remove hypothesis accept/reject buttons from admin, add read-only badges, fix /voor/ filter (Wave 2)
 
 ---
 
