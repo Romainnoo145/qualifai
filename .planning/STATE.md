@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 Phase: 16 of 16 (Draft Queue Redesign)
 Plan: 1 of N
 Status: In progress
-Last activity: 2026-02-22 — Plan 15-02 complete (action queue dashboard UI)
+Last activity: 2026-02-22 — Completed quick task 2: Improve Add Contact form layout
 
 Progress: [█████████░] 90% (v1.2)
 
@@ -97,9 +97,10 @@ None identified for v1.2 phases.
 | #   | Description                                                                                  | Date       | Commit  | Directory                                                                                         |
 | --- | -------------------------------------------------------------------------------------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------- |
 | 1   | Merge search into prospects page, restructure detail page, fix CTA cards on /voor/ dashboard | 2026-02-21 | 42fd9ee | [1-commit-search-merge-detail-page-restruct](./quick/1-commit-search-merge-detail-page-restruct/) |
+| 2   | Improve Add Contact form layout in ContactsSection — less cramped, stacked fields            | 2026-02-22 | 4653256 | [2-improve-add-contact-form-layout-in-conta](./quick/2-improve-add-contact-form-layout-in-conta/) |
 
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 15-02-PLAN.md (action queue dashboard UI)
+Stopped at: Completed quick task 2: Improve Add Contact form layout
 Resume file: None
