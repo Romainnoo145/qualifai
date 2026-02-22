@@ -66,12 +66,12 @@ export const assetsRouter = router({
             select: { id: true, strictGate: true },
           },
           workflowHypotheses: {
-            where: { status: 'ACCEPTED' },
+            where: { status: { in: ['ACCEPTED', 'PENDING'] } },
             orderBy: { confidenceScore: 'desc' },
             take: 3,
           },
           automationOpportunities: {
-            where: { status: 'ACCEPTED' },
+            where: { status: { in: ['ACCEPTED', 'PENDING'] } },
             orderBy: { confidenceScore: 'desc' },
             take: 2,
           },
@@ -273,9 +273,12 @@ export const assetsRouter = router({
         }),
       ]);
 
-      // Hypothesis approval gate — block outreach unless at least one hypothesis is approved
+      // Hypothesis approval gate — block outreach unless at least one hypothesis is approved or pending
       const approvedHypothesisCount = await ctx.db.workflowHypothesis.count({
-        where: { prospectId: map.prospect.id, status: 'ACCEPTED' },
+        where: {
+          prospectId: map.prospect.id,
+          status: { in: ['ACCEPTED', 'PENDING'] },
+        },
       });
       if (approvedHypothesisCount === 0) {
         throw new TRPCError({
@@ -415,7 +418,7 @@ export const assetsRouter = router({
         ctx.db.workflowHypothesis.findMany({
           where: {
             researchRunId: run.id,
-            status: 'ACCEPTED',
+            status: { in: ['ACCEPTED', 'PENDING'] },
           },
           orderBy: { confidenceScore: 'desc' },
           take: 3,
@@ -423,7 +426,7 @@ export const assetsRouter = router({
         ctx.db.automationOpportunity.findMany({
           where: {
             researchRunId: run.id,
-            status: 'ACCEPTED',
+            status: { in: ['ACCEPTED', 'PENDING'] },
           },
           orderBy: { confidenceScore: 'desc' },
           take: 2,

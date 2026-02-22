@@ -37,14 +37,14 @@ type Finding = {
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: 'Pending validation',
-  ACCEPTED: 'Pending validation', // Legacy admin-accepted, same display as PENDING
+  ACCEPTED: 'Confirmed by prospect', // Confirmed by prospect on /voor/ dashboard
   PENDING: 'Pending validation',
   REJECTED: 'Skipped', // Legacy admin-rejected
   DECLINED: 'Declined by prospect',
 };
 
 const STATUS_PILL: Record<string, string> = {
-  ACCEPTED: 'bg-blue-50 text-blue-700 border-blue-200', // Changed from emerald — no longer means "admin approved"
+  ACCEPTED: 'bg-emerald-50 text-emerald-700 border-emerald-200', // Confirmed — green to distinguish from pending
   REJECTED: 'bg-slate-100 text-slate-500 border-slate-200', // Dimmed — legacy
   DRAFT: 'bg-blue-50 text-blue-700 border-blue-200', // Same as PENDING
   PENDING: 'bg-blue-50 text-blue-700 border-blue-200',

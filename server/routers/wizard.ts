@@ -208,7 +208,7 @@ export const wizardRouter = router({
           prospect: {
             include: {
               workflowHypotheses: {
-                where: { status: 'ACCEPTED' },
+                where: { status: { in: ['ACCEPTED', 'PENDING'] } },
                 take: 3,
                 include: {
                   proofMatches: {

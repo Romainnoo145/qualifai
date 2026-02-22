@@ -123,7 +123,9 @@ export const hypothesesRouter = router({
     .input(
       z
         .object({
-          status: z.enum(['DRAFT', 'ACCEPTED', 'REJECTED']).optional(),
+          status: z
+            .enum(['DRAFT', 'ACCEPTED', 'REJECTED', 'PENDING', 'DECLINED'])
+            .optional(),
           limit: z.number().min(1).max(200).default(100),
         })
         .optional(),
