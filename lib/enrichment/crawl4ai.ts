@@ -63,6 +63,22 @@ export async function extractMarkdown(
   }
 }
 
+const CRAWLED_404_INDICATORS = [
+  'page not found',
+  'pagina niet gevonden',
+  'niet gevonden',
+  'does not exist',
+  'bestaat niet',
+  '404 error',
+  '404 not found',
+];
+
+function looksLikeCrawled404(markdown: string): boolean {
+  if (markdown.length > 3000) return false;
+  const lower = markdown.toLowerCase();
+  return CRAWLED_404_INDICATORS.some((i) => lower.includes(i));
+}
+
 export async function ingestCrawl4aiEvidenceDrafts(
   urls: string[],
 ): Promise<EvidenceDraft[]> {
@@ -72,31 +88,28 @@ export async function ingestCrawl4aiEvidenceDrafts(
   for (const url of capped) {
     const { markdown, title } = await extractMarkdown(url);
 
+    // Empty/minimal content = page doesn't exist or is useless — skip entirely
     if (!markdown || markdown.length < 80) {
-      drafts.push({
-        sourceType: 'REVIEWS',
-        sourceUrl: url,
-        title: title || 'Source (browser extraction)',
-        snippet:
-          'Page queued for manual review -- browser extraction returned minimal content.',
-        workflowTag: 'workflow-context',
-        confidenceScore: 0.55,
-        metadata: { adapter: 'crawl4ai', fallback: true },
-      });
-    } else {
-      const sourceType = url.includes('google.com/maps')
-        ? 'REVIEWS'
-        : 'JOB_BOARD';
-      drafts.push({
-        sourceType,
-        sourceUrl: url,
-        title: title || 'Browser-extracted page',
-        snippet: markdown.slice(0, 240).replace(/\n+/g, ' ').trim(),
-        workflowTag: 'workflow-context',
-        confidenceScore: 0.76,
-        metadata: { adapter: 'crawl4ai', source: 'serp-discovery' },
-      });
+      continue;
     }
+
+    // Detect 404 content in crawled pages (target returned 404 HTML)
+    if (looksLikeCrawled404(markdown)) {
+      continue;
+    }
+
+    const sourceType = url.includes('google.com/maps')
+      ? 'REVIEWS'
+      : 'JOB_BOARD';
+    drafts.push({
+      sourceType,
+      sourceUrl: url,
+      title: title || 'Browser-extracted page',
+      snippet: markdown.slice(0, 240).replace(/\n+/g, ' ').trim(),
+      workflowTag: 'workflow-context',
+      confidenceScore: 0.76,
+      metadata: { adapter: 'crawl4ai', source: 'serp-discovery' },
+    });
   }
 
   return drafts;

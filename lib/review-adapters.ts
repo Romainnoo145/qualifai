@@ -197,6 +197,10 @@ export async function ingestReviewEvidenceDrafts(
         },
       });
       if (!response.ok) {
+        // 404/410 = page doesn't exist, not evidence — skip entirely
+        if (response.status === 404 || response.status === 410) {
+          continue;
+        }
         drafts.push(fallbackReviewDraft(sourceUrl, provider));
         continue;
       }

@@ -233,6 +233,23 @@ function fallbackDraft(
   };
 }
 
+const SOFT_404_INDICATORS = [
+  'page not found',
+  'pagina niet gevonden',
+  'niet gevonden',
+  'does not exist',
+  'bestaat niet',
+  '404 error',
+  '404 not found',
+];
+
+function looksLikeSoft404(html: string): boolean {
+  const text = stripHtml(html).toLowerCase();
+  // Only flag short pages — real content pages are long even if they mention "404"
+  if (text.length > 3000) return false;
+  return SOFT_404_INDICATORS.some((i) => text.includes(i));
+}
+
 function uniqueUrls(urls: string[]): string[] {
   return Array.from(new Set(urls.map((url) => url.trim()).filter(Boolean)));
 }
@@ -259,11 +276,22 @@ export async function ingestWebsiteEvidenceDrafts(
       clearTimeout(timeout);
 
       if (!response.ok) {
+        // 404/410 = page doesn't exist, not evidence — skip entirely
+        if (response.status === 404 || response.status === 410) {
+          continue;
+        }
+        // Other errors (500, 503, rate limits) = page might exist
         drafts.push(fallbackDraft(sourceUrl, sourceType));
         continue;
       }
 
       const html = await response.text();
+
+      // Detect soft 404s (200 OK but "not found" content)
+      if (looksLikeSoft404(html)) {
+        continue;
+      }
+
       drafts.push(
         ...extractWebsiteEvidenceFromHtml({
           sourceUrl,
