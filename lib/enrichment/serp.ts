@@ -25,6 +25,86 @@ interface GoogleJobsResult {
 }
 
 /**
+ * External mention found via Google Search (reviews, job postings, news).
+ */
+export interface GoogleSearchMention {
+  url: string;
+  title: string;
+  snippet: string;
+}
+
+/**
+ * Discover Google Search mentions for a company — reviews, job postings, and news.
+ *
+ * Runs 3 sequential Google Search queries via SerpAPI (google engine) targeting NL
+ * search intent. Each query is individually wrapped in try/catch so one failing query
+ * does not abort the others. Returns [] immediately when SERP_API_KEY is not set.
+ *
+ * Complements discoverSerpUrls (Maps + Jobs engines) — this function uses the standard
+ * Google Search engine to surface web mentions that homepage crawling cannot find.
+ */
+export async function discoverGoogleSearchMentions(input: {
+  companyName: string | null;
+  domain: string;
+}): Promise<GoogleSearchMention[]> {
+  const apiKey = process.env.SERP_API_KEY;
+
+  if (!apiKey) {
+    return [];
+  }
+
+  // Lazy init — set API key before each call
+  serpConfig.api_key = apiKey;
+
+  const query = input.companyName ?? input.domain;
+  const mentions: GoogleSearchMention[] = [];
+
+  const queries = [
+    `"${query}" reviews OR ervaringen`,
+    `"${query}" vacatures OR werken bij`,
+    `"${query}" nieuws`,
+  ];
+
+  for (const q of queries) {
+    try {
+      const result = (await getJson({
+        engine: 'google',
+        q,
+        gl: 'nl',
+        hl: 'nl',
+        google_domain: 'google.nl',
+        num: 5,
+      })) as {
+        organic_results?: Array<{
+          link?: string;
+          title?: string;
+          snippet?: string;
+        }>;
+      };
+
+      for (const item of result.organic_results ?? []) {
+        if (
+          item.link &&
+          item.title &&
+          item.snippet &&
+          item.snippet.length > 30
+        ) {
+          mentions.push({
+            url: item.link,
+            title: item.title,
+            snippet: item.snippet,
+          });
+        }
+      }
+    } catch (err) {
+      console.error(`[SerpAPI] google search error for "${q}":`, err);
+    }
+  }
+
+  return mentions.slice(0, 12);
+}
+
+/**
  * Discover Google Maps review URLs and job listing URLs for a given prospect.
  *
  * Uses SerpAPI as the evidence discovery layer — finds URLs that Crawl4AI (plan 08-02)
