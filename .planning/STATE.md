@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v1.2 — Autopilot with Oversight (Phase 13: Prospect Story Flow)
+**Current focus:** v1.2 — Autopilot with Oversight (Phase 13: Prospect Story Flow — COMPLETE)
 
 ## Current Position
 
 Phase: 13 of 16 (Prospect Story Flow)
-Plan: 3 of 5
-Status: In progress
-Last activity: 2026-02-22 — Plan 13-03 complete (OutreachPreviewSection with email, dashboard, call brief)
+Plan: 5 of 5 (COMPLETE)
+Status: Phase complete — ready for Phase 14
+Last activity: 2026-02-22 — Plan 13-05 complete (TERM-02 terminology sweep)
 
-Progress: [████░░░░░░] 50% (v1.2)
+Progress: [██████░░░░] 60% (v1.2)
 
 ## Performance Metrics
 
@@ -35,7 +35,7 @@ Progress: [████░░░░░░] 50% (v1.2)
 | 10. Cadence Engine        | 4/4   | 7 min   | 1.75 min |
 | 11. Prospect Dashboard    | 2/2   | ~6 min  | 3 min    |
 | 12. Navigation & Language | 2/2   | 6 min   | 3 min    |
-| 13. Prospect Story Flow   | 3/5   | ~14 min | ~5 min   |
+| 13. Prospect Story Flow   | 5/5   | ~17 min | ~3.4 min |
 
 _Updated after each plan completion_
 
@@ -62,6 +62,8 @@ Recent decisions affecting v1.2 work:
 - [Phase 7]: Hypotheses must be manually approved (DRAFT → ACCEPTED) — auto-accept removed
 - [Phase 13]: OutreachPreviewSection owns all mutations locally (generate, queueDraft, regenerateCallBrief) — page only passes latestRunId + prospect as props
 - [Phase 13]: CallPlanGrid helper component avoids TS2589 deep type inference from Prisma JsonValue
+- [Phase 13, Plan 05]: TERM-02 scope follows TERM-01 pattern — only user-visible string literals changed, variable/prop/type names left intact
+- [Phase 13, Plan 05]: Label maps (WORKFLOW_TAG_LABELS, OUTREACH_STATUS_LABELS, OUTREACH_TYPE_LABELS) co-located at file top with ?? fallback for unknown enum values
 
 ### Pending Todos
 
@@ -84,5 +86,5 @@ None identified for v1.2 phases.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 13-03-PLAN.md (OutreachPreviewSection)
+Stopped at: Completed 13-05-PLAN.md (TERM-02 terminology sweep — Phase 13 complete)
 Resume file: None
