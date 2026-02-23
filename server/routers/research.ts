@@ -196,7 +196,7 @@ export const researchRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.researchRun.update({
+      const run = await ctx.db.researchRun.update({
         where: { id: input.runId },
         data: {
           qualityApproved: input.approved,
@@ -204,5 +204,17 @@ export const researchRouter = router({
           qualityNotes: input.notes ?? null,
         },
       });
+      if (input.approved) {
+        await ctx.db.workflowHypothesis.updateMany({
+          where: { researchRunId: input.runId, status: 'DRAFT' },
+          data: { status: 'PENDING' },
+        });
+      } else {
+        await ctx.db.workflowHypothesis.updateMany({
+          where: { researchRunId: input.runId, status: 'PENDING' },
+          data: { status: 'DRAFT' },
+        });
+      }
+      return run;
     }),
 });
