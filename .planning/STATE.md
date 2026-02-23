@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-22)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v2.0 — Streamlined Flow (Phase 20: One-Click Send Queue + Pipeline View)
+**Current focus:** v2.0 — Streamlined Flow (Phase 21: Prospect Discovery + Cleanup)
 
 ## Current Position
 
-Phase: 20 — One-Click Send Queue + Pipeline View — IN PROGRESS
-Plan: 01 complete — idempotency guards on approveDraft and bulkApproveLowRisk (also 02 complete)
-Status: 2/3 plans complete — idempotency guards + pipeline chips shipped; send queue UI remains
-Last activity: 2026-02-23 — Plan 01 complete (atomic send claim guards)
+Phase: 20 — One-Click Send Queue + Pipeline View — COMPLETE
+Plan: 03 complete — action queue enhancements + inline send UI
+Status: 3/3 plans complete — Phase 20 DONE
+Last activity: 2026-02-23 — Plan 03 complete (action queue enhancements + inline send)
 
 ## Performance Metrics
 
@@ -42,6 +42,7 @@ Last activity: 2026-02-23 — Plan 01 complete (atomic send claim guards)
 
 _Updated after each plan completion_
 | Phase 20 P02 | 2 | 2 tasks | 5 files |
+| Phase 20 P03 | ~4 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,10 @@ _Updated after each plan completion_
 - [Phase 20, Plan 01]: Transient send failure reverts to 'draft' (retryable); quality block keeps 'manual_review' (permanent) — clear error-type distinction
 - [Phase 20, Plan 01]: bulkApproveLowRisk silently skips (continue) drafts already claimed by concurrent request — not counted as failures
 - [Phase 20, Plan 01]: Missing contact email in approveDraft reverts to 'draft' (data issue, fixable) not 'manual_review' (needs human judgment)
+- [Phase 20, Plan 03]: researchInProgressStatuses uses per-element 'as const' (not array 'as const') — readonly array not assignable to mutable ResearchStatus[] for Prisma { in: [...] } filter
+- [Phase 20, Plan 03]: ActionRow split: draft items render as <div>+Send button, non-draft items keep <Link> wrapper — avoids invalid nested interactive HTML
+- [Phase 20, Plan 03]: approveDraft onError also invalidates the cache — idempotency CONFLICT causes the stale draft row to disappear on refresh
+- [Phase 20, Plan 03]: isSendPending shared across all draft rows — complements DB-level idempotency guard at the UI level
 
 ### v2.0 Architecture Notes
 
@@ -140,5 +145,5 @@ _Updated after each plan completion_
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Phase 20 Plan 01 COMPLETE — idempotency guards on approveDraft + bulkApproveLowRisk (also Plan 02 complete)
-Resume file: None — next step is Phase 20 Plan 03 (send queue UI)
+Stopped at: Phase 20 Plan 03 COMPLETE — Phase 20 DONE (all 3 plans shipped)
+Resume file: None — next step is Phase 21 (Prospect Discovery + Cleanup)
