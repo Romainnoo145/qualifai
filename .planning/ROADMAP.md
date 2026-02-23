@@ -433,11 +433,11 @@ Plans:
 2. After quality approval, the /voor/ dashboard shows hypotheses in the validation section — prospect can confirm or decline
 3. When a prospect validates a hypothesis on /voor/, admin sees the result in the Analysis section on next page load
 
-**Plans:** TBD (1 plan expected)
+**Plans:** 1 plan in 1 wave
 
 Plans:
 
-- [ ] 22-01-PLAN.md — Add DRAFT→PENDING transition to approveQuality + verify E2E flow
+- [ ] 22-01-PLAN.md — Add DRAFT→PENDING transition to approveQuality + hypothesis cache invalidation in quality-chip
 
 ---
 
