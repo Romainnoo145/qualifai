@@ -9,6 +9,8 @@ import {
   MessageCircle,
   Linkedin,
   CheckCircle2,
+  Send,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -37,6 +39,8 @@ type ActionItem = {
   urgency: 'overdue' | 'normal';
   channel?: string | null;
   dueAt?: string | null;
+  preview?: string;
+  engagementAt?: Date | string | null;
 };
 
 const ChannelIcon = ({ channel }: { channel: string | null | undefined }) => {
@@ -88,25 +92,27 @@ const CountCard = ({
   </Link>
 );
 
-const ActionRow = ({ item }: { item: ActionItem }) => {
-  const href =
-    item.type === 'hypothesis'
-      ? `/admin/prospects/${item.prospectId}#analysis`
-      : '/admin/outreach';
-
+const ActionRow = ({
+  item,
+  onSendDraft,
+  isPending,
+}: {
+  item: ActionItem;
+  onSendDraft?: (id: string) => void;
+  isPending?: boolean;
+}) => {
   const isOverdue = item.urgency === 'overdue';
 
-  return (
-    <Link
-      href={href}
-      className={cn(
-        'glass-card p-5 mb-2 rounded-2xl flex items-center justify-between hover:border-[#EBCB4B]/30 transition-all',
-        isOverdue && 'border-l-4 border-red-500',
-      )}
-    >
+  const content = (
+    <>
       <div className="flex-1 min-w-0 mr-4">
         <p className="font-bold text-sm text-[#040026]">{item.prospectName}</p>
         <p className="text-xs text-slate-500 truncate max-w-md">{item.title}</p>
+        {item.preview && (
+          <p className="text-[10px] text-slate-400 line-clamp-2 mt-1 max-w-lg">
+            {item.preview}
+          </p>
+        )}
         {item.type === 'task' && item.channel && (
           <div className="flex items-center gap-1 mt-1">
             <ChannelIcon channel={item.channel} />
@@ -114,6 +120,11 @@ const ActionRow = ({ item }: { item: ActionItem }) => {
         )}
       </div>
       <div className="flex flex-col items-end gap-1 shrink-0">
+        {item.engagementAt && (
+          <span className="text-[9px] font-black text-purple-500 uppercase tracking-widest">
+            Active
+          </span>
+        )}
         {isOverdue && (
           <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
             OVERDUE
@@ -131,6 +142,49 @@ const ActionRow = ({ item }: { item: ActionItem }) => {
           {timeAgo(item.createdAt)}
         </span>
       </div>
+    </>
+  );
+
+  const wrapperClass = cn(
+    'glass-card p-5 mb-2 rounded-2xl flex items-center justify-between transition-all',
+    isOverdue && 'border-l-4 border-red-500',
+  );
+
+  // Draft items: render as <div> with inline Send button (NOT inside a <Link>)
+  if (item.type === 'draft') {
+    return (
+      <div className={wrapperClass}>
+        {content}
+        <button
+          onClick={() => onSendDraft?.(item.id)}
+          disabled={isPending}
+          className={cn(
+            'ui-tap flex items-center gap-2 px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full border transition-all ml-3',
+            isPending
+              ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+              : 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100',
+          )}
+        >
+          {isPending ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <Send className="w-3 h-3" />
+          )}
+          Send
+        </button>
+      </div>
+    );
+  }
+
+  // Non-draft items: render as <Link> (existing behavior)
+  const href =
+    item.type === 'hypothesis'
+      ? `/admin/prospects/${item.prospectId}#analysis`
+      : '/admin/outreach';
+
+  return (
+    <Link href={href} className={cn(wrapperClass, 'hover:border-[#EBCB4B]/30')}>
+      {content}
     </Link>
   );
 };
@@ -140,11 +194,15 @@ const ActionSection = ({
   icon: Icon,
   label,
   items,
+  onSendDraft,
+  isSendPending,
 }: {
   id: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   items: ActionItem[];
+  onSendDraft?: (id: string) => void;
+  isSendPending?: boolean;
 }) => {
   if (items.length === 0) return null;
   return (
@@ -159,7 +217,12 @@ const ActionSection = ({
         </span>
       </div>
       {items.map((item) => (
-        <ActionRow key={item.id} item={item} />
+        <ActionRow
+          key={item.id}
+          item={item}
+          onSendDraft={onSendDraft}
+          isPending={isSendPending}
+        />
       ))}
     </section>
   );
@@ -169,6 +232,16 @@ const ActionSection = ({
 
 export default function AdminDashboard() {
   const queue = api.admin.getActionQueue.useQuery();
+  const utils = api.useUtils();
+  const approveDraft = api.outreach.approveDraft.useMutation({
+    onSuccess: () => {
+      void utils.admin.getActionQueue.invalidate();
+    },
+    onError: () => {
+      // Refresh queue — draft was likely already sent (idempotency guard)
+      void utils.admin.getActionQueue.invalidate();
+    },
+  });
 
   if (queue.isLoading) {
     return (
@@ -292,6 +365,8 @@ export default function AdminDashboard() {
             icon={Mail}
             label="Drafts to Approve"
             items={draftItems as ActionItem[]}
+            onSendDraft={(id) => approveDraft.mutate({ id })}
+            isSendPending={approveDraft.isPending}
           />
           <ActionSection
             id="tasks"
