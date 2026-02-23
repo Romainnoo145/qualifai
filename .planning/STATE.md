@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 
 ## Current Position
 
-Phase: 20 — One-Click Send Queue + Pipeline View — COMPLETE
-Plan: 03 complete — action queue enhancements + inline send UI
-Status: 3/3 plans complete — Phase 20 DONE
-Last activity: 2026-02-23 — Phase 20 verified (7/7 must-haves passed)
+Phase: 21 — Prospect Discovery + Cleanup — IN PROGRESS
+Plan: 02 complete — dead admin pages replaced with notFound() stubs
+Status: 2/? plans complete
+Last activity: 2026-02-23 — Phase 21 Plan 02: /admin/hypotheses, /admin/research, /admin/briefs all return 404
 
 ## Performance Metrics
 
@@ -110,6 +110,8 @@ _Updated after each plan completion_
 - [Phase 20, Plan 03]: ActionRow split: draft items render as <div>+Send button, non-draft items keep <Link> wrapper — avoids invalid nested interactive HTML
 - [Phase 20, Plan 03]: approveDraft onError also invalidates the cache — idempotency CONFLICT causes the stale draft row to disappear on refresh
 - [Phase 20, Plan 03]: isSendPending shared across all draft rows — complements DB-level idempotency guard at the UI level
+- [Phase 21, Plan 02]: notFound() stubs preserve directories (git history intact) rather than deleting files — explicit about removed intent
+- [Phase 21, Plan 02]: Removed 'use client' from dead page stubs — notFound() must run in a server component to produce HTTP 404 status
 
 ### v2.0 Architecture Notes
 
@@ -145,5 +147,5 @@ _Updated after each plan completion_
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Phase 20 Plan 03 COMPLETE — Phase 20 DONE (all 3 plans shipped)
-Resume file: None — next step is Phase 21 (Prospect Discovery + Cleanup)
+Stopped at: Phase 21 Plan 02 COMPLETE — dead admin pages replaced with notFound() stubs
+Resume file: None — Phase 21 Plan 02 done, continue with next Phase 21 plan
