@@ -387,9 +387,9 @@ Plans:
 
 Plans:
 
-- [ ] 20-01-PLAN.md — Idempotency guard on approveDraft + bulkApproveLowRisk (Wave 1)
-- [ ] 20-02-PLAN.md — Pipeline stage helper + PipelineChip component + wire to list/detail (Wave 1)
-- [ ] 20-03-PLAN.md — getActionQueue enhancements (filter + ranking + preview) + dashboard inline send (Wave 2)
+- [x] 20-01-PLAN.md — Idempotency guard on approveDraft + bulkApproveLowRisk (Wave 1)
+- [x] 20-02-PLAN.md — Pipeline stage helper + PipelineChip component + wire to list/detail (Wave 1)
+- [x] 20-03-PLAN.md — getActionQueue enhancements (filter + ranking + preview) + dashboard inline send (Wave 2)
 
 ---
 
@@ -431,5 +431,5 @@ Plans:
 | 17. Evidence Pipeline Enrichment    | v2.0      | 3/3            | Complete    | 2026-02-22 |
 | 18. Research Quality Gate           | v2.0      | 3/3            | Complete    | 2026-02-22 |
 | 19. Client Hypothesis Validation    | v2.0      | 2/2            | Complete    | 2026-02-23 |
-| 20. One-Click Send Queue + Pipeline | v2.0      | 0/?            | Not started | -          |
+| 20. One-Click Send Queue + Pipeline | v2.0      | 3/3            | Complete    | 2026-02-23 |
 | 21. Prospect Discovery + Cleanup    | v2.0      | 0/?            | Not started | -          |
