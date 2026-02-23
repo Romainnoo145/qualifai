@@ -1,3 +1,4 @@
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { adminProcedure, router } from '../trpc';
 import {
@@ -503,6 +504,19 @@ Klarifai`;
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Step 1: Atomic claim — prevents double-send
+      const claimed = await ctx.db.outreachLog.updateMany({
+        where: { id: input.id, status: 'draft' },
+        data: { status: 'sending' },
+      });
+
+      if (claimed.count === 0) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'Draft is already being sent. Please refresh the queue.',
+        });
+      }
+
       const draft = await ctx.db.outreachLog.findUniqueOrThrow({
         where: { id: input.id },
         include: {
@@ -524,11 +538,17 @@ Klarifai`;
       });
 
       if (!draft.contact.primaryEmail) {
+        // Revert claim — contact data issue is not a send conflict
+        await ctx.db.outreachLog.update({
+          where: { id: input.id },
+          data: { status: 'draft' },
+        });
         throw new Error('Contact has no email address');
       }
 
       const quality = scoreContactForOutreach(draft.contact);
       if (quality.status === 'blocked') {
+        // Quality block is permanent — keep manual_review (not a transient error)
         await ctx.db.outreachLog.update({
           where: { id: input.id },
           data: {
@@ -558,17 +578,10 @@ Klarifai`;
           type: draft.type,
         });
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        // Transient send failure — revert to draft so it reappears in the queue for retry
         await ctx.db.outreachLog.update({
           where: { id: input.id },
-          data: {
-            status: 'manual_review',
-            metadata: {
-              ...metadataAsObject(draft.metadata),
-              manualReviewReasons: [message],
-              blockedByQualityChecks: true,
-            } as never,
-          },
+          data: { status: 'draft' },
         });
         throw error;
       }
@@ -630,6 +643,18 @@ Klarifai`;
 
       for (const draft of lowRiskDrafts) {
         if (!draft.contact.primaryEmail) continue;
+
+        // Atomic claim per draft — skip if already claimed by concurrent request
+        const claimed = await ctx.db.outreachLog.updateMany({
+          where: { id: draft.id, status: 'draft' },
+          data: { status: 'sending' },
+        });
+
+        if (claimed.count === 0) {
+          // Already claimed by concurrent request — skip, don't fail
+          continue;
+        }
+
         let result;
         try {
           result = await sendOutreachEmail({
@@ -640,21 +665,13 @@ Klarifai`;
             bodyText: draft.bodyText ?? '',
             type: draft.type,
           });
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : String(error);
+        } catch {
+          // Transient send failure — revert to draft so it reappears in the queue for retry
           failed += 1;
           failedIds.push(draft.id);
           await ctx.db.outreachLog.update({
             where: { id: draft.id },
-            data: {
-              status: 'manual_review',
-              metadata: {
-                ...metadataAsObject(draft.metadata),
-                manualReviewReasons: [message],
-                blockedByQualityChecks: true,
-              } as never,
-            },
+            data: { status: 'draft' },
           });
           continue;
         }
