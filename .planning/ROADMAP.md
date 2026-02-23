@@ -407,7 +407,12 @@ Plans:
 2. Admin can select one or more results from the search and import them as prospects in a single action — duplicates (already-imported companies) are skipped with a visible count
 3. The pages /admin/hypotheses, /admin/research, and /admin/briefs return 404 or redirect — no direct URL can reach dead admin pages that are no longer part of any workflow
 
-**Plans:** TBD (run /gsd:plan-phase 21 to break down)
+**Plans:** 2 plans in 1 wave
+
+Plans:
+
+- [ ] 21-01-PLAN.md — Sector + location search and batch import (DISC-01) (Wave 1)
+- [ ] 21-02-PLAN.md — Remove dead admin pages (CLEAN-01) (Wave 1)
 
 ---
 
