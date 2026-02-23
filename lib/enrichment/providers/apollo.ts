@@ -620,7 +620,15 @@ export const apolloProvider: EnrichmentProvider = {
           page,
           per_page: pageSize,
           q_organization_name: filters.companyName,
-          organization_locations: filters.countries,
+          organization_locations:
+            [...(filters.countries ?? []), ...(filters.cities ?? [])].filter(
+              Boolean,
+            ).length > 0
+              ? [...(filters.countries ?? []), ...(filters.cities ?? [])]
+              : undefined,
+          organization_keywords: filters.industries?.length
+            ? filters.industries
+            : undefined,
           organization_num_employees_ranges:
             filters.employeesRange &&
             (filters.employeesRange.min || filters.employeesRange.max)
