@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Qualifai is the sales engine in the Klarifai ecosystem. It automates evidence-backed outbound prospecting for the Workflow Optimization Sprint proposition — finding companies with provable workflow pain points, matching those to Klarifai's services, and running personalized multi-touch outreach grounded in real evidence. Built for marketing agencies in NL/BE.
+Qualifai is the sales engine in the Klarifai ecosystem. It automates evidence-backed outbound prospecting for the Workflow Optimization Sprint proposition — finding companies with provable workflow pain points from multiple sources (sitemap crawling, Google search, KvK registry, LinkedIn), matching those to Klarifai's services via AI hypothesis generation, and running personalized multi-touch outreach grounded in real evidence. The admin operates through a streamlined oversight console: enter prospects, review research quality via traffic-light indicators, approve outreach with one click, and track pipeline stage — while prospects validate pain-point hypotheses themselves on their /voor/ dashboard. Built for marketing agencies in NL/BE.
 
 ## Core Value
 
@@ -41,14 +41,17 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - ✓ **Prospect detail story flow** (Evidence → Analysis → Outreach Preview → Results) — v1.2
 - ✓ **Campaign cohort reporting** (funnel metrics, per-prospect status) — v1.2
 - ✓ **Terminology cleanup** (plain language throughout) — v1.2
+- ✓ **Evidence pipeline enrichment** (sitemap, Google search, KvK registry, LinkedIn) — v2.0
+- ✓ **Research quality gate** (traffic-light indicator, soft override, quality review) — v2.0
+- ✓ **Client hypothesis validation** (prospect confirm/decline on /voor/ dashboard) — v2.0
+- ✓ **One-click send queue** (inline preview, atomic idempotency guards) — v2.0
+- ✓ **Pipeline stage visibility** (7-stage chip on every prospect row) — v2.0
+- ✓ **Prospect discovery** (Apollo sector/location search with batch import) — v2.0
+- ✓ **Dead page cleanup** (/admin/hypotheses, /research, /briefs removed) — v2.0
 
 ### Active
 
-- [ ] **Admin oversight console** — single-flow admin experience: enter prospects → review research quality → approve/send outreach → track status
-- [ ] **Research quality gate** — admin reviews whether research is sufficient (not hypothesis content) and can request more research
-- [ ] **Client-facing hypothesis validation** — hypotheses approved by the prospect on /voor/ dashboard, not by admin
-- [ ] **One-click send queue** — per-channel send buttons (Gmail/LinkedIn/WhatsApp/Call) with content preview, one click per action
-- [ ] **Prospect pipeline view** — see every prospect's stage at a glance: researching → reviewed → sending → engaged → booked
+(No active requirements — define with next milestone)
 
 ### Out of Scope
 
@@ -60,6 +63,11 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - WhatsApp API integration — Manual tasks for now, API too complex/expensive
 - LinkedIn API automation — ToS risk, manual tasks only
 - Bulk email sending without evidence — Contradicts core value
+- "Need more research" re-run button — Pipeline too narrow, same results; fix evidence sources first
+- Kanban board pipeline view — List with stage chips sufficient at current volumes (20-50 prospects)
+- Auto-send without approval — Trust not yet calibrated, GDPR/anti-spam risk for NL/BE
+- Research completeness as hard blocker — Makes system unusable for thin-presence Dutch SMBs
+- Global research threshold — Different industries have different evidence availability
 
 ## Context
 
@@ -67,44 +75,40 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - **Target market:** Marketing agencies in NL/BE
 - **Proposition:** Workflow Optimization Sprint
 - **CTA pattern (enforced):** Step 1: "I made a 1-page Workflow Loss Map" → Step 2: "15-min teardown + live mini-demo"
-- **Current enrichment:** Apollo for company/contact data. People-search endpoints blocked on current plan (free tier).
-- **Current research:** Server-side fetch + HTML parse. No browser rendering, no Google discovery.
-- **Proof source:** Obsidian vault (inventory.json + client_offers.json). Moving to in-app Use Cases management.
-- **Email delivery:** Resend API
+- **Current enrichment:** Apollo for company/contact data + KvK registry for Dutch company details
+- **Current research:** Multi-source pipeline (website crawl, sitemap, Google search, LinkedIn, KvK) + Crawl4AI browser extraction + SerpAPI discovery
+- **Proof matching:** In-app Use Cases management with Claude semantic scoring
+- **Email delivery:** Resend API with idempotency guards
 - **Scheduling:** Cal.com
+- **Current codebase:** ~15,000 LOC TypeScript, 76 files modified in v2.0 alone
+- **Shipped:** v1.0 (Feb 20) → v1.1 (Feb 21) → v1.2 (Feb 22) → v2.0 (Feb 23)
 
 ## Constraints
 
 - **Tech stack**: Next.js 16 + tRPC + Prisma + PostgreSQL (established, no changes)
 - **AI provider**: Anthropic Claude (established)
 - **Enrichment**: Apollo (current plan limits people-search)
-- **Browser crawling**: Playwright (already devDependency)
-- **Search discovery**: SerpAPI (new dependency for Google search)
+- **Browser crawling**: Crawl4AI REST API (managed browser)
+- **Search discovery**: SerpAPI (Google search, reviews, jobs)
 - **Multi-tenant**: All models need organization_id (NOT NULL, indexed)
 - **Port**: App runs on 9200
 
-## Current Milestone: v2.0 — Streamlined Flow
-
-**Goal:** Transform the admin from a collection of disconnected pages into a single oversight console where the admin enters prospects, reviews research quality, approves outreach with one click per channel, and tracks status — while prospects validate hypotheses themselves on their dashboard.
-
-**Target features:**
-
-- Admin oversight console (single flow: enter → review → send → track)
-- Research quality gate (admin checks research sufficiency, not hypothesis accuracy)
-- Client-side hypothesis validation (prospect approves on /voor/ dashboard)
-- One-click send queue (Gmail/LinkedIn/WhatsApp/Call per row)
-- Prospect pipeline view (stage visibility at a glance)
-
 ## Key Decisions
 
-| Decision                              | Rationale                                                        | Outcome   |
-| ------------------------------------- | ---------------------------------------------------------------- | --------- |
-| SerpAPI for Google discovery          | Google aggressive with bot detection, not worth self-maintaining | — Pending |
-| Playwright for content extraction     | Already in project, handles JS-rendered pages                    | — Pending |
-| Manual evidence approval (not auto)   | Quality over speed, wrong outreach damages brand                 | — Pending |
-| Engagement-driven cadence (not fixed) | Smarter resource allocation, respond to prospect behavior        | — Pending |
-| WhatsApp/LinkedIn as manual tasks     | API integration too complex/expensive for now                    | — Pending |
+| Decision                                | Rationale                                                        | Outcome   |
+| --------------------------------------- | ---------------------------------------------------------------- | --------- |
+| SerpAPI for Google discovery            | Google aggressive with bot detection, not worth self-maintaining | ✓ Good    |
+| Crawl4AI for content extraction         | Handles JS-rendered pages, cookie consent, managed browser       | ✓ Good    |
+| Manual evidence approval (not auto)     | Quality over speed, wrong outreach damages brand                 | ✓ Good    |
+| Engagement-driven cadence (not fixed)   | Smarter resource allocation, respond to prospect behavior        | ✓ Good    |
+| WhatsApp/LinkedIn as manual tasks       | API integration too complex/expensive for now                    | ✓ Good    |
+| Admin reviews quality, not hypothesis   | Prospect is subject matter expert on their own pain points       | ✓ Good    |
+| Soft gate (amber = warn + proceed)      | Dutch SMBs have thin web presence, hard block unusable           | ✓ Good    |
+| Prospect validates hypotheses on /voor/ | Shifts validation from admin guesswork to prospect confirmation  | ✓ Good    |
+| Idempotency via atomic updateMany       | Database-level claim prevents double-sends, no external locks    | ✓ Good    |
+| List view with stage chips (not kanban) | Sufficient at current volumes (20-50 prospects)                  | — Pending |
+| Pipeline stage as computed value        | No schema change, derived from existing data                     | ✓ Good    |
 
 ---
 
-_Last updated: 2026-02-22 after milestone v2.0 kickoff_
+_Last updated: 2026-02-23 after v2.0 milestone_

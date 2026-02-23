@@ -91,3 +91,34 @@
 - Hypothesis approval is in the wrong place — admin can't judge hypotheses for unknown prospects; client should validate via /voor/ dashboard
 - Too many disconnected screens — user wants a simple flow: enter prospect → review research quality → send → track
 - Draft Queue redesign (Phase 16) was too incremental — needs fundamental rethink as part of v2.0
+
+## v2.0 — Streamlined Flow (Completed)
+
+**Started:** 2026-02-22
+**Shipped:** 2026-02-23
+**Phases:** 17–22 (6 phases, 14 plans)
+**Files:** 76 changed, +10,208 / -1,048
+
+### What shipped:
+
+- Evidence pipeline enriched with 4 new sources: sitemap crawling, Google search mentions, KvK registry, LinkedIn company pages (Phase 17)
+- Traffic-light research quality gate with soft "proceed anyway" override for thin-presence Dutch SMBs (Phase 18)
+- Hypothesis approve/reject removed from admin — replaced with read-only status badges (Phase 18)
+- Prospect-facing hypothesis validation on /voor/ dashboard — prospects confirm or decline pain points themselves (Phase 19)
+- One-click send queue with inline preview and atomic idempotency guards preventing double-sends (Phase 20)
+- 7-stage pipeline chip (Imported → Booked) on every prospect row for at-a-glance status (Phase 20)
+- Action queue filters to actionable stages only with engagement-based urgency ranking (Phase 20)
+- Apollo sector/location search with multi-select batch import for prospect discovery (Phase 21)
+- Dead admin pages (/admin/hypotheses, /admin/research, /admin/briefs) removed (Phase 21)
+- Critical integration gap fixed: DRAFT→PENDING hypothesis transition in approveQuality (Phase 22)
+
+### Key learnings:
+
+- Cross-phase integration testing catches gaps invisible during individual phase verification — milestone audit essential
+- Admin reviews research quality, not hypothesis content — prospect is the subject matter expert on their own pain points
+- Soft gate (amber = warn + proceed) works better than hard blocking for Dutch SMB market with thin web presence
+- Idempotency guard must ship in same phase as one-click send UI — never separate
+- tRPC v11 middleware uses async getRawInput() not sync rawInput — breaking change from v10
+- List-view quality indicators can use approximate values (source diversity not in list query) — detail is definitive
+
+---
