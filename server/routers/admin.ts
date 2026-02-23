@@ -398,6 +398,11 @@ export const adminRouter = router({
         cursor: input?.cursor ? { id: input.cursor } : undefined,
         include: {
           _count: { select: { sessions: true, contacts: true } },
+          sessions: {
+            where: { callBooked: true },
+            take: 1,
+            select: { id: true },
+          },
           researchRuns: {
             orderBy: { createdAt: 'desc' as const },
             take: 1,
