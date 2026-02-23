@@ -51,7 +51,13 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ### Active
 
-(No active requirements — define with next milestone)
+<!-- v2.1 Production Bootstrap — being defined -->
+
+- [ ] Use case population from Obsidian vault + AI-extracted project capabilities
+- [ ] Prospect seeding with known targets + Apollo discovery
+- [ ] Pipeline validation against real companies
+- [ ] Quality threshold calibration with real data
+- [ ] End-to-end outreach cycle (send → reply → booking)
 
 ### Out of Scope
 
@@ -111,4 +117,18 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ---
 
-_Last updated: 2026-02-23 after v2.0 milestone_
+## Current Milestone: v2.1 Production Bootstrap
+
+**Goal:** Populate the system with real Klarifai data, validate the full outreach cycle against real companies, and calibrate quality thresholds — proving the system works end-to-end before scaling.
+
+**Target features:**
+
+- Use case population (Obsidian import + AI extraction from project codebases)
+- Prospect seeding (known targets + Apollo sector/location discovery)
+- Research pipeline validation with real company data
+- Quality threshold calibration (amber/green from real results)
+- Full outreach cycle verification (send → reply handling → booking)
+
+---
+
+_Last updated: 2026-02-23 after v2.1 milestone start_

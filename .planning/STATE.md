@@ -5,13 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** Planning next milestone
+**Current focus:** v2.1 Production Bootstrap
 
 ## Current Position
 
-Phase: All phases complete through v2.0
-Status: v2.0 Streamlined Flow shipped 2026-02-23
-Last activity: 2026-02-23 — Milestone v2.0 archived
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-23 — Milestone v2.1 started
 
 ## Milestones Shipped
 
@@ -55,5 +56,5 @@ Last activity: 2026-02-23 — Milestone v2.0 archived
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: v2.0 milestone completion
-Resume with: `/gsd:new-milestone`
+Stopped at: v2.1 milestone started, defining requirements
+Resume with: Continue requirements definition
