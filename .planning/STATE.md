@@ -110,6 +110,10 @@ _Updated after each plan completion_
 - [Phase 20, Plan 03]: ActionRow split: draft items render as <div>+Send button, non-draft items keep <Link> wrapper — avoids invalid nested interactive HTML
 - [Phase 20, Plan 03]: approveDraft onError also invalidates the cache — idempotency CONFLICT causes the stale draft row to disappear on refresh
 - [Phase 20, Plan 03]: isSendPending shared across all draft rows — complements DB-level idempotency guard at the UI level
+- [Phase 21, Plan 01]: organization_keywords used for sector/industries (not organization_industry_tag_ids) — free-text avoids Apollo taxonomy mapping requirement
+- [Phase 21, Plan 01]: cities merged into organization_locations alongside countries — Apollo accepts both city and country strings in the same field
+- [Phase 21, Plan 01]: onImported() called after full batch completes in handleBatchImport — not in importCompany onSuccess which would fire per-item
+- [Phase 21, Plan 01]: Map<domain, companyName> for selectedDomains state — stores both key (domain) and display value needed by batch handler
 - [Phase 21, Plan 02]: notFound() stubs preserve directories (git history intact) rather than deleting files — explicit about removed intent
 - [Phase 21, Plan 02]: Removed 'use client' from dead page stubs — notFound() must run in a server component to produce HTTP 404 status
 
@@ -147,5 +151,5 @@ _Updated after each plan completion_
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Phase 21 Plan 02 COMPLETE — dead admin pages replaced with notFound() stubs
-Resume file: None — Phase 21 Plan 02 done, continue with next Phase 21 plan
+Stopped at: Phase 21 Plan 01 + 02 COMPLETE — sector/city search + batch import shipped; dead admin pages replaced with notFound() stubs
+Resume file: None — Phase 21 Plans 01 and 02 done, continue with remaining Phase 21 plans
