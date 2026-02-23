@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 
 ## Current Position
 
-Phase: 19 — Client Hypothesis Validation — COMPLETE
-Plan: 02 complete — Phase 19 COMPLETE
-Status: All 2 plans complete — prospect hypothesis validation backend + /voor/ UI
-Last activity: 2026-02-23 — Phase 19 verified (8/8 must-haves passed)
+Phase: 20 — One-Click Send Queue + Pipeline View — IN PROGRESS
+Plan: 02 complete — Pipeline Stage Chip (computePipelineStage + PipelineChip)
+Status: 2/3 plans complete — pipeline chip shipped, idempotency guard + send queue remain
+Last activity: 2026-02-23 — Plan 02 complete (pipeline chips on list + detail views)
 
 ## Performance Metrics
 
@@ -41,6 +41,7 @@ Last activity: 2026-02-23 — Phase 19 verified (8/8 must-haves passed)
 | 19. Client Hypothesis Val. | 2/2   | ~5 min    | ~2.5 min |
 
 _Updated after each plan completion_
+| Phase 20 P02 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,8 @@ _Updated after each plan completion_
 - [Phase 19, Plan 02]: HypothesisData.status typed as full Prisma enum union (DRAFT | ACCEPTED | REJECTED | PENDING | DECLINED) — narrowing to subset causes TS2322 at the prop site where Prisma returns HypothesisStatus
 - [Phase 19, Plan 02]: Validation section sits below the hypothesis grid as a sibling block (not embedded in cards) — keeps discovery content clean and creates a clear separate action zone
 - [Phase 19, Plan 02]: Optimistic update fires before tRPC mutate() call — instant button-to-chip transition without waiting for server; buttons become unavailable once state is set (state !== null)
+- [Phase 20]: listProspects sessions include filtered by callBooked:true (take:1) for booked detection without loading full session history
+- [Phase 20]: detail page uses p.sessions?.some(s => s.callBooked) for hasBookedSession — getProspect returns all sessions unfiltered, must check each for callBooked flag
 
 ### v2.0 Architecture Notes
 
@@ -133,5 +136,5 @@ _Updated after each plan completion_
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Phase 19 COMPLETE — verified 8/8 must-haves
-Resume file: None — next step is Phase 20 (One-Click Send Queue + Pipeline View)
+Stopped at: Phase 20 Plan 02 COMPLETE — PipelineChip wired into list and detail
+Resume file: None — next step is Phase 20 Plan 03 (idempotency guard + send queue)
