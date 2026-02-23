@@ -5,7 +5,7 @@
 - v1.0 MVP — Phases 1-5 (shipped 2026-02-20)
 - v1.1 Evidence-Backed Multi-Touch Outreach — Phases 6-11 (shipped 2026-02-21)
 - v1.2 Autopilot with Oversight — Phases 12-15 (shipped 2026-02-22)
-- v2.0 Streamlined Flow — Phases 17-21 (in progress)
+- v2.0 Streamlined Flow — Phases 17-22 (in progress)
 
 ## Phases
 
@@ -286,6 +286,7 @@ Plans:
 - [ ] **Phase 19: Client Hypothesis Validation** — Prospects confirm or decline hypotheses on their /voor/ dashboard; admin sees results in prospect detail
 - [ ] **Phase 20: One-Click Send Queue + Pipeline View** — Unified per-channel send queue with inline preview; pipeline stage chip on every prospect row; queue filters to actionable stages only with urgency ranking
 - [ ] **Phase 21: Prospect Discovery + Cleanup** — Apollo sector search for batch prospect import; dead admin pages removed
+- [ ] **Phase 22: Hypothesis Flow Fix** — Fix DRAFT→PENDING transition in approveQuality so /voor/ hypothesis validation works for new prospects
 
 ---
 
@@ -416,25 +417,50 @@ Plans:
 
 ---
 
+### Phase 22: Hypothesis Flow Fix
+
+**Goal:** Close the critical integration gap where `approveQuality` doesn't transition hypotheses from DRAFT to PENDING — making /voor/ hypothesis validation work for new prospects and completing the E2E discovery-to-send flow.
+
+**Depends on:** Phase 18 (approveQuality mutation is defined there), Phase 19 (validation UI consumes PENDING hypotheses)
+
+**Requirements:** HYPO-06, HYPO-07
+
+**Gap Closure:** Closes all gaps from v2.0 milestone audit (2 requirements, 1 integration, 1 flow)
+
+**Success Criteria** (what must be TRUE when this phase completes):
+
+1. When admin approves research quality via `approveQuality`, all DRAFT hypotheses for that research run transition to PENDING
+2. After quality approval, the /voor/ dashboard shows hypotheses in the validation section — prospect can confirm or decline
+3. When a prospect validates a hypothesis on /voor/, admin sees the result in the Analysis section on next page load
+
+**Plans:** TBD (1 plan expected)
+
+Plans:
+
+- [ ] 22-01-PLAN.md — Add DRAFT→PENDING transition to approveQuality + verify E2E flow
+
+---
+
 ## Progress
 
-**Execution order (v2.0):** 17 → 18 → 19 → 20 → 21
+**Execution order (v2.0):** 17 → 18 → 19 → 20 → 21 → 22
 
-| Phase                               | Milestone | Plans Complete | Status   | Completed  |
-| ----------------------------------- | --------- | -------------- | -------- | ---------- |
-| 1-5. MVP                            | v1.0      | —              | Complete | 2026-02-20 |
-| 6. Use Cases Foundation             | v1.1      | 3/3            | Complete | 2026-02-20 |
-| 7. Evidence Approval Gate           | v1.1      | 2/2            | Complete | 2026-02-20 |
-| 8. Deep Evidence Pipeline           | v1.1      | 3/3            | Complete | 2026-02-21 |
-| 9. Engagement Triggers              | v1.1      | 2/2            | Complete | 2026-02-21 |
-| 10. Cadence Engine                  | v1.1      | 4/4            | Complete | 2026-02-21 |
-| 11. Prospect Dashboard              | v1.1      | 2/2            | Complete | 2026-02-21 |
-| 12. Navigation and Language         | v1.2      | 2/2            | Complete | 2026-02-21 |
-| 13. Prospect Story Flow             | v1.2      | 5/5            | Complete | 2026-02-22 |
-| 14. Campaign Reporting              | v1.2      | 2/2            | Complete | 2026-02-22 |
-| 15. Action Queue Dashboard          | v1.2      | 2/2            | Complete | 2026-02-22 |
-| 17. Evidence Pipeline Enrichment    | v2.0      | 3/3            | Complete | 2026-02-22 |
-| 18. Research Quality Gate           | v2.0      | 3/3            | Complete | 2026-02-22 |
-| 19. Client Hypothesis Validation    | v2.0      | 2/2            | Complete | 2026-02-23 |
-| 20. One-Click Send Queue + Pipeline | v2.0      | 3/3            | Complete | 2026-02-23 |
-| 21. Prospect Discovery + Cleanup    | v2.0      | 2/2            | Complete | 2026-02-23 |
+| Phase                               | Milestone | Plans Complete | Status      | Completed  |
+| ----------------------------------- | --------- | -------------- | ----------- | ---------- |
+| 1-5. MVP                            | v1.0      | —              | Complete    | 2026-02-20 |
+| 6. Use Cases Foundation             | v1.1      | 3/3            | Complete    | 2026-02-20 |
+| 7. Evidence Approval Gate           | v1.1      | 2/2            | Complete    | 2026-02-20 |
+| 8. Deep Evidence Pipeline           | v1.1      | 3/3            | Complete    | 2026-02-21 |
+| 9. Engagement Triggers              | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 10. Cadence Engine                  | v1.1      | 4/4            | Complete    | 2026-02-21 |
+| 11. Prospect Dashboard              | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 12. Navigation and Language         | v1.2      | 2/2            | Complete    | 2026-02-21 |
+| 13. Prospect Story Flow             | v1.2      | 5/5            | Complete    | 2026-02-22 |
+| 14. Campaign Reporting              | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 15. Action Queue Dashboard          | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 17. Evidence Pipeline Enrichment    | v2.0      | 3/3            | Complete    | 2026-02-22 |
+| 18. Research Quality Gate           | v2.0      | 3/3            | Complete    | 2026-02-22 |
+| 19. Client Hypothesis Validation    | v2.0      | 2/2            | Complete    | 2026-02-23 |
+| 20. One-Click Send Queue + Pipeline | v2.0      | 3/3            | Complete    | 2026-02-23 |
+| 21. Prospect Discovery + Cleanup    | v2.0      | 2/2            | Complete    | 2026-02-23 |
+| 22. Hypothesis Flow Fix             | v2.0      | 0/1            | Not Started | —          |
