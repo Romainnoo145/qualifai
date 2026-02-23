@@ -5,14 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v2.1 Production Bootstrap
+**Current focus:** v2.1 Production Bootstrap — Phase 23: Use Case Extractors
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-23 — Milestone v2.1 started
+Phase: 23 of 27 (Use Case Extractors)
+Plan: 0 of 2 in current phase
+Status: Ready to plan
+Last activity: 2026-02-23 — v2.1 roadmap created, 5 phases defined
+
+Progress: [░░░░░░░░░░] 0% (v2.1 — 0/12 plans complete)
 
 ## Milestones Shipped
 
@@ -35,26 +37,29 @@ Last activity: 2026-02-23 — Milestone v2.1 started
 
 ## Accumulated Context
 
+### Decisions (Recent)
+
+- [Phase 22]: Admin reviews research quality, not hypothesis content — prospect validates own pain points on /voor/
+- [Phase 20]: Idempotency guard must ship in same phase as one-click send UI — never separate
+- [v2.1 scope]: SEED-01/02 are new features (build first); DISC-01/02 use existing Phase 21 Apollo search (validate only)
+
 ### Pending Todos
 
-- Run quality scoring against all existing prospects to calibrate amber/green thresholds
-- Plan a real prospect validation session to test the hypothesis confirmation UX on /voor/
+- Calibrate amber/green quality thresholds against real prospect data (becomes QUAL-01 in Phase 26)
+- Run real prospect validation session on /voor/ before building features that depend on hypothesis confirmation signal
 
 ### Tech Debt (Carried Forward)
 
-- SERP cache re-read after overwrite (Phase 8 bug) — SERP cache on re-runs always treated as stale
-- List-view traffic light uses approximate values (hardcodes sourceTypeCount=1, confidence=0.65)
+- SERP cache re-read after overwrite (Phase 8 bug) — cache on re-runs always treated as stale
+- List-view traffic light uses hardcoded approximation (sourceTypeCount=1, confidence=0.65) — fixed in Phase 26 (QUAL-02)
 - Unused logoUrl prop in DashboardClient interface
 
-### Quick Tasks Completed
+### Blockers/Concerns
 
-| #   | Description                                                                                  | Date       | Commit  |
-| --- | -------------------------------------------------------------------------------------------- | ---------- | ------- |
-| 1   | Merge search into prospects page, restructure detail page, fix CTA cards on /voor/ dashboard | 2026-02-21 | 42fd9ee |
-| 2   | Improve Add Contact form layout in ContactsSection — less cramped, stacked fields            | 2026-02-22 | 4653256 |
+None yet.
 
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: v2.1 milestone started, defining requirements
-Resume with: Continue requirements definition
+Stopped at: v2.1 roadmap created — 5 phases (23-27), 13 requirements mapped, 100% coverage
+Resume with: `/gsd:plan-phase 23`

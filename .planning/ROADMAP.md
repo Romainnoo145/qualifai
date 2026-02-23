@@ -6,6 +6,7 @@
 - ✅ **v1.1 Evidence-Backed Multi-Touch Outreach** — Phases 6-11 (shipped 2026-02-21)
 - ✅ **v1.2 Autopilot with Oversight** — Phases 12-15 (shipped 2026-02-22)
 - ✅ **v2.0 Streamlined Flow** — Phases 17-22 (shipped 2026-02-23)
+- 🚧 **v2.1 Production Bootstrap** — Phases 23-27 (in progress)
 
 ## Phases
 
@@ -50,24 +51,133 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 </details>
 
+### 🚧 v2.1 Production Bootstrap (In Progress)
+
+**Milestone Goal:** Populate the system with real Klarifai data, validate the full outreach cycle against real companies, and calibrate quality thresholds — proving the system works end-to-end before scaling.
+
+#### Phase 23: Use Case Extractors
+
+**Goal:** Admin can populate the use case catalog from existing Klarifai knowledge assets — Obsidian vault markdown and project codebases — without manual entry.
+**Depends on:** Phase 22 (existing UseCase model and CRUD infrastructure)
+**Requirements:** SEED-01, SEED-02
+**Success Criteria** (what must be TRUE):
+
+1. Admin can point the vault reader at an Obsidian folder and it produces UseCase records with dedup (no duplicates on re-run)
+2. Admin can point the codebase analyzer at a project directory and it extracts capability descriptions, creating UseCase records
+3. Both extractors surface clear results — how many records created, how many skipped as duplicates
+4. Extracted use cases appear immediately in the Use Cases admin list and are usable for proof matching
+   **Plans:** TBD
+
+Plans:
+
+- [ ] 23-01: Vault reader — scan Obsidian markdown, extract service capabilities, create UseCase records with dedup
+- [ ] 23-02: Codebase analyzer — AI-powered capability extraction from source files, UseCase record creation
+
+---
+
+#### Phase 24: Data Population and Discovery
+
+**Goal:** The system is populated with real Klarifai service data and at least 5 real prospect companies are imported and ready for research.
+**Depends on:** Phase 23 (vault reader and codebase analyzer must exist before populating)
+**Requirements:** SEED-03, DISC-01, DISC-02
+**Success Criteria** (what must be TRUE):
+
+1. Klarifai service catalog reflects all real offerings — populated from vault and codebases via Phase 23 extractors
+2. At least 5 known target companies are imported and visible in the prospects list
+3. Admin can discover new prospects via Apollo sector/location search and import them in batch
+4. All imported prospects have correct company data and are ready to kick off research
+   **Plans:** TBD
+
+Plans:
+
+- [ ] 24-01: Run vault reader and codebase analyzer on Klarifai assets — populate service catalog
+- [ ] 24-02: Import known target companies and run Apollo discovery for new prospects
+
+---
+
+#### Phase 25: Pipeline Hardening
+
+**Goal:** The research pipeline runs successfully on real company websites and surfaces clear errors when external APIs fail, rather than silently producing empty results.
+**Depends on:** Phase 24 (real prospects must exist to run research against)
+**Requirements:** PIPE-01, PIPE-02, PIPE-03
+**Success Criteria** (what must be TRUE):
+
+1. Research pipeline completes successfully on at least 3 real marketing agency websites
+2. When Crawl4AI times out, SerpAPI hits rate limits, or KvK returns an error, the admin sees a user-visible error message — not a silent empty result
+3. Evidence extraction produces at least one relevant workflow pain point hypothesis per real prospect
+4. Research quality gate correctly classifies each result as red, amber, or green
+   **Plans:** TBD
+
+Plans:
+
+- [ ] 25-01: Run research pipeline on real prospects — document which sources succeed and which fail
+- [ ] 25-02: Implement user-visible error handling for API failures (Crawl4AI, SerpAPI, KvK)
+- [ ] 25-03: Validate hypothesis quality on real marketing agency data
+
+---
+
+#### Phase 26: Quality Calibration
+
+**Goal:** The amber/green quality thresholds reflect what real Dutch marketing agency research actually looks like, and the list-view traffic light matches the detail-view score.
+**Depends on:** Phase 25 (real research results needed for calibration)
+**Requirements:** QUAL-01, QUAL-02
+**Success Criteria** (what must be TRUE):
+
+1. Amber/green thresholds are set based on observed real research scores — not estimated defaults
+2. List-view traffic light chip matches the detail-view quality score for the same prospect (no more hardcoded approximation)
+3. At least one real prospect clears green threshold and at least one lands at amber — thresholds are meaningfully distinguishing
+   **Plans:** TBD
+
+Plans:
+
+- [ ] 26-01: Calibrate amber/green thresholds from real research results — update config values
+- [ ] 26-02: Fix list-view traffic light to use real per-prospect quality data instead of hardcoded approximation
+
+---
+
+#### Phase 27: End-to-End Cycle
+
+**Goal:** At least one real outreach email is sent, received, and replied to — with the reply correctly triaged and a Cal.com booking triggering an automatic meeting brief.
+**Depends on:** Phase 26 (calibrated quality gate needed before sending real outreach)
+**Requirements:** E2E-01, E2E-02, E2E-03
+**Success Criteria** (what must be TRUE):
+
+1. Admin sends a real outreach email to a real prospect via the send queue — email is delivered and not caught by spam
+2. A real reply from the prospect is received via webhook and correctly triaged (interested / not interested / auto-reply)
+3. A Cal.com booking from a real prospect triggers automatic meeting brief generation — brief appears in the prospect's Results section
+   **Plans:** TBD
+
+Plans:
+
+- [ ] 27-01: Send real outreach email via send queue — verify delivery and record outcome
+- [ ] 27-02: Verify reply webhook receives and triages real responses
+- [ ] 27-03: Verify Cal.com booking triggers meeting brief generation end-to-end
+
+---
+
 ## Progress
 
-| Phase                               | Milestone | Plans Complete | Status   | Completed  |
-| ----------------------------------- | --------- | -------------- | -------- | ---------- |
-| 1-5. MVP                            | v1.0      | —              | Complete | 2026-02-20 |
-| 6. Use Cases Foundation             | v1.1      | 3/3            | Complete | 2026-02-20 |
-| 7. Evidence Approval Gate           | v1.1      | 2/2            | Complete | 2026-02-20 |
-| 8. Deep Evidence Pipeline           | v1.1      | 3/3            | Complete | 2026-02-21 |
-| 9. Engagement Triggers              | v1.1      | 2/2            | Complete | 2026-02-21 |
-| 10. Cadence Engine                  | v1.1      | 4/4            | Complete | 2026-02-21 |
-| 11. Prospect Dashboard              | v1.1      | 2/2            | Complete | 2026-02-21 |
-| 12. Navigation and Language         | v1.2      | 2/2            | Complete | 2026-02-21 |
-| 13. Prospect Story Flow             | v1.2      | 5/5            | Complete | 2026-02-22 |
-| 14. Campaign Reporting              | v1.2      | 2/2            | Complete | 2026-02-22 |
-| 15. Action Queue Dashboard          | v1.2      | 2/2            | Complete | 2026-02-22 |
-| 17. Evidence Pipeline Enrichment    | v2.0      | 3/3            | Complete | 2026-02-22 |
-| 18. Research Quality Gate           | v2.0      | 3/3            | Complete | 2026-02-22 |
-| 19. Client Hypothesis Validation    | v2.0      | 2/2            | Complete | 2026-02-23 |
-| 20. One-Click Send Queue + Pipeline | v2.0      | 3/3            | Complete | 2026-02-23 |
-| 21. Prospect Discovery + Cleanup    | v2.0      | 2/2            | Complete | 2026-02-23 |
-| 22. Hypothesis Flow Fix             | v2.0      | 1/1            | Complete | 2026-02-23 |
+| Phase                               | Milestone | Plans Complete | Status      | Completed  |
+| ----------------------------------- | --------- | -------------- | ----------- | ---------- |
+| 1-5. MVP                            | v1.0      | —              | Complete    | 2026-02-20 |
+| 6. Use Cases Foundation             | v1.1      | 3/3            | Complete    | 2026-02-20 |
+| 7. Evidence Approval Gate           | v1.1      | 2/2            | Complete    | 2026-02-20 |
+| 8. Deep Evidence Pipeline           | v1.1      | 3/3            | Complete    | 2026-02-21 |
+| 9. Engagement Triggers              | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 10. Cadence Engine                  | v1.1      | 4/4            | Complete    | 2026-02-21 |
+| 11. Prospect Dashboard              | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 12. Navigation and Language         | v1.2      | 2/2            | Complete    | 2026-02-21 |
+| 13. Prospect Story Flow             | v1.2      | 5/5            | Complete    | 2026-02-22 |
+| 14. Campaign Reporting              | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 15. Action Queue Dashboard          | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 17. Evidence Pipeline Enrichment    | v2.0      | 3/3            | Complete    | 2026-02-22 |
+| 18. Research Quality Gate           | v2.0      | 3/3            | Complete    | 2026-02-22 |
+| 19. Client Hypothesis Validation    | v2.0      | 2/2            | Complete    | 2026-02-23 |
+| 20. One-Click Send Queue + Pipeline | v2.0      | 3/3            | Complete    | 2026-02-23 |
+| 21. Prospect Discovery + Cleanup    | v2.0      | 2/2            | Complete    | 2026-02-23 |
+| 22. Hypothesis Flow Fix             | v2.0      | 1/1            | Complete    | 2026-02-23 |
+| 23. Use Case Extractors             | v2.1      | 0/2            | Not started | -          |
+| 24. Data Population and Discovery   | v2.1      | 0/2            | Not started | -          |
+| 25. Pipeline Hardening              | v2.1      | 0/3            | Not started | -          |
+| 26. Quality Calibration             | v2.1      | 0/2            | Not started | -          |
+| 27. End-to-End Cycle                | v2.1      | 0/3            | Not started | -          |

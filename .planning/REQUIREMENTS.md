@@ -54,29 +54,29 @@ Requirements for Production Bootstrap milestone. Each maps to roadmap phases.
 
 ## Traceability
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| SEED-01     | —     | Pending |
-| SEED-02     | —     | Pending |
-| SEED-03     | —     | Pending |
-| DISC-01     | —     | Pending |
-| DISC-02     | —     | Pending |
-| PIPE-01     | —     | Pending |
-| PIPE-02     | —     | Pending |
-| PIPE-03     | —     | Pending |
-| QUAL-01     | —     | Pending |
-| QUAL-02     | —     | Pending |
-| E2E-01      | —     | Pending |
-| E2E-02      | —     | Pending |
-| E2E-03      | —     | Pending |
+| Requirement | Phase                          | Status  |
+| ----------- | ------------------------------ | ------- |
+| SEED-01     | Phase 23 — Use Case Extractors | Pending |
+| SEED-02     | Phase 23 — Use Case Extractors | Pending |
+| SEED-03     | Phase 24 — Data Population     | Pending |
+| DISC-01     | Phase 24 — Data Population     | Pending |
+| DISC-02     | Phase 24 — Data Population     | Pending |
+| PIPE-01     | Phase 25 — Pipeline Hardening  | Pending |
+| PIPE-02     | Phase 25 — Pipeline Hardening  | Pending |
+| PIPE-03     | Phase 25 — Pipeline Hardening  | Pending |
+| QUAL-01     | Phase 26 — Quality Calibration | Pending |
+| QUAL-02     | Phase 26 — Quality Calibration | Pending |
+| E2E-01      | Phase 27 — End-to-End Cycle    | Pending |
+| E2E-02      | Phase 27 — End-to-End Cycle    | Pending |
+| E2E-03      | Phase 27 — End-to-End Cycle    | Pending |
 
 **Coverage:**
 
 - v2.1 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13
+- Mapped to phases: 13
+- Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-02-23_
-_Last updated: 2026-02-23 after initial definition_
+_Last updated: 2026-02-23 after roadmap creation — all 13 requirements mapped_
