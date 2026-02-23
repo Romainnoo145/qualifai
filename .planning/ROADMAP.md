@@ -411,8 +411,8 @@ Plans:
 
 Plans:
 
-- [ ] 21-01-PLAN.md — Sector + location search and batch import (DISC-01) (Wave 1)
-- [ ] 21-02-PLAN.md — Remove dead admin pages (CLEAN-01) (Wave 1)
+- [x] 21-01-PLAN.md — Sector + location search and batch import (DISC-01) (Wave 1)
+- [x] 21-02-PLAN.md — Remove dead admin pages (CLEAN-01) (Wave 1)
 
 ---
 
@@ -420,21 +420,21 @@ Plans:
 
 **Execution order (v2.0):** 17 → 18 → 19 → 20 → 21
 
-| Phase                               | Milestone | Plans Complete | Status      | Completed  |
-| ----------------------------------- | --------- | -------------- | ----------- | ---------- |
-| 1-5. MVP                            | v1.0      | —              | Complete    | 2026-02-20 |
-| 6. Use Cases Foundation             | v1.1      | 3/3            | Complete    | 2026-02-20 |
-| 7. Evidence Approval Gate           | v1.1      | 2/2            | Complete    | 2026-02-20 |
-| 8. Deep Evidence Pipeline           | v1.1      | 3/3            | Complete    | 2026-02-21 |
-| 9. Engagement Triggers              | v1.1      | 2/2            | Complete    | 2026-02-21 |
-| 10. Cadence Engine                  | v1.1      | 4/4            | Complete    | 2026-02-21 |
-| 11. Prospect Dashboard              | v1.1      | 2/2            | Complete    | 2026-02-21 |
-| 12. Navigation and Language         | v1.2      | 2/2            | Complete    | 2026-02-21 |
-| 13. Prospect Story Flow             | v1.2      | 5/5            | Complete    | 2026-02-22 |
-| 14. Campaign Reporting              | v1.2      | 2/2            | Complete    | 2026-02-22 |
-| 15. Action Queue Dashboard          | v1.2      | 2/2            | Complete    | 2026-02-22 |
-| 17. Evidence Pipeline Enrichment    | v2.0      | 3/3            | Complete    | 2026-02-22 |
-| 18. Research Quality Gate           | v2.0      | 3/3            | Complete    | 2026-02-22 |
-| 19. Client Hypothesis Validation    | v2.0      | 2/2            | Complete    | 2026-02-23 |
-| 20. One-Click Send Queue + Pipeline | v2.0      | 3/3            | Complete    | 2026-02-23 |
-| 21. Prospect Discovery + Cleanup    | v2.0      | 0/?            | Not started | -          |
+| Phase                               | Milestone | Plans Complete | Status   | Completed  |
+| ----------------------------------- | --------- | -------------- | -------- | ---------- |
+| 1-5. MVP                            | v1.0      | —              | Complete | 2026-02-20 |
+| 6. Use Cases Foundation             | v1.1      | 3/3            | Complete | 2026-02-20 |
+| 7. Evidence Approval Gate           | v1.1      | 2/2            | Complete | 2026-02-20 |
+| 8. Deep Evidence Pipeline           | v1.1      | 3/3            | Complete | 2026-02-21 |
+| 9. Engagement Triggers              | v1.1      | 2/2            | Complete | 2026-02-21 |
+| 10. Cadence Engine                  | v1.1      | 4/4            | Complete | 2026-02-21 |
+| 11. Prospect Dashboard              | v1.1      | 2/2            | Complete | 2026-02-21 |
+| 12. Navigation and Language         | v1.2      | 2/2            | Complete | 2026-02-21 |
+| 13. Prospect Story Flow             | v1.2      | 5/5            | Complete | 2026-02-22 |
+| 14. Campaign Reporting              | v1.2      | 2/2            | Complete | 2026-02-22 |
+| 15. Action Queue Dashboard          | v1.2      | 2/2            | Complete | 2026-02-22 |
+| 17. Evidence Pipeline Enrichment    | v2.0      | 3/3            | Complete | 2026-02-22 |
+| 18. Research Quality Gate           | v2.0      | 3/3            | Complete | 2026-02-22 |
+| 19. Client Hypothesis Validation    | v2.0      | 2/2            | Complete | 2026-02-23 |
+| 20. One-Click Send Queue + Pipeline | v2.0      | 3/3            | Complete | 2026-02-23 |
+| 21. Prospect Discovery + Cleanup    | v2.0      | 2/2            | Complete | 2026-02-23 |
