@@ -66,12 +66,12 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 2. Admin can point the codebase analyzer at a project directory and it extracts capability descriptions, creating UseCase records
 3. Both extractors surface clear results — how many records created, how many skipped as duplicates
 4. Extracted use cases appear immediately in the Use Cases admin list and are usable for proof matching
-   **Plans:** TBD
+   **Plans:** 2 plans
 
 Plans:
 
-- [ ] 23-01: Vault reader — scan Obsidian markdown, extract service capabilities, create UseCase records with dedup
-- [ ] 23-02: Codebase analyzer — AI-powered capability extraction from source files, UseCase record creation
+- [ ] 23-01-PLAN.md — Vault reader: scan Obsidian markdown via AI, create UseCase records with dedup, UI button
+- [ ] 23-02-PLAN.md — Codebase analyzer: AI-powered capability extraction from project source files, UseCase record creation, UI with path input
 
 ---
 
