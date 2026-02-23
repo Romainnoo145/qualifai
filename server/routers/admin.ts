@@ -29,6 +29,25 @@ function parseDueAt(metadata: unknown): Date | null {
   return date;
 }
 
+// Helper: compute the latest engagement timestamp from prospect sessions
+function latestEngagementAt(
+  sessions: {
+    createdAt: Date;
+    pdfDownloadedAt: Date | null;
+    callBookedAt: Date | null;
+    updatedAt: Date;
+  }[],
+): Date | null {
+  if (sessions.length === 0) return null;
+  const s = sessions[0]!;
+  const candidates = [s.updatedAt, s.pdfDownloadedAt, s.callBookedAt].filter(
+    Boolean,
+  ) as Date[];
+  return candidates.length > 0
+    ? new Date(Math.max(...candidates.map((d) => d.getTime())))
+    : s.createdAt;
+}
+
 function buildEnrichmentData(
   enriched: Awaited<ReturnType<typeof enrichCompany>>,
 ) {
@@ -494,38 +513,106 @@ export const adminRouter = router({
   getActionQueue: adminProcedure.query(async ({ ctx }) => {
     const now = new Date();
 
-    const [hypotheses, draftLogs, touchTasks, replies] = await Promise.all([
-      // 1. DRAFT hypotheses needing review
-      ctx.db.workflowHypothesis.findMany({
-        where: { status: 'DRAFT' },
-        orderBy: { createdAt: 'asc' },
-        take: 50,
-        include: {
-          prospect: { select: { id: true, companyName: true, domain: true } },
-        },
-      }),
+    // PIPE-02: statuses that indicate research is still in progress
+    const researchInProgressStatuses = [
+      'PENDING' as const,
+      'CRAWLING' as const,
+      'EXTRACTING' as const,
+      'HYPOTHESIS' as const,
+      'BRIEFING' as const,
+    ];
 
-      // 2. Draft outreach logs awaiting approval
-      ctx.db.outreachLog.findMany({
-        where: { status: 'draft' },
+    const [hypotheses, draftLogs, touchTasks, replies] = await Promise.all([
+      // 1. DRAFT hypotheses needing review — exclude prospects with active research runs
+      ctx.db.workflowHypothesis.findMany({
+        where: {
+          status: 'DRAFT',
+          prospect: {
+            researchRuns: {
+              none: {
+                status: { in: researchInProgressStatuses },
+              },
+            },
+          },
+        },
         orderBy: { createdAt: 'asc' },
         take: 50,
         include: {
-          contact: {
-            include: {
-              prospect: {
-                select: { id: true, companyName: true, domain: true },
+          prospect: {
+            select: {
+              id: true,
+              companyName: true,
+              domain: true,
+              sessions: {
+                orderBy: { updatedAt: 'desc' as const },
+                take: 1,
+                select: {
+                  createdAt: true,
+                  pdfDownloadedAt: true,
+                  callBookedAt: true,
+                  updatedAt: true,
+                },
               },
             },
           },
         },
       }),
 
-      // 3. Open touch tasks (calls, LinkedIn, WhatsApp, email)
+      // 2. Draft outreach logs awaiting approval — exclude prospects with active research runs
+      ctx.db.outreachLog.findMany({
+        where: {
+          status: 'draft',
+          contact: {
+            prospect: {
+              researchRuns: {
+                none: {
+                  status: { in: researchInProgressStatuses },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 50,
+        include: {
+          contact: {
+            include: {
+              prospect: {
+                select: {
+                  id: true,
+                  companyName: true,
+                  domain: true,
+                  sessions: {
+                    orderBy: { updatedAt: 'desc' as const },
+                    take: 1,
+                    select: {
+                      createdAt: true,
+                      pdfDownloadedAt: true,
+                      callBookedAt: true,
+                      updatedAt: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+
+      // 3. Open touch tasks (calls, LinkedIn, WhatsApp, email) — exclude prospects with active research runs
       ctx.db.outreachLog.findMany({
         where: {
           status: 'touch_open',
           channel: { in: ['call', 'linkedin', 'whatsapp', 'email'] },
+          contact: {
+            prospect: {
+              researchRuns: {
+                none: {
+                  status: { in: researchInProgressStatuses },
+                },
+              },
+            },
+          },
         },
         orderBy: { createdAt: 'asc' },
         take: 50,
@@ -533,23 +620,63 @@ export const adminRouter = router({
           contact: {
             include: {
               prospect: {
-                select: { id: true, companyName: true, domain: true },
+                select: {
+                  id: true,
+                  companyName: true,
+                  domain: true,
+                  sessions: {
+                    orderBy: { updatedAt: 'desc' as const },
+                    take: 1,
+                    select: {
+                      createdAt: true,
+                      pdfDownloadedAt: true,
+                      callBookedAt: true,
+                      updatedAt: true,
+                    },
+                  },
+                },
               },
             },
           },
         },
       }),
 
-      // 4. Pending inbound replies
+      // 4. Pending inbound replies — exclude prospects with active research runs
       ctx.db.outreachLog.findMany({
-        where: { type: 'FOLLOW_UP', status: 'received' },
+        where: {
+          type: 'FOLLOW_UP',
+          status: 'received',
+          contact: {
+            prospect: {
+              researchRuns: {
+                none: {
+                  status: { in: researchInProgressStatuses },
+                },
+              },
+            },
+          },
+        },
         orderBy: { createdAt: 'asc' },
         take: 50,
         include: {
           contact: {
             include: {
               prospect: {
-                select: { id: true, companyName: true, domain: true },
+                select: {
+                  id: true,
+                  companyName: true,
+                  domain: true,
+                  sessions: {
+                    orderBy: { updatedAt: 'desc' as const },
+                    take: 1,
+                    select: {
+                      createdAt: true,
+                      pdfDownloadedAt: true,
+                      callBookedAt: true,
+                      updatedAt: true,
+                    },
+                  },
+                },
               },
             },
           },
@@ -568,9 +695,11 @@ export const adminRouter = router({
       urgency: 'normal' as const,
       channel: undefined,
       dueAt: undefined,
+      preview: undefined,
+      engagementAt: latestEngagementAt(h.prospect.sessions),
     }));
 
-    // Map draft outreach logs
+    // Map draft outreach logs (with inline preview — SEND-01)
     const draftItems = draftLogs.map((log) => ({
       id: log.id,
       type: 'draft' as const,
@@ -582,6 +711,8 @@ export const adminRouter = router({
       urgency: 'normal' as const,
       channel: undefined,
       dueAt: undefined,
+      preview: log.bodyText?.slice(0, 200) ?? '',
+      engagementAt: latestEngagementAt(log.contact.prospect.sessions),
     }));
 
     // Map touch tasks with overdue detection
@@ -600,6 +731,8 @@ export const adminRouter = router({
         urgency: (isOverdue ? 'overdue' : 'normal') as 'overdue' | 'normal',
         channel: log.channel,
         dueAt: dueAtDate?.toISOString() ?? null,
+        preview: undefined,
+        engagementAt: latestEngagementAt(log.contact.prospect.sessions),
       };
     });
 
@@ -615,9 +748,11 @@ export const adminRouter = router({
       urgency: 'normal' as const,
       channel: undefined,
       dueAt: undefined,
+      preview: undefined,
+      engagementAt: latestEngagementAt(log.contact.prospect.sessions),
     }));
 
-    // Merge and sort: overdue first, then oldest first
+    // Merge and sort: overdue first, then engaged prospects (PIPE-03), then oldest first
     const items = [
       ...hypothesisItems,
       ...draftItems,
@@ -626,6 +761,11 @@ export const adminRouter = router({
     ].sort((a, b) => {
       if (a.urgency === 'overdue' && b.urgency !== 'overdue') return -1;
       if (a.urgency !== 'overdue' && b.urgency === 'overdue') return 1;
+      // Engaged prospects surface first
+      if (a.engagementAt && !b.engagementAt) return -1;
+      if (!a.engagementAt && b.engagementAt) return 1;
+      if (a.engagementAt && b.engagementAt)
+        return b.engagementAt.getTime() - a.engagementAt.getTime();
       return a.createdAt.getTime() - b.createdAt.getTime();
     });
 
