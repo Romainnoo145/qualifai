@@ -281,9 +281,16 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
   const [domain, setDomain] = useState('');
   const [industry, setIndustry] = useState('');
   const [country, setCountry] = useState('');
+  const [city, setCity] = useState('');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [results, setResults] = useState<any[] | null>(null);
   const [guardrail, setGuardrail] = useState<SearchGuardrail | null>(null);
+  // Map<domain, companyName> — need both for importCompany mutation
+  const [selectedDomains, setSelectedDomains] = useState<Map<string, string>>(
+    new Map(),
+  );
+  const [batchPending, setBatchPending] = useState(false);
+  const [importSummary, setImportSummary] = useState<string | null>(null);
 
   const utils = api.useUtils();
 
@@ -293,16 +300,13 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
     onSuccess: (data: any) => {
       setResults(data.results);
       setGuardrail((data.guardrail as SearchGuardrail | null) ?? null);
+      setSelectedDomains(new Map());
+      setImportSummary(null);
     },
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const importCompany = (api.search.importCompany as any).useMutation({
-    onSuccess: () => {
-      utils.admin.listProspects.invalidate();
-      onImported();
-    },
-  });
+  const importCompany = (api.search.importCompany as any).useMutation();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -311,7 +315,40 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
       domain: domain || undefined,
       industries: industry ? [industry] : undefined,
       countries: country ? [country] : undefined,
+      cities: city ? [city] : undefined,
     });
+  };
+
+  const handleBatchImport = async () => {
+    setBatchPending(true);
+    setImportSummary(null);
+    try {
+      const entries = Array.from(selectedDomains.entries());
+      const batchResults = await Promise.allSettled(
+        entries.map(([domain, companyName]) =>
+          importCompany.mutateAsync({
+            domain,
+            companyName: companyName || undefined,
+          }),
+        ),
+      );
+      const fulfilled = batchResults.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled',
+      );
+      const imported = fulfilled.filter((r) => !r.value.alreadyExists).length;
+      const skipped = fulfilled.filter((r) => r.value.alreadyExists).length;
+      const failed = batchResults.length - fulfilled.length;
+      let summary = `${imported} geïmporteerd`;
+      if (skipped > 0) summary += `, ${skipped} al aanwezig`;
+      if (failed > 0) summary += `, ${failed} mislukt`;
+      setImportSummary(summary);
+      setSelectedDomains(new Map());
+      utils.admin.listProspects.invalidate();
+      onImported();
+    } finally {
+      setBatchPending(false);
+    }
   };
 
   return (
@@ -347,25 +384,37 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">
-              Industry
+              Sector
             </label>
             <input
               type="text"
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
-              placeholder="e.g. Fintech, AI"
+              placeholder="b.v. marketingbureaus, webdesign"
               className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
             />
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">
-              Country
+              Land
             </label>
             <input
               type="text"
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-              placeholder="e.g. United States"
+              placeholder="e.g. Netherlands"
+              className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">
+              Locatie
+            </label>
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="b.v. Amsterdam, Netherlands"
               className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
             />
           </div>
@@ -412,6 +461,55 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
           <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] ml-2">
             {results.length} results
           </p>
+
+          {results.length > 0 && (
+            <div className="flex items-center justify-between gap-4 p-4 glass-card rounded-2xl">
+              <label className="flex items-center gap-3 text-xs font-black text-slate-500 uppercase tracking-widest cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedDomains.size === results.length}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      const all = new Map<string, string>();
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      results.forEach((c: any) =>
+                        all.set(c.domain, c.companyName ?? c.domain),
+                      );
+                      setSelectedDomains(all);
+                    } else {
+                      setSelectedDomains(new Map());
+                    }
+                  }}
+                  className="w-4 h-4 rounded accent-[#040026]"
+                />
+                {selectedDomains.size} geselecteerd
+              </label>
+              {selectedDomains.size > 0 && (
+                <button
+                  onClick={handleBatchImport}
+                  disabled={batchPending}
+                  className="ui-tap flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#EBCB4B] hover:text-[#040026] transition-all disabled:opacity-50"
+                >
+                  {batchPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                  Importeer geselecteerd
+                </button>
+              )}
+            </div>
+          )}
+
+          {importSummary && (
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
+              <Check className="w-5 h-5 text-emerald-600 shrink-0" />
+              <p className="text-sm font-bold text-emerald-800">
+                {importSummary}
+              </p>
+            </div>
+          )}
+
           {results.length === 0 ? (
             <div className="glass-card p-20 text-center rounded-[2.5rem]">
               <Search className="w-16 h-16 text-slate-100 mx-auto mb-6" />
@@ -431,6 +529,23 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
                   className="glass-card p-8 rounded-[2.5rem] flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between group transition-all"
                 >
                   <div className="flex items-center gap-6">
+                    <input
+                      type="checkbox"
+                      checked={selectedDomains.has(company.domain)}
+                      onChange={(e) => {
+                        const next = new Map(selectedDomains);
+                        if (e.target.checked) {
+                          next.set(
+                            company.domain,
+                            company.companyName ?? company.domain,
+                          );
+                        } else {
+                          next.delete(company.domain);
+                        }
+                        setSelectedDomains(next);
+                      }}
+                      className="w-4 h-4 rounded accent-[#040026] shrink-0"
+                    />
                     <div className="w-16 h-16 rounded-2xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden">
                       {company.logoUrl ? (
                         <img
@@ -463,18 +578,6 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
                       </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() =>
-                      importCompany.mutate({
-                        domain: company.domain,
-                        companyName: company.companyName ?? undefined,
-                      })
-                    }
-                    disabled={importCompany.isPending}
-                    className="ui-tap flex items-center justify-center gap-3 px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#EBCB4B] hover:text-[#040026] transition-all disabled:opacity-50 w-full sm:w-auto shadow-lg shadow-[#040026]/10"
-                  >
-                    <Plus className="w-4 h-4" /> Import
-                  </button>
                 </div>
               ))}
             </div>
