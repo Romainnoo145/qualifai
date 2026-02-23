@@ -63,6 +63,7 @@ export function QualityChip({
       void utils.admin.listProspects.invalidate();
       void utils.research.listRuns.invalidate();
       void utils.research.getRun.invalidate({ runId: runId ?? '' });
+      void utils.hypotheses.listByProspect.invalidate();
     },
   });
 
