@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 ## Current Position
 
 Phase: 20 — One-Click Send Queue + Pipeline View — IN PROGRESS
-Plan: 02 complete — Pipeline Stage Chip (computePipelineStage + PipelineChip)
-Status: 2/3 plans complete — pipeline chip shipped, idempotency guard + send queue remain
-Last activity: 2026-02-23 — Plan 02 complete (pipeline chips on list + detail views)
+Plan: 01 complete — idempotency guards on approveDraft and bulkApproveLowRisk (also 02 complete)
+Status: 2/3 plans complete — idempotency guards + pipeline chips shipped; send queue UI remains
+Last activity: 2026-02-23 — Plan 01 complete (atomic send claim guards)
 
 ## Performance Metrics
 
@@ -101,6 +101,10 @@ _Updated after each plan completion_
 - [Phase 19, Plan 02]: Optimistic update fires before tRPC mutate() call — instant button-to-chip transition without waiting for server; buttons become unavailable once state is set (state !== null)
 - [Phase 20]: listProspects sessions include filtered by callBooked:true (take:1) for booked detection without loading full session history
 - [Phase 20]: detail page uses p.sessions?.some(s => s.callBooked) for hasBookedSession — getProspect returns all sessions unfiltered, must check each for callBooked flag
+- [Phase 20, Plan 01]: approveDraft atomic claim uses updateMany(where: {id, status:'draft'}, data: {status:'sending'}) — CONFLICT thrown if count=0 (already claimed or not a draft)
+- [Phase 20, Plan 01]: Transient send failure reverts to 'draft' (retryable); quality block keeps 'manual_review' (permanent) — clear error-type distinction
+- [Phase 20, Plan 01]: bulkApproveLowRisk silently skips (continue) drafts already claimed by concurrent request — not counted as failures
+- [Phase 20, Plan 01]: Missing contact email in approveDraft reverts to 'draft' (data issue, fixable) not 'manual_review' (needs human judgment)
 
 ### v2.0 Architecture Notes
 
@@ -136,5 +140,5 @@ _Updated after each plan completion_
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Phase 20 Plan 02 COMPLETE — PipelineChip wired into list and detail
-Resume file: None — next step is Phase 20 Plan 03 (idempotency guard + send queue)
+Stopped at: Phase 20 Plan 01 COMPLETE — idempotency guards on approveDraft + bulkApproveLowRisk (also Plan 02 complete)
+Resume file: None — next step is Phase 20 Plan 03 (send queue UI)
