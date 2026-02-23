@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-22)
 
 ## Current Position
 
-Phase: 21 — Prospect Discovery + Cleanup — COMPLETE
-Plan: 02 complete — dead admin pages replaced with notFound() stubs
-Status: 2/2 plans complete — Phase 21 DONE
-Last activity: 2026-02-23 — Phase 21 verified (7/7 must-haves passed)
+Phase: 22 — Hypothesis Flow Fix — IN PROGRESS
+Plan: 01 complete — approveQuality DRAFT→PENDING transition + hypothesis cache invalidation
+Status: 1/1 plans complete — Phase 22 DONE
+Last activity: 2026-02-23 — Phase 22-01 executed (2/2 tasks, TypeScript clean)
 
 ## Performance Metrics
 
@@ -39,10 +39,12 @@ Last activity: 2026-02-23 — Phase 21 verified (7/7 must-haves passed)
 | 17. Evidence Pipeline      | 3/3   | ~9 min    | ~3 min   |
 | 18. Research Quality Gate  | 3/3   | ~11.5 min | ~3.8 min |
 | 19. Client Hypothesis Val. | 2/2   | ~5 min    | ~2.5 min |
+| 22. Hypothesis Flow Fix    | 1/1   | ~1 min    | ~1 min   |
 
 _Updated after each plan completion_
 | Phase 20 P02 | 2 | 2 tasks | 5 files |
 | Phase 20 P03 | ~4 min | 2 tasks | 2 files |
+| Phase 22 P01 | ~1 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -117,6 +119,11 @@ _Updated after each plan completion_
 - [Phase 21, Plan 02]: notFound() stubs preserve directories (git history intact) rather than deleting files — explicit about removed intent
 - [Phase 21, Plan 02]: Removed 'use client' from dead page stubs — notFound() must run in a server component to produce HTTP 404 status
 
+- [Phase 22, Plan 01]: status: 'DRAFT' guard in approval updateMany prevents overwriting ACCEPTED/DECLINED hypotheses already actioned by prospect
+- [Phase 22, Plan 01]: status: 'PENDING' guard in rejection updateMany only reverts quality-approved-but-unvalidated hypotheses, terminal states preserved
+- [Phase 22, Plan 01]: updateMany result ({ count }) discarded — approveQuality return type remains ResearchRun unchanged
+- [Phase 22, Plan 01]: Broad hypotheses.listByProspect.invalidate() (no prospectId arg) used in QualityChip — component only receives runId, not prospectId
+
 ### v2.0 Architecture Notes
 
 - Research summary recommends additive-only schema changes: `ResearchRun` gets `qualityApproved Boolean?`, `qualityReviewedAt DateTime?`, `qualityNotes String?`; `HypothesisStatus` enum gets `PENDING` and `DECLINED` values
@@ -151,5 +158,5 @@ _Updated after each plan completion_
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Phase 21 COMPLETE — v2.0 milestone done (all 5 phases shipped)
-Resume file: None — v2.0 Streamlined Flow milestone complete
+Stopped at: Phase 22-01 COMPLETE — hypothesis flow fix (DRAFT→PENDING transition + cache invalidation)
+Resume file: None — Phase 22 plan 01 complete
