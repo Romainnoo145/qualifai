@@ -17,8 +17,9 @@ import {
   Linkedin,
 } from 'lucide-react';
 import { useState } from 'react';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
+import { PipelineChip } from '@/components/features/prospects/pipeline-chip';
+import { computePipelineStage } from '@/lib/pipeline-stage';
 import { EvidenceSection } from '@/components/features/prospects/evidence-section';
 import { AnalysisSection } from '@/components/features/prospects/analysis-section';
 import { OutreachPreviewSection } from '@/components/features/prospects/outreach-preview-section';
@@ -91,7 +92,22 @@ export default function ProspectDetail() {
         >
           <ArrowLeft className="w-4 h-4" />
         </Link>
-        <StatusBadge status={p.status} />
+        <PipelineChip
+          stage={computePipelineStage({
+            status: p.status,
+            researchRun: researchRuns.data?.[0]
+              ? {
+                  status: researchRuns.data[0].status,
+                  qualityApproved:
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (researchRuns.data[0] as any).qualityApproved ?? null,
+                }
+              : null,
+            hasSession: (p._count?.sessions ?? 0) > 0,
+            hasBookedSession:
+              p.sessions?.some((s: any) => s.callBooked) ?? false,
+          })}
+        />
         {researchRuns.data?.[0] && (
           <QualityChip
             runId={researchRuns.data[0].id}

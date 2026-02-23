@@ -20,6 +20,8 @@ import {
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { QualityChip } from '@/components/features/prospects/quality-chip';
+import { PipelineChip } from '@/components/features/prospects/pipeline-chip';
+import { computePipelineStage } from '@/lib/pipeline-stage';
 
 type View = 'all' | 'search-companies' | 'search-contacts';
 type SearchGuardrail = {
@@ -27,18 +29,6 @@ type SearchGuardrail = {
   title: string;
   message: string;
   recommendation?: string;
-};
-
-const statusColors: Record<string, string> = {
-  DRAFT: 'bg-slate-100 text-slate-600',
-  ENRICHED: 'bg-blue-50 text-blue-600',
-  GENERATING: 'bg-amber-50 text-amber-600',
-  READY: 'bg-emerald-50 text-emerald-600',
-  SENT: 'bg-indigo-50 text-indigo-600',
-  VIEWED: 'bg-cyan-50 text-cyan-600',
-  ENGAGED: 'bg-purple-50 text-purple-600',
-  CONVERTED: 'bg-yellow-50 text-yellow-700',
-  ARCHIVED: 'bg-slate-50 text-slate-400',
 };
 
 export default function ProspectList() {
@@ -178,15 +168,20 @@ function AllCompanies() {
                 >
                   {prospect.companyName ?? prospect.domain}
                 </Link>
-                <span
-                  className={cn(
-                    'text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border',
-                    statusColors[prospect.status] ||
-                      'bg-slate-50 text-slate-400 border-slate-100',
-                  )}
-                >
-                  {prospect.status}
-                </span>
+                <PipelineChip
+                  stage={computePipelineStage({
+                    status: prospect.status,
+                    researchRun: prospect.researchRuns?.[0]
+                      ? {
+                          status: prospect.researchRuns[0].status,
+                          qualityApproved:
+                            prospect.researchRuns[0].qualityApproved,
+                        }
+                      : null,
+                    hasSession: (prospect._count?.sessions ?? 0) > 0,
+                    hasBookedSession: (prospect.sessions?.length ?? 0) > 0,
+                  })}
+                />
                 {(() => {
                   const run = prospect.researchRuns?.[0];
                   return run ? (
