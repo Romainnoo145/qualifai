@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import { adminProcedure, router } from '../trpc';
 import {
   executeResearchRun,
@@ -196,12 +197,40 @@ export const researchRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const currentRun = await ctx.db.researchRun.findUniqueOrThrow({
+        where: { id: input.runId },
+        select: { summary: true },
+      });
+      const summary =
+        currentRun.summary &&
+        typeof currentRun.summary === 'object' &&
+        !Array.isArray(currentRun.summary)
+          ? (currentRun.summary as Record<string, unknown>)
+          : null;
+      const gate =
+        summary?.gate &&
+        typeof summary.gate === 'object' &&
+        !Array.isArray(summary.gate)
+          ? (summary.gate as Record<string, unknown>)
+          : null;
+      const gatePassed =
+        typeof gate?.passed === 'boolean' ? (gate.passed as boolean) : true;
+      const overrideReason = input.notes?.trim() ?? '';
+
+      if (input.approved && !gatePassed && overrideReason.length < 12) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            'Override requires a clear reason (min. 12 chars) when gate is not passed.',
+        });
+      }
+
       const run = await ctx.db.researchRun.update({
         where: { id: input.runId },
         data: {
           qualityApproved: input.approved,
           qualityReviewedAt: new Date(),
-          qualityNotes: input.notes ?? null,
+          qualityNotes: overrideReason || null,
         },
       });
       if (input.approved) {

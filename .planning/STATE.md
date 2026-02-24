@@ -42,11 +42,13 @@ Progress: [░░░░░░░░░░] 0% (v2.1 — 0/12 plans complete)
 - [Phase 22]: Admin reviews research quality, not hypothesis content — prospect validates own pain points on /voor/
 - [Phase 20]: Idempotency guard must ship in same phase as one-click send UI — never separate
 - [v2.1 scope]: SEED-01/02 are new features (build first); DISC-01/02 use existing Phase 21 Apollo search (validate only)
+- [2026-02-24]: Added v2.2 milestone (Phases 28-30) for verified pain intelligence: source discovery, browser extraction, and hard pain-confirmation outreach gate
 
 ### Pending Todos
 
 - Calibrate amber/green quality thresholds against real prospect data (becomes QUAL-01 in Phase 26)
 - Run real prospect validation session on /voor/ before building features that depend on hypothesis confirmation signal
+- Plan Phase 28 with concrete Google/sitemap/manual discovery architecture and data model updates
 
 ### Tech Debt (Carried Forward)
 

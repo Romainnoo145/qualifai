@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgis/postgis:16-3.5
+    container_name: qualifai-db
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_DB: qualifai
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - qualifai_postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: qualifai-redis
+    restart: unless-stopped
+    ports:
+      - '6381:6379'
+    volumes:
+      - qualifai_redis_data:/data
+
+volumes:
+  qualifai_postgres_data:
+  qualifai_redis_data:

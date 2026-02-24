@@ -169,6 +169,9 @@ async function markSequenceStepAfterSend(
     where: { id: sequenceId },
     data: { status: 'SENT' },
   });
+
+  // Auto-advance cadence after a successful send so multi-touch continues
+  evaluateCadence(db, sequenceId, DEFAULT_CADENCE_CONFIG).catch(console.error);
 }
 
 function buildOutreachContext(
@@ -1133,6 +1136,24 @@ Klarifai`;
         },
       });
 
+      const outreachStepId =
+        typeof metadata.outreachStepId === 'string'
+          ? metadata.outreachStepId
+          : null;
+      const sequenceIdFromMetadata =
+        typeof metadata.outreachSequenceId === 'string'
+          ? metadata.outreachSequenceId
+          : undefined;
+      if (outreachStepId) {
+        await ctx.db.outreachStep.updateMany({
+          where: { id: outreachStepId, sequenceId: sequenceIdFromMetadata },
+          data: {
+            status: 'SENT',
+            sentAt: completedAt,
+          },
+        });
+      }
+
       await ctx.db.contact.update({
         where: { id: task.contactId },
         data: { lastContactedAt: completedAt },
@@ -1166,14 +1187,15 @@ Klarifai`;
       }
 
       const metadata = metadataAsObject(task.metadata);
-      return ctx.db.outreachLog.update({
+      const skippedAt = new Date();
+      const updated = await ctx.db.outreachLog.update({
         where: { id: input.id },
         data: {
           status: TOUCH_TASK_STATUS_SKIPPED,
           metadata: {
             ...metadata,
             kind: metadata.kind ?? 'touch_task',
-            skippedAt: new Date().toISOString(),
+            skippedAt: skippedAt.toISOString(),
             skipReason: input.reason?.trim() || metadata.skipReason || null,
           } as never,
         },
@@ -1193,6 +1215,35 @@ Klarifai`;
           },
         },
       });
+
+      const outreachStepId =
+        typeof metadata.outreachStepId === 'string'
+          ? metadata.outreachStepId
+          : null;
+      const sequenceIdFromMetadata =
+        typeof metadata.outreachSequenceId === 'string'
+          ? metadata.outreachSequenceId
+          : undefined;
+      if (outreachStepId) {
+        await ctx.db.outreachStep.updateMany({
+          where: { id: outreachStepId, sequenceId: sequenceIdFromMetadata },
+          data: {
+            // Skip still counts as touch attempt; keep cadence moving.
+            status: 'SENT',
+            sentAt: skippedAt,
+          },
+        });
+      }
+
+      // Fire-and-forget: cadence evaluation must never block task skip
+      const seqId = await resolveSequenceId(ctx.db, task.contactId, metadata);
+      if (seqId) {
+        evaluateCadence(ctx.db, seqId, DEFAULT_CADENCE_CONFIG).catch(
+          console.error,
+        );
+      }
+
+      return updated;
     }),
 
   processSignals: adminProcedure.mutation(async () => {

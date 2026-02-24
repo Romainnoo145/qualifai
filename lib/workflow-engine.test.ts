@@ -84,18 +84,21 @@ describe('workflow-engine', () => {
         sourceType: 'WEBSITE',
         workflowTag: 'planning',
         confidenceScore: 0.72,
+        metadata: { adapter: 'web-ingestion' },
       },
       {
         id: 'e2',
         sourceType: 'CAREERS',
         workflowTag: 'handoff',
         confidenceScore: 0.7,
+        metadata: { adapter: 'web-ingestion' },
       },
       {
         id: 'e3',
-        sourceType: 'DOCS',
+        sourceType: 'REVIEWS',
         workflowTag: 'billing',
         confidenceScore: 0.75,
+        metadata: { adapter: 'live-review-ingestion' },
       },
     ]);
 
@@ -103,6 +106,34 @@ describe('workflow-engine', () => {
     expect(gate.evidenceCount).toBe(3);
     expect(gate.sourceTypeCount).toBe(3);
     expect(gate.averageConfidence).toBeGreaterThanOrEqual(0.65);
+  });
+
+  it('fails quality gate when evidence is synthetic and unconfirmed', () => {
+    const gate = evaluateQualityGate([
+      {
+        id: 'e1',
+        sourceType: 'WEBSITE',
+        workflowTag: 'planning',
+        confidenceScore: 0.74,
+      },
+      {
+        id: 'e2',
+        sourceType: 'CAREERS',
+        workflowTag: 'handoff',
+        confidenceScore: 0.72,
+      },
+      {
+        id: 'e3',
+        sourceType: 'REVIEWS',
+        workflowTag: 'billing',
+        confidenceScore: 0.76,
+      },
+    ]);
+
+    expect(gate.passed).toBe(false);
+    expect(gate.reasons).toContain(
+      'At least 3 confirmed evidence items required',
+    );
   });
 
   it('fails quality gate with clear reasons when evidence is weak', () => {

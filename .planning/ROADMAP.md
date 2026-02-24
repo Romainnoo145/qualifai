@@ -7,6 +7,7 @@
 - ✅ **v1.2 Autopilot with Oversight** — Phases 12-15 (shipped 2026-02-22)
 - ✅ **v2.0 Streamlined Flow** — Phases 17-22 (shipped 2026-02-23)
 - 🚧 **v2.1 Production Bootstrap** — Phases 23-27 (in progress)
+- 🆕 **v2.2 Verified Pain Intelligence (Browser + Google)** — Phases 28-30 (planned)
 
 ## Phases
 
@@ -155,6 +156,67 @@ Plans:
 
 ---
 
+### 🆕 v2.2 Verified Pain Intelligence (Planned)
+
+**Milestone Goal:** Confirm pain points from real external evidence (Google reviews, jobs, support/docs, website) using browser-rendered extraction before outreach is allowed.
+
+#### Phase 28: Source Discovery Upgrade
+
+**Goal:** Automatically discover high-signal evidence sources per prospect instead of relying on fixed URL guesses.
+**Depends on:** Phase 27 (stable end-to-end baseline)
+**Requirements:** VPI-01, VPI-02
+**Success Criteria** (what must be TRUE):
+
+1. Per prospect, system discovers and stores candidate source URLs for reviews, jobs, docs/help, and core website pages
+2. Discovery deduplicates URLs and keeps source provenance (google/sitemap/manual)
+3. Admin can inspect discovered sources before running extraction
+   **Plans:** TBD
+
+Plans:
+
+- [ ] 28-01: Add source discovery layer (Google + sitemap + manual merge) with dedup and provenance
+- [ ] 28-02: Add admin source list visibility and selection controls
+
+---
+
+#### Phase 29: Browser Evidence Extraction
+
+**Goal:** Extract evidence from JS-rendered pages reliably using browser automation rather than fetch-only HTML.
+**Depends on:** Phase 28 (source catalog must exist first)
+**Requirements:** VPI-03, VPI-04
+**Success Criteria** (what must be TRUE):
+
+1. JS-rendered pages produce evidence records with snippet, source URL, timestamp, and source type
+2. Extraction handles anti-bot or failed loads with explicit status (not silent empty results)
+3. Review and vacature sources consistently yield usable evidence for scoring
+   **Plans:** TBD
+
+Plans:
+
+- [ ] 29-01: Introduce browser-rendered extractor pipeline (Playwright/Crawl4AI-compatible adapter)
+- [ ] 29-02: Persist normalized extraction diagnostics and user-visible failure reasons
+
+---
+
+#### Phase 30: Pain Confirmation Gate
+
+**Goal:** Block outreach drafts unless minimum cross-source pain confirmation is met.
+**Depends on:** Phase 29 (browser evidence must be available first)
+**Requirements:** VPI-05, VPI-06
+**Success Criteria** (what must be TRUE):
+
+1. Outreach queue enforces a hard gate based on confirmed pain evidence thresholds
+2. Gate explains exactly what is missing (e.g. no review proof, weak vacature signal)
+3. Manual override is tracked with explicit reason and audit metadata
+   **Plans:** TBD
+
+Plans:
+
+- [ ] 30-01: Implement pain-confirmation scoring and minimum evidence thresholds
+- [ ] 30-02: Enforce gate in draft creation/approval flows with explicit override audit trail
+
+---
+
 ## Progress
 
 | Phase                               | Milestone | Plans Complete | Status      | Completed  |
@@ -181,3 +243,6 @@ Plans:
 | 25. Pipeline Hardening              | v2.1      | 0/3            | Not started | -          |
 | 26. Quality Calibration             | v2.1      | 0/2            | Not started | -          |
 | 27. End-to-End Cycle                | v2.1      | 0/3            | Not started | -          |
+| 28. Source Discovery Upgrade        | v2.2      | 0/2            | Not started | -          |
+| 29. Browser Evidence Extraction     | v2.2      | 0/2            | Not started | -          |
+| 30. Pain Confirmation Gate          | v2.2      | 0/2            | Not started | -          |

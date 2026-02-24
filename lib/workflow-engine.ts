@@ -109,6 +109,14 @@ export interface QualityGateResult {
   sourceTypeCount: number;
   evidenceCount: number;
   reasons: string[];
+  painConfirmation: {
+    observedEvidenceCount: number;
+    reviewsCount: number;
+    jobsCount: number;
+    contextCount: number;
+    distinctPainTags: number;
+    reasons: string[];
+  };
 }
 
 interface EvidenceInput {
@@ -116,6 +124,7 @@ interface EvidenceInput {
   sourceType: EvidenceSourceType;
   workflowTag: string;
   confidenceScore: number;
+  metadata?: unknown;
 }
 
 export interface ProofCandidate {
@@ -367,6 +376,96 @@ export function generateEvidenceDrafts(
   return drafts.slice(0, 18);
 }
 
+const SYNTHETIC_ADAPTERS = new Set([
+  'manual',
+  'reviews-first',
+  'apollo-derived',
+]);
+const CONTEXT_SOURCE_TYPES = new Set<EvidenceSourceType>([
+  'WEBSITE',
+  'DOCS',
+  'HELP_CENTER',
+  'REGISTRY',
+]);
+const JOB_SOURCE_TYPES = new Set<EvidenceSourceType>(['CAREERS', 'JOB_BOARD']);
+const PAIN_WORKFLOW_TAGS = new Set([
+  'planning',
+  'handoff',
+  'billing',
+  'lead-intake',
+  'field-reporting',
+]);
+
+function parseEvidenceMetadata(value: unknown): {
+  adapter?: string;
+  fallback?: boolean;
+} {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const payload = value as Record<string, unknown>;
+  const adapter =
+    typeof payload.adapter === 'string' ? payload.adapter : undefined;
+  const fallback = payload.fallback === true;
+  return { adapter, fallback };
+}
+
+function isObservedEvidence(item: EvidenceInput): boolean {
+  const metadata = parseEvidenceMetadata(item.metadata);
+  if (!metadata.adapter) return false;
+  if (SYNTHETIC_ADAPTERS.has(metadata.adapter)) return false;
+  if (metadata.fallback) return false;
+  return item.confidenceScore >= 0.62;
+}
+
+function evaluatePainConfirmation(items: EvidenceInput[]): {
+  observedEvidenceCount: number;
+  reviewsCount: number;
+  jobsCount: number;
+  contextCount: number;
+  distinctPainTags: number;
+  reasons: string[];
+} {
+  const observed = items.filter(isObservedEvidence);
+  const reviewsCount = observed.filter(
+    (item) => item.sourceType === 'REVIEWS',
+  ).length;
+  const jobsCount = observed.filter((item) =>
+    JOB_SOURCE_TYPES.has(item.sourceType),
+  ).length;
+  const contextCount = observed.filter((item) =>
+    CONTEXT_SOURCE_TYPES.has(item.sourceType),
+  ).length;
+  const distinctPainTags = new Set(
+    observed
+      .map((item) => item.workflowTag)
+      .filter((tag) => PAIN_WORKFLOW_TAGS.has(tag)),
+  ).size;
+
+  const reasons: string[] = [];
+  if (observed.length < 3) {
+    reasons.push('At least 3 confirmed evidence items required');
+  }
+  if (contextCount < 1) {
+    reasons.push('At least 1 confirmed site-context source required');
+  }
+  if (reviewsCount === 0 && jobsCount === 0) {
+    reasons.push(
+      'At least 1 confirmed external pain source required (reviews or jobs)',
+    );
+  }
+  if (distinctPainTags < 2) {
+    reasons.push('Pain confirmation needs at least 2 workflow tags');
+  }
+
+  return {
+    observedEvidenceCount: observed.length,
+    reviewsCount,
+    jobsCount,
+    contextCount,
+    distinctPainTags,
+    reasons,
+  };
+}
+
 export function evaluateQualityGate(items: EvidenceInput[]): QualityGateResult {
   const reasons: string[] = [];
   const evidenceCount = items.length;
@@ -374,12 +473,14 @@ export function evaluateQualityGate(items: EvidenceInput[]): QualityGateResult {
   const averageConfidence = round2(
     average(items.map((item) => item.confidenceScore)),
   );
+  const painConfirmation = evaluatePainConfirmation(items);
 
   if (evidenceCount < 3) reasons.push('Minimum 3 evidence items required');
   if (sourceTypeCount < 2)
     reasons.push('At least 2 evidence source types required');
   if (averageConfidence < 0.65)
     reasons.push('Average confidence must be >= 0.65');
+  reasons.push(...painConfirmation.reasons);
 
   return {
     passed: reasons.length === 0,
@@ -387,6 +488,7 @@ export function evaluateQualityGate(items: EvidenceInput[]): QualityGateResult {
     sourceTypeCount,
     evidenceCount,
     reasons,
+    painConfirmation,
   };
 }
 

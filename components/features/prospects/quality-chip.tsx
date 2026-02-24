@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/components/providers';
-import { computeTrafficLight } from '@/lib/workflow-engine';
 import { cn } from '@/lib/utils';
 import { Check, Loader2, RefreshCw } from 'lucide-react';
 
@@ -28,6 +27,16 @@ const CHIP_LABELS: Record<'red' | 'amber' | 'green', string> = {
   amber: 'LIMITED',
   green: 'SOLID',
 };
+
+function computeTrafficLight(
+  evidenceCount: number,
+  sourceTypeCount: number,
+  averageConfidence: number,
+): 'red' | 'amber' | 'green' {
+  if (evidenceCount < 3) return 'red';
+  if (sourceTypeCount < 2 || averageConfidence < 0.65) return 'amber';
+  return 'green';
+}
 
 function formatReviewedAt(dt: Date | string | null): string {
   if (!dt) return '';
@@ -119,6 +128,30 @@ export function QualityChip({
   const fullTrafficLight = fullRun
     ? computeTrafficLight(evidenceCount2, sourceTypeCount2, avgConf2)
     : trafficLight;
+  const gateFromSummary = (() => {
+    const summary = fullRun?.summary;
+    if (!summary || typeof summary !== 'object' || Array.isArray(summary))
+      return null;
+    const gate = (summary as Record<string, unknown>).gate;
+    if (!gate || typeof gate !== 'object' || Array.isArray(gate)) return null;
+    const gatePayload = gate as Record<string, unknown>;
+    const reasonsRaw = gatePayload.reasons;
+    const reasons = Array.isArray(reasonsRaw)
+      ? reasonsRaw.filter((item): item is string => typeof item === 'string')
+      : [];
+    const pain = gatePayload.painConfirmation;
+    const painPayload =
+      pain && typeof pain === 'object' && !Array.isArray(pain)
+        ? (pain as Record<string, unknown>)
+        : null;
+    return {
+      reasons,
+      painConfirmed:
+        typeof painPayload?.observedEvidenceCount === 'number'
+          ? painPayload.observedEvidenceCount
+          : null,
+    };
+  })();
 
   const displayLight = fullRun ? fullTrafficLight : trafficLight;
   const isReviewed = qualityApproved !== null;
@@ -179,31 +212,43 @@ export function QualityChip({
                   label="Hypothesen"
                   value={`${fullRun._count.workflowHypotheses}`}
                 />
+                {gateFromSummary?.painConfirmed !== null && (
+                  <BreakdownRow
+                    label="Confirmed evidence"
+                    value={`${gateFromSummary?.painConfirmed}`}
+                  />
+                )}
               </div>
 
               {/* Quality reasons */}
               {(() => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const evidenceItems: any[] = fullRun.evidenceItems ?? [];
-                const sourceTypeCount = new Set(
-                  evidenceItems.map(
-                    (e: { sourceType: string }) => e.sourceType,
-                  ),
-                ).size;
-                const avgConf =
-                  evidenceItems.length > 0
-                    ? evidenceItems.reduce(
-                        (sum: number, e: { confidenceScore: number }) =>
-                          sum + e.confidenceScore,
-                        0,
-                      ) / evidenceItems.length
-                    : 0;
-                const reasons: string[] = [];
-                if (evidenceItems.length < 3)
-                  reasons.push('Min. 3 bewijsstukken vereist');
-                if (sourceTypeCount < 2)
-                  reasons.push('Min. 2 brontypen vereist');
-                if (avgConf < 0.65) reasons.push('Gem. betrouwbaarheid < 65%');
+                const reasons =
+                  gateFromSummary?.reasons ??
+                  ((): string[] => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const evidenceItems: any[] = fullRun.evidenceItems ?? [];
+                    const sourceTypeCount = new Set(
+                      evidenceItems.map(
+                        (e: { sourceType: string }) => e.sourceType,
+                      ),
+                    ).size;
+                    const avgConf =
+                      evidenceItems.length > 0
+                        ? evidenceItems.reduce(
+                            (sum: number, e: { confidenceScore: number }) =>
+                              sum + e.confidenceScore,
+                            0,
+                          ) / evidenceItems.length
+                        : 0;
+                    const fallback: string[] = [];
+                    if (evidenceItems.length < 3)
+                      fallback.push('Min. 3 bewijsstukken vereist');
+                    if (sourceTypeCount < 2)
+                      fallback.push('Min. 2 brontypen vereist');
+                    if (avgConf < 0.65)
+                      fallback.push('Gem. betrouwbaarheid < 65%');
+                    return fallback;
+                  })();
                 return reasons.length > 0 ? (
                   <ul className="space-y-1">
                     {reasons.map((r) => (

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { adminProcedure, router } from '../trpc';
 import { env } from '@/env.mjs';
+import { scanVaultForUseCases } from '@/lib/vault-reader';
 import {
   inventoryToCandidates,
   offersToCandidates,
@@ -173,5 +174,58 @@ export const useCasesRouter = router({
     }
 
     return { created, skipped, errors };
+  }),
+
+  importFromVault: adminProcedure.mutation(async ({ ctx }) => {
+    const configuredPath =
+      env.OBSIDIAN_VAULT_PATH ?? process.env.OBSIDIAN_VAULT_PATH;
+
+    if (!configuredPath) {
+      return {
+        created: 0,
+        skipped: 0,
+        filesScanned: 0,
+        errors: ['OBSIDIAN_VAULT_PATH not configured'],
+      };
+    }
+
+    const scanResult = await scanVaultForUseCases(configuredPath);
+    let created = 0;
+    let skipped = 0;
+
+    for (const candidate of scanResult.candidates) {
+      const existing = await ctx.db.useCase.findFirst({
+        where: { sourceRef: candidate.sourceRef },
+      });
+
+      if (existing) {
+        skipped++;
+        continue;
+      }
+
+      await ctx.db.useCase.create({
+        data: {
+          title: candidate.title,
+          summary: candidate.summary,
+          category: candidate.category,
+          outcomes: candidate.outcomes,
+          tags: candidate.tags,
+          caseStudyRefs: [],
+          isActive: true,
+          isShipped: true,
+          sourceRef: candidate.sourceRef,
+          externalUrl: null,
+        },
+      });
+
+      created++;
+    }
+
+    return {
+      created,
+      skipped,
+      filesScanned: scanResult.filesScanned,
+      errors: scanResult.errors,
+    };
   }),
 });

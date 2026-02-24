@@ -35,6 +35,25 @@ Requirements for Production Bootstrap milestone. Each maps to roadmap phases.
 - [ ] **E2E-02**: Reply webhooks correctly receive and triage real email responses
 - [ ] **E2E-03**: Cal.com booking triggers automatic meeting brief generation
 
+## v2.2 Requirements
+
+Requirements for Verified Pain Intelligence milestone. Focus: better evidence acquisition and stricter outreach gating.
+
+### Source Discovery
+
+- [ ] **VPI-01**: System discovers candidate URLs per prospect from Google + sitemap + manual seeds for reviews, jobs, docs/help, and main pages
+- [ ] **VPI-02**: Discovered sources are deduplicated and stored with provenance metadata (google/sitemap/manual)
+
+### Browser Extraction
+
+- [ ] **VPI-03**: JS-rendered pages are extracted via browser automation (Playwright/Crawl4AI-compatible flow), not fetch-only fallback
+- [ ] **VPI-04**: Each extracted evidence record includes source URL, source type, snippet/quote, extraction timestamp, and extraction status
+
+### Pain Confirmation Gate
+
+- [ ] **VPI-05**: Outreach drafts require minimum pain-confirmation thresholds across sources (reviews/jobs/site context)
+- [ ] **VPI-06**: When thresholds fail, queue shows explicit missing-evidence reasons; override requires reason + audit metadata
+
 ## Future Requirements
 
 ### Scaling
@@ -69,14 +88,23 @@ Requirements for Production Bootstrap milestone. Each maps to roadmap phases.
 | E2E-01      | Phase 27 — End-to-End Cycle    | Pending |
 | E2E-02      | Phase 27 — End-to-End Cycle    | Pending |
 | E2E-03      | Phase 27 — End-to-End Cycle    | Pending |
+| VPI-01      | Phase 28 — Source Discovery    | Pending |
+| VPI-02      | Phase 28 — Source Discovery    | Pending |
+| VPI-03      | Phase 29 — Browser Extraction  | Pending |
+| VPI-04      | Phase 29 — Browser Extraction  | Pending |
+| VPI-05      | Phase 30 — Pain Gate           | Pending |
+| VPI-06      | Phase 30 — Pain Gate           | Pending |
 
 **Coverage:**
 
 - v2.1 requirements: 13 total
 - Mapped to phases: 13
 - Unmapped: 0
+- v2.2 requirements: 6 total
+- Mapped to phases: 6
+- Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-02-23_
-_Last updated: 2026-02-23 after roadmap creation — all 13 requirements mapped_
+_Last updated: 2026-02-24 after adding v2.2 milestone requirements_

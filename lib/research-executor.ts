@@ -353,6 +353,7 @@ export async function executeResearchRun(
     snippet: string;
     workflowTag: string;
     confidenceScore: number;
+    metadata: unknown;
   }> = [];
 
   for (const draft of evidenceDrafts) {
@@ -376,6 +377,7 @@ export async function executeResearchRun(
         snippet: true,
         workflowTag: true,
         confidenceScore: true,
+        metadata: true,
       },
     });
     evidenceRecords.push(record);
@@ -387,6 +389,7 @@ export async function executeResearchRun(
       sourceType: item.sourceType,
       workflowTag: item.workflowTag,
       confidenceScore: item.confidenceScore,
+      metadata: item.metadata,
     })),
   );
 

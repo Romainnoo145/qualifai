@@ -11,6 +11,7 @@ import {
   Loader2,
   Tag,
   ExternalLink,
+  FolderSearch,
 } from 'lucide-react';
 
 type UseCase = {
@@ -85,6 +86,17 @@ export default function UseCasesPage() {
     onSuccess: async (data) => {
       await utils.useCases.list.invalidate();
       let message = `Created ${data.created} use cases, skipped ${data.skipped} duplicates.`;
+      if (data.errors.length > 0) {
+        message += `\n\nErrors:\n${data.errors.join('\n')}`;
+      }
+      window.alert(message);
+    },
+  });
+
+  const vaultImportMutation = api.useCases.importFromVault.useMutation({
+    onSuccess: async (data) => {
+      await utils.useCases.list.invalidate();
+      let message = `Scanned ${data.filesScanned} files. Created ${data.created} use cases, skipped ${data.skipped} duplicates.`;
       if (data.errors.length > 0) {
         message += `\n\nErrors:\n${data.errors.join('\n')}`;
       }
@@ -178,6 +190,23 @@ export default function UseCasesPage() {
               </>
             )}
           </button>
+          <button
+            onClick={() => vaultImportMutation.mutate()}
+            disabled={vaultImportMutation.isPending}
+            className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50"
+          >
+            {vaultImportMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Scanning...
+              </>
+            ) : (
+              <>
+                <FolderSearch className="w-4 h-4" />
+                Scan Vault
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -209,7 +238,7 @@ export default function UseCasesPage() {
         <div className="glass-card p-12 text-center rounded-[2.5rem]">
           <BookOpen className="w-10 h-10 text-slate-200 mx-auto mb-4" />
           <p className="text-sm font-medium text-slate-400">
-            No use cases yet. Create one or import from Obsidian.
+            No use cases yet. Create one, import from Obsidian, or scan vault.
           </p>
         </div>
       )}

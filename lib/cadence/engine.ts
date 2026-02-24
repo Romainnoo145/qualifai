@@ -177,13 +177,14 @@ export async function evaluateCadence(
         },
       },
       steps: {
-        where: { status: { in: ['SENT', 'QUEUED'] } },
         orderBy: { stepOrder: 'asc' },
         select: {
           id: true,
           stepOrder: true,
           status: true,
           sentAt: true,
+          triggeredBy: true,
+          outreachLogId: true,
           metadata: true,
         },
       },
@@ -217,12 +218,25 @@ export async function evaluateCadence(
     linkedinUrl: sequence.contact?.linkedinUrl ?? null,
   };
 
-  // Map completed steps to touch records
-  const completedTouches = sequence.steps.map((step) => ({
-    completedAt: step.sentAt ?? new Date(),
-    channel: (step.metadata as { channel?: string } | null)?.channel ?? 'email',
-    stepOrder: step.stepOrder,
-  }));
+  // Idempotency guard: do not create another cadence step when one is already active.
+  const hasPendingCadenceStep = sequence.steps.some(
+    (step) =>
+      step.triggeredBy === 'cadence' &&
+      (step.status === 'DRAFTED' || step.status === 'QUEUED'),
+  );
+  if (hasPendingCadenceStep) {
+    return { created: false, stepId: null, scheduledAt: null };
+  }
+
+  // Map completed steps to touch records (only SENT steps count as completed touches)
+  const completedTouches = sequence.steps
+    .filter((step) => step.status === 'SENT')
+    .map((step) => ({
+      completedAt: step.sentAt ?? new Date(),
+      channel:
+        (step.metadata as { channel?: string } | null)?.channel ?? 'email',
+      stepOrder: step.stepOrder,
+    }));
 
   const state = buildCadenceState(
     completedTouches,
@@ -240,12 +254,15 @@ export async function evaluateCadence(
     return { created: false, stepId: null, scheduledAt: null };
   }
 
+  const nextStepOrder =
+    Math.max(0, ...sequence.steps.map((step) => step.stepOrder)) + 1;
+
   // Create the next OutreachStep
   const now = new Date();
   const newStep = await db.outreachStep.create({
     data: {
       sequenceId,
-      stepOrder: state.touchCount + 1,
+      stepOrder: nextStepOrder,
       bodyText: '', // Placeholder — cron or agent will fill actual copy
       status: 'DRAFTED',
       scheduledAt: now,
@@ -311,9 +328,13 @@ export async function processDueCadenceSteps(db: PrismaClient): Promise<{
         channel,
         status: 'touch_open',
         subject: `Cadence follow-up: ${channel}`,
+        bodyText: `Cadence task (${channel}) for ${
+          step.sequence.prospect.companyName ?? step.sequence.prospect.domain
+        }.`,
         metadata: {
           kind: 'touch_task',
           priority: 'medium',
+          dueAt: step.nextStepReadyAt?.toISOString() ?? null,
           createdBy: 'cadence-engine',
           outreachSequenceId: step.sequenceId,
           outreachStepId: step.id,

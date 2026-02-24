@@ -312,6 +312,87 @@ describe('evaluateCadence', () => {
       }),
     );
   });
+
+  it('Test 10b: idempotent when pending cadence step already exists', async () => {
+    const db = makeDb();
+    const sequence = makeSequence({
+      steps: [
+        {
+          id: 'step-cadence-pending',
+          stepOrder: 2,
+          status: 'DRAFTED',
+          sentAt: null,
+          triggeredBy: 'cadence',
+          outreachLogId: null,
+          metadata: { channel: 'call' },
+        },
+      ],
+    });
+
+    db.outreachSequence.findFirst.mockResolvedValue(sequence);
+    db.wizardSession.findFirst.mockResolvedValue({
+      maxStepReached: 1,
+      pdfDownloaded: false,
+    });
+
+    const result = await evaluateCadence(
+      db as never,
+      'seq-1',
+      DEFAULT_CADENCE_CONFIG,
+    );
+
+    expect(result.created).toBe(false);
+    expect(db.outreachStep.create).not.toHaveBeenCalled();
+  });
+
+  it('Test 10c: uses max existing stepOrder + 1 for new cadence step', async () => {
+    const db = makeDb();
+    const sequence = makeSequence({
+      steps: [
+        {
+          id: 'legacy-1',
+          stepOrder: 1,
+          status: 'SENT',
+          sentAt: new Date(Date.now() - 5 * 86400000),
+          triggeredBy: null,
+          outreachLogId: 'log-1',
+          metadata: { channel: 'email' },
+        },
+        {
+          id: 'legacy-2',
+          stepOrder: 3,
+          status: 'SENT',
+          sentAt: new Date(Date.now() - 2 * 86400000),
+          triggeredBy: null,
+          outreachLogId: 'log-2',
+          metadata: { channel: 'call' },
+        },
+      ],
+    });
+
+    db.outreachSequence.findFirst.mockResolvedValue(sequence);
+    db.wizardSession.findFirst.mockResolvedValue({
+      maxStepReached: 1,
+      pdfDownloaded: false,
+    });
+    db.outreachStep.create.mockResolvedValue({
+      id: 'step-new-2',
+      sequenceId: 'seq-1',
+      stepOrder: 4,
+      status: 'DRAFTED',
+      scheduledAt: new Date(),
+    });
+
+    await evaluateCadence(db as never, 'seq-1', DEFAULT_CADENCE_CONFIG);
+
+    expect(db.outreachStep.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          stepOrder: 4,
+        }),
+      }),
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------

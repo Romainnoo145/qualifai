@@ -98,11 +98,15 @@ export const assetsRouter = router({
       const strictGateEnabled = run.campaign?.strictGate ?? true;
       if (strictGateEnabled) {
         const gate = extractGateFromSummary(run.summary);
-        if (!gate?.passed) {
+        const hasOverride =
+          run.qualityApproved === true &&
+          typeof run.qualityNotes === 'string' &&
+          run.qualityNotes.trim().length >= 12;
+        if (!gate?.passed && !hasOverride) {
           const reasons =
             gate?.reasons?.join('; ') ?? 'evidence quality gate not met';
           throw new Error(
-            `Cannot generate assets before gate passes: ${reasons}`,
+            `Cannot generate assets before gate passes: ${reasons}. Review quality and add override reason if proceeding.`,
           );
         }
       }
@@ -306,6 +310,10 @@ export const assetsRouter = router({
         lossMapUrl,
         calBookingUrl,
       );
+      const firstStep = steps[0];
+      if (!firstStep) {
+        throw new Error('Sequence template generated no steps');
+      }
 
       const sequence = await ctx.db.outreachSequence.create({
         data: {
@@ -327,23 +335,18 @@ export const assetsRouter = router({
         },
       });
 
-      for (const step of steps) {
-        await ctx.db.outreachStep.create({
-          data: {
-            sequenceId: sequence.id,
-            stepOrder: step.order,
-            subject: step.subject,
-            bodyText: step.bodyText,
-            bodyHtml: step.bodyHtml,
-            status: 'DRAFTED',
-          },
-        });
-      }
+      await ctx.db.outreachStep.create({
+        data: {
+          sequenceId: sequence.id,
+          stepOrder: firstStep.order,
+          subject: firstStep.subject,
+          bodyText: firstStep.bodyText,
+          bodyHtml: firstStep.bodyHtml,
+          status: 'DRAFTED',
+          metadata: toJson({ channel: 'email', seeded: true }),
+        },
+      });
 
-      const firstStep = steps[0];
-      if (!firstStep) {
-        throw new Error('Sequence template generated no steps');
-      }
       const draft = await ctx.db.outreachLog.create({
         data: {
           contactId: contact.id,

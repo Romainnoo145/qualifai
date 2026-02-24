@@ -681,6 +681,7 @@ export const campaignsRouter = router({
               lossMapUrl,
               calBookingUrl,
             );
+            const firstStep = steps[0];
 
             const existingDraft = await ctx.db.outreachLog.findFirst({
               where: {
@@ -733,54 +734,54 @@ export const campaignsRouter = router({
             });
             sequenceId = sequence.id;
 
-            for (const step of steps) {
-              await ctx.db.outreachStep.create({
-                data: {
-                  sequenceId: sequence.id,
-                  stepOrder: step.order,
-                  subject: step.subject,
-                  bodyText: step.bodyText,
-                  bodyHtml: step.bodyHtml,
-                  status: 'DRAFTED',
-                },
-              });
+            if (!firstStep) {
+              throw new Error('Sequence template generated no steps');
             }
 
-            const firstStep = steps[0];
-            if (firstStep) {
-              const outreachDraft = await ctx.db.outreachLog.create({
-                data: {
-                  contactId: contact.id,
-                  type: 'INTRO_EMAIL',
-                  channel: 'email',
-                  status: 'draft',
-                  subject: firstStep.subject,
-                  bodyText: firstStep.bodyText,
-                  bodyHtml: firstStep.bodyHtml,
-                  metadata: toJson({
-                    outreachSequenceId: sequence.id,
-                    workflowLossMapId: savedLossMap.id,
-                    evidenceBacked: true,
-                    ctaStep1: savedLossMap.ctaStep1,
-                    ctaStep2: savedLossMap.ctaStep2,
-                    calBookingUrl,
-                    calEventTypeId: env.CALCOM_EVENT_TYPE_ID ?? null,
-                  }),
+            await ctx.db.outreachStep.create({
+              data: {
+                sequenceId: sequence.id,
+                stepOrder: firstStep.order,
+                subject: firstStep.subject,
+                bodyText: firstStep.bodyText,
+                bodyHtml: firstStep.bodyHtml,
+                status: 'DRAFTED',
+                metadata: toJson({ channel: 'email', seeded: true }),
+              },
+            });
+
+            const outreachDraft = await ctx.db.outreachLog.create({
+              data: {
+                contactId: contact.id,
+                type: 'INTRO_EMAIL',
+                channel: 'email',
+                status: 'draft',
+                subject: firstStep.subject,
+                bodyText: firstStep.bodyText,
+                bodyHtml: firstStep.bodyHtml,
+                metadata: toJson({
+                  outreachSequenceId: sequence.id,
+                  workflowLossMapId: savedLossMap.id,
+                  evidenceBacked: true,
+                  ctaStep1: savedLossMap.ctaStep1,
+                  ctaStep2: savedLossMap.ctaStep2,
+                  calBookingUrl,
+                  calEventTypeId: env.CALCOM_EVENT_TYPE_ID ?? null,
+                }),
+              },
+            });
+            await ctx.db.outreachStep.update({
+              where: {
+                sequenceId_stepOrder: {
+                  sequenceId: sequence.id,
+                  stepOrder: 1,
                 },
-              });
-              await ctx.db.outreachStep.update({
-                where: {
-                  sequenceId_stepOrder: {
-                    sequenceId: sequence.id,
-                    stepOrder: 1,
-                  },
-                },
-                data: {
-                  outreachLogId: outreachDraft.id,
-                  status: 'QUEUED',
-                },
-              });
-            }
+              },
+              data: {
+                outreachLogId: outreachDraft.id,
+                status: 'QUEUED',
+              },
+            });
 
             if (contact.outreachStatus === 'NONE') {
               await ctx.db.contact.update({
