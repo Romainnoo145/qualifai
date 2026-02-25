@@ -13,6 +13,7 @@ import {
 import { persistWorkflowLossMapPdf } from '@/lib/pdf-storage';
 import { env } from '@/env.mjs';
 import type { Prisma } from '@prisma/client';
+import { buildDiscoverUrl } from '@/lib/prospect-url';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -268,7 +269,13 @@ export const assetsRouter = router({
           where: { id: input.workflowLossMapId },
           include: {
             prospect: {
-              select: { id: true, slug: true, companyName: true, domain: true },
+              select: {
+                id: true,
+                slug: true,
+                readableSlug: true,
+                companyName: true,
+                domain: true,
+              },
             },
           },
         }),
@@ -294,7 +301,12 @@ export const assetsRouter = router({
 
       const appUrl =
         process.env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
-      const lossMapUrl = `${appUrl}/discover/${map.prospect.slug}`;
+      const lossMapUrl = buildDiscoverUrl(appUrl, {
+        slug: map.prospect.slug,
+        readableSlug: map.prospect.readableSlug,
+        companyName: map.prospect.companyName,
+        domain: map.prospect.domain,
+      });
       const companyName = map.prospect.companyName ?? map.prospect.domain;
       const calBookingUrl = buildCalBookingUrl(
         env.NEXT_PUBLIC_CALCOM_BOOKING_URL,

@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
+import { buildDiscoverPath } from '@/lib/prospect-url';
 
 type ProcessStage = 'idle' | 'creating' | 'enriching' | 'generating' | 'done';
 
@@ -64,9 +65,7 @@ export default function NewProspect() {
 
   const copyLink = () => {
     if (!result) return;
-    const url = result.readableSlug
-      ? `${window.location.origin}/voor/${result.readableSlug}`
-      : `${window.location.origin}/discover/${result.slug}`;
+    const url = `${window.location.origin}${buildDiscoverPath(result)}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -110,9 +109,7 @@ export default function NewProspect() {
           <div className="flex items-center gap-4 bg-[#FCFCFD] rounded-2xl px-6 py-4 border border-slate-100">
             <code className="text-xs font-mono text-slate-500 flex-1 text-left truncate">
               {typeof window !== 'undefined' ? window.location.origin : ''}
-              {result.readableSlug
-                ? `/voor/${result.readableSlug}`
-                : `/discover/${result.slug}`}
+              {buildDiscoverPath(result)}
             </code>
             <button
               onClick={copyLink}
@@ -132,11 +129,7 @@ export default function NewProspect() {
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-4">
             <a
-              href={
-                result.readableSlug
-                  ? `/voor/${result.readableSlug}`
-                  : `/discover/${result.slug}`
-              }
+              href={buildDiscoverPath(result)}
               target="_blank"
               className="ui-tap flex items-center justify-center gap-3 px-10 py-4 btn-pill-primary text-xs w-full sm:w-auto shadow-xl"
             >

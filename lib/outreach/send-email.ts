@@ -68,6 +68,7 @@ export async function sendOutreachEmail(
     where: { id: contactId },
     select: {
       id: true,
+      prospectId: true,
       primaryEmail: true,
       outreachStatus: true,
     },
@@ -138,13 +139,24 @@ export async function sendOutreachEmail(
 
   // Update contact status
   if (status === 'sent') {
-    await prisma.contact.update({
-      where: { id: contactId },
-      data: {
-        outreachStatus: 'EMAIL_SENT',
-        lastContactedAt: new Date(),
-      },
-    });
+    await prisma.$transaction([
+      prisma.contact.update({
+        where: { id: contactId },
+        data: {
+          outreachStatus: 'EMAIL_SENT',
+          lastContactedAt: new Date(),
+        },
+      }),
+      prisma.workflowHypothesis.updateMany({
+        where: {
+          prospectId: contact.prospectId,
+          status: 'DRAFT',
+        },
+        data: {
+          status: 'PENDING',
+        },
+      }),
+    ]);
   }
 
   return { success: status === 'sent', logId: log.id };

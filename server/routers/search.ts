@@ -6,6 +6,7 @@ import {
   enrichCompany,
   isEnrichmentPlanLimitedError,
 } from '@/lib/enrichment';
+import { mergeApolloWithKvk } from '@/lib/enrichment/merge';
 import { nanoid } from 'nanoid';
 import type { Prisma } from '@prisma/client';
 import { env } from '@/env.mjs';
@@ -54,6 +55,50 @@ function isEnrichmentFresh(lastEnrichedAt: Date | null | undefined): boolean {
   if (!lastEnrichedAt) return false;
   const ageMs = Date.now() - lastEnrichedAt.getTime();
   return ageMs < REENRICH_AFTER_HOURS * 60 * 60 * 1000;
+}
+
+function buildProspectEnrichmentData(
+  enriched: Awaited<ReturnType<typeof enrichCompany>>,
+  options?: {
+    kvk?: unknown;
+    confidence?: unknown;
+  },
+) {
+  return {
+    companyName: enriched.companyName,
+    industry: enriched.industry,
+    subIndustry: enriched.subIndustry,
+    employeeRange: enriched.employeeRange,
+    employeeCount: enriched.employeeCount,
+    revenueRange: enriched.revenueRange,
+    revenueEstimate: enriched.revenueEstimate,
+    technologies: enriched.technologies,
+    specialties: enriched.specialties,
+    country: enriched.country,
+    city: enriched.city,
+    state: enriched.state,
+    description: enriched.description,
+    logoUrl: enriched.logoUrl,
+    linkedinUrl: enriched.linkedinUrl,
+    foundedYear: enriched.foundedYear,
+    naicsCode: enriched.naicsCode,
+    sicCode: enriched.sicCode,
+    lushaCompanyId: enriched.lushaCompanyId,
+    lushaRawData: toJson({
+      provider: 'apollo',
+      apollo: enriched.rawData,
+      kvk: options?.kvk ?? null,
+      confidence: options?.confidence ?? null,
+    }),
+    intentTopics: enriched.intentTopics
+      ? toJson(enriched.intentTopics)
+      : undefined,
+    fundingInfo: enriched.fundingInfo
+      ? toJson(enriched.fundingInfo)
+      : undefined,
+    lastEnrichedAt: new Date(),
+    status: 'ENRICHED' as const,
+  };
 }
 
 export const searchRouter = router({
@@ -184,35 +229,19 @@ export const searchRouter = router({
         if (input.enrich && !isEnrichmentFresh(existing.lastEnrichedAt)) {
           try {
             const enriched = await enrichCompany(cleanDomain, existing.id);
+            const combined = await mergeApolloWithKvk(enriched, {
+              domainHint: cleanDomain,
+              companyNameHint: existing.companyName,
+            });
             const refreshed = await ctx.db.prospect.update({
               where: { id: existing.id },
               data: {
-                companyName: enriched.companyName ?? existing.companyName,
-                industry: enriched.industry,
-                subIndustry: enriched.subIndustry,
-                employeeRange: enriched.employeeRange,
-                employeeCount: enriched.employeeCount,
-                revenueRange: enriched.revenueRange,
-                revenueEstimate: enriched.revenueEstimate,
-                technologies: enriched.technologies,
-                specialties: enriched.specialties,
-                country: enriched.country,
-                city: enriched.city,
-                state: enriched.state,
-                description: enriched.description,
-                logoUrl: enriched.logoUrl,
-                linkedinUrl: enriched.linkedinUrl,
-                foundedYear: enriched.foundedYear,
-                lushaCompanyId: enriched.lushaCompanyId,
-                lushaRawData: toJson(enriched.rawData),
-                intentTopics: enriched.intentTopics
-                  ? toJson(enriched.intentTopics)
-                  : undefined,
-                fundingInfo: enriched.fundingInfo
-                  ? toJson(enriched.fundingInfo)
-                  : undefined,
-                lastEnrichedAt: new Date(),
-                status: 'ENRICHED',
+                ...buildProspectEnrichmentData(combined.merged, {
+                  kvk: combined.kvk,
+                  confidence: combined.confidence,
+                }),
+                companyName:
+                  combined.merged.companyName ?? existing.companyName,
               },
             });
             return {
@@ -245,35 +274,18 @@ export const searchRouter = router({
       if (input.enrich) {
         try {
           const enriched = await enrichCompany(cleanDomain, prospect.id);
+          const combined = await mergeApolloWithKvk(enriched, {
+            domainHint: cleanDomain,
+            companyNameHint: input.companyName,
+          });
           prospect = await ctx.db.prospect.update({
             where: { id: prospect.id },
             data: {
-              companyName: enriched.companyName ?? input.companyName,
-              industry: enriched.industry,
-              subIndustry: enriched.subIndustry,
-              employeeRange: enriched.employeeRange,
-              employeeCount: enriched.employeeCount,
-              revenueRange: enriched.revenueRange,
-              revenueEstimate: enriched.revenueEstimate,
-              technologies: enriched.technologies,
-              specialties: enriched.specialties,
-              country: enriched.country,
-              city: enriched.city,
-              state: enriched.state,
-              description: enriched.description,
-              logoUrl: enriched.logoUrl,
-              linkedinUrl: enriched.linkedinUrl,
-              foundedYear: enriched.foundedYear,
-              lushaCompanyId: enriched.lushaCompanyId,
-              lushaRawData: toJson(enriched.rawData),
-              intentTopics: enriched.intentTopics
-                ? toJson(enriched.intentTopics)
-                : undefined,
-              fundingInfo: enriched.fundingInfo
-                ? toJson(enriched.fundingInfo)
-                : undefined,
-              lastEnrichedAt: new Date(),
-              status: 'ENRICHED',
+              ...buildProspectEnrichmentData(combined.merged, {
+                kvk: combined.kvk,
+                confidence: combined.confidence,
+              }),
+              companyName: combined.merged.companyName ?? input.companyName,
             },
           });
         } catch (error) {

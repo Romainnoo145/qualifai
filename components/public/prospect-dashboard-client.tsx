@@ -53,6 +53,19 @@ interface HypothesisData {
   status: 'DRAFT' | 'ACCEPTED' | 'REJECTED' | 'PENDING' | 'DECLINED';
 }
 
+interface TrustSnapshot {
+  combinedConfidencePct: number | null;
+  enrichmentLabel: string | null;
+  kvkNumber: string | null;
+  kvkLegalForm: string | null;
+  lastUpdateLabel: string | null;
+  researchStatusLabel: string | null;
+  qualityLabel: string | null;
+  evidenceCount: number;
+  sourceTypeCount: number;
+  diagnosticsWarningCount: number;
+}
+
 interface DashboardClientProps {
   prospectSlug: string;
   companyName: string;
@@ -70,6 +83,7 @@ interface DashboardClientProps {
   automationAgents: Record<string, unknown>;
   successStories: Record<string, unknown>;
   aiRoadmap: Record<string, unknown>;
+  trustSnapshot?: TrustSnapshot;
 }
 
 // ─── Step configuration ───────────────────────────────────────────────────────

@@ -17,11 +17,12 @@ import {
   Briefcase,
   AlertTriangle,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { QualityChip } from '@/components/features/prospects/quality-chip';
 import { PipelineChip } from '@/components/features/prospects/pipeline-chip';
-import { computePipelineStage } from '@/lib/pipeline-stage';
+import { computePipelineStage, type PipelineStage } from '@/lib/pipeline-stage';
+import { buildDiscoverPath } from '@/lib/prospect-url';
 
 type View = 'all' | 'search-companies' | 'search-contacts';
 type SearchGuardrail = {
@@ -29,6 +30,44 @@ type SearchGuardrail = {
   title: string;
   message: string;
   recommendation?: string;
+};
+
+type StageFilterKey =
+  | 'all'
+  | 'to-research'
+  | 'researched'
+  | 'engaged'
+  | 'booked';
+
+const PIPELINE_FILTERS: Array<{
+  key: StageFilterKey;
+  label: string;
+  stages?: PipelineStage[];
+}> = [
+  { key: 'all', label: 'Alles' },
+  {
+    key: 'to-research',
+    label: 'Te onderzoeken',
+    stages: ['Imported', 'Researching'],
+  },
+  {
+    key: 'researched',
+    label: 'Onderzocht',
+    stages: ['Researched', 'Reviewed', 'Ready', 'Sending'],
+  },
+  { key: 'engaged', label: 'Engaged', stages: ['Engaged'] },
+  { key: 'booked', label: 'Booked', stages: ['Booked'] },
+];
+
+const PIPELINE_SORT_PRIORITY: Record<PipelineStage, number> = {
+  Booked: 0,
+  Engaged: 1,
+  Sending: 2,
+  Ready: 3,
+  Reviewed: 4,
+  Researched: 5,
+  Researching: 6,
+  Imported: 7,
 };
 
 export default function ProspectList() {
@@ -49,11 +88,11 @@ export default function ProspectList() {
       </div>
 
       {/* View toggle */}
-      <div className="flex items-center gap-2 p-1.5 bg-slate-50/80 rounded-2xl w-fit border border-slate-100">
+      <div className="flex items-center gap-2 p-1.5 bg-slate-50/80 rounded-full w-fit border border-slate-100">
         <button
           onClick={() => setView('all')}
           className={cn(
-            'ui-tap flex items-center gap-2.5 px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all whitespace-nowrap',
+            'ui-tap flex items-center gap-2.5 px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-full transition-all whitespace-nowrap',
             view === 'all'
               ? 'bg-white text-slate-900 shadow-xl shadow-slate-200/50 border border-slate-100'
               : 'text-slate-400 hover:text-slate-900',
@@ -64,7 +103,7 @@ export default function ProspectList() {
         <button
           onClick={() => setView('search-companies')}
           className={cn(
-            'ui-tap flex items-center gap-2.5 px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all whitespace-nowrap',
+            'ui-tap flex items-center gap-2.5 px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-full transition-all whitespace-nowrap',
             view === 'search-companies'
               ? 'bg-white text-slate-900 shadow-xl shadow-slate-200/50 border border-slate-100'
               : 'text-slate-400 hover:text-slate-900',
@@ -75,7 +114,7 @@ export default function ProspectList() {
         <button
           onClick={() => setView('search-contacts')}
           className={cn(
-            'ui-tap flex items-center gap-2.5 px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.15em] rounded-xl transition-all whitespace-nowrap',
+            'ui-tap flex items-center gap-2.5 px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-full transition-all whitespace-nowrap',
             view === 'search-contacts'
               ? 'bg-white text-slate-900 shadow-xl shadow-slate-200/50 border border-slate-100'
               : 'text-slate-400 hover:text-slate-900',
@@ -99,15 +138,88 @@ function AllCompanies() {
   const deleteMutation = api.admin.deleteProspect.useMutation({
     onSuccess: () => prospects.refetch(),
   });
+  const startResearchMutation = api.research.startRun.useMutation({
+    onSuccess: () => prospects.refetch(),
+    onSettled: () => setStartingResearchId(null),
+  });
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+  const [startingResearchId, setStartingResearchId] = useState<string | null>(
+    null,
+  );
+  const [stageFilter, setStageFilter] = useState<StageFilterKey>('all');
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const stageOf = (prospect: any): PipelineStage =>
+    computePipelineStage({
+      status: prospect.status,
+      researchRun: prospect.researchRuns?.[0]
+        ? {
+            status: prospect.researchRuns[0].status,
+            qualityApproved: prospect.researchRuns[0].qualityApproved,
+          }
+        : null,
+      hasSession: (prospect._count?.sessions ?? 0) > 0,
+      hasBookedSession: (prospect.sessions?.length ?? 0) > 0,
+    });
+
+  const stagedProspects = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rows = ((prospects.data?.prospects as any[]) ?? []).map(
+      (prospect) => {
+        const stage = stageOf(prospect);
+        return { prospect, stage };
+      },
+    );
+
+    rows.sort((a, b) => {
+      const stageDelta =
+        PIPELINE_SORT_PRIORITY[a.stage] - PIPELINE_SORT_PRIORITY[b.stage];
+      if (stageDelta !== 0) return stageDelta;
+      const nameA = (
+        a.prospect.companyName ??
+        a.prospect.domain ??
+        ''
+      ).toString();
+      const nameB = (
+        b.prospect.companyName ??
+        b.prospect.domain ??
+        ''
+      ).toString();
+      return nameA.localeCompare(nameB, 'nl', { sensitivity: 'base' });
+    });
+
+    return rows;
+  }, [prospects.data?.prospects]);
+
+  const stageFilterCounts = useMemo(() => {
+    return Object.fromEntries(
+      PIPELINE_FILTERS.map((filter) => {
+        if (!filter.stages) return [filter.key, stagedProspects.length];
+        const count = stagedProspects.filter((row) =>
+          filter.stages!.includes(row.stage),
+        ).length;
+        return [filter.key, count];
+      }),
+    ) as Record<StageFilterKey, number>;
+  }, [stagedProspects]);
+
+  const visibleProspects = useMemo(() => {
+    const activeFilter = PIPELINE_FILTERS.find(
+      (filter) => filter.key === stageFilter,
+    );
+    if (!activeFilter?.stages) return stagedProspects;
+    return stagedProspects.filter((row) =>
+      activeFilter.stages!.includes(row.stage),
+    );
+  }, [stageFilter, stagedProspects]);
 
   const copyLink = (prospect: {
     slug: string;
     readableSlug: string | null;
+    companyName?: string | null;
+    domain?: string | null;
   }) => {
-    const url = prospect.readableSlug
-      ? `${window.location.origin}/voor/${prospect.readableSlug}`
-      : `${window.location.origin}/discover/${prospect.slug}`;
+    const url = `${window.location.origin}${buildDiscoverPath(prospect)}`;
     navigator.clipboard.writeText(url);
     setCopiedSlug(prospect.slug);
     setTimeout(() => setCopiedSlug(null), 2000);
@@ -125,7 +237,7 @@ function AllCompanies() {
     );
   }
 
-  if (prospects.data?.prospects.length === 0) {
+  if (stagedProspects.length === 0) {
     return (
       <div className="glass-card p-12 text-center">
         <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
@@ -142,136 +254,173 @@ function AllCompanies() {
 
   return (
     <div className="space-y-4">
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      {(prospects.data?.prospects as any[])?.map((prospect: any) => (
-        <div
-          key={prospect.id}
-          className="glass-card glass-card-hover p-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between group"
-        >
-          <div className="flex items-center gap-6">
-            <div className="w-14 h-14 rounded-2xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden">
-              {prospect.logoUrl ? (
-                <img
-                  src={prospect.logoUrl}
-                  alt=""
-                  className="w-8 h-8 object-contain"
-                />
-              ) : (
-                <Building2 className="w-6 h-6 text-slate-200" />
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-50/80 rounded-2xl border border-slate-100 w-fit">
+        {PIPELINE_FILTERS.map((filter) => {
+          const count = stageFilterCounts[filter.key] ?? 0;
+          return (
+            <button
+              key={filter.key}
+              onClick={() => setStageFilter(filter.key)}
+              className={cn(
+                'ui-tap inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all',
+                stageFilter === filter.key
+                  ? 'bg-white text-slate-900 shadow-xl shadow-slate-200/50 border border-slate-100'
+                  : 'text-slate-400 hover:text-slate-900',
               )}
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-4">
-                <Link
-                  href={`/admin/prospects/${prospect.id}`}
-                  className="text-xl font-black text-[#040026] tracking-tighter hover:text-[#007AFF] transition-all"
-                >
-                  {prospect.companyName ?? prospect.domain}
-                </Link>
-                <PipelineChip
-                  stage={computePipelineStage({
-                    status: prospect.status,
-                    researchRun: prospect.researchRuns?.[0]
-                      ? {
-                          status: prospect.researchRuns[0].status,
-                          qualityApproved:
-                            prospect.researchRuns[0].qualityApproved,
-                        }
-                      : null,
-                    hasSession: (prospect._count?.sessions ?? 0) > 0,
-                    hasBookedSession: (prospect.sessions?.length ?? 0) > 0,
-                  })}
-                />
-                {(() => {
-                  const run = prospect.researchRuns?.[0];
-                  return run ? (
-                    <QualityChip
-                      runId={run.id}
-                      evidenceCount={run._count.evidenceItems}
-                      hypothesisCount={run._count.workflowHypotheses}
-                      qualityApproved={run.qualityApproved}
-                      qualityReviewedAt={run.qualityReviewedAt}
-                    />
-                  ) : null;
-                })()}
-              </div>
-              <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-400 mt-2">
-                <span className="flex items-center gap-2">
-                  <Globe className="w-3.5 h-3.5" /> {prospect.domain}
-                </span>
-                {prospect.industry && (
-                  <>
-                    <span className="w-1 h-1 rounded-full bg-slate-200" />
-                    <span>{prospect.industry}</span>
-                  </>
-                )}
-                {prospect._count.sessions > 0 && (
-                  <>
-                    <span className="w-1 h-1 rounded-full bg-slate-200" />
-                    <span className="text-[#007AFF]">
-                      {prospect._count.sessions} sessions
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
+            >
+              <span>{filter.label}</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {['READY', 'SENT', 'VIEWED', 'ENGAGED', 'CONVERTED'].includes(
-              prospect.status,
-            ) && (
-              <>
-                <button
-                  onClick={() => copyLink(prospect)}
-                  className="ui-tap flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-slate-100 transition-all border border-slate-100"
-                >
-                  {copiedSlug === prospect.slug ? (
+      {}
+      {visibleProspects.map(({ prospect, stage }) => {
+        const canStartResearch = stage === 'Imported';
+        const isStarting =
+          startResearchMutation.isPending && startingResearchId === prospect.id;
+
+        return (
+          <div
+            key={prospect.id}
+            className="glass-card glass-card-hover p-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between group"
+          >
+            <div className="flex items-center gap-6">
+              <div className="w-14 h-14 rounded-2xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden">
+                {prospect.logoUrl ? (
+                  <img
+                    src={prospect.logoUrl}
+                    alt=""
+                    className="w-8 h-8 object-contain"
+                  />
+                ) : (
+                  <Building2 className="w-6 h-6 text-slate-200" />
+                )}
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-4">
+                  <Link
+                    href={`/admin/prospects/${prospect.id}`}
+                    className="text-xl font-black text-[#040026] tracking-tighter hover:text-[#007AFF] transition-all"
+                  >
+                    {prospect.companyName ?? prospect.domain}
+                  </Link>
+                  <PipelineChip stage={stage} />
+                  {(() => {
+                    const run = prospect.researchRuns?.[0];
+                    return run ? (
+                      <QualityChip
+                        runId={run.id}
+                        evidenceCount={run._count.evidenceItems}
+                        hypothesisCount={run._count.workflowHypotheses}
+                        qualityApproved={run.qualityApproved}
+                        qualityReviewedAt={run.qualityReviewedAt}
+                      />
+                    ) : null;
+                  })()}
+                </div>
+                <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-400 mt-2">
+                  <span className="flex items-center gap-2">
+                    <Globe className="w-3.5 h-3.5" /> {prospect.domain}
+                  </span>
+                  {prospect.industry && (
                     <>
-                      <Check className="w-3.5 h-3.5" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      Share
+                      <span className="w-1 h-1 rounded-full bg-slate-200" />
+                      <span>{prospect.industry}</span>
                     </>
                   )}
-                </button>
-                <Link
-                  href={
-                    prospect.readableSlug
-                      ? `/voor/${prospect.readableSlug}`
-                      : `/discover/${prospect.slug}`
-                  }
-                  target="_blank"
-                  className="ui-tap flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#1E1E4A] transition-all shadow-xl shadow-[#040026]/10"
+                  {prospect._count.sessions > 0 && (
+                    <>
+                      <span className="w-1 h-1 rounded-full bg-slate-200" />
+                      <span className="text-[#007AFF]">
+                        {prospect._count.sessions} sessions
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {canStartResearch && (
+                <button
+                  onClick={() => {
+                    setStartingResearchId(prospect.id);
+                    startResearchMutation.mutate({ prospectId: prospect.id });
+                  }}
+                  disabled={isStarting}
+                  className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 disabled:opacity-50"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Preview
-                </Link>
-              </>
-            )}
-            <button
-              onClick={() => {
-                if (
-                  confirm(`Delete ${prospect.companyName ?? prospect.domain}?`)
-                )
-                  deleteMutation.mutate({ id: prospect.id });
-              }}
-              className="ui-tap p-2.5 rounded-xl bg-slate-50 text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-100 transition-all"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
-            <Link
-              href={`/admin/prospects/${prospect.id}`}
-              className="ui-tap p-2.5 rounded-xl bg-slate-50 text-slate-400 hover:text-[#040026] hover:bg-slate-100 border border-slate-100 transition-all"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </Link>
+                  {isStarting ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Search className="w-3.5 h-3.5" />
+                  )}
+                  Start Research
+                </button>
+              )}
+              {['READY', 'SENT', 'VIEWED', 'ENGAGED', 'CONVERTED'].includes(
+                prospect.status,
+              ) && (
+                <>
+                  <button
+                    onClick={() => copyLink(prospect)}
+                    className="ui-tap flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-slate-100 transition-all border border-slate-100"
+                  >
+                    {copiedSlug === prospect.slug ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        Share
+                      </>
+                    )}
+                  </button>
+                  <Link
+                    href={buildDiscoverPath(prospect)}
+                    target="_blank"
+                    className="ui-tap flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#1E1E4A] transition-all shadow-xl shadow-[#040026]/10"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Preview
+                  </Link>
+                </>
+              )}
+              <button
+                onClick={() => {
+                  if (
+                    confirm(
+                      `Delete ${prospect.companyName ?? prospect.domain}?`,
+                    )
+                  )
+                    deleteMutation.mutate({ id: prospect.id });
+                }}
+                className="ui-tap p-2.5 rounded-xl bg-slate-50 text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-100 transition-all"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+              <Link
+                href={`/admin/prospects/${prospect.id}`}
+                className="ui-tap p-2.5 rounded-xl bg-slate-50 text-slate-400 hover:text-[#040026] hover:bg-slate-100 border border-slate-100 transition-all"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </Link>
+            </div>
           </div>
+        );
+      })}
+
+      {visibleProspects.length === 0 && (
+        <div className="glass-card p-10 rounded-[2rem] text-center text-sm font-bold text-slate-400">
+          Geen companies in deze filter.
         </div>
-      ))}
+      )}
     </div>
   );
 }

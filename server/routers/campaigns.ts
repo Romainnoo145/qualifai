@@ -16,6 +16,7 @@ import { persistWorkflowLossMapPdf } from '@/lib/pdf-storage';
 import { env } from '@/env.mjs';
 import type { Prisma } from '@prisma/client';
 import { scoreContactForOutreach } from '@/lib/outreach/quality';
+import { buildDiscoverUrl } from '@/lib/prospect-url';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -216,6 +217,19 @@ export const campaignsRouter = router({
       const researchCountMap = new Map<string, number>(
         researchCounts.map((r) => [r.prospectId, r._count.id]),
       );
+      const activeResearchCounts = await ctx.db.researchRun.groupBy({
+        by: ['prospectId'],
+        where: {
+          prospectId: { in: prospectIds },
+          status: {
+            in: ['PENDING', 'CRAWLING', 'EXTRACTING', 'HYPOTHESIS', 'BRIEFING'],
+          },
+        },
+        _count: { id: true },
+      });
+      const activeResearchCountMap = new Map<string, number>(
+        activeResearchCounts.map((r) => [r.prospectId, r._count.id]),
+      );
 
       // Fetch approved hypothesis counts per prospect
       const hypothesisCounts = await ctx.db.workflowHypothesis.groupBy({
@@ -236,6 +250,7 @@ export const campaignsRouter = router({
         | 'emailed'
         | 'approved'
         | 'researched'
+        | 'researching'
         | 'imported';
 
       type ProspectWithStage = {
@@ -264,10 +279,12 @@ export const campaignsRouter = router({
       const prospects: ProspectWithStage[] = campaignProspects.map((cp) => {
         const p = cp.prospect;
         const completedResearchCount = researchCountMap.get(p.id) ?? 0;
+        const activeResearchCount = activeResearchCountMap.get(p.id) ?? 0;
         const approvedHypothesisCount = hypothesisCountMap.get(p.id) ?? 0;
 
         let funnelStage: FunnelStage = 'imported';
 
+        if (activeResearchCount > 0) funnelStage = 'researching';
         if (completedResearchCount > 0) funnelStage = 'researched';
         if (approvedHypothesisCount > 0) funnelStage = 'approved';
 
@@ -308,11 +325,12 @@ export const campaignsRouter = router({
       // Compute cumulative funnel counts (each stage includes all higher stages)
       const stagePriority: Record<FunnelStage, number> = {
         imported: 0,
-        researched: 1,
-        approved: 2,
-        emailed: 3,
-        replied: 4,
-        booked: 5,
+        researching: 1,
+        researched: 2,
+        approved: 3,
+        emailed: 4,
+        replied: 5,
+        booked: 6,
       };
 
       const stageCountPerProspect = prospects.map(
@@ -321,11 +339,12 @@ export const campaignsRouter = router({
 
       const funnel = {
         imported: stageCountPerProspect.filter((s) => s >= 0).length,
-        researched: stageCountPerProspect.filter((s) => s >= 1).length,
-        approved: stageCountPerProspect.filter((s) => s >= 2).length,
-        emailed: stageCountPerProspect.filter((s) => s >= 3).length,
-        replied: stageCountPerProspect.filter((s) => s >= 4).length,
-        booked: stageCountPerProspect.filter((s) => s >= 5).length,
+        researching: stageCountPerProspect.filter((s) => s >= 1).length,
+        researched: stageCountPerProspect.filter((s) => s >= 2).length,
+        approved: stageCountPerProspect.filter((s) => s >= 3).length,
+        emailed: stageCountPerProspect.filter((s) => s >= 4).length,
+        replied: stageCountPerProspect.filter((s) => s >= 5).length,
+        booked: stageCountPerProspect.filter((s) => s >= 6).length,
       };
 
       const metrics = {
@@ -359,6 +378,7 @@ export const campaignsRouter = router({
                 select: {
                   id: true,
                   slug: true,
+                  readableSlug: true,
                   domain: true,
                   companyName: true,
                 },
@@ -666,7 +686,12 @@ export const campaignsRouter = router({
 
             const appUrl =
               process.env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
-            const lossMapUrl = `${appUrl}/discover/${prospect.slug}`;
+            const lossMapUrl = buildDiscoverUrl(appUrl, {
+              slug: prospect.slug,
+              readableSlug: prospect.readableSlug,
+              companyName: prospect.companyName,
+              domain: prospect.domain,
+            });
             const calBookingUrl = buildCalBookingUrl(
               env.NEXT_PUBLIC_CALCOM_BOOKING_URL,
               {

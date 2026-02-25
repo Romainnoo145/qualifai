@@ -1,6 +1,7 @@
 export type PipelineStage =
   | 'Imported'
   | 'Researching'
+  | 'Researched'
   | 'Reviewed'
   | 'Ready'
   | 'Sending'
@@ -30,8 +31,8 @@ export function computePipelineStage(p: ProspectForStage): PipelineStage {
     p.status !== 'GENERATING'
   )
     return 'Reviewed';
+  if (p.researchRun?.status === 'COMPLETED') return 'Researched';
   if (
-    p.status === 'ENRICHED' ||
     p.status === 'GENERATING' ||
     (p.researchRun?.status &&
       ['PENDING', 'CRAWLING', 'EXTRACTING', 'HYPOTHESIS', 'BRIEFING'].includes(

@@ -69,6 +69,13 @@ const STEPS = [
   { id: 5, label: 'Next Steps', icon: Calendar },
 ];
 
+function nowMs(): number {
+  if (typeof window !== 'undefined' && window.performance?.now) {
+    return window.performance.now();
+  }
+  return Date.now();
+}
+
 export function WizardClient({
   slug,
   companyName,
@@ -84,7 +91,7 @@ export function WizardClient({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [direction, setDirection] = useState(1);
   const stepTimesRef = useRef<Record<string, number>>({});
-  const stepStartRef = useRef<number>(Date.now());
+  const stepStartRef = useRef<number>(nowMs());
 
   const startSession = api.wizard.startSession.useMutation();
   const trackProgress = api.wizard.trackProgress.useMutation();
@@ -108,9 +115,10 @@ export function WizardClient({
 
   const goToStep = (step: number) => {
     // Track time spent on current step
-    const elapsed = Math.floor((Date.now() - stepStartRef.current) / 1000);
+    const elapsedMs = Math.max(0, nowMs() - stepStartRef.current);
+    const elapsed = Math.floor(elapsedMs / 1000);
     stepTimesRef.current[String(currentStep)] = elapsed;
-    stepStartRef.current = Date.now();
+    stepStartRef.current = nowMs();
 
     setDirection(step > currentStep ? 1 : -1);
     setCurrentStep(step);

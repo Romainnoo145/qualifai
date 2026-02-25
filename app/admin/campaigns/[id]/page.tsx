@@ -4,11 +4,12 @@ import { api } from '@/components/providers';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
-import { ArrowLeft, Building2, Plus, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Building2, Plus, X, Loader2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type FunnelStage =
   | 'imported'
+  | 'researching'
   | 'researched'
   | 'approved'
   | 'emailed'
@@ -21,11 +22,13 @@ const STAGE_ORDER: FunnelStage[] = [
   'emailed',
   'approved',
   'researched',
+  'researching',
   'imported',
 ];
 
 const STAGE_LABELS: Record<FunnelStage, string> = {
   imported: 'Imported',
+  researching: 'Researching',
   researched: 'Researched',
   approved: 'Approved',
   emailed: 'Emailed',
@@ -35,6 +38,7 @@ const STAGE_LABELS: Record<FunnelStage, string> = {
 
 const STAGE_BADGE: Record<FunnelStage, string> = {
   imported: 'bg-slate-100 text-slate-600',
+  researching: 'bg-cyan-50 text-cyan-700',
   researched: 'bg-blue-50 text-blue-600',
   approved: 'bg-indigo-50 text-indigo-600',
   emailed: 'bg-amber-50 text-amber-600',
@@ -44,6 +48,7 @@ const STAGE_BADGE: Record<FunnelStage, string> = {
 
 const FUNNEL_STAGES: Array<{ key: FunnelStage; barColor: string }> = [
   { key: 'imported', barColor: 'bg-slate-300' },
+  { key: 'researching', barColor: 'bg-cyan-400' },
   { key: 'researched', barColor: 'bg-blue-400' },
   { key: 'approved', barColor: 'bg-indigo-400' },
   { key: 'emailed', barColor: 'bg-amber-400' },
@@ -105,6 +110,13 @@ function ProspectRow({
       onDetach();
     },
   });
+  const startResearch = api.research.startRun.useMutation({
+    onSuccess: () => {
+      utils.campaigns.getWithFunnelData.invalidate({ id: campaignId });
+    },
+  });
+
+  const canStartResearch = prospect.funnelStage === 'imported';
 
   return (
     <div className="glass-card glass-card-hover p-5 flex items-center justify-between gap-4">
@@ -143,6 +155,28 @@ function ProspectRow({
         >
           {STAGE_LABELS[prospect.funnelStage]}
         </span>
+        {canStartResearch && (
+          <button
+            onClick={() =>
+              startResearch.mutate({ prospectId: prospect.id, campaignId })
+            }
+            disabled={startResearch.isPending}
+            className="ui-tap inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all disabled:opacity-50 text-[9px] font-black uppercase tracking-widest"
+          >
+            {startResearch.isPending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Search className="w-3.5 h-3.5" />
+            )}
+            Start Research
+          </button>
+        )}
+        {prospect.funnelStage === 'researching' && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-50 text-cyan-700 border border-cyan-200 text-[9px] font-black uppercase tracking-widest">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Running
+          </span>
+        )}
         <button
           onClick={() => {
             if (

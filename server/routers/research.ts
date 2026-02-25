@@ -233,12 +233,7 @@ export const researchRouter = router({
           qualityNotes: overrideReason || null,
         },
       });
-      if (input.approved) {
-        await ctx.db.workflowHypothesis.updateMany({
-          where: { researchRunId: input.runId, status: 'DRAFT' },
-          data: { status: 'PENDING' },
-        });
-      } else {
+      if (!input.approved) {
         await ctx.db.workflowHypothesis.updateMany({
           where: { researchRunId: input.runId, status: 'PENDING' },
           data: { status: 'DRAFT' },

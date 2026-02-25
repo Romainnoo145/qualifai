@@ -18,6 +18,7 @@ import {
 } from '@/lib/outreach/reply-workflow';
 import { scoreContactForOutreach } from '@/lib/outreach/quality';
 import { evaluateCadence, DEFAULT_CADENCE_CONFIG } from '@/lib/cadence/engine';
+import { buildDiscoverUrl } from '@/lib/prospect-url';
 
 function metadataAsObject(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
@@ -309,7 +310,12 @@ export const outreachRouter = router({
 
       const appUrl =
         process.env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
-      const wizardUrl = `${appUrl}/discover/${prospect.slug}`;
+      const wizardUrl = buildDiscoverUrl(appUrl, {
+        slug: prospect.slug,
+        readableSlug: prospect.readableSlug,
+        companyName: prospect.companyName,
+        domain: prospect.domain,
+      });
 
       const bodyHtml = `<p>Hi ${contact.firstName},</p>
 <p>I've put together a personalized AI discovery for ${prospect.companyName ?? prospect.domain}. It shows specific opportunities where AI could add value to your business.</p>

@@ -64,19 +64,6 @@ npm test -- --run
 npm run build
 ```
 
-## Workflow Smoke Test
-
-Run one end-to-end smoke scenario (campaign -> research -> loss map/pdf -> outreach draft -> reply triage):
-
-```bash
-npm run smoke:workflow
-```
-
-Notes:
-
-- Requires a valid `.env` (`DATABASE_URL`, `ADMIN_SECRET`, etc.)
-- Writes test records into your configured database
-
 ## Railway Deployment Checklist
 
 1. Set all required env vars from `.env.example`.

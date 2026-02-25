@@ -19,7 +19,6 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "smoke:workflow": "NODE_ENV=development tsx -r dotenv/config scripts/smoke-workflow.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "prepare": "husky"

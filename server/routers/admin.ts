@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { adminProcedure, router } from '../trpc';
 import { nanoid } from 'nanoid';
 import { enrichCompany } from '@/lib/enrichment';
+import { mergeApolloWithKvk } from '@/lib/enrichment/merge';
 import { generateWizardContent } from '@/lib/ai/generate-wizard';
 import type { CompanyContext, IndustryPrompts } from '@/lib/ai/prompts';
 import type { Prisma } from '@prisma/client';
@@ -50,6 +51,10 @@ function latestEngagementAt(
 
 function buildEnrichmentData(
   enriched: Awaited<ReturnType<typeof enrichCompany>>,
+  options?: {
+    kvk?: unknown;
+    confidence?: unknown;
+  },
 ) {
   return {
     companyName: enriched.companyName,
@@ -71,7 +76,12 @@ function buildEnrichmentData(
     naicsCode: enriched.naicsCode,
     sicCode: enriched.sicCode,
     lushaCompanyId: enriched.lushaCompanyId,
-    lushaRawData: toJson(enriched.rawData),
+    lushaRawData: toJson({
+      provider: 'apollo',
+      apollo: enriched.rawData,
+      kvk: options?.kvk ?? null,
+      confidence: options?.confidence ?? null,
+    }),
     intentTopics: enriched.intentTopics
       ? toJson(enriched.intentTopics)
       : undefined,
@@ -179,16 +189,24 @@ export const adminRouter = router({
       }
 
       const enriched = await enrichCompany(prospect.domain, prospect.id);
+      const combined = await mergeApolloWithKvk(enriched, {
+        domainHint: prospect.domain,
+        companyNameHint: prospect.companyName,
+      });
 
-      const shouldAutoSlug = enriched.companyName && !prospect.readableSlug;
+      const shouldAutoSlug =
+        combined.merged.companyName && !prospect.readableSlug;
       const readableSlug = shouldAutoSlug
-        ? await generateUniqueReadableSlug(ctx.db, enriched.companyName!)
+        ? await generateUniqueReadableSlug(ctx.db, combined.merged.companyName!)
         : undefined;
 
       const updated = await ctx.db.prospect.update({
         where: { id: input.id },
         data: {
-          ...buildEnrichmentData(enriched),
+          ...buildEnrichmentData(combined.merged, {
+            kvk: combined.kvk,
+            confidence: combined.confidence,
+          }),
           ...(shouldAutoSlug ? { readableSlug } : {}),
         },
       });
@@ -301,7 +319,12 @@ export const adminRouter = router({
       // Enrich via Apollo provider.
       try {
         const enriched = await enrichCompany(cleanDomain, prospect.id);
-        const slugSource = enriched.companyName ?? cleanDomain.split('.')[0]!;
+        const combined = await mergeApolloWithKvk(enriched, {
+          domainHint: cleanDomain,
+          companyNameHint: prospect.companyName,
+        });
+        const slugSource =
+          combined.merged.companyName ?? cleanDomain.split('.')[0]!;
         const readableSlug = await generateUniqueReadableSlug(
           ctx.db,
           slugSource,
@@ -309,7 +332,10 @@ export const adminRouter = router({
         prospect = await ctx.db.prospect.update({
           where: { id: prospect.id },
           data: {
-            ...buildEnrichmentData(enriched),
+            ...buildEnrichmentData(combined.merged, {
+              kvk: combined.kvk,
+              confidence: combined.confidence,
+            }),
             readableSlug,
           },
         });
@@ -390,7 +416,7 @@ export const adminRouter = router({
         }
 
         // Hypotheses stay as DRAFT — admin reviews and accepts/rejects
-        // in the prospect detail Hypotheses tab before they appear on /voor/ dashboard
+        // in the prospect detail Hypotheses tab before they appear on the public discovery dashboard
       } catch (error) {
         console.error('Research pipeline failed (non-blocking):', error);
       }

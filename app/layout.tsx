@@ -44,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased`}
+        className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased min-h-screen bg-[#FCFCFD] text-[#040026] relative`}
       >
         <TRPCProvider>{children}</TRPCProvider>
       </body>

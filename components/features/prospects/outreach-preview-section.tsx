@@ -2,6 +2,7 @@
 
 import { api } from '@/components/providers';
 import { Mail, ExternalLink, FileText, Loader2, Download } from 'lucide-react';
+import { buildDiscoverPath } from '@/lib/prospect-url';
 
 type PlanItem = {
   action: string;
@@ -24,29 +25,29 @@ function CallPlanGrid({ plan }: { plan: Record<string, unknown> }) {
     { label: '90 days', items: parsePlanItems(plan['plan90']) },
   ];
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {!!plan['summary'] && (
-        <p className="text-sm text-slate-600">{String(plan['summary'])}</p>
+        <p className="text-[13px] text-slate-600">{String(plan['summary'])}</p>
       )}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {sections.map(({ label, items }) => (
-          <div
-            key={label}
-            className="rounded-xl bg-slate-50 border border-slate-100 p-3 space-y-2"
-          >
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+          <div key={label} className="space-y-2.5">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">
               {label}
             </p>
             {items.length > 0 ? (
               <ul className="space-y-1.5">
                 {items.slice(0, 3).map((item, i) => (
-                  <li key={i} className="text-xs text-slate-600">
+                  <li
+                    key={i}
+                    className="text-[12px] font-medium text-slate-700 leading-snug"
+                  >
                     {item.action}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-slate-400">No items</p>
+              <p className="text-[13px] text-slate-400">No items</p>
             )}
           </div>
         ))}
@@ -93,21 +94,22 @@ export function OutreachPreviewSection({
   const seqList = sequences.data ?? [];
   const firstContact = prospect?.contacts?.[0];
 
-  const dashboardUrl = prospect?.readableSlug
-    ? `/voor/${prospect.readableSlug}`
-    : prospect?.slug
-      ? `/discover/${prospect.slug}`
-      : null;
-  const dashboardLabel = prospect?.readableSlug
-    ? 'Preview Dashboard'
-    : 'Preview Wizard';
+  const dashboardUrl = prospect?.slug
+    ? buildDiscoverPath({
+        slug: prospect.slug,
+        readableSlug: prospect.readableSlug ?? null,
+        companyName: prospect.companyName ?? null,
+        domain: prospect.domain ?? null,
+      })
+    : null;
+  const dashboardLabel = 'Preview Discovery';
 
   const isLoading =
     latestAsset.isLoading || callPrep.isLoading || sequences.isLoading;
 
   if (isLoading) {
     return (
-      <div className="glass-card p-6 space-y-4 animate-pulse rounded-2xl">
+      <div className="glass-card p-5 space-y-3 animate-pulse rounded-[1.6rem]">
         <div className="h-4 bg-slate-200 rounded w-40" />
         <div className="h-3 bg-slate-100 rounded w-full" />
         <div className="h-3 bg-slate-100 rounded w-3/4" />
@@ -118,30 +120,29 @@ export function OutreachPreviewSection({
   const activeSeq = seqList[0];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Sequence status indicator */}
       {activeSeq && (
         <div className="flex items-center gap-2 text-xs text-slate-500">
-          <span className="inline-block w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="inline-block w-2 h-2 rounded-full bg-[#EBCB4B]" />
           Outreach sequence: {activeSeq.status.toLowerCase()} &mdash;{' '}
           {activeSeq.steps?.length ?? 0} steps
         </div>
       )}
 
       {/* 1. Email Content */}
-      <div className="glass-card p-6 space-y-4 rounded-2xl">
+      <div className="glass-card p-6 rounded-[1.6rem] space-y-4 mt-1">
         <div className="flex items-center justify-between">
-          <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center gap-2">
-            <Mail className="w-3.5 h-3.5 text-slate-300" />
-            Email Content
-          </p>
+          <h4 className="text-lg font-black text-[#040026] tracking-tight flex items-center gap-2">
+            <Mail className="w-5 h-5 text-[#EBCB4B]" /> Email Content
+          </h4>
           <div className="flex items-center gap-2">
             {lossMap?.pdfUrl && (
               <a
                 href={lossMap.pdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="ui-tap flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-slate-100 transition-all border border-slate-100"
+                className="ui-tap flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-[#EBCB4B] hover:border-[#D4B43B] transition-all border border-slate-100"
               >
                 <Download className="w-3 h-3" /> PDF
               </a>
@@ -152,7 +153,7 @@ export function OutreachPreviewSection({
                 generateReport.mutate({ runId: latestRunId });
               }}
               disabled={!latestRunId || generateReport.isPending}
-              className="ui-tap flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-slate-100 transition-all border border-slate-100 disabled:opacity-40"
+              className="ui-tap flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-[#EBCB4B] hover:border-[#D4B43B] transition-all border border-slate-100 disabled:opacity-40"
             >
               {generateReport.isPending ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -180,29 +181,31 @@ export function OutreachPreviewSection({
         </div>
 
         {lossMap ? (
-          <div className="space-y-3">
-            <p className="text-sm font-semibold text-klarifai-midnight">
+          <div className="space-y-4">
+            <p className="text-base font-bold text-[#040026]">
               {lossMap.emailSubject}
             </p>
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm font-mono text-xs text-slate-600 whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">
+            <div className="font-mono text-[12px] text-slate-600 whitespace-pre-wrap leading-relaxed max-w-3xl">
               {lossMap.emailBodyText}
             </div>
             {(lossMap.ctaStep1 || lossMap.ctaStep2) && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 {lossMap.ctaStep1 && (
-                  <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2">
-                    <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1">
+                  <div className="pl-4 border-l-2 border-[#EBCB4B] space-y-1.5">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                       Step 1
                     </p>
-                    <p className="text-xs text-blue-700">{lossMap.ctaStep1}</p>
+                    <p className="text-sm font-medium text-slate-700 leading-snug">
+                      {lossMap.ctaStep1}
+                    </p>
                   </div>
                 )}
                 {lossMap.ctaStep2 && (
-                  <div className="rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2">
-                    <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">
+                  <div className="pl-4 border-l-2 border-[#EBCB4B] space-y-1.5">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                       Step 2
                     </p>
-                    <p className="text-xs text-indigo-700">
+                    <p className="text-sm font-medium text-slate-700 leading-snug">
                       {lossMap.ctaStep2}
                     </p>
                   </div>
@@ -219,11 +222,10 @@ export function OutreachPreviewSection({
       </div>
 
       {/* 2. Prospect Dashboard */}
-      <div className="glass-card p-6 space-y-3 rounded-2xl">
-        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center gap-2">
-          <ExternalLink className="w-3.5 h-3.5 text-slate-300" />
-          Prospect Dashboard
-        </p>
+      <div className="glass-card p-6 rounded-[1.6rem] space-y-4">
+        <h4 className="text-lg font-black text-[#040026] tracking-tight flex items-center gap-2">
+          <ExternalLink className="w-5 h-5 text-[#EBCB4B]" /> Prospect Dashboard
+        </h4>
         <p className="text-xs text-slate-400">
           This is what the prospect sees when they click the link in the email.
         </p>
@@ -232,7 +234,7 @@ export function OutreachPreviewSection({
             href={dashboardUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="ui-tap inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-600 hover:text-[#040026] hover:bg-slate-100 border border-slate-100 transition-all"
+            className="ui-tap inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-600 hover:text-[#040026] hover:bg-[#EBCB4B] hover:border-[#D4B43B] border border-slate-100 transition-all"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             {dashboardLabel}
@@ -243,19 +245,18 @@ export function OutreachPreviewSection({
       </div>
 
       {/* 3. Call Brief */}
-      <div className="glass-card p-6 space-y-4 rounded-2xl">
+      <div className="glass-card p-6 rounded-[1.6rem] space-y-5">
         <div className="flex items-center justify-between">
-          <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center gap-2">
-            <FileText className="w-3.5 h-3.5 text-slate-300" />
-            Call Brief
-          </p>
+          <h4 className="text-lg font-black text-[#040026] tracking-tight flex items-center gap-2">
+            <FileText className="w-5 h-5 text-[#EBCB4B]" /> Call Brief
+          </h4>
           <button
             onClick={() => {
               if (!latestRunId) return;
               regenerateCallBrief.mutate({ runId: latestRunId });
             }}
             disabled={!latestRunId || regenerateCallBrief.isPending}
-            className="ui-tap flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-slate-100 transition-all border border-slate-100 disabled:opacity-40"
+            className="ui-tap flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-[#EBCB4B] hover:border-[#D4B43B] transition-all border border-slate-100 disabled:opacity-40"
           >
             {regenerateCallBrief.isPending ? (
               <Loader2 className="w-3 h-3 animate-spin" />
