@@ -117,7 +117,7 @@ function TimelineItem({ step }: { step: Step }) {
 function MetricCard({
   label,
   value,
-  accent: _accent,
+  accent,
 }: {
   label: string;
   value: string | number;
@@ -125,6 +125,12 @@ function MetricCard({
 }) {
   const compact =
     typeof value === 'string' && value.length >= 4 ? 'text-xl' : 'text-2xl';
+  const valueTone =
+    accent === true
+      ? 'text-emerald-600'
+      : accent === false
+        ? 'text-sky-700'
+        : 'text-[#040026]';
 
   return (
     <div className="flex flex-col gap-1 py-1.5">
@@ -132,7 +138,7 @@ function MetricCard({
         {label}
       </p>
       <p
-        className={`${compact} font-black tracking-tighter leading-none text-[#040026]`}
+        className={`${compact} font-black tracking-tighter leading-none ${valueTone}`}
       >
         {value}
       </p>
