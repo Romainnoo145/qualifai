@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 ## Current Position
 
 Phase: 25 of 27 (Pipeline Hardening)
-Plan: 0 of 3 in current phase
-Status: Ready to execute
-Last activity: 2026-02-25 — Phase 24-02 completed (10 prospects imported + enriched)
+Plan: 2 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-25 — Phase 25-02 completed (source diagnostics surfaced in UI)
 
-Progress: [████░░░░░░] 33% (v2.1 — 4/12 plans complete)
+Progress: [█████░░░░░] 50% (v2.1 — 6/12 plans complete)
 
 ## Milestones Shipped
 
@@ -63,5 +63,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Phase 24 complete (catalog seeded + prospects imported)
-Resume with: `/gsd:plan-phase 25`
+Stopped at: Phase 25 in progress (25-01 and 25-02 complete)
+Resume with: `/gsd:plan-phase 25-03`

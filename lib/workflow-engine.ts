@@ -1213,9 +1213,17 @@ export async function matchProofs(
 export function runSummaryPayload(
   gate: QualityGateResult,
   campaign: CampaignForEngine | null,
+  options?: {
+    diagnostics?: Array<{
+      source: string;
+      status: 'ok' | 'warning' | 'error' | 'skipped';
+      message: string;
+    }>;
+  },
 ): Record<string, unknown> {
   return {
     gate,
+    diagnostics: options?.diagnostics ?? [],
     campaign: campaign
       ? {
           id: campaign.id,

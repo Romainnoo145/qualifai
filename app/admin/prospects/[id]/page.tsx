@@ -81,6 +81,8 @@ export default function ProspectDetail() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const p = prospect.data as any;
   const latestRunId = researchRuns.data?.[0]?.id ?? null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const latestRun = (researchRuns.data?.[0] as any) ?? null;
 
   return (
     <div className="space-y-8">
@@ -274,7 +276,12 @@ export default function ProspectDetail() {
 
       {/* All sections stay mounted, inactive ones hidden via CSS */}
       <div className={activeTab === 'evidence' ? '' : 'hidden'}>
-        <EvidenceSection prospectId={id} signals={p.signals} />
+        <EvidenceSection
+          prospectId={id}
+          signals={p.signals}
+          latestRunSummary={latestRun?.summary}
+          latestRunError={latestRun?.error ?? null}
+        />
       </div>
       <div className={activeTab === 'analysis' ? '' : 'hidden'}>
         <AnalysisSection prospectId={id} />

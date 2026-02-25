@@ -56,6 +56,43 @@ type EvidenceItem = {
   confidenceScore: number;
 };
 
+type SourceDiagnostic = {
+  source: string;
+  status: 'ok' | 'warning' | 'error' | 'skipped';
+  message: string;
+};
+
+function parseDiagnostics(summary: unknown): SourceDiagnostic[] {
+  if (!summary || typeof summary !== 'object' || Array.isArray(summary)) {
+    return [];
+  }
+  const diagnostics = (summary as Record<string, unknown>).diagnostics;
+  if (!Array.isArray(diagnostics)) return [];
+
+  const normalized: SourceDiagnostic[] = [];
+  for (const item of diagnostics) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+    const raw = item as Record<string, unknown>;
+    const source = typeof raw.source === 'string' ? raw.source.trim() : '';
+    const message = typeof raw.message === 'string' ? raw.message.trim() : '';
+    const status =
+      raw.status === 'ok' ||
+      raw.status === 'warning' ||
+      raw.status === 'error' ||
+      raw.status === 'skipped'
+        ? raw.status
+        : null;
+    if (!source || !message || !status) continue;
+    normalized.push({ source, status, message });
+  }
+
+  return normalized;
+}
+
+function sourceLabel(source: string): string {
+  return toSentenceCase(source.replace(/_/g, ' '));
+}
+
 function EvidenceCard({ item }: { item: EvidenceItem }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -108,12 +145,20 @@ function EvidenceCard({ item }: { item: EvidenceItem }) {
 export function EvidenceSection({
   prospectId,
   signals,
+  latestRunSummary,
+  latestRunError,
 }: {
   prospectId: string;
   signals?: Signal[];
+  latestRunSummary?: unknown;
+  latestRunError?: string | null;
 }) {
   const evidence = api.research.listEvidence.useQuery({ prospectId });
   const items: EvidenceItem[] = evidence.data ?? [];
+  const diagnostics = parseDiagnostics(latestRunSummary);
+  const actionableDiagnostics = diagnostics.filter(
+    (item) => item.status === 'warning' || item.status === 'error',
+  );
 
   // Group by sourceType
   const groups: Record<string, EvidenceItem[]> = {};
@@ -151,6 +196,32 @@ export function EvidenceSection({
 
   return (
     <div className="space-y-6">
+      {(latestRunError || actionableDiagnostics.length > 0) && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-amber-700 mb-2">
+            Source Diagnostics
+          </p>
+          {latestRunError && (
+            <p className="text-xs text-amber-800 font-medium mb-2">
+              Research run error: {latestRunError}
+            </p>
+          )}
+          <div className="space-y-1.5">
+            {actionableDiagnostics.map((item) => (
+              <p
+                key={`${item.source}:${item.message}`}
+                className="text-xs text-amber-800"
+              >
+                <span className="font-semibold">
+                  {sourceLabel(item.source)}:
+                </span>{' '}
+                {item.message}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Buying Signals */}
       {signals && signals.length > 0 && (
         <div>

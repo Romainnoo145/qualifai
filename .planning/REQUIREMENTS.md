@@ -20,8 +20,8 @@ Requirements for Production Bootstrap milestone. Each maps to roadmap phases.
 
 ### Pipeline Validation
 
-- [ ] **PIPE-01**: Research pipeline runs successfully on real company websites
-- [ ] **PIPE-02**: API failures (crawl timeouts, SerpAPI rate limits, KvK errors) surface user-visible error messages instead of silent failures
+- [x] **PIPE-01**: Research pipeline runs successfully on real company websites
+- [x] **PIPE-02**: API failures (crawl timeouts, SerpAPI rate limits, KvK errors) surface user-visible error messages instead of silent failures
 - [ ] **PIPE-03**: Evidence extraction produces relevant hypotheses for real marketing agencies
 
 ### Quality Calibration
@@ -80,8 +80,8 @@ Requirements for Verified Pain Intelligence milestone. Focus: better evidence ac
 | SEED-03     | Phase 24 — Data Population     | Complete |
 | DISC-01     | Phase 24 — Data Population     | Complete |
 | DISC-02     | Phase 24 — Data Population     | Complete |
-| PIPE-01     | Phase 25 — Pipeline Hardening  | Pending  |
-| PIPE-02     | Phase 25 — Pipeline Hardening  | Pending  |
+| PIPE-01     | Phase 25 — Pipeline Hardening  | Complete |
+| PIPE-02     | Phase 25 — Pipeline Hardening  | Complete |
 | PIPE-03     | Phase 25 — Pipeline Hardening  | Pending  |
 | QUAL-01     | Phase 26 — Quality Calibration | Pending  |
 | QUAL-02     | Phase 26 — Quality Calibration | Pending  |
@@ -107,4 +107,4 @@ Requirements for Verified Pain Intelligence milestone. Focus: better evidence ac
 ---
 
 _Requirements defined: 2026-02-23_
-_Last updated: 2026-02-24 after completing Phase 23 (SEED-01/SEED-02)_
+_Last updated: 2026-02-25 after completing Phase 25-01/25-02 (PIPE-01/PIPE-02)_

@@ -77,6 +77,22 @@ function dedupeEvidenceDrafts<
   return unique;
 }
 
+type SourceStatus = 'ok' | 'warning' | 'error' | 'skipped';
+
+interface SourceDiagnostic {
+  source:
+    | 'sitemap'
+    | 'website'
+    | 'reviews'
+    | 'serp'
+    | 'crawl4ai'
+    | 'google_mentions'
+    | 'kvk'
+    | 'linkedin';
+  status: SourceStatus;
+  message: string;
+}
+
 export async function executeResearchRun(
   db: PrismaClient,
   input: {
@@ -130,12 +146,26 @@ export async function executeResearchRun(
         },
       })
     : null;
+  const diagnostics: SourceDiagnostic[] = [];
 
   // Sitemap discovery — always runs (zero API cost)
   // Cache was pre-read before run create/update
   const sitemapUrls = isSitemapCacheValid
     ? sitemapCache.urls
     : await discoverSitemapUrls(prospect.domain);
+  if (sitemapUrls.length > 0) {
+    diagnostics.push({
+      source: 'sitemap',
+      status: 'ok',
+      message: `Sitemap discovery found ${sitemapUrls.length} URLs.`,
+    });
+  } else {
+    diagnostics.push({
+      source: 'sitemap',
+      status: 'warning',
+      message: 'No sitemap URLs discovered for this domain.',
+    });
+  }
 
   // Build fresh cache object when we actually fetched sitemap
   const freshSitemapCache: SitemapCache | undefined =
@@ -189,11 +219,37 @@ export async function executeResearchRun(
   );
 
   const websiteEvidenceDrafts = await ingestWebsiteEvidenceDrafts(researchUrls);
+  if (websiteEvidenceDrafts.length > 0) {
+    diagnostics.push({
+      source: 'website',
+      status: 'ok',
+      message: `Website ingestion produced ${websiteEvidenceDrafts.length} evidence items.`,
+    });
+  } else {
+    diagnostics.push({
+      source: 'website',
+      status: 'warning',
+      message: 'Website ingestion returned no evidence.',
+    });
+  }
   const baseEvidenceDrafts = generateEvidenceDrafts(
     prospect,
     nonReviewManualUrls,
   );
   const reviewEvidenceDrafts = await ingestReviewEvidenceDrafts(reviewUrls);
+  if (reviewEvidenceDrafts.length > 0) {
+    diagnostics.push({
+      source: 'reviews',
+      status: 'ok',
+      message: `Review ingestion produced ${reviewEvidenceDrafts.length} evidence items.`,
+    });
+  } else {
+    diagnostics.push({
+      source: 'reviews',
+      status: 'warning',
+      message: 'Review ingestion returned no evidence.',
+    });
+  }
 
   const allDrafts = [
     ...reviewEvidenceDrafts,
@@ -217,12 +273,37 @@ export async function executeResearchRun(
       Date.now() - new Date(serpCache.discoveredAt).getTime() <
         24 * 60 * 60 * 1000;
 
+    const serpApiConfigured = Boolean(process.env.SERP_API_KEY);
+    if (!serpApiConfigured) {
+      diagnostics.push({
+        source: 'serp',
+        status: 'warning',
+        message:
+          'SERP_API_KEY is not configured; deep discovery sources are limited.',
+      });
+    }
+
     const serpResult: SerpDiscoveryResult = isCacheValid
       ? serpCache
       : await discoverSerpUrls({
           companyName: prospect.companyName,
           domain: prospect.domain,
         });
+    const serpDiscoveredCount =
+      serpResult.reviewUrls.length + serpResult.jobUrls.length;
+    if (serpDiscoveredCount > 0) {
+      diagnostics.push({
+        source: 'serp',
+        status: 'ok',
+        message: `SERP discovery found ${serpDiscoveredCount} URLs.`,
+      });
+    } else {
+      diagnostics.push({
+        source: 'serp',
+        status: 'warning',
+        message: 'SERP discovery returned no review/job URLs.',
+      });
+    }
 
     // Persist cache in inputSnapshot for future retries
     if (!isCacheValid) {
@@ -243,8 +324,30 @@ export async function executeResearchRun(
     // Extract content via Crawl4AI for discovered URLs
     const serpUrls = [...serpResult.reviewUrls, ...serpResult.jobUrls];
     if (serpUrls.length > 0) {
-      const serpEvidenceDrafts = await ingestCrawl4aiEvidenceDrafts(serpUrls);
-      allDrafts.push(...serpEvidenceDrafts);
+      try {
+        const serpEvidenceDrafts = await ingestCrawl4aiEvidenceDrafts(serpUrls);
+        allDrafts.push(...serpEvidenceDrafts);
+        diagnostics.push({
+          source: 'crawl4ai',
+          status: serpEvidenceDrafts.length > 0 ? 'ok' : 'warning',
+          message:
+            serpEvidenceDrafts.length > 0
+              ? `Crawl4AI produced ${serpEvidenceDrafts.length} evidence items.`
+              : 'Crawl4AI returned no evidence for discovered URLs.',
+        });
+      } catch (err) {
+        diagnostics.push({
+          source: 'crawl4ai',
+          status: 'error',
+          message: `Crawl4AI extraction failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        });
+      }
+    } else {
+      diagnostics.push({
+        source: 'crawl4ai',
+        status: 'skipped',
+        message: 'Crawl4AI skipped because no SERP URLs were discovered.',
+      });
     }
 
     // Google search mentions (EVID-07) — 3 queries, gated behind deepCrawl
@@ -264,21 +367,80 @@ export async function executeResearchRun(
           metadata: { adapter: 'serp-google-search', source: 'google-mention' },
         });
       }
+      diagnostics.push({
+        source: 'google_mentions',
+        status: googleMentions.length > 0 ? 'ok' : 'warning',
+        message:
+          googleMentions.length > 0
+            ? `Google mentions produced ${googleMentions.length} evidence items.`
+            : 'Google mentions returned no results.',
+      });
     } catch (err) {
       console.error('[Google Search] mention discovery failed:', err);
+      diagnostics.push({
+        source: 'google_mentions',
+        status: 'error',
+        message: `Google mention discovery failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      });
     }
+  } else {
+    diagnostics.push({
+      source: 'serp',
+      status: 'skipped',
+      message: 'SERP discovery skipped (deep crawl disabled).',
+    });
+    diagnostics.push({
+      source: 'crawl4ai',
+      status: 'skipped',
+      message: 'Crawl4AI skipped (deep crawl disabled).',
+    });
+    diagnostics.push({
+      source: 'google_mentions',
+      status: 'skipped',
+      message: 'Google mention discovery skipped (deep crawl disabled).',
+    });
   }
 
   // KvK registry enrichment (EVID-09) — runs for all Dutch prospects with a companyName
   if (prospect.companyName) {
-    try {
-      const kvkData = await fetchKvkData(prospect.companyName);
-      if (kvkData) {
-        allDrafts.push(kvkDataToEvidenceDraft(kvkData));
+    if (!process.env.KVK_API_KEY) {
+      diagnostics.push({
+        source: 'kvk',
+        status: 'warning',
+        message: 'KVK_API_KEY is not configured; KvK enrichment skipped.',
+      });
+    } else {
+      try {
+        const kvkData = await fetchKvkData(prospect.companyName);
+        if (kvkData) {
+          allDrafts.push(kvkDataToEvidenceDraft(kvkData));
+          diagnostics.push({
+            source: 'kvk',
+            status: 'ok',
+            message: 'KvK enrichment returned company profile data.',
+          });
+        } else {
+          diagnostics.push({
+            source: 'kvk',
+            status: 'warning',
+            message: 'KvK enrichment returned no match.',
+          });
+        }
+      } catch (err) {
+        console.error('[KvK] enrichment failed, continuing without:', err);
+        diagnostics.push({
+          source: 'kvk',
+          status: 'error',
+          message: `KvK enrichment failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        });
       }
-    } catch (err) {
-      console.error('[KvK] enrichment failed, continuing without:', err);
     }
+  } else {
+    diagnostics.push({
+      source: 'kvk',
+      status: 'skipped',
+      message: 'KvK enrichment skipped because company name is missing.',
+    });
   }
 
   // LinkedIn profile evidence from Apollo-derived data (EVID-08 — reliable, no network call)
@@ -303,6 +465,11 @@ export async function executeResearchRun(
       workflowTag: 'workflow-context',
       confidenceScore: 0.74,
       metadata: { adapter: 'apollo-derived', source: 'linkedin-profile' },
+    });
+    diagnostics.push({
+      source: 'linkedin',
+      status: 'ok',
+      message: 'LinkedIn context synthesized from Apollo profile data.',
     });
   }
 
@@ -334,10 +501,23 @@ export async function executeResearchRun(
           confidenceScore: 0.72,
           metadata: { adapter: 'crawl4ai', source: 'linkedin' },
         });
+      } else {
+        diagnostics.push({
+          source: 'linkedin',
+          status: 'warning',
+          message:
+            'LinkedIn page is behind an auth wall; browser extraction skipped.',
+        });
       }
       // If authwall: skip silently — don't create fallback for LinkedIn
     } catch {
       // LinkedIn extraction failure is expected — skip silently
+      diagnostics.push({
+        source: 'linkedin',
+        status: 'warning',
+        message:
+          'LinkedIn browser extraction failed; using Apollo profile context only.',
+      });
     }
   }
 
@@ -454,7 +634,9 @@ export async function executeResearchRun(
     });
   }
 
-  const summary = runSummaryPayload(gate, campaign);
+  const summary = runSummaryPayload(gate, campaign, {
+    diagnostics,
+  });
   const completed = await db.researchRun.update({
     where: { id: run.id },
     data: {
