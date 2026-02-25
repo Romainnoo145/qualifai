@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { adminProcedure, router } from '../trpc';
 import { env } from '@/env.mjs';
 import { scanVaultForUseCases } from '@/lib/vault-reader';
+import { analyzeCodebase } from '@/lib/codebase-analyzer';
 import {
   inventoryToCandidates,
   offersToCandidates,
@@ -228,4 +229,52 @@ export const useCasesRouter = router({
       errors: scanResult.errors,
     };
   }),
+
+  importFromCodebase: adminProcedure
+    .input(
+      z.object({
+        projectPath: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const analysis = await analyzeCodebase(input.projectPath);
+      let created = 0;
+      let skipped = 0;
+
+      for (const candidate of analysis.candidates) {
+        const existing = await ctx.db.useCase.findFirst({
+          where: { sourceRef: candidate.sourceRef },
+        });
+
+        if (existing) {
+          skipped++;
+          continue;
+        }
+
+        await ctx.db.useCase.create({
+          data: {
+            title: candidate.title,
+            summary: candidate.summary,
+            category: candidate.category,
+            outcomes: candidate.outcomes,
+            tags: candidate.tags,
+            caseStudyRefs: [],
+            isActive: true,
+            isShipped: true,
+            sourceRef: candidate.sourceRef,
+            externalUrl: null,
+          },
+        });
+
+        created++;
+      }
+
+      return {
+        created,
+        skipped,
+        filesAnalyzed: analysis.filesAnalyzed,
+        projectName: analysis.projectName,
+        errors: analysis.errors,
+      };
+    }),
 });

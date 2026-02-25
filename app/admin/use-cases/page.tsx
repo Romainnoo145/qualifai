@@ -12,6 +12,8 @@ import {
   Tag,
   ExternalLink,
   FolderSearch,
+  CodeXml,
+  ChevronDown,
 } from 'lucide-react';
 
 type UseCase = {
@@ -54,6 +56,8 @@ function splitCsv(value: string): string[] {
 export default function UseCasesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showCodebaseForm, setShowCodebaseForm] = useState(false);
+  const [codebasePath, setCodebasePath] = useState('');
   const [form, setForm] = useState(emptyForm);
 
   const utils = api.useUtils();
@@ -104,6 +108,17 @@ export default function UseCasesPage() {
     },
   });
 
+  const codebaseImportMutation = api.useCases.importFromCodebase.useMutation({
+    onSuccess: async (data) => {
+      await utils.useCases.list.invalidate();
+      let message = `Analyzed ${data.projectName} (${data.filesAnalyzed} files). Created ${data.created} use cases, skipped ${data.skipped} duplicates.`;
+      if (data.errors.length > 0) {
+        message += `\n\nErrors:\n${data.errors.join('\n')}`;
+      }
+      window.alert(message);
+    },
+  });
+
   function startEdit(uc: UseCase) {
     setEditingId(uc.id);
     setShowCreateForm(false);
@@ -146,6 +161,8 @@ export default function UseCasesPage() {
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const list = (useCases.data ?? []) as UseCase[];
+  const codebaseInputClass =
+    'w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#040026]/5 focus:border-[#040026] transition-all';
 
   return (
     <div className="space-y-10">
@@ -208,6 +225,51 @@ export default function UseCasesPage() {
             )}
           </button>
         </div>
+      </div>
+
+      <div className="glass-card p-4 sm:p-5 space-y-3">
+        <button
+          onClick={() => setShowCodebaseForm((prev) => !prev)}
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+        >
+          <ChevronDown
+            className={`w-4 h-4 transition-transform ${showCodebaseForm ? 'rotate-180' : ''}`}
+          />
+          Analyze a project codebase...
+        </button>
+
+        {showCodebaseForm && (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <input
+              value={codebasePath}
+              onChange={(e) => setCodebasePath(e.target.value)}
+              placeholder="/home/klarifai/Documents/klarifai/projects/copifai"
+              className={codebaseInputClass}
+            />
+            <button
+              onClick={() =>
+                codebaseImportMutation.mutate({ projectPath: codebasePath })
+              }
+              disabled={
+                codebaseImportMutation.isPending ||
+                codebasePath.trim().length === 0
+              }
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50 sm:shrink-0"
+            >
+              {codebaseImportMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <CodeXml className="w-4 h-4" />
+                  Analyze Codebase
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Create form */}

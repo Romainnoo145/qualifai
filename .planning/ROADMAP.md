@@ -71,8 +71,8 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 Plans:
 
-- [ ] 23-01-PLAN.md — Vault reader: scan Obsidian markdown via AI, create UseCase records with dedup, UI button
-- [ ] 23-02-PLAN.md — Codebase analyzer: AI-powered capability extraction from project source files, UseCase record creation, UI with path input
+- [x] 23-01-PLAN.md — Vault reader: scan Obsidian markdown via AI, create UseCase records with dedup, UI button
+- [x] 23-02-PLAN.md — Codebase analyzer: AI-powered capability extraction from project source files, UseCase record creation, UI with path input
 
 ---
 
@@ -91,8 +91,8 @@ Plans:
 
 Plans:
 
-- [ ] 24-01: Run vault reader and codebase analyzer on Klarifai assets — populate service catalog
-- [ ] 24-02: Import known target companies and run Apollo discovery for new prospects
+- [x] 24-01: Run vault reader and codebase analyzer on Klarifai assets — populate service catalog
+- [x] 24-02: Import known target companies and run Apollo discovery for new prospects
 
 ---
 
@@ -238,8 +238,8 @@ Plans:
 | 20. One-Click Send Queue + Pipeline | v2.0      | 3/3            | Complete    | 2026-02-23 |
 | 21. Prospect Discovery + Cleanup    | v2.0      | 2/2            | Complete    | 2026-02-23 |
 | 22. Hypothesis Flow Fix             | v2.0      | 1/1            | Complete    | 2026-02-23 |
-| 23. Use Case Extractors             | v2.1      | 0/2            | Not started | -          |
-| 24. Data Population and Discovery   | v2.1      | 0/2            | Not started | -          |
+| 23. Use Case Extractors             | v2.1      | 2/2            | Complete    | 2026-02-24 |
+| 24. Data Population and Discovery   | v2.1      | 2/2            | Complete    | 2026-02-25 |
 | 25. Pipeline Hardening              | v2.1      | 0/3            | Not started | -          |
 | 26. Quality Calibration             | v2.1      | 0/2            | Not started | -          |
 | 27. End-to-End Cycle                | v2.1      | 0/3            | Not started | -          |

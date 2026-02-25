@@ -495,23 +495,35 @@ async function enrichCompanyWithFallbackQueries(
     { organization_domain: clean },
     { website_url: clean },
   ];
+  let sawSuccessfulResponse = false;
+  let lastError: Error | null = null;
 
   for (const query of queryCandidates) {
-    const payload = await apolloFetch<Record<string, unknown>>(
-      '/organizations/enrich',
-      {
-        query,
-        operation: 'apollo.enrichCompany',
-        prospectId,
-      },
-    );
-    const organization =
-      payload.organization && typeof payload.organization === 'object'
-        ? (payload.organization as Record<string, unknown>)
-        : payload.data && typeof payload.data === 'object'
-          ? (payload.data as Record<string, unknown>)
-          : null;
-    if (organization) return organization;
+    try {
+      const payload = await apolloFetch<Record<string, unknown>>(
+        '/organizations/enrich',
+        {
+          query,
+          operation: 'apollo.enrichCompany',
+          prospectId,
+        },
+      );
+      sawSuccessfulResponse = true;
+
+      const organization =
+        payload.organization && typeof payload.organization === 'object'
+          ? (payload.organization as Record<string, unknown>)
+          : payload.data && typeof payload.data === 'object'
+            ? (payload.data as Record<string, unknown>)
+            : null;
+      if (organization) return organization;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+    }
+  }
+
+  if (!sawSuccessfulResponse && lastError) {
+    throw lastError;
   }
 
   return null;
@@ -612,7 +624,7 @@ export const apolloProvider: EnrichmentProvider = {
     }
 
     const payload = await apolloFetch<Record<string, unknown>>(
-      '/mixed_companies/search',
+      '/organizations/search',
       {
         method: 'POST',
         operation: 'apollo.searchCompanies',

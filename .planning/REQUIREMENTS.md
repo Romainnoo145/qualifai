@@ -9,14 +9,14 @@ Requirements for Production Bootstrap milestone. Each maps to roadmap phases.
 
 ### Use Case Population
 
-- [ ] **SEED-01**: Admin can import use cases from Obsidian vault — reads project markdown files, extracts service capabilities, creates UseCase records with dedup
-- [ ] **SEED-02**: Admin can extract use cases from a project codebase — analyzes source files via AI, generates capability descriptions, creates UseCase records
-- [ ] **SEED-03**: Klarifai service catalog is populated with all relevant offerings from vault + codebases
+- [x] **SEED-01**: Admin can import use cases from Obsidian vault — reads project markdown files, extracts service capabilities, creates UseCase records with dedup
+- [x] **SEED-02**: Admin can extract use cases from a project codebase — analyzes source files via AI, generates capability descriptions, creates UseCase records
+- [x] **SEED-03**: Klarifai service catalog is populated with all relevant offerings from vault + codebases
 
 ### Prospect Seeding
 
-- [ ] **DISC-01**: Admin imports 5+ real target companies using existing import functionality
-- [ ] **DISC-02**: Admin discovers and imports new prospects via Apollo sector/location search
+- [x] **DISC-01**: Admin imports 5+ real target companies using existing import functionality
+- [x] **DISC-02**: Admin discovers and imports new prospects via Apollo sector/location search
 
 ### Pipeline Validation
 
@@ -73,27 +73,27 @@ Requirements for Verified Pain Intelligence milestone. Focus: better evidence ac
 
 ## Traceability
 
-| Requirement | Phase                          | Status  |
-| ----------- | ------------------------------ | ------- |
-| SEED-01     | Phase 23 — Use Case Extractors | Pending |
-| SEED-02     | Phase 23 — Use Case Extractors | Pending |
-| SEED-03     | Phase 24 — Data Population     | Pending |
-| DISC-01     | Phase 24 — Data Population     | Pending |
-| DISC-02     | Phase 24 — Data Population     | Pending |
-| PIPE-01     | Phase 25 — Pipeline Hardening  | Pending |
-| PIPE-02     | Phase 25 — Pipeline Hardening  | Pending |
-| PIPE-03     | Phase 25 — Pipeline Hardening  | Pending |
-| QUAL-01     | Phase 26 — Quality Calibration | Pending |
-| QUAL-02     | Phase 26 — Quality Calibration | Pending |
-| E2E-01      | Phase 27 — End-to-End Cycle    | Pending |
-| E2E-02      | Phase 27 — End-to-End Cycle    | Pending |
-| E2E-03      | Phase 27 — End-to-End Cycle    | Pending |
-| VPI-01      | Phase 28 — Source Discovery    | Pending |
-| VPI-02      | Phase 28 — Source Discovery    | Pending |
-| VPI-03      | Phase 29 — Browser Extraction  | Pending |
-| VPI-04      | Phase 29 — Browser Extraction  | Pending |
-| VPI-05      | Phase 30 — Pain Gate           | Pending |
-| VPI-06      | Phase 30 — Pain Gate           | Pending |
+| Requirement | Phase                          | Status   |
+| ----------- | ------------------------------ | -------- |
+| SEED-01     | Phase 23 — Use Case Extractors | Complete |
+| SEED-02     | Phase 23 — Use Case Extractors | Complete |
+| SEED-03     | Phase 24 — Data Population     | Complete |
+| DISC-01     | Phase 24 — Data Population     | Complete |
+| DISC-02     | Phase 24 — Data Population     | Complete |
+| PIPE-01     | Phase 25 — Pipeline Hardening  | Pending  |
+| PIPE-02     | Phase 25 — Pipeline Hardening  | Pending  |
+| PIPE-03     | Phase 25 — Pipeline Hardening  | Pending  |
+| QUAL-01     | Phase 26 — Quality Calibration | Pending  |
+| QUAL-02     | Phase 26 — Quality Calibration | Pending  |
+| E2E-01      | Phase 27 — End-to-End Cycle    | Pending  |
+| E2E-02      | Phase 27 — End-to-End Cycle    | Pending  |
+| E2E-03      | Phase 27 — End-to-End Cycle    | Pending  |
+| VPI-01      | Phase 28 — Source Discovery    | Pending  |
+| VPI-02      | Phase 28 — Source Discovery    | Pending  |
+| VPI-03      | Phase 29 — Browser Extraction  | Pending  |
+| VPI-04      | Phase 29 — Browser Extraction  | Pending  |
+| VPI-05      | Phase 30 — Pain Gate           | Pending  |
+| VPI-06      | Phase 30 — Pain Gate           | Pending  |
 
 **Coverage:**
 
@@ -107,4 +107,4 @@ Requirements for Verified Pain Intelligence milestone. Focus: better evidence ac
 ---
 
 _Requirements defined: 2026-02-23_
-_Last updated: 2026-02-24 after adding v2.2 milestone requirements_
+_Last updated: 2026-02-24 after completing Phase 23 (SEED-01/SEED-02)_

@@ -282,6 +282,9 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
   const [industry, setIndustry] = useState('');
   const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
+  const [bulkDomains, setBulkDomains] = useState('');
+  const [bulkPending, setBulkPending] = useState(false);
+  const [bulkSummary, setBulkSummary] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [results, setResults] = useState<any[] | null>(null);
   const [guardrail, setGuardrail] = useState<SearchGuardrail | null>(null);
@@ -307,6 +310,75 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const importCompany = (api.search.importCompany as any).useMutation();
+
+  const normalizeDomain = (value: string) =>
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/^(https?:\/\/)?(www\.)?/, '')
+      .split('/')[0]!;
+
+  const handleBulkImport = async () => {
+    const rows = bulkDomains
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (rows.length === 0) return;
+
+    const unique = new Map<string, string | undefined>();
+    for (const row of rows) {
+      const [rawDomain, ...nameParts] = row
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean);
+      if (!rawDomain) continue;
+      const normalizedDomain = normalizeDomain(rawDomain);
+      if (!normalizedDomain.includes('.')) continue;
+      const companyName =
+        nameParts.length > 0 ? nameParts.join(', ').trim() : undefined;
+      unique.set(normalizedDomain, companyName || undefined);
+    }
+
+    if (unique.size === 0) {
+      setBulkSummary('Geen geldige domains gevonden.');
+      return;
+    }
+
+    setBulkPending(true);
+    setBulkSummary(null);
+    try {
+      const entries = Array.from(unique.entries());
+      const batchResults = await Promise.allSettled(
+        entries.map(([importDomain, companyName]) =>
+          importCompany.mutateAsync({
+            domain: importDomain,
+            companyName,
+          }),
+        ),
+      );
+      const fulfilled = batchResults.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (result): result is PromiseFulfilledResult<any> =>
+          result.status === 'fulfilled',
+      );
+      const imported = fulfilled.filter(
+        (result) => !result.value.alreadyExists,
+      ).length;
+      const skipped = fulfilled.filter(
+        (result) => result.value.alreadyExists,
+      ).length;
+      const failed = batchResults.length - fulfilled.length;
+
+      let summary = `${imported} geïmporteerd`;
+      if (skipped > 0) summary += `, ${skipped} al aanwezig`;
+      if (failed > 0) summary += `, ${failed} mislukt`;
+      setBulkSummary(summary);
+      await utils.admin.listProspects.invalidate();
+      onImported();
+    } finally {
+      setBulkPending(false);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -435,6 +507,47 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
           )}
         </button>
       </form>
+
+      <div className="glass-card p-8 rounded-[2.5rem] space-y-4">
+        <div>
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">
+            Handmatige batch import
+          </p>
+          <p className="text-xs font-semibold text-slate-500 mt-2">
+            Plak 1 domain per regel of `domain, bedrijfsnaam` (bijv. `acme.nl,
+            Acme BV`).
+          </p>
+        </div>
+
+        <textarea
+          value={bulkDomains}
+          onChange={(e) => setBulkDomains(e.target.value)}
+          rows={6}
+          placeholder={'bedrijf-a.nl\nbedrijf-b.com, Bedrijf B'}
+          className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
+        />
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={handleBulkImport}
+            disabled={bulkPending || bulkDomains.trim().length === 0}
+            className="ui-tap flex items-center justify-center gap-3 px-6 py-3 btn-pill-primary text-xs font-black uppercase tracking-widest disabled:opacity-50"
+          >
+            {bulkPending ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Importeren...
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" /> Domains importeren
+              </>
+            )}
+          </button>
+          {bulkSummary && (
+            <p className="text-xs font-bold text-emerald-700">{bulkSummary}</p>
+          )}
+        </div>
+      </div>
 
       {results !== null && (
         <div className="space-y-6">
