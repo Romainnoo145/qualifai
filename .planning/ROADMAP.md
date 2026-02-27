@@ -113,7 +113,8 @@ Plans:
 
 - [x] 25-01: Run research pipeline on real prospects — document which sources succeed and which fail
 - [x] 25-02: Implement user-visible error handling for API failures (Crawl4AI, SerpAPI, KvK)
-- [ ] 25-03: Validate hypothesis quality on real marketing agency data
+- [x] 25-03: Validate hypothesis quality on real marketing agency data
+- [x] 25-04: Integrate Scrapling as stealth fetcher — replace raw fetch(), increase snippet limits to 700 chars
 
 ---
 
@@ -240,7 +241,7 @@ Plans:
 | 22. Hypothesis Flow Fix             | v2.0      | 1/1            | Complete    | 2026-02-23 |
 | 23. Use Case Extractors             | v2.1      | 2/2            | Complete    | 2026-02-24 |
 | 24. Data Population and Discovery   | v2.1      | 2/2            | Complete    | 2026-02-25 |
-| 25. Pipeline Hardening              | v2.1      | 2/3            | In progress | -          |
+| 25. Pipeline Hardening              | v2.1      | 4/4            | Complete    | 2026-02-27 |
 | 26. Quality Calibration             | v2.1      | 0/2            | Not started | -          |
 | 27. End-to-End Cycle                | v2.1      | 0/3            | Not started | -          |
 | 28. Source Discovery Upgrade        | v2.2      | 0/2            | Not started | -          |

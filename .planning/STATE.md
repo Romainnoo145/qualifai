@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 ## Current Position
 
 Phase: 25 of 27 (Pipeline Hardening)
-Plan: 2 of 3 in current phase
+Plan: 4 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-25 — Phase 25-02 completed (source diagnostics surfaced in UI)
+Last activity: 2026-02-27 — Phase 25-04 completed (Scrapling stealth fetcher integrated)
 
-Progress: [█████░░░░░] 50% (v2.1 — 6/12 plans complete)
+Progress: [██████░░░░] 60% (v2.1 — 8/12 plans complete)
 
 ## Milestones Shipped
 
@@ -39,6 +39,9 @@ Progress: [█████░░░░░] 50% (v2.1 — 6/12 plans complete)
 
 ### Decisions (Recent)
 
+- [Phase 25-04]: Use DynamicFetcher (not PlayWrightFetcher) — correct class name in Scrapling 0.4.1
+- [Phase 25-04]: Run sync Scrapling fetchers in ThreadPoolExecutor to avoid asyncio event loop conflict
+- [Phase 25-04]: Override Scrapling base image ENTRYPOINT with uv run uvicorn to access venv
 - [Phase 22]: Admin reviews research quality, not hypothesis content — prospect validates own pain points on /voor/
 - [Phase 20]: Idempotency guard must ship in same phase as one-click send UI — never separate
 - [v2.1 scope]: SEED-01/02 are new features (build first); DISC-01/02 use existing Phase 21 Apollo search (validate only)
@@ -62,6 +65,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-25
-Stopped at: Phase 25 in progress (25-01 and 25-02 complete)
-Resume with: `/gsd:plan-phase 25-03`
+Last session: 2026-02-27
+Stopped at: Phase 25-04 complete (Scrapling stealth fetcher integrated, all 4 plans in phase complete)
+Resume with: `/gsd:new-milestone` or `/gsd:plan-phase 26`
