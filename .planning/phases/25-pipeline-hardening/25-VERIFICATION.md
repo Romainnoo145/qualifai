@@ -1,7 +1,7 @@
 ---
 phase: 25-pipeline-hardening
 verified: 2026-02-27T00:00:00Z
-status: human_needed
+status: passed
 score: 4/4 must-haves verified
 gaps:
   - truth: 'PIPE-03 marked Pending in REQUIREMENTS.md despite 5/5 prospects passing hypothesis gate'

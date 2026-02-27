@@ -107,7 +107,7 @@ Plans:
 2. When Crawl4AI times out, SerpAPI hits rate limits, or KvK returns an error, the admin sees a user-visible error message — not a silent empty result
 3. Evidence extraction produces at least one relevant workflow pain point hypothesis per real prospect
 4. Research quality gate correctly classifies each result as red, amber, or green
-   **Plans:** TBD
+   **Plans:** 4/2 plans complete
 
 Plans:
 
@@ -241,7 +241,7 @@ Plans:
 | 22. Hypothesis Flow Fix             | v2.0      | 1/1            | Complete    | 2026-02-23 |
 | 23. Use Case Extractors             | v2.1      | 2/2            | Complete    | 2026-02-24 |
 | 24. Data Population and Discovery   | v2.1      | 2/2            | Complete    | 2026-02-25 |
-| 25. Pipeline Hardening              | v2.1      | 4/4            | Complete    | 2026-02-27 |
+| 25. Pipeline Hardening              | v2.1      | Complete       | 2026-02-27  | 2026-02-27 |
 | 26. Quality Calibration             | v2.1      | 0/2            | Not started | -          |
 | 27. End-to-End Cycle                | v2.1      | 0/3            | Not started | -          |
 | 28. Source Discovery Upgrade        | v2.2      | 0/2            | Not started | -          |
