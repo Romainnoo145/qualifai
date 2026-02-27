@@ -1,5 +1,6 @@
 import { inferSourceType, type EvidenceDraft } from '@/lib/workflow-engine';
 import type { EvidenceSourceType } from '@prisma/client';
+import { fetchStealth } from '@/lib/enrichment/scrapling';
 
 type WorkflowTag =
   | 'planning'
@@ -99,7 +100,7 @@ function extractMetaDescription(html: string): string | null {
   );
   if (!match?.[1]) return null;
   const value = normalizeWhitespace(match[1]);
-  return value.length >= 30 ? value.slice(0, 260) : null;
+  return value.length >= 30 ? value.slice(0, 700) : null;
 }
 
 function detectWorkflowTag(
@@ -135,8 +136,8 @@ function firstReadableSnippet(text: string): string {
   const sentences = normalizeWhitespace(text)
     .split(/(?<=[.!?])\s+/)
     .map((line) => normalizeWhitespace(line))
-    .filter((line) => line.length >= 35 && line.length <= 260);
-  return sentences[0] ?? normalizeWhitespace(text).slice(0, 220);
+    .filter((line) => line.length >= 35 && line.length <= 700);
+  return sentences[0] ?? normalizeWhitespace(text).slice(0, 600);
 }
 
 function baseConfidence(sourceType: EvidenceSourceType): number {
@@ -263,31 +264,46 @@ export async function ingestWebsiteEvidenceDrafts(
   for (const sourceUrl of uniqueUrls(urls)) {
     const sourceType = sourceTypeForUrl(sourceUrl);
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 9000);
-      const response = await fetch(sourceUrl, {
-        method: 'GET',
-        headers: {
-          'user-agent':
-            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Qualifai/1.0',
-          accept:
-            'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
+      // Try Scrapling StealthyFetcher first (bypasses bot detection)
+      let html: string | null = null;
 
-      if (!response.ok) {
-        // 404/410 = page doesn't exist, not evidence — skip entirely
-        if (response.status === 404 || response.status === 410) {
+      const scrapling = await fetchStealth(sourceUrl);
+      if (scrapling.ok && scrapling.html.length > 200) {
+        html = scrapling.html;
+      } else {
+        // Fallback: raw fetch (for local/intranet pages or when Scrapling service is down)
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 9000);
+          const response = await fetch(sourceUrl, {
+            method: 'GET',
+            headers: {
+              'user-agent':
+                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Qualifai/1.0',
+              accept:
+                'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            },
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+          if (response.ok) {
+            html = await response.text();
+          } else if (response.status === 404 || response.status === 410) {
+            continue;
+          } else {
+            drafts.push(fallbackDraft(sourceUrl, sourceType));
+            continue;
+          }
+        } catch {
+          drafts.push(fallbackDraft(sourceUrl, sourceType));
           continue;
         }
-        // Other errors (500, 503, rate limits) = page might exist
+      }
+
+      if (!html) {
         drafts.push(fallbackDraft(sourceUrl, sourceType));
         continue;
       }
-
-      const html = await response.text();
 
       // Detect soft 404s (200 OK but "not found" content)
       if (looksLikeSoft404(html)) {
