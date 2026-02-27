@@ -39,6 +39,8 @@ Progress: [██████░░░░] 60% (v2.1 — 8/12 plans complete)
 
 ### Decisions (Recent)
 
+- [Phase 25-03]: generateHypothesisDraftsAI is primary generator; old templates renamed generateFallbackHypothesisDrafts (internal fallback, not exported)
+- [Phase 25-03]: Hypothesis re-run bug deferred to Phase 26 — re-run does not clear old hypotheses before inserting new ones (creates template + AI duplicate rows)
 - [Phase 25-04]: Use DynamicFetcher (not PlayWrightFetcher) — correct class name in Scrapling 0.4.1
 - [Phase 25-04]: Run sync Scrapling fetchers in ThreadPoolExecutor to avoid asyncio event loop conflict
 - [Phase 25-04]: Override Scrapling base image ENTRYPOINT with uv run uvicorn to access venv
@@ -58,6 +60,8 @@ Progress: [██████░░░░] 60% (v2.1 — 8/12 plans complete)
 - SERP cache re-read after overwrite (Phase 8 bug) — cache on re-runs always treated as stale
 - List-view traffic light uses hardcoded approximation (sourceTypeCount=1, confidence=0.65) — fixed in Phase 26 (QUAL-02)
 - Unused logoUrl prop in DashboardClient interface
+- Old construction-industry templates not cleared on research re-run — old + new hypotheses co-exist in DB; delete-before-insert needed in executeResearchRun (Phase 26)
+- Hypothesis insertion lacks idempotency guard — duplicate entries on double re-run for deondernemer.nl and motiondesignawards.com (Phase 26)
 
 ### Blockers/Concerns
 
