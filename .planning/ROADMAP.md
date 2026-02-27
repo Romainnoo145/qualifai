@@ -130,10 +130,12 @@ Plans:
 3. At least one real prospect clears green threshold and at least one lands at amber — thresholds are meaningfully distinguishing
    **Plans:** TBD
 
+**Plans:** 2 plans
+
 Plans:
 
-- [ ] 26-01: Calibrate amber/green thresholds from real research results — update config values
-- [ ] 26-02: Fix list-view traffic light to use real per-prospect quality data instead of hardcoded approximation
+- [ ] 26-01-PLAN.md — Calibrate thresholds: create quality-config.ts constants, update computeTrafficLight, fix hypothesis re-run idempotency, human approval checkpoint
+- [ ] 26-02-PLAN.md — Fix list-view traffic light: extend listProspects with summary, use real sourceTypeCount in QualityChip, enforce AMBER hard gate in sendEmail
 
 ---
 
