@@ -2,7 +2,7 @@ import {
   evaluateQualityGate,
   generateEvidenceDrafts,
   inferSourceType,
-  generateHypothesisDrafts,
+  generateHypothesisDraftsAI,
   generateOpportunityDrafts,
   runSummaryPayload,
 } from '@/lib/workflow-engine';
@@ -573,13 +573,22 @@ export async function executeResearchRun(
     })),
   );
 
-  const hypotheses = generateHypothesisDrafts(
+  const hypotheses = await generateHypothesisDraftsAI(
     evidenceRecords.map((item) => ({
       id: item.id,
       sourceType: item.sourceType,
       workflowTag: item.workflowTag,
       confidenceScore: item.confidenceScore,
+      snippet: item.snippet,
+      sourceUrl: item.sourceUrl,
+      title: item.title,
     })),
+    {
+      companyName: prospect.companyName,
+      industry: prospect.industry,
+      specialties: prospect.specialties,
+      description: prospect.description,
+    },
   );
   for (const hypothesis of hypotheses) {
     await db.workflowHypothesis.create({
