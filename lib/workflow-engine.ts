@@ -544,7 +544,198 @@ function defaultEvidenceRefs(evidence: EvidenceInput[]): string[] {
     .map((item) => item.id);
 }
 
-export function generateHypothesisDrafts(
+interface AIEvidenceInput {
+  id: string;
+  sourceType: EvidenceSourceType;
+  workflowTag: string;
+  confidenceScore: number;
+  snippet: string;
+  sourceUrl: string;
+  title: string | null;
+}
+
+interface AIProspectContext {
+  companyName: string | null;
+  industry: string | null;
+  specialties: string[];
+  description: string | null;
+}
+
+interface AIHypothesisItem {
+  title: string;
+  problemStatement: string;
+  assumptions: string[];
+  validationQuestions: string[];
+  workflowTag: string;
+  confidenceScore: number;
+  evidenceRefs: string[];
+}
+
+export async function generateHypothesisDraftsAI(
+  evidence: AIEvidenceInput[],
+  prospectContext: AIProspectContext,
+): Promise<HypothesisDraft[]> {
+  const METRIC_DEFAULTS = {
+    hoursSavedWeekLow: 4,
+    hoursSavedWeekMid: 8,
+    hoursSavedWeekHigh: 14,
+    handoffSpeedGainPct: 28,
+    errorReductionPct: 20,
+    revenueLeakageRecoveredLow: 400,
+    revenueLeakageRecoveredMid: 900,
+    revenueLeakageRecoveredHigh: 2000,
+  };
+
+  const VALID_WORKFLOW_TAGS = new Set([
+    'content-production',
+    'client-reporting',
+    'project-management',
+    'lead-intake',
+    'creative-briefing',
+    'billing',
+    'handoff',
+  ]);
+
+  try {
+    // Filter to confident, non-empty snippet items and take top 12
+    const filteredEvidence = evidence
+      .filter(
+        (item) => item.confidenceScore >= 0.6 && item.snippet.trim().length > 0,
+      )
+      .sort((a, b) => b.confidenceScore - a.confidenceScore)
+      .slice(0, 12);
+
+    const evidenceLines = filteredEvidence
+      .map(
+        (item) =>
+          `[${item.sourceType}] ${item.sourceUrl}: ${item.snippet.slice(0, 200)}`,
+      )
+      .join('\n');
+
+    const specialtiesStr =
+      prospectContext.specialties.length > 0
+        ? prospectContext.specialties.join(', ')
+        : 'unknown';
+
+    const prompt = `You are analyzing evidence from a Dutch marketing bureau's public web presence to identify specific workflow automation pain points that Klarifai (an AI implementation consultancy) could solve.
+
+IMPORTANT: These are marketing agencies (bureaus), not construction companies. Focus on marketing/creative workflow pain: content production bottlenecks, client reporting overhead, briefing-to-delivery friction, project management chaos, manual campaign reporting, etc.
+
+Only output JSON. No markdown fences. No explanation.
+
+Company context:
+- Name: ${prospectContext.companyName ?? 'Unknown'}
+- Industry: ${prospectContext.industry ?? 'Marketing/digital agency'}
+- Specialties: ${specialtiesStr}
+- Description: ${prospectContext.description ?? 'No description available'}
+
+Evidence gathered from their public web presence:
+${evidenceLines || 'No specific evidence snippets available — reason from company context only.'}
+
+Based on the company context and evidence above, identify 3 distinct workflow pain hypotheses specific to this company's industry and activities. Each hypothesis must:
+- Be specific to marketing/creative/digital agency workflows (NOT construction, field-service, or generic)
+- Be grounded in the evidence or company context provided
+- Have a workflowTag from this list ONLY: content-production, client-reporting, project-management, lead-intake, creative-briefing, billing, handoff
+- Have a confidenceScore between 0.6 and 0.9 reflecting how specifically the evidence supports the pain
+- Include 2-3 evidenceRefs (sourceUrls from the evidence list above that support this hypothesis)
+
+Return ONLY a JSON array with exactly this schema:
+[
+  {
+    "title": "...",
+    "problemStatement": "...",
+    "assumptions": ["...", "..."],
+    "validationQuestions": ["...", "..."],
+    "workflowTag": "...",
+    "confidenceScore": 0.0,
+    "evidenceRefs": ["<sourceUrl>", "..."]
+  }
+]`;
+
+    const model = getGenAI().getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const response = await model.generateContent(prompt);
+    const text = response.response.text();
+
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      throw new Error('No JSON array in AI response');
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]) as AIHypothesisItem[];
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('AI response parsed to empty or non-array');
+    }
+
+    // Build a lookup from sourceUrl -> evidence id
+    const urlToId = new Map<string, string>(
+      evidence.map((item) => [item.sourceUrl, item.id]),
+    );
+
+    const fallback = defaultEvidenceRefs(
+      evidence.map((item) => ({
+        id: item.id,
+        sourceType: item.sourceType,
+        workflowTag: item.workflowTag,
+        confidenceScore: item.confidenceScore,
+      })),
+    );
+
+    return parsed.map((item): HypothesisDraft => {
+      // Map evidenceRefs from URLs to IDs
+      const resolvedRefs = (item.evidenceRefs ?? [])
+        .map((ref: string) => urlToId.get(ref))
+        .filter((id): id is string => id !== undefined);
+      const evidenceRefIds = resolvedRefs.length > 0 ? resolvedRefs : fallback;
+
+      const workflowTag = VALID_WORKFLOW_TAGS.has(item.workflowTag)
+        ? item.workflowTag
+        : 'project-management';
+
+      const confidenceScore =
+        typeof item.confidenceScore === 'number' &&
+        item.confidenceScore >= 0.5 &&
+        item.confidenceScore <= 1.0
+          ? item.confidenceScore
+          : 0.7;
+
+      // workflowTag is used internally by AI but not part of HypothesisDraft schema
+      void workflowTag;
+
+      return {
+        title: String(item.title ?? 'Untitled hypothesis'),
+        problemStatement: String(item.problemStatement ?? ''),
+        assumptions: Array.isArray(item.assumptions)
+          ? item.assumptions.map(String)
+          : [],
+        confidenceScore,
+        evidenceRefs: evidenceRefIds,
+        validationQuestions: Array.isArray(item.validationQuestions)
+          ? item.validationQuestions.map(String)
+          : [],
+        ...METRIC_DEFAULTS,
+      };
+    });
+  } catch (err) {
+    console.warn(
+      '[generateHypothesisDraftsAI] AI generation failed, falling back to templates:',
+      err instanceof Error ? err.message : err,
+    );
+    return generateFallbackHypothesisDrafts(
+      evidence.map((item) => ({
+        id: item.id,
+        sourceType: item.sourceType,
+        workflowTag: item.workflowTag,
+        confidenceScore: item.confidenceScore,
+      })),
+    );
+  }
+}
+
+// Keep backward-compat export so callers can still import generateHypothesisDrafts
+// until they are updated to use generateHypothesisDraftsAI.
+export { generateFallbackHypothesisDrafts as generateHypothesisDrafts };
+
+function generateFallbackHypothesisDrafts(
   evidence: EvidenceInput[],
 ): HypothesisDraft[] {
   const fallback = defaultEvidenceRefs(evidence);
