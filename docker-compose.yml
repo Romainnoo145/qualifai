@@ -21,6 +21,13 @@ services:
     volumes:
       - qualifai_redis_data:/data
 
+  scrapling:
+    build: ./services/scrapling
+    container_name: qualifai-scrapling
+    restart: unless-stopped
+    ports:
+      - '3010:3010'
+
 volumes:
   qualifai_postgres_data:
   qualifai_redis_data:
