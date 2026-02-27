@@ -37,6 +37,10 @@ Progress: [██████░░░░] 60% (v2.1 — 8/12 plans complete)
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 26.1 inserted after Phase 26: Evidence Pipeline Expansion (URGENT) — deepCrawl always-on, Scrapling for reviews, Google News RSS, LinkedIn source type fix, Trustpilot direct scrape
+
 ### Decisions (Recent)
 
 - [Phase 25-03]: generateHypothesisDraftsAI is primary generator; old templates renamed generateFallbackHypothesisDrafts (internal fallback, not exported)
