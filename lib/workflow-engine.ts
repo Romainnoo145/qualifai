@@ -1,5 +1,11 @@
 import { env } from '@/env.mjs';
 import {
+  MIN_EVIDENCE_COUNT,
+  AMBER_MIN_SOURCE_TYPES,
+  GREEN_MIN_SOURCE_TYPES,
+  MIN_AVERAGE_CONFIDENCE,
+} from '@/lib/quality-config';
+import {
   type AutomationOpportunity,
   type Campaign,
   type EvidenceSourceType,
@@ -506,22 +512,30 @@ export interface QualityBreakdown {
 /**
  * computeTrafficLight — pure function mapping evidence metrics to a traffic light.
  *
- * Red:   critically thin evidence (< 3 items) — definitely needs attention
- * Amber: minor shortfall (low source diversity OR low confidence) — warn + allow proceed
- * Green: all thresholds met — good to go
+ * Red:   critically thin evidence (< MIN_EVIDENCE_COUNT items OR 0 source types)
+ * Amber: limited source diversity (sourceTypeCount < GREEN_MIN_SOURCE_TYPES) —
+ *        BLOCKS send until admin explicitly reviews and approves
+ * Green: strong multi-source evidence (sourceTypeCount >= GREEN_MIN_SOURCE_TYPES)
  *
- * Mirrors the thresholds from evaluateQualityGate but returns three states
- * instead of binary pass/fail. The soft-gate principle means amber never blocks.
+ * Primary signal: source type diversity.
+ * Thresholds defined in lib/quality-config.ts.
  */
 export function computeTrafficLight(
   evidenceCount: number,
   sourceTypeCount: number,
   averageConfidence: number,
 ): TrafficLight {
-  if (evidenceCount < 3) return 'red';
-  if (sourceTypeCount < 2 || averageConfidence < 0.65) return 'amber';
+  if (evidenceCount < MIN_EVIDENCE_COUNT || sourceTypeCount < 1) return 'red';
+  if (
+    sourceTypeCount < GREEN_MIN_SOURCE_TYPES ||
+    averageConfidence < MIN_AVERAGE_CONFIDENCE
+  )
+    return 'amber';
   return 'green';
 }
+
+// AMBER_MIN_SOURCE_TYPES documents the lower bound for amber (1 type → red, 2 types → amber, 3+ types → green)
+void AMBER_MIN_SOURCE_TYPES;
 
 function selectEvidenceIdsByTag(
   evidence: EvidenceInput[],

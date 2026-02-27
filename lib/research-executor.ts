@@ -573,6 +573,11 @@ export async function executeResearchRun(
     })),
   );
 
+  // Clear existing hypotheses before inserting new ones — ensures re-runs are idempotent
+  await db.workflowHypothesis.deleteMany({
+    where: { researchRunId: run.id },
+  });
+
   const hypotheses = await generateHypothesisDraftsAI(
     evidenceRecords.map((item) => ({
       id: item.id,
