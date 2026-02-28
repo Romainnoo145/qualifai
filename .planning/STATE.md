@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v2.1 Production Bootstrap — Phase 26.1: Evidence Pipeline Expansion
+**Current focus:** v2.1 Production Bootstrap — Phase 26: Quality Calibration
 
 ## Current Position
 
-Phase: 26.1 of 27 (Evidence Pipeline Expansion)
-Plan: 3 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-28 — Phase 26.1-03 completed (LinkedIn posts via Scrapling, replacing Crawl4AI LinkedIn extraction)
+Phase: 26 of 27 (Quality Calibration)
+Plan: 1 of 1 in current phase
+Status: Complete
+Last activity: 2026-02-28 — Phase 26-01 completed (quality threshold calibration against 5 real prospects, hypothesis idempotency fix)
 
-Progress: [███████░░░] 69% (v2.1 — 11/13 plans complete)
+Progress: [████████░░] 77% (v2.1 — 12/13 plans complete)
 
 ## Milestones Shipped
 
@@ -43,6 +43,10 @@ Progress: [███████░░░] 69% (v2.1 — 11/13 plans complete)
 
 ### Decisions (Recent)
 
+- [Phase 26-01]: MIN_AVERAGE_CONFIDENCE=0.65 retained as meaningful secondary signal — Brainport Eindhoven had 5 source types but avgConf 0.64, correctly classified AMBER
+- [Phase 26-01]: Thresholds approved as-is: GREEN_MIN_SOURCE_TYPES=3, AMBER_MIN_SOURCE_TYPES=2, MIN_EVIDENCE_COUNT=3, MIN_AVERAGE_CONFIDENCE=0.65
+- [Phase 26-01]: AMBER is a HARD gate (not soft warn-and-proceed) — send queue requires qualityApproved===true for AMBER prospects
+- [Phase 26-01]: Active source types for quality scoring: WEBSITE, CAREERS, LINKEDIN, NEWS, REVIEWS (KVK/REGISTRY inactive — no API key)
 - [Phase 26.1-02]: Google Reviews uses Google Search page (not Maps embed) — simpler to scrape, same snippet data available
 - [Phase 26.1-02]: Google News uses native fetch RSS (not Scrapling) — public XML feed, no bot detection needed
 - [Phase 26.1-02]: Empty-result recording mandatory for REVIEWS and NEWS — confidenceScore 0.1, notFound:true metadata distinguishes "tried/not-found" from "not-tried"
@@ -65,7 +69,6 @@ Progress: [███████░░░] 69% (v2.1 — 11/13 plans complete)
 
 ### Pending Todos
 
-- Calibrate amber/green quality thresholds against real prospect data (becomes QUAL-01 in Phase 26)
 - Run real prospect validation session on /voor/ before building features that depend on hypothesis confirmation signal
 - Plan Phase 28 with concrete Google/sitemap/manual discovery architecture and data model updates
 
@@ -74,8 +77,7 @@ Progress: [███████░░░] 69% (v2.1 — 11/13 plans complete)
 - SERP cache re-read after overwrite (Phase 8 bug) — cache on re-runs always treated as stale
 - List-view traffic light uses hardcoded approximation (sourceTypeCount=1, confidence=0.65) — fixed in Phase 26 (QUAL-02)
 - Unused logoUrl prop in DashboardClient interface
-- Old construction-industry templates not cleared on research re-run — old + new hypotheses co-exist in DB; delete-before-insert needed in executeResearchRun (Phase 26)
-- Hypothesis insertion lacks idempotency guard — duplicate entries on double re-run for deondernemer.nl and motiondesignawards.com (Phase 26)
+- List-view traffic light still uses hardcoded approximation — fixed constants now in quality-config.ts but list-view component not yet updated (Phase 26 QUAL-02)
 
 ### Blockers/Concerns
 
@@ -84,5 +86,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Phase 26.1-03 complete (LinkedIn posts via Scrapling, empty-result recording, evidence cap 48)
-Resume with: Phase 26.1 complete — advance to Phase 26 or next milestone
+Stopped at: Phase 26-01 complete (quality threshold calibration, 4 GREEN 1 AMBER 0 RED, hypothesis idempotency fix)
+Resume with: Phase 26 complete — advance to Phase 27 (quality gate UI) or next milestone

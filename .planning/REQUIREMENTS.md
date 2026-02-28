@@ -26,7 +26,7 @@ Requirements for Production Bootstrap milestone. Each maps to roadmap phases.
 
 ### Quality Calibration
 
-- [ ] **QUAL-01**: Amber/green quality thresholds are calibrated using real research results
+- [x] **QUAL-01**: Amber/green quality thresholds are calibrated using real research results
 - [ ] **QUAL-02**: List-view traffic light accuracy improved (resolve hardcoded approximate values)
 
 ### End-to-End Cycle
@@ -83,7 +83,7 @@ Requirements for Verified Pain Intelligence milestone. Focus: better evidence ac
 | PIPE-01     | Phase 25 — Pipeline Hardening  | Complete |
 | PIPE-02     | Phase 25 — Pipeline Hardening  | Complete |
 | PIPE-03     | Phase 25 — Pipeline Hardening  | Complete |
-| QUAL-01     | Phase 26 — Quality Calibration | Pending  |
+| QUAL-01     | Phase 26 — Quality Calibration | Complete |
 | QUAL-02     | Phase 26 — Quality Calibration | Pending  |
 | E2E-01      | Phase 27 — End-to-End Cycle    | Pending  |
 | E2E-02      | Phase 27 — End-to-End Cycle    | Pending  |

@@ -134,7 +134,7 @@ Plans:
 
 Plans:
 
-- [ ] 26-01-PLAN.md — Calibrate thresholds: create quality-config.ts constants, update computeTrafficLight, fix hypothesis re-run idempotency, human approval checkpoint
+- [x] 26-01-PLAN.md — Calibrate thresholds: create quality-config.ts constants, update computeTrafficLight, fix hypothesis re-run idempotency, human approval checkpoint
 - [ ] 26-02-PLAN.md — Fix list-view traffic light: extend listProspects with summary, use real sourceTypeCount in QualityChip, enforce AMBER hard gate in sendEmail
 
 ---
@@ -148,9 +148,9 @@ Plans:
 
 Plans:
 
-- [ ] 26.1-01-PLAN.md — Schema extension (LINKEDIN + NEWS enum values), SERP ungating, domain filter on Google mentions, LinkedIn source type backfill script
-- [ ] 26.1-02-PLAN.md — Google Reviews via Scrapling + Google News RSS + wire both into pipeline with empty-result recording
-- [ ] 26.1-03-PLAN.md — LinkedIn company posts via Scrapling + wire into pipeline replacing Crawl4AI LinkedIn
+- [x] 26.1-01-PLAN.md — Schema extension (LINKEDIN + NEWS enum values), SERP ungating, domain filter on Google mentions, LinkedIn source type backfill script
+- [x] 26.1-02-PLAN.md — Google Reviews via Scrapling + Google News RSS + wire both into pipeline with empty-result recording
+- [x] 26.1-03-PLAN.md — LinkedIn company posts via Scrapling + wire into pipeline replacing Crawl4AI LinkedIn
 
 #### Phase 27: End-to-End Cycle
 
@@ -257,7 +257,7 @@ Plans:
 | 23. Use Case Extractors             | v2.1      | 2/2            | Complete    | 2026-02-24 |
 | 24. Data Population and Discovery   | v2.1      | 2/2            | Complete    | 2026-02-25 |
 | 25. Pipeline Hardening              | v2.1      | Complete       | 2026-02-27  | 2026-02-27 |
-| 26. Quality Calibration             | v2.1      | 0/2            | Not started | -          |
+| 26. Quality Calibration             | v2.1      | 1/2            | In progress | -          |
 | 27. End-to-End Cycle                | v2.1      | 0/3            | Not started | -          |
 | 28. Source Discovery Upgrade        | v2.2      | 0/2            | Not started | -          |
 | 29. Browser Evidence Extraction     | v2.2      | 0/2            | Not started | -          |
