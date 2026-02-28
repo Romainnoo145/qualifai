@@ -213,6 +213,7 @@ export function inferSourceType(url: string): EvidenceSourceType {
   ) {
     return 'REVIEWS';
   }
+  if (lowered.includes('linkedin.com')) return 'LINKEDIN';
   if (lowered.includes('manual://')) return 'MANUAL_URL';
   return 'WEBSITE';
 }
@@ -392,6 +393,8 @@ const CONTEXT_SOURCE_TYPES = new Set<EvidenceSourceType>([
   'DOCS',
   'HELP_CENTER',
   'REGISTRY',
+  'LINKEDIN',
+  'NEWS',
 ]);
 const JOB_SOURCE_TYPES = new Set<EvidenceSourceType>(['CAREERS', 'JOB_BOARD']);
 const PAIN_WORKFLOW_TAGS = new Set([

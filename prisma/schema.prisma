@@ -69,6 +69,8 @@ enum EvidenceSourceType {
   REVIEWS
   MANUAL_URL
   REGISTRY  // KvK Handelsregister data
+  LINKEDIN  // Company posts and profile from LinkedIn public pages
+  NEWS      // Google News RSS mentions and press coverage
 }
 
 enum HypothesisStatus {
