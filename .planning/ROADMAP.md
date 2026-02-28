@@ -154,21 +154,21 @@ Plans:
 
 #### Phase 27: End-to-End Cycle
 
-**Goal:** At least one real outreach email is sent, received, and replied to — with the reply correctly triaged and a Cal.com booking triggering an automatic meeting brief.
+**Goal:** At least one real outreach email is sent, received, and replied to — with the reply correctly triaged. Cal.com booking validation deferred.
 **Depends on:** Phase 26 (calibrated quality gate needed before sending real outreach)
 **Requirements:** E2E-01, E2E-02, E2E-03
 **Success Criteria** (what must be TRUE):
 
 1. Admin sends a real outreach email to a real prospect via the send queue — email is delivered and not caught by spam
-2. A real reply from the prospect is received via webhook and correctly triaged (interested / not interested / auto-reply)
-3. A Cal.com booking from a real prospect triggers automatic meeting brief generation — brief appears in the prospect's Results section
-   **Plans:** TBD
+2. A real reply from the prospect is received via webhook and correctly triaged (interested / not interested)
+3. Cal.com booking (E2E-03) deferred to follow-up phase
+
+**Plans:** 2 plans
 
 Plans:
 
-- [ ] 27-01: Send real outreach email via send queue — verify delivery and record outcome
-- [ ] 27-02: Verify reply webhook receives and triages real responses
-- [ ] 27-03: Verify Cal.com booking triggers meeting brief generation end-to-end
+- [ ] 27-01-PLAN.md — DNS pre-flight + send 2 real outreach emails via Resend to info@klarifai.nl, verify delivery
+- [ ] 27-02-PLAN.md — Post 2 realistic replies to inbound webhook, verify triage (interested + not-interested)
 
 ---
 
@@ -258,7 +258,7 @@ Plans:
 | 24. Data Population and Discovery   | v2.1      | 2/2            | Complete    | 2026-02-25 |
 | 25. Pipeline Hardening              | v2.1      | Complete       | 2026-02-27  | 2026-02-27 |
 | 26. Quality Calibration             | 2/2       | Complete       | 2026-02-28  | -          |
-| 27. End-to-End Cycle                | v2.1      | 0/3            | Not started | -          |
+| 27. End-to-End Cycle                | v2.1      | 0/2            | Not started | -          |
 | 28. Source Discovery Upgrade        | v2.2      | 0/2            | Not started | -          |
 | 29. Browser Evidence Extraction     | v2.2      | 0/2            | Not started | -          |
 | 30. Pain Confirmation Gate          | v2.2      | 0/2            | Not started | -          |
