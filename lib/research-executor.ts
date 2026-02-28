@@ -13,10 +13,8 @@ import {
   discoverGoogleSearchMentions,
   type SerpDiscoveryResult,
 } from '@/lib/enrichment/serp';
-import {
-  ingestCrawl4aiEvidenceDrafts,
-  extractMarkdown,
-} from '@/lib/enrichment/crawl4ai';
+import { ingestCrawl4aiEvidenceDrafts } from '@/lib/enrichment/crawl4ai';
+import { fetchLinkedInPosts } from '@/lib/enrichment/linkedin-posts';
 import {
   discoverSitemapUrls,
   type SitemapCache,
@@ -88,7 +86,8 @@ interface SourceDiagnostic {
     | 'crawl4ai'
     | 'google_mentions'
     | 'kvk'
-    | 'linkedin';
+    | 'linkedin'
+    | 'linkedin_posts';
   status: SourceStatus;
   message: string;
 }
@@ -399,6 +398,11 @@ export async function executeResearchRun(
       status: 'skipped',
       message: 'Google mention discovery skipped (deep crawl disabled).',
     });
+    diagnostics.push({
+      source: 'linkedin_posts',
+      status: 'skipped',
+      message: 'LinkedIn posts skipped (deep crawl disabled).',
+    });
   }
 
   // KvK registry enrichment (EVID-09) — runs for all Dutch prospects with a companyName
@@ -473,55 +477,52 @@ export async function executeResearchRun(
     });
   }
 
-  // LinkedIn browser extraction attempt (EVID-08 — best-effort, often blocked by authwall)
+  // LinkedIn company posts via Scrapling (replaces Crawl4AI LinkedIn extraction)
   if (input.deepCrawl && prospect.linkedinUrl) {
     try {
-      const { markdown, title } = await extractMarkdown(prospect.linkedinUrl);
-
-      // Detect LinkedIn authwall redirect
-      const isAuthwall =
-        !markdown ||
-        markdown.length < 200 ||
-        [
-          'authwall',
-          'log in to linkedin',
-          'join linkedin',
-          'sign in',
-          'leden login',
-        ].some((phrase) => markdown.toLowerCase().includes(phrase));
-
-      if (!isAuthwall) {
+      const linkedinPostDrafts = await fetchLinkedInPosts({
+        linkedinUrl: prospect.linkedinUrl,
+        companyName: prospect.companyName,
+      });
+      allDrafts.push(...linkedinPostDrafts);
+      // Empty result recording — always record the attempt (distinguishes "not found" from "not tried")
+      if (linkedinPostDrafts.length === 0) {
         allDrafts.push({
           sourceType: 'LINKEDIN',
           sourceUrl: prospect.linkedinUrl,
-          title:
-            title || `${prospect.companyName ?? prospect.domain} - LinkedIn`,
-          snippet: markdown.slice(0, 240).replace(/\n+/g, ' ').trim(),
+          title: `${prospect.companyName ?? prospect.domain} - LinkedIn Posts (geen resultaten)`,
+          snippet:
+            'LinkedIn company posts page could not be scraped (auth wall or blocking).',
           workflowTag: 'workflow-context',
-          confidenceScore: 0.73,
-          metadata: { adapter: 'crawl4ai', source: 'linkedin' },
-        });
-      } else {
-        diagnostics.push({
-          source: 'linkedin',
-          status: 'warning',
-          message:
-            'LinkedIn page is behind an auth wall; browser extraction skipped.',
+          confidenceScore: 0.1,
+          metadata: { adapter: 'linkedin-posts-scrapling', notFound: true },
         });
       }
-      // If authwall: skip silently — don't create fallback for LinkedIn
-    } catch {
-      // LinkedIn extraction failure is expected — skip silently
       diagnostics.push({
-        source: 'linkedin',
-        status: 'warning',
+        source: 'linkedin_posts',
+        status: linkedinPostDrafts.length > 0 ? 'ok' : 'warning',
         message:
-          'LinkedIn browser extraction failed; using Apollo profile context only.',
+          linkedinPostDrafts.length > 0
+            ? `LinkedIn posts scraped ${linkedinPostDrafts.length} post snippets.`
+            : 'LinkedIn posts page was blocked or empty; placeholder recorded.',
+      });
+    } catch (err) {
+      console.error('[LinkedIn Posts] scrape failed:', err);
+      diagnostics.push({
+        source: 'linkedin_posts',
+        status: 'error',
+        message: `LinkedIn posts scrape failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
       });
     }
+  } else if (!prospect.linkedinUrl) {
+    diagnostics.push({
+      source: 'linkedin_posts',
+      status: 'skipped',
+      message: 'LinkedIn posts skipped: no linkedinUrl on prospect.',
+    });
   }
 
-  const evidenceDrafts = dedupeEvidenceDrafts(allDrafts).slice(0, 36);
+  const evidenceDrafts = dedupeEvidenceDrafts(allDrafts).slice(0, 48);
 
   const evidenceRecords: Array<{
     id: string;
