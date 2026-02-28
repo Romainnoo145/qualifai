@@ -311,15 +311,16 @@ function AllCompanies() {
                   <PipelineChip stage={stage} />
                   {(() => {
                     const run = prospect.researchRuns?.[0];
-                    return run ? (
+                    return (
                       <QualityChip
-                        runId={run.id}
-                        evidenceCount={run._count.evidenceItems}
-                        hypothesisCount={run._count.workflowHypotheses}
-                        qualityApproved={run.qualityApproved}
-                        qualityReviewedAt={run.qualityReviewedAt}
+                        runId={run?.id ?? null}
+                        evidenceCount={run?._count.evidenceItems ?? 0}
+                        hypothesisCount={run?._count.workflowHypotheses ?? 0}
+                        qualityApproved={run?.qualityApproved ?? null}
+                        qualityReviewedAt={run?.qualityReviewedAt ?? null}
+                        summary={run?.summary}
                       />
-                    ) : null;
+                    );
                   })()}
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-400 mt-2">

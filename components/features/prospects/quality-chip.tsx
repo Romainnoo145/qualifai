@@ -12,6 +12,8 @@ interface QualityChipProps {
   hypothesisCount: number;
   qualityApproved: boolean | null; // null = not reviewed
   qualityReviewedAt: Date | string | null;
+  /** Summary JSON from ResearchRun.summary — contains gate.sourceTypeCount and gate.averageConfidence */
+  summary?: unknown;
   /** Optional: for detail view where we have full data */
   runStatus?: string;
 }
@@ -54,6 +56,7 @@ export function QualityChip({
   hypothesisCount,
   qualityApproved,
   qualityReviewedAt,
+  summary,
 }: QualityChipProps) {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -101,11 +104,28 @@ export function QualityChip({
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
-  // No research run yet — show nothing
-  if (!runId) return null;
+  // No research run yet — show grey placeholder chip
+  if (!runId) {
+    return (
+      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border bg-slate-50 text-slate-400 border-slate-100">
+        Geen data
+      </span>
+    );
+  }
 
-  // Compute traffic light from list-view data (worst-case: assume 1 source type)
-  const trafficLight = computeTrafficLight(evidenceCount, 1, 0.65);
+  // Extract real quality metrics from stored gate data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const gate = (summary as any)?.gate;
+  const realSourceTypeCount: number =
+    typeof gate?.sourceTypeCount === 'number' ? gate.sourceTypeCount : 1;
+  const realAvgConf: number =
+    typeof gate?.averageConfidence === 'number' ? gate.averageConfidence : 0.65;
+
+  const trafficLight = computeTrafficLight(
+    evidenceCount,
+    realSourceTypeCount,
+    realAvgConf,
+  );
 
   // If we have full run data use it for a more accurate display.
   // Cast as any to avoid TS2589 deep inference from Prisma — established project pattern.

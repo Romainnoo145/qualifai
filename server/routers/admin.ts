@@ -456,6 +456,7 @@ export const adminRouter = router({
               status: true,
               qualityApproved: true,
               qualityReviewedAt: true,
+              summary: true,
               _count: {
                 select: { evidenceItems: true, workflowHypotheses: true },
               },
