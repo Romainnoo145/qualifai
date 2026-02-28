@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v2.1 Production Bootstrap — Phase 25: Pipeline Hardening
+**Current focus:** v2.1 Production Bootstrap — Phase 26.1: Evidence Pipeline Expansion
 
 ## Current Position
 
-Phase: 25 of 27 (Pipeline Hardening)
-Plan: 4 of 4 in current phase
+Phase: 26.1 of 27 (Evidence Pipeline Expansion)
+Plan: 1 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-27 — Phase 25-04 completed (Scrapling stealth fetcher integrated)
+Last activity: 2026-02-28 — Phase 26.1-01 completed (LINKEDIN/NEWS schema foundation + SERP domain filter + backfill script)
 
-Progress: [██████░░░░] 60% (v2.1 — 8/12 plans complete)
+Progress: [██████░░░░] 62% (v2.1 — 9/13 plans complete)
 
 ## Milestones Shipped
 
@@ -43,6 +43,10 @@ Progress: [██████░░░░] 60% (v2.1 — 8/12 plans complete)
 
 ### Decisions (Recent)
 
+- [Phase 26.1-01]: LinkedIn evidence uses sourceType LINKEDIN (not WEBSITE) — both apollo-derived and crawl4ai sources
+- [Phase 26.1-01]: CONTEXT_SOURCE_TYPES includes LINKEDIN and NEWS — external social proof counts as context for quality gate
+- [Phase 26.1-01]: Own-domain filtering added to discoverGoogleSearchMentions to prevent duplicate SERP + WEBSITE evidence
+- [Phase 26.1-01]: Installed @types/pg devDependency — fixes pre-existing TS7016 in scripts/rerun-hypotheses.ts too
 - [Phase 25-03]: generateHypothesisDraftsAI is primary generator; old templates renamed generateFallbackHypothesisDrafts (internal fallback, not exported)
 - [Phase 25-03]: Hypothesis re-run bug deferred to Phase 26 — re-run does not clear old hypotheses before inserting new ones (creates template + AI duplicate rows)
 - [Phase 25-04]: Use DynamicFetcher (not PlayWrightFetcher) — correct class name in Scrapling 0.4.1
@@ -73,6 +77,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-27
-Stopped at: Phase 25-04 complete (Scrapling stealth fetcher integrated, all 4 plans in phase complete)
-Resume with: `/gsd:new-milestone` or `/gsd:plan-phase 26`
+Last session: 2026-02-28
+Stopped at: Phase 26.1-01 complete (LINKEDIN/NEWS schema foundation, SERP domain filter, backfill script)
+Resume with: Phase 26.1-02 (next evidence pipeline expansion plan)
