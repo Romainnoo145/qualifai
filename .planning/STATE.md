@@ -11,10 +11,10 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 
 Phase: 27 of 27 (End-to-End Cycle)
 Plan: 2 of 2 in current phase
-Status: In Progress (Phase 27-01 complete; Phase 27-02 reply-triage pending)
-Last activity: 2026-02-28 — Phase 27-01 complete: 2 emails delivered to info@klarifai.nl inbox (not spam), confirmed by human
+Status: Complete (Phase 27 fully done — all plans complete)
+Last activity: 2026-02-28 — Phase 27-02 complete: reply triage pipeline proven end-to-end (interested → ENGAGED, not_fit → close_lost), human-verified in admin UI
 
-Progress: [█████████░] 96% (v2.1 — 15/16 plans complete)
+Progress: [██████████] 100% (v2.1 — 16/16 plans complete)
 
 ## Milestones Shipped
 
@@ -43,6 +43,10 @@ Progress: [█████████░] 96% (v2.1 — 15/16 plans complete)
 
 ### Decisions (Recent)
 
+- [Phase 27-02]: De Ondernemer had no OutreachSequence — CLOSED_LOST update correctly skipped (sequence required for that path)
+- [Phase 27-02]: Mujjo triaged as interested (confidence=0.87): suggestedAction=book_teardown, prospect status ENGAGED
+- [Phase 27-02]: De Ondernemer triaged as not_fit (confidence=0.78): suggestedAction=close_lost, outreachStatus=REPLIED
+- [Phase 27-02]: Dutch reply keyword matching works: 'klinkt goed'/'laten we'/'gesprek' → interested; 'geen budget'/'niet relevant' → not_fit
 - [Phase 27-01]: Verified Resend sending domain is mail.klarifai.nl (not klarifai.nl) — from address must be romano@mail.klarifai.nl for sends to be accepted
 - [Phase 27-01]: Both E2E test emails delivered to info@klarifai.nl inbox (not spam) — Resend msgIds: Mujjo 976a7bb7, De Ondernemer 0b84e093
 - [Phase 27-01]: DKIM for resend.\_domainkey.klarifai.nl not yet configured — required before production sends at volume
@@ -93,5 +97,5 @@ Progress: [█████████░] 96% (v2.1 — 15/16 plans complete)
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 27-01-PLAN.md (E2E send + delivery confirmed); Phase 27-02 reply-triage is next
-Resume with: Execute Phase 27-02 — POST 2 realistic replies to the inbound webhook and verify interested/not-interested triage paths
+Stopped at: Completed 27-02-PLAN.md — full E2E cycle complete (send + reply triage both proven)
+Resume with: Start v2.2 milestone planning with `/gsd:new-milestone` — Phases 28-30: verified pain intelligence
