@@ -13,7 +13,9 @@
  * Note: AMBER is a HARD gate (not soft warn-and-proceed). The send queue will
  * not allow outreach for AMBER prospects unless qualityApproved === true.
  *
- * Calibrated: 2026-02-27 against real Dutch marketing agency prospects.
+ * Calibrated: 2026-02-28 against 5 real prospects with expanded evidence pipeline (5 source types).
+ * Distribution: 4 GREEN, 1 AMBER, 0 RED. MIN_AVERAGE_CONFIDENCE=0.65 is a meaningful secondary signal.
+ * Active source types: WEBSITE, CAREERS, LINKEDIN, NEWS, REVIEWS (KVK/REGISTRY inactive — no API key).
  * See: .planning/phases/26-quality-calibration/26-01-SUMMARY.md for calibration data.
  */
 
