@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/components/providers';
 import { cn } from '@/lib/utils';
-import { computeTrafficLight } from '@/lib/workflow-engine';
+import { computeTrafficLight } from '@/lib/quality-config';
 import { Check, Loader2, RefreshCw } from 'lucide-react';
 
 interface QualityChipProps {

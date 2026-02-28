@@ -26,7 +26,7 @@ const { Resend } = require('resend');
 
 const TEST_RECIPIENT = 'info@klarifai.nl';
 const FROM_EMAIL =
-  process.env.OUTREACH_FROM_EMAIL ?? 'Romano Groenewoud <romano@mail.klarifai.nl>';
+  process.env.OUTREACH_FROM_EMAIL ?? 'Romano Kanters <info@klarifai.nl>';
 const REPLY_TO_EMAIL =
   process.env.OUTREACH_REPLY_TO_EMAIL ?? 'info@klarifai.nl';
 const APP_URL =
@@ -84,7 +84,7 @@ function buildEmailHtml(prospect, contact, hypothesis) {
   <p>Je kunt direct een moment pakken via: <a href="${APP_URL}/cal">klarifai.nl/plan</a></p>
 
   <p>Met vriendelijke groet,<br>
-  <strong>Romano Groenewoud</strong><br>
+  <strong>Romano Kanters</strong><br>
   Klarifai — AI-gedreven procesautomatisering<br>
   <a href="https://klarifai.nl">klarifai.nl</a></p>
 </div>`;
@@ -109,7 +109,7 @@ Dit is precies het soort probleem dat we bij vergelijkbare bedrijven hebben opge
 Je kunt direct een moment pakken via: ${APP_URL}/cal
 
 Met vriendelijke groet,
-Romano Groenewoud
+Romano Kanters
 Klarifai — AI-gedreven procesautomatisering
 klarifai.nl`;
 }

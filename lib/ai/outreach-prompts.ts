@@ -46,7 +46,7 @@ RULES:
 - Reference how AI/data could help their specific industry or department
 - End with a clear, low-commitment CTA (e.g., "Would a 15-minute call make sense?")
 - Tone: Professional but warm, European sensibility, not salesy
-- Sign off as "Romano Groenewoud, Klarifai"
+- Sign off as "Romano Kanters, Klarifai"
 - Do NOT use exclamation marks excessively
 
 Respond with JSON:

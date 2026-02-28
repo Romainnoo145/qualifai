@@ -30,3 +30,26 @@ export const GREEN_MIN_SOURCE_TYPES = 3;
 
 /** Minimum average confidence score (secondary signal, used when source types alone are borderline) */
 export const MIN_AVERAGE_CONFIDENCE = 0.65;
+
+/** Traffic light tier for prospect quality gating */
+export type TrafficLight = 'red' | 'amber' | 'green';
+
+/**
+ * computeTrafficLight — pure function mapping evidence metrics to a traffic light.
+ *
+ * Client-safe: no Node.js dependencies. Used by both server (workflow-engine)
+ * and client (quality-chip) components.
+ */
+export function computeTrafficLight(
+  evidenceCount: number,
+  sourceTypeCount: number,
+  averageConfidence: number,
+): TrafficLight {
+  if (evidenceCount < MIN_EVIDENCE_COUNT || sourceTypeCount < 1) return 'red';
+  if (
+    sourceTypeCount < GREEN_MIN_SOURCE_TYPES ||
+    averageConfidence < MIN_AVERAGE_CONFIDENCE
+  )
+    return 'amber';
+  return 'green';
+}

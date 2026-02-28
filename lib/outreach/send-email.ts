@@ -8,7 +8,7 @@ import { assessEmailForOutreach } from '@/lib/outreach/quality';
 const resend = new Resend(env.RESEND_API_KEY);
 
 const FROM_EMAIL =
-  process.env.OUTREACH_FROM_EMAIL ?? 'Romano Groenewoud <info@klarifai.nl>';
+  process.env.OUTREACH_FROM_EMAIL ?? 'Romano Kanters <info@klarifai.nl>';
 const REPLY_TO_EMAIL =
   process.env.OUTREACH_REPLY_TO_EMAIL ?? 'info@klarifai.nl';
 const UNSUBSCRIBE_EMAIL =

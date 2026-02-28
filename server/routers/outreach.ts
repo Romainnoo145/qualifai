@@ -370,7 +370,7 @@ export const outreachRouter = router({
 <p>I've put together a personalized AI discovery for ${prospect.companyName ?? prospect.domain}. It shows specific opportunities where AI could add value to your business.</p>
 <p><a href="${wizardUrl}" style="display:inline-block;padding:12px 24px;background:#0A0A23;color:white;text-decoration:none;border-radius:8px;font-weight:600;">View Your AI Discovery</a></p>
 <p>Takes about 3 minutes to explore. I'd love to hear your thoughts.</p>
-<p>Best,<br>Romano Groenewoud<br>Klarifai</p>`;
+<p>Best,<br>Romano Kanters<br>Klarifai</p>`;
 
       const bodyText = `Hi ${contact.firstName},
 
@@ -381,7 +381,7 @@ View it here: ${wizardUrl}
 Takes about 3 minutes to explore. I'd love to hear your thoughts.
 
 Best,
-Romano Groenewoud
+Romano Kanters
 Klarifai`;
 
       return sendOutreachEmail({

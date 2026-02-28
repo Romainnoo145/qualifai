@@ -1,14 +1,7 @@
 'use client';
 
 import { api } from '@/components/providers';
-import {
-  ExternalLink,
-  Database,
-  Link2,
-  FileText,
-  MessageSquare,
-  Briefcase,
-} from 'lucide-react';
+import { ExternalLink, Database, Briefcase } from 'lucide-react';
 
 type Finding = {
   id: string;
@@ -58,32 +51,24 @@ function compactUrl(url: string): string {
   }
 }
 
-function sourceIcon(sourceType: string) {
-  const upper = sourceType.toUpperCase();
-  if (upper === 'REVIEWS') return MessageSquare;
-  if (upper === 'CAREERS' || upper === 'JOB_BOARD') return Briefcase;
-  if (upper === 'DOCS' || upper === 'HELP_CENTER') return FileText;
-  return Link2;
-}
-
 function matchVisual(pct: number): { badge: string } {
   if (pct >= 95) {
+    return {
+      badge: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    };
+  }
+  if (pct >= 80) {
     return {
       badge: 'bg-emerald-50/70 text-emerald-700 border-emerald-100',
     };
   }
-  if (pct >= 85) {
-    return {
-      badge: 'bg-blue-50/70 text-blue-700 border-blue-100',
-    };
-  }
   if (pct >= 70) {
     return {
-      badge: 'bg-slate-100 text-slate-700 border-slate-200',
+      badge: 'bg-amber-50/70 text-amber-700 border-amber-200',
     };
   }
   return {
-    badge: 'bg-slate-100 text-slate-600 border-slate-200',
+    badge: 'bg-slate-100 text-slate-500 border-slate-200',
   };
 }
 
@@ -92,97 +77,112 @@ function FindingCard({ finding }: { finding: Finding }) {
   const more = finding.evidenceItems.length - visible.length;
 
   return (
-    <div className="glass-card p-5 space-y-4 rounded-[1.6rem] hover:border-slate-200 transition-colors">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3 min-w-0">
-          <span
-            className={`text-[9px] uppercase font-extrabold tracking-widest px-2.5 py-1 rounded-full border shadow-sm shrink-0 ${STATUS_PILL[finding.status] ?? STATUS_PILL.DRAFT}`}
-          >
-            {STATUS_LABELS[finding.status] ?? 'Pending validation'}
-          </span>
-          <div className="min-w-0">
-            <h3 className="text-[15px] font-bold text-[#040026] leading-snug">
-              {finding.title}
-            </h3>
-            <span className="text-[10px] text-slate-400 font-medium">
+    <div className="glass-card p-5 rounded-[1.4rem] border border-slate-100 hover:border-slate-200 transition-colors">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span
+              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] shrink-0 ${STATUS_PILL[finding.status] ?? STATUS_PILL.DRAFT}`}
+            >
+              {STATUS_LABELS[finding.status] ?? 'Pending validation'}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-slate-200 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-slate-500 bg-slate-50/70">
               {finding.kind === 'hypothesis' ? 'Challenge' : 'Improvement'}
             </span>
           </div>
+          <h3 className="text-[15px] font-black text-[#040026] leading-tight line-clamp-2">
+            {finding.title}
+          </h3>
         </div>
       </div>
 
-      <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-3">
+      <p className="mt-3 text-[13px] text-slate-600 leading-relaxed line-clamp-3">
         {finding.summary}
       </p>
 
-      <div className="space-y-4 relative z-10 pt-1">
-        <div className="space-y-3">
-          <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-            <Database className="w-3.5 h-3.5" /> Insights
-          </h4>
-          {visible.length > 0 ? (
-            <div className="space-y-3">
-              {visible.map((ev) => (
-                <div
-                  key={ev.id}
-                  className="rounded-xl border border-slate-100/80 bg-white px-3 py-2.5"
-                >
-                  <div className="flex items-start gap-2.5">
-                    {(() => {
-                      const Icon = sourceIcon(ev.sourceType);
-                      return (
-                        <Icon className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                      );
-                    })()}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
-                        {ev.sourceType.replace(/_/g, ' ')}
-                      </p>
+      <div className="mt-4 space-y-4">
+        <details
+          open
+          className="rounded-2xl border border-slate-100 overflow-hidden"
+        >
+          <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden px-4 py-3 flex items-center justify-between gap-3">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] flex items-center gap-1.5">
+              <Database className="w-3.5 h-3.5" /> Insights (
+              {finding.evidenceItems.length})
+            </p>
+          </summary>
+          <div className="px-4 pb-4 border-t border-slate-100/80 space-y-2.5">
+            {visible.length > 0 ? (
+              <>
+                {visible.map((ev) => (
+                  <div
+                    key={ev.id}
+                    className="glass-card p-4 rounded-[1.2rem] border border-slate-100 hover:border-slate-200 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <span className="inline-flex items-center rounded-full border border-slate-200 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-slate-500 bg-slate-50/70 mb-2">
+                          {ev.sourceType.replace(/_/g, ' ')}
+                        </span>
+                        <a
+                          href={ev.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group/link inline-flex items-start gap-2"
+                        >
+                          <p className="text-[13px] font-black text-[#040026] leading-tight line-clamp-2 group-hover/link:text-[#EBCB4B] transition-colors">
+                            {ev.title ??
+                              ev.sourceUrl.slice(0, 52) +
+                                (ev.sourceUrl.length > 52 ? '...' : '')}
+                          </p>
+                        </a>
+                        <p className="mt-0.5 text-[11px] font-medium text-slate-400 line-clamp-1">
+                          {compactUrl(ev.sourceUrl)}
+                        </p>
+                        {ev.snippet && (
+                          <p className="mt-2 text-[12px] text-slate-500 leading-relaxed line-clamp-2">
+                            {ev.snippet}
+                          </p>
+                        )}
+                      </div>
                       <a
                         href={ev.sourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[12px] font-semibold text-[#040026] hover:text-[#EBCB4B] flex items-center gap-1.5 transition-colors"
+                        className="ui-tap p-2 rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-[#040026] transition-colors shrink-0"
+                        aria-label="Open source"
                       >
-                        <span className="truncate">
-                          {ev.title ??
-                            ev.sourceUrl.slice(0, 52) +
-                              (ev.sourceUrl.length > 52 ? '...' : '')}
-                        </span>
-                        <ExternalLink className="w-3 h-3 shrink-0 text-slate-400" />
+                        <ExternalLink className="w-3 h-3" />
                       </a>
-                      <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
-                        {compactUrl(ev.sourceUrl)}
-                      </p>
-                      {ev.snippet && (
-                        <p className="text-[11px] text-slate-500 leading-relaxed mt-1 line-clamp-2">
-                          {ev.snippet}
-                        </p>
-                      )}
                     </div>
                   </div>
-                </div>
-              ))}
-              {more > 0 && (
-                <p className="text-[11px] font-medium text-slate-400">
-                  + {more} extra insight source{more !== 1 ? 's' : ''}
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400">No specific sources linked</p>
-          )}
-        </div>
-
-        <div className="pt-1 border-t border-slate-100">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Matching Solutions
-            </span>
-            <span className="h-px bg-slate-200/80 flex-1" />
+                ))}
+                {more > 0 && (
+                  <p className="text-[11px] font-medium text-slate-400 pt-1">
+                    + {more} more source{more !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-slate-400 py-2">
+                No specific sources linked
+              </p>
+            )}
           </div>
-          {finding.proofMatches.length > 0 ? (
-            <div className="grid grid-cols-1 gap-2.5 transition-all">
+        </details>
+
+        {finding.proofMatches.length > 0 && (
+          <details
+            open
+            className="rounded-2xl border border-slate-100 overflow-hidden"
+          >
+            <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden px-4 py-3 flex items-center justify-between gap-3">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] flex items-center gap-1.5">
+                <Briefcase className="w-3.5 h-3.5" /> Matching Solutions (
+                {finding.proofMatches.length})
+              </p>
+            </summary>
+            <div className="px-4 pb-4 border-t border-slate-100/80 space-y-2.5">
               {finding.proofMatches
                 .slice()
                 .sort((a, b) => b.score - a.score)
@@ -193,16 +193,16 @@ function FindingCard({ finding }: { finding: Finding }) {
                   return (
                     <div
                       key={m.id}
-                      className="group rounded-xl border border-slate-100 bg-white px-3.5 py-3 transition-colors hover:bg-slate-50"
+                      className="glass-card p-4 rounded-[1.2rem] border border-slate-100 hover:border-slate-200 transition-colors"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           {m.useCase?.category && (
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                            <span className="inline-flex items-center rounded-full border border-[#EBCB4B] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-[#040026] bg-white mb-2">
                               {m.useCase.category}
-                            </p>
+                            </span>
                           )}
-                          <p className="text-[13px] font-bold text-slate-800 group-hover:text-[#040026] transition-colors line-clamp-2 leading-snug mt-0.5">
+                          <p className="text-[13px] font-black text-[#040026] leading-tight line-clamp-2">
                             {m.useCase?.title ?? m.proofTitle}
                           </p>
                         </div>
@@ -216,13 +216,13 @@ function FindingCard({ finding }: { finding: Finding }) {
                   );
                 })}
             </div>
-          ) : (
-            <p className="text-sm text-slate-400 pb-1">
-              {/* TERM-02: "proof matching" replaced with plain language */}
-              No services matched yet — run service matching
-            </p>
-          )}
-        </div>
+          </details>
+        )}
+        {finding.proofMatches.length === 0 && (
+          <p className="text-xs text-slate-400 px-1">
+            No services matched yet — run service matching
+          </p>
+        )}
       </div>
     </div>
   );
@@ -321,7 +321,7 @@ export function AnalysisSection({ prospectId }: { prospectId: string }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <p className="text-xs font-black text-slate-400 uppercase tracking-[0.15em]">
         Analysis ({findings.length} finding{findings.length !== 1 ? 's' : ''})
       </p>
