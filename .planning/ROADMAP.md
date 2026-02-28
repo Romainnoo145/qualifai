@@ -184,7 +184,7 @@ Plans:
 2. The webhook handler creates a `callPrepPlan` record linked to the prospect's research run
 3. Sequence, step, contact, and prospect status updates are verified in the database
 
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 

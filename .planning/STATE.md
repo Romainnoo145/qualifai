@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v2.1 Production Bootstrap — Phase 27: End-to-End Cycle
+**Current focus:** Phase 27.1 gap closure — Cal.com booking validation (E2E-03)
 
 ## Current Position
 
-Phase: 27 of 27 (End-to-End Cycle)
-Plan: 2 of 2 in current phase
-Status: Complete (Phase 27 fully done — all plans complete)
-Last activity: 2026-02-28 — Phase 27-02 complete: reply triage pipeline proven end-to-end (interested → ENGAGED, not_fit → close_lost), human-verified in admin UI
+Phase: 27.1-calcom-booking-validation (gap closure after v2.1)
+Plan: 1 of 1 in current phase
+Status: Checkpoint — Task 1 complete (script created, committed 4efcebc), awaiting human verification (Task 2: run the script)
+Last activity: 2026-03-01 — Phase 27.1-01 Task 1 complete: E2E Cal.com booking test script created (562 lines, ESLint clean)
 
-Progress: [██████████] 100% (v2.1 — 16/16 plans complete)
+Progress: [██████████] 100% (v2.1 — 16/16 plans complete) + Phase 27.1 gap closure in progress
 
 ## Milestones Shipped
 
@@ -43,6 +43,9 @@ Progress: [██████████] 100% (v2.1 — 16/16 plans complete)
 
 ### Decisions (Recent)
 
+- [Phase 27.1-01]: CALCOM_WEBHOOK_SECRET must be pre-set in .env — no runtime fallback (dev server reads env at boot, so runtime injection does not work)
+- [Phase 27.1-01]: Sequence reset strategy: existing OutreachSequence reset to SENT status (not deleted) so webhook can transition to BOOKED — avoids accumulating test sequences
+- [Phase 27.1-01]: Fallback prospect search: tries mujjo.com/deondernemer.nl first, then any COMPLETED run with hypotheses+opportunities (last 20 checked)
 - [Phase 27-02]: De Ondernemer had no OutreachSequence — CLOSED_LOST update correctly skipped (sequence required for that path)
 - [Phase 27-02]: Mujjo triaged as interested (confidence=0.87): suggestedAction=book_teardown, prospect status ENGAGED
 - [Phase 27-02]: De Ondernemer triaged as not_fit (confidence=0.78): suggestedAction=close_lost, outreachStatus=REPLIED
@@ -96,6 +99,6 @@ Progress: [██████████] 100% (v2.1 — 16/16 plans complete)
 
 ## Session Continuity
 
-Last session: 2026-02-28
-Stopped at: Completed 27-02-PLAN.md — full E2E cycle complete (send + reply triage both proven)
-Resume with: Start v2.2 milestone planning with `/gsd:new-milestone` — Phases 28-30: verified pain intelligence
+Last session: 2026-03-01
+Stopped at: Phase 27.1-01 Task 1 complete — checkpoint:human-verify for Task 2 (run node scripts/e2e-calcom-booking-test.mjs)
+Resume with: After running e2e-calcom-booking-test.mjs successfully, mark phase 27.1 complete and plan v2.2 milestone with `/gsd:new-milestone` — Phases 28-30: verified pain intelligence
