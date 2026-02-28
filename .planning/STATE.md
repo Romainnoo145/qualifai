@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 ## Current Position
 
 Phase: 26.1 of 27 (Evidence Pipeline Expansion)
-Plan: 1 of 3 in current phase
+Plan: 3 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-28 — Phase 26.1-01 completed (LINKEDIN/NEWS schema foundation + SERP domain filter + backfill script)
+Last activity: 2026-02-28 — Phase 26.1-03 completed (LinkedIn posts via Scrapling, replacing Crawl4AI LinkedIn extraction)
 
-Progress: [██████░░░░] 62% (v2.1 — 9/13 plans complete)
+Progress: [███████░░░] 69% (v2.1 — 11/13 plans complete)
 
 ## Milestones Shipped
 
@@ -43,6 +43,9 @@ Progress: [██████░░░░] 62% (v2.1 — 9/13 plans complete)
 
 ### Decisions (Recent)
 
+- [Phase 26.1-03]: Replaced Crawl4AI LinkedIn extraction with Scrapling StealthyFetcher (fetchLinkedInPosts) — better stealth posture
+- [Phase 26.1-03]: Empty-result placeholder recorded with notFound=true when LinkedIn posts are blocked — distinguishes blocked from not-tried
+- [Phase 26.1-03]: Evidence cap raised from 36 to 48 — LinkedIn posts adds up to 8 new items per pipeline run
 - [Phase 26.1-01]: LinkedIn evidence uses sourceType LINKEDIN (not WEBSITE) — both apollo-derived and crawl4ai sources
 - [Phase 26.1-01]: CONTEXT_SOURCE_TYPES includes LINKEDIN and NEWS — external social proof counts as context for quality gate
 - [Phase 26.1-01]: Own-domain filtering added to discoverGoogleSearchMentions to prevent duplicate SERP + WEBSITE evidence
@@ -78,5 +81,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Phase 26.1-01 complete (LINKEDIN/NEWS schema foundation, SERP domain filter, backfill script)
-Resume with: Phase 26.1-02 (next evidence pipeline expansion plan)
+Stopped at: Phase 26.1-03 complete (LinkedIn posts via Scrapling, empty-result recording, evidence cap 48)
+Resume with: Phase 26.1 complete — advance to Phase 26 or next milestone
