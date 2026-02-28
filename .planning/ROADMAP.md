@@ -135,7 +135,7 @@ Plans:
 Plans:
 
 - [x] 26-01-PLAN.md — Calibrate thresholds: create quality-config.ts constants, update computeTrafficLight, fix hypothesis re-run idempotency, human approval checkpoint
-- [ ] 26-02-PLAN.md — Fix list-view traffic light: extend listProspects with summary, use real sourceTypeCount in QualityChip, enforce AMBER hard gate in sendEmail
+- [x] 26-02-PLAN.md — Fix list-view traffic light: extend listProspects with summary, use real sourceTypeCount in QualityChip, enforce AMBER hard gate in sendEmail
 
 ---
 
@@ -163,11 +163,11 @@ Plans:
 2. A real reply from the prospect is received via webhook and correctly triaged (interested / not interested)
 3. Cal.com booking (E2E-03) deferred to follow-up phase
 
-**Plans:** 1/2 plans executed
+**Plans:** 1/2 plans complete
 
 Plans:
 
-- [ ] 27-01-PLAN.md — DNS pre-flight + send 2 real outreach emails via Resend to info@klarifai.nl, verify delivery
+- [x] 27-01-PLAN.md — DNS pre-flight + send 2 real outreach emails via Resend to info@klarifai.nl, verify delivery
 - [ ] 27-02-PLAN.md — Post 2 realistic replies to inbound webhook, verify triage (interested + not-interested)
 
 ---
@@ -257,8 +257,8 @@ Plans:
 | 23. Use Case Extractors             | v2.1      | 2/2            | Complete    | 2026-02-24 |
 | 24. Data Population and Discovery   | v2.1      | 2/2            | Complete    | 2026-02-25 |
 | 25. Pipeline Hardening              | v2.1      | Complete       | 2026-02-27  | 2026-02-27 |
-| 26. Quality Calibration             | 2/2       | Complete       | 2026-02-28  | -          |
-| 27. End-to-End Cycle                | 1/2       | In Progress    |             | -          |
+| 26. Quality Calibration             | v2.1      | 2/2            | Complete    | 2026-02-28 |
+| 27. End-to-End Cycle                | v2.1      | 1/2            | In Progress |            |
 | 28. Source Discovery Upgrade        | v2.2      | 0/2            | Not started | -          |
 | 29. Browser Evidence Extraction     | v2.2      | 0/2            | Not started | -          |
 | 30. Pain Confirmation Gate          | v2.2      | 0/2            | Not started | -          |

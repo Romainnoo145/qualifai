@@ -31,6 +31,8 @@ key-decisions:
   - 'DMARC policy=none (monitoring only) — acceptable for initial testing, should enforce (p=quarantine) before volume sends'
   - 'Test contacts created inline for Mujjo and De Ondernemer with primaryEmail=info@klarifai.nl'
   - 'Script resets outreachStatus to NONE if already EMAIL_SENT, enabling re-run without DB cleanup'
+  - 'Verified Resend sending domain is mail.klarifai.nl (not klarifai.nl) — from address must be romano@mail.klarifai.nl'
+  - 'Both emails delivered successfully to info@klarifai.nl inbox (not spam) — Resend msgIds documented'
 
 patterns-established:
   - 'E2E test scripts: guard against placeholder RESEND_API_KEY with clear error + --dry-run bypass'
@@ -39,33 +41,35 @@ patterns-established:
 requirements-completed: [E2E-01]
 
 # Metrics
-duration: 25min
+duration: 45min
 completed: 2026-02-28
 ---
 
-# Phase 27 Plan 01: E2E Send Test — DNS Preflight + Script Summary
+# Phase 27 Plan 01: E2E Send Test — DNS Preflight + Email Delivery Summary
 
-**Reusable E2E send script with inline test contact creation, DNS preflight findings, and dry-run verification — blocked on RESEND_API_KEY before live send**
+**2 real outreach emails delivered to info@klarifai.nl inbox via Resend (mail.klarifai.nl), DNS audit reveals missing DKIM that must be configured before production volume sends**
 
 ## Performance
 
-- **Duration:** 25 min
-- **Started:** 2026-02-28T12:00:00Z
-- **Completed:** 2026-02-28T12:25:00Z
-- **Tasks:** 1 of 2 (Task 2 is checkpoint:human-verify, requires Resend API key + inbox check)
+- **Duration:** 45 min
+- **Started:** 2026-02-28
+- **Completed:** 2026-02-28
+- **Tasks:** 2/2 (automated + human-verify checkpoint)
 - **Files modified:** 1
 
 ## Accomplishments
 
 - DNS pre-flight completed for klarifai.nl — SPF, DKIM, and DMARC findings documented
-- Created `scripts/e2e-send-test.mjs` — fully functional, verified via dry-run
+- Created `scripts/e2e-send-test.mjs` — fully functional with dry-run mode and live send support
 - Test contacts created in DB for Mujjo and De Ondernemer with info@klarifai.nl as primaryEmail
-- Script builds real email content from hypothesis data in the research runs
-- DB state verification confirms OutreachLog and Contact records are correct after send
+- Both emails sent successfully and delivered to info@klarifai.nl inbox (not spam) — human confirmed "The mails got in! Perfect!!"
+- Resend message IDs: Mujjo `976a7bb7-5bdb-4339-8dc1-42b680bf067f`, De Ondernemer `0b84e093-3fa7-4d00-a756-0a803669bf03`
+- Discovered verified Resend domain is `mail.klarifai.nl` — from address updated to `romano@mail.klarifai.nl`
 
 ## Task Commits
 
 1. **Task 1: DNS pre-flight and E2E send script** - `d94320f` (feat)
+2. **Task 2: Verify email delivery in inbox** - Human checkpoint (no code commit — delivery confirmed by user: both emails arrived in inbox)
 
 ## Files Created/Modified
 
@@ -113,23 +117,29 @@ completed: 2026-02-28
 
 ## Authentication Gate
 
-**Blocked:** RESEND_API_KEY is set to `re_your-key` (placeholder value) in `.env`.
-
-The script enforces this at startup and exits with a clear error unless `--dry-run` is specified. The real send cannot proceed until a valid Resend API key is configured.
-
-**To unblock:** Set `RESEND_API_KEY=re_xxxxx` in `.env` with a real key from resend.com/api-keys.
+**Resolved:** RESEND_API_KEY was initially a placeholder (`re_your-key`). User set the real key, which unblocked live sends. Both emails delivered successfully after the key was configured.
 
 ## Issues Encountered
 
 - No contacts or outreach sequences existed in the DB — handled by the plan's fallback: created test contacts inline
-- RESEND_API_KEY is a placeholder — authentication gate, treated as normal flow
+- RESEND_API_KEY was a placeholder — authentication gate, treated as normal flow, resolved by user setting the real key
+- Resend verified domain is `mail.klarifai.nl` (not `klarifai.nl`) — from address required updating from `info@klarifai.nl` to `romano@mail.klarifai.nl`
+
+## User Setup Required
+
+Before production sends at volume, configure DKIM in Resend:
+
+1. Log in to Resend dashboard → Domains → `mail.klarifai.nl`
+2. Copy the DKIM TXT record value for `resend._domainkey.mail.klarifai.nl`
+3. Add to Cloudflare DNS for `mail.klarifai.nl`
+4. Verify in Resend dashboard
+5. After DKIM confirmed working, tighten DMARC from `p=none` to `p=quarantine`
 
 ## Next Phase Readiness
 
-- Script is ready to run once RESEND_API_KEY is set
-- Run: `node scripts/e2e-send-test.mjs` (live send) or `node scripts/e2e-send-test.mjs --dry-run` (test)
-- After send: check info@klarifai.nl inbox for 2 emails, then proceed to Task 2 (human-verify checkpoint)
-- Recommend configuring Resend DKIM via Cloudflare before the live send for better deliverability
+- Email delivery confirmed working end-to-end — ready for Phase 27-02 (reply triage)
+- Phase 27-02 will POST 2 realistic replies to the inbound webhook and verify interested/not-interested triage paths
+- DKIM configuration is a background concern — does not block Phase 27-02 (webhook testing is internal)
 
 ---
 
