@@ -456,14 +456,14 @@ export async function executeResearchRun(
 
   if (linkedinSnippet.length > 0) {
     allDrafts.push({
-      sourceType: 'WEBSITE',
+      sourceType: 'LINKEDIN',
       sourceUrl:
         prospect.linkedinUrl ??
         `https://www.linkedin.com/company/${prospect.domain.split('.')[0]}`,
       title: `${prospect.companyName ?? prospect.domain} - Bedrijfsprofiel`,
       snippet: linkedinSnippet.slice(0, 240),
       workflowTag: 'workflow-context',
-      confidenceScore: 0.74,
+      confidenceScore: 0.73,
       metadata: { adapter: 'apollo-derived', source: 'linkedin-profile' },
     });
     diagnostics.push({
@@ -492,13 +492,13 @@ export async function executeResearchRun(
 
       if (!isAuthwall) {
         allDrafts.push({
-          sourceType: 'WEBSITE',
+          sourceType: 'LINKEDIN',
           sourceUrl: prospect.linkedinUrl,
           title:
             title || `${prospect.companyName ?? prospect.domain} - LinkedIn`,
           snippet: markdown.slice(0, 240).replace(/\n+/g, ' ').trim(),
           workflowTag: 'workflow-context',
-          confidenceScore: 0.72,
+          confidenceScore: 0.73,
           metadata: { adapter: 'crawl4ai', source: 'linkedin' },
         });
       } else {

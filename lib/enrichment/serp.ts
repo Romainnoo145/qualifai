@@ -101,7 +101,10 @@ export async function discoverGoogleSearchMentions(input: {
     }
   }
 
-  return mentions.slice(0, 12);
+  // Filter out own-domain results (already covered by WEBSITE source type)
+  return mentions
+    .filter((mention) => !mention.url.includes(input.domain))
+    .slice(0, 12);
 }
 
 /**
