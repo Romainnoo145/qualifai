@@ -152,6 +152,7 @@ export default function ProspectDetail() {
               (researchRuns.data[0] as any).qualityReviewedAt ?? null
             }
             runStatus={researchRuns.data[0].status}
+            summary={(researchRuns.data[0] as any).summary}
           />
         )}
       </div>

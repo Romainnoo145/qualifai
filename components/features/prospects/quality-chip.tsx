@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/components/providers';
 import { cn } from '@/lib/utils';
+import { computeTrafficLight } from '@/lib/workflow-engine';
 import { Check, Loader2, RefreshCw } from 'lucide-react';
 
 interface QualityChipProps {
@@ -29,16 +30,6 @@ const CHIP_LABELS: Record<'red' | 'amber' | 'green', string> = {
   amber: 'LIMITED',
   green: 'SOLID',
 };
-
-function computeTrafficLight(
-  evidenceCount: number,
-  sourceTypeCount: number,
-  averageConfidence: number,
-): 'red' | 'amber' | 'green' {
-  if (evidenceCount < 3) return 'red';
-  if (sourceTypeCount < 2 || averageConfidence < 0.65) return 'amber';
-  return 'green';
-}
 
 function formatReviewedAt(dt: Date | string | null): string {
   if (!dt) return '';
