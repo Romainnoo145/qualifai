@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 ## Current Position
 
 Phase: 26 of 27 (Quality Calibration)
-Plan: 1 of 1 in current phase
+Plan: 2 of 2 in current phase
 Status: Complete
-Last activity: 2026-02-28 — Phase 26-01 completed (quality threshold calibration against 5 real prospects, hypothesis idempotency fix)
+Last activity: 2026-02-28 — Phase 26-02 completed (list-view QualityChip uses real data, AMBER hard gate in sendEmail)
 
-Progress: [████████░░] 77% (v2.1 — 12/13 plans complete)
+Progress: [█████████░] 85% (v2.1 — 13/14 plans complete)
 
 ## Milestones Shipped
 
@@ -43,6 +43,9 @@ Progress: [████████░░] 77% (v2.1 — 12/13 plans complete)
 
 ### Decisions (Recent)
 
+- [Phase 26-02]: Contact.prospectId is non-nullable String — direct field access in sendEmail mutation is type-safe without optional chaining
+- [Phase 26-02]: computeTrafficLight imported statically into outreach router — no circular dependency (already imports from workflow-engine)
+- [Phase 26-02]: Always render QualityChip in list-view (null runId → grey chip) — eliminates invisible gap for unresearched prospects
 - [Phase 26-01]: MIN_AVERAGE_CONFIDENCE=0.65 retained as meaningful secondary signal — Brainport Eindhoven had 5 source types but avgConf 0.64, correctly classified AMBER
 - [Phase 26-01]: Thresholds approved as-is: GREEN_MIN_SOURCE_TYPES=3, AMBER_MIN_SOURCE_TYPES=2, MIN_EVIDENCE_COUNT=3, MIN_AVERAGE_CONFIDENCE=0.65
 - [Phase 26-01]: AMBER is a HARD gate (not soft warn-and-proceed) — send queue requires qualityApproved===true for AMBER prospects
@@ -75,9 +78,8 @@ Progress: [████████░░] 77% (v2.1 — 12/13 plans complete)
 ### Tech Debt (Carried Forward)
 
 - SERP cache re-read after overwrite (Phase 8 bug) — cache on re-runs always treated as stale
-- List-view traffic light uses hardcoded approximation (sourceTypeCount=1, confidence=0.65) — fixed in Phase 26 (QUAL-02)
 - Unused logoUrl prop in DashboardClient interface
-- List-view traffic light still uses hardcoded approximation — fixed constants now in quality-config.ts but list-view component not yet updated (Phase 26 QUAL-02)
+- Unused logoUrl prop in DashboardClient interface
 
 ### Blockers/Concerns
 
@@ -86,5 +88,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Phase 26-01 complete (quality threshold calibration, 4 GREEN 1 AMBER 0 RED, hypothesis idempotency fix)
-Resume with: Phase 26 complete — advance to Phase 27 (quality gate UI) or next milestone
+Stopped at: Phase 26-02 complete (list-view QualityChip real data, AMBER hard gate in sendEmail)
+Resume with: Phase 26 complete (both plans done) — advance to Phase 27 (quality gate UI) or next milestone

@@ -128,7 +128,7 @@ Plans:
 1. Amber/green thresholds are set based on observed real research scores — not estimated defaults
 2. List-view traffic light chip matches the detail-view quality score for the same prospect (no more hardcoded approximation)
 3. At least one real prospect clears green threshold and at least one lands at amber — thresholds are meaningfully distinguishing
-   **Plans:** TBD
+   **Plans:** 2/2 plans complete
 
 **Plans:** 2 plans
 
@@ -257,7 +257,7 @@ Plans:
 | 23. Use Case Extractors             | v2.1      | 2/2            | Complete    | 2026-02-24 |
 | 24. Data Population and Discovery   | v2.1      | 2/2            | Complete    | 2026-02-25 |
 | 25. Pipeline Hardening              | v2.1      | Complete       | 2026-02-27  | 2026-02-27 |
-| 26. Quality Calibration             | v2.1      | 1/2            | In progress | -          |
+| 26. Quality Calibration             | 2/2       | Complete       | 2026-02-28  | -          |
 | 27. End-to-End Cycle                | v2.1      | 0/3            | Not started | -          |
 | 28. Source Discovery Upgrade        | v2.2      | 0/2            | Not started | -          |
 | 29. Browser Evidence Extraction     | v2.2      | 0/2            | Not started | -          |
