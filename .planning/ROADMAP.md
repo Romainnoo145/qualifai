@@ -184,11 +184,11 @@ Plans:
 2. The webhook handler creates a `callPrepPlan` record linked to the prospect's research run
 3. Sequence, step, contact, and prospect status updates are verified in the database
 
-**Plans:** TBD
+**Plans:** 1 plan
 
 Plans:
 
-- [ ] 27.1-01-PLAN.md — E2E Cal.com booking test script + call prep generation verification
+- [ ] 27.1-01-PLAN.md — E2E Cal.com booking test script with HMAC signature + full DB verification (sequence, steps, contact, prospect, outreach log, call prep plan)
 
 ---
 
