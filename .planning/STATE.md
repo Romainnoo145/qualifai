@@ -43,6 +43,9 @@ Progress: [███████░░░] 69% (v2.1 — 11/13 plans complete)
 
 ### Decisions (Recent)
 
+- [Phase 26.1-02]: Google Reviews uses Google Search page (not Maps embed) — simpler to scrape, same snippet data available
+- [Phase 26.1-02]: Google News uses native fetch RSS (not Scrapling) — public XML feed, no bot detection needed
+- [Phase 26.1-02]: Empty-result recording mandatory for REVIEWS and NEWS — confidenceScore 0.1, notFound:true metadata distinguishes "tried/not-found" from "not-tried"
 - [Phase 26.1-03]: Replaced Crawl4AI LinkedIn extraction with Scrapling StealthyFetcher (fetchLinkedInPosts) — better stealth posture
 - [Phase 26.1-03]: Empty-result placeholder recorded with notFound=true when LinkedIn posts are blocked — distinguishes blocked from not-tried
 - [Phase 26.1-03]: Evidence cap raised from 36 to 48 — LinkedIn posts adds up to 8 new items per pipeline run
