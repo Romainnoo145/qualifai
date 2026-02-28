@@ -139,6 +139,19 @@ Plans:
 
 ---
 
+### Phase 26.1: Evidence Pipeline Expansion (INSERTED)
+
+**Goal:** Add new evidence sources and fix data quality gaps so Phase 26 threshold calibration has real multi-source data to work with. Target: 4-5 distinct source types per prospect.
+**Depends on:** Phase 26
+**Requirements:** EXP-01, EXP-02, EXP-03, EXP-04, EXP-05
+**Plans:** 3 plans
+
+Plans:
+
+- [ ] 26.1-01-PLAN.md — Schema extension (LINKEDIN + NEWS enum values), SERP ungating, domain filter on Google mentions, LinkedIn source type backfill script
+- [ ] 26.1-02-PLAN.md — Google Reviews via Scrapling + Google News RSS + wire both into pipeline with empty-result recording
+- [ ] 26.1-03-PLAN.md — LinkedIn company posts via Scrapling + wire into pipeline replacing Crawl4AI LinkedIn
+
 #### Phase 27: End-to-End Cycle
 
 **Goal:** At least one real outreach email is sent, received, and replied to — with the reply correctly triaged and a Cal.com booking triggering an automatic meeting brief.
