@@ -31,7 +31,7 @@ Requirements for Production Bootstrap milestone. Each maps to roadmap phases.
 
 ### End-to-End Cycle
 
-- [ ] **E2E-01**: Admin sends real outreach email via the send queue to a real prospect
+- [x] **E2E-01**: Admin sends real outreach email via the send queue to a real prospect
 - [ ] **E2E-02**: Reply webhooks correctly receive and triage real email responses
 - [ ] **E2E-03**: Cal.com booking triggers automatic meeting brief generation
 
@@ -85,7 +85,7 @@ Requirements for Verified Pain Intelligence milestone. Focus: better evidence ac
 | PIPE-03     | Phase 25 — Pipeline Hardening  | Complete |
 | QUAL-01     | Phase 26 — Quality Calibration | Complete |
 | QUAL-02     | Phase 26 — Quality Calibration | Complete |
-| E2E-01      | Phase 27 — End-to-End Cycle    | Pending  |
+| E2E-01      | Phase 27 — End-to-End Cycle    | Complete |
 | E2E-02      | Phase 27 — End-to-End Cycle    | Pending  |
 | E2E-03      | Phase 27 — End-to-End Cycle    | Pending  |
 | VPI-01      | Phase 28 — Source Discovery    | Pending  |

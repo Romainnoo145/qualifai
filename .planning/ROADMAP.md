@@ -163,7 +163,7 @@ Plans:
 2. A real reply from the prospect is received via webhook and correctly triaged (interested / not interested)
 3. Cal.com booking (E2E-03) deferred to follow-up phase
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 
@@ -258,7 +258,7 @@ Plans:
 | 24. Data Population and Discovery   | v2.1      | 2/2            | Complete    | 2026-02-25 |
 | 25. Pipeline Hardening              | v2.1      | Complete       | 2026-02-27  | 2026-02-27 |
 | 26. Quality Calibration             | 2/2       | Complete       | 2026-02-28  | -          |
-| 27. End-to-End Cycle                | v2.1      | 0/2            | Not started | -          |
+| 27. End-to-End Cycle                | 1/2       | In Progress    |             | -          |
 | 28. Source Discovery Upgrade        | v2.2      | 0/2            | Not started | -          |
 | 29. Browser Evidence Extraction     | v2.2      | 0/2            | Not started | -          |
 | 30. Pain Confirmation Gate          | v2.2      | 0/2            | Not started | -          |

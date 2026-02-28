@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v2.1 Production Bootstrap — Phase 26: Quality Calibration
+**Current focus:** v2.1 Production Bootstrap — Phase 27: End-to-End Cycle
 
 ## Current Position
 
-Phase: 26 of 27 (Quality Calibration)
-Plan: 2 of 2 in current phase
-Status: Complete
-Last activity: 2026-02-28 — Phase 26-02 completed (list-view QualityChip uses real data, AMBER hard gate in sendEmail)
+Phase: 27 of 27 (End-to-End Cycle)
+Plan: 1 of 2 in current phase
+Status: Blocked (auth gate — RESEND_API_KEY not set)
+Last activity: 2026-02-28 — Phase 27-01 Task 1 completed (E2E send script + DNS preflight); blocked at auth gate pending real Resend API key
 
-Progress: [█████████░] 85% (v2.1 — 13/14 plans complete)
+Progress: [█████████░] 93% (v2.1 — 14/15 plans complete)
 
 ## Milestones Shipped
 
@@ -43,6 +43,9 @@ Progress: [█████████░] 85% (v2.1 — 13/14 plans complete)
 
 ### Decisions (Recent)
 
+- [Phase 27-01]: DKIM for klarifai.nl via Resend not yet configured (resend.\_domainkey has no record) — required before production sends
+- [Phase 27-01]: DMARC policy=none (monitoring only) — should enforce p=quarantine after DKIM is confirmed working
+- [Phase 27-01]: Test contacts created inline for Mujjo and De Ondernemer with primaryEmail=info@klarifai.nl
 - [Phase 26-02]: Contact.prospectId is non-nullable String — direct field access in sendEmail mutation is type-safe without optional chaining
 - [Phase 26-02]: computeTrafficLight imported statically into outreach router — no circular dependency (already imports from workflow-engine)
 - [Phase 26-02]: Always render QualityChip in list-view (null runId → grey chip) — eliminates invisible gap for unresearched prospects
@@ -83,10 +86,11 @@ Progress: [█████████░] 85% (v2.1 — 13/14 plans complete)
 
 ### Blockers/Concerns
 
-None yet.
+- RESEND_API_KEY is a placeholder (`re_your-key`) in `.env` — set real key to unblock Phase 27-01 live send
+- Resend DKIM (`resend._domainkey.klarifai.nl`) not configured in Cloudflare DNS — configure before production sends
 
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Phase 26-02 complete (list-view QualityChip real data, AMBER hard gate in sendEmail)
-Resume with: Phase 26 complete (both plans done) — advance to Phase 27 (quality gate UI) or next milestone
+Stopped at: Phase 27-01 Task 1 complete (scripts/e2e-send-test.mjs created, DNS preflight documented); blocked at auth gate (RESEND_API_KEY placeholder)
+Resume with: Set RESEND_API_KEY in .env → run `node scripts/e2e-send-test.mjs` → check info@klarifai.nl inbox → confirm Task 2 checkpoint (human-verify)
