@@ -18,7 +18,10 @@ export async function fetchGoogleReviews(input: {
     const query = encodeURIComponent(`${input.companyName} reviews ervaringen`);
     const url = `https://www.google.com/search?q=${query}&hl=nl&gl=nl`;
 
-    const result = await fetchStealth(url);
+    const result = await fetchStealth(url, {
+      google_search: true,
+      network_idle: true,
+    });
 
     if (!result.ok || result.html.length < 500) {
       return [];

@@ -11,6 +11,9 @@ executor = ThreadPoolExecutor(max_workers=4)
 
 class FetchRequest(BaseModel):
     url: str
+    cookies: list[dict] | None = None
+    network_idle: bool | None = None
+    google_search: bool | None = None
 
 
 class FetchResponse(BaseModel):
@@ -20,10 +23,24 @@ class FetchResponse(BaseModel):
     error: str | None = None
 
 
-def _do_stealth_fetch(url: str) -> FetchResponse:
+def _do_stealth_fetch(
+    url: str,
+    cookies: list[dict] | None = None,
+    network_idle: bool | None = None,
+    google_search: bool | None = None,
+) -> FetchResponse:
     try:
         fetcher = StealthyFetcher()
-        page = fetcher.fetch(url)
+        kwargs: dict = {}
+        if cookies is not None:
+            kwargs["cookies"] = [
+                {**c, "path": c.get("path", "/")} for c in cookies
+            ]
+        if network_idle is not None:
+            kwargs["network_idle"] = network_idle
+        if google_search is not None:
+            kwargs["google_search"] = google_search
+        page = fetcher.fetch(url, **kwargs)
         return FetchResponse(
             success=True,
             html=page.html_content or "",
@@ -54,7 +71,14 @@ async def fetch_stealth(req: FetchRequest) -> FetchResponse:
     Runs in thread pool to avoid blocking asyncio event loop.
     """
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(executor, _do_stealth_fetch, req.url)
+    return await loop.run_in_executor(
+        executor,
+        _do_stealth_fetch,
+        req.url,
+        req.cookies,
+        req.network_idle,
+        req.google_search,
+    )
 
 
 @app.post("/fetch-dynamic", response_model=FetchResponse)

@@ -1,3 +1,4 @@
+import { fetchStealth } from '@/lib/enrichment/scrapling';
 import type { EvidenceDraft } from '@/lib/workflow-engine';
 
 type WorkflowTag = 'planning' | 'handoff' | 'billing' | 'workflow-context';
@@ -186,27 +187,18 @@ export async function ingestReviewEvidenceDrafts(
 
   for (const sourceUrl of reviewUrls) {
     const provider = detectProvider(sourceUrl);
+    const isGoogle = provider === 'google';
     try {
-      const response = await fetch(sourceUrl, {
-        method: 'GET',
-        headers: {
-          'user-agent':
-            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Qualifai/1.0',
-          accept:
-            'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
+      const result = await fetchStealth(sourceUrl, {
+        ...(isGoogle ? { google_search: true, network_idle: true } : {}),
       });
-      if (!response.ok) {
-        // 404/410 = page doesn't exist, not evidence — skip entirely
-        if (response.status === 404 || response.status === 410) {
-          continue;
-        }
+
+      if (!result.ok || result.html.length < 200) {
         drafts.push(fallbackReviewDraft(sourceUrl, provider));
         continue;
       }
 
-      const html = await response.text();
-      const signals = extractReviewSignalsFromText(html);
+      const signals = extractReviewSignalsFromText(result.html);
       if (signals.length === 0) {
         drafts.push(fallbackReviewDraft(sourceUrl, provider));
         continue;

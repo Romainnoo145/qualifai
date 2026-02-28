@@ -1,4 +1,4 @@
-import { fetchStealth } from '@/lib/enrichment/scrapling';
+import { fetchStealth, type StealthOptions } from '@/lib/enrichment/scrapling';
 import type { EvidenceDraft } from '@/lib/workflow-engine';
 
 // UI phrases to exclude from post snippets — navigation chrome, not post content
@@ -78,7 +78,23 @@ export async function fetchLinkedInPosts(input: {
     const baseUrl = input.linkedinUrl.replace(/\/+$/, '').split('?')[0];
     const postsUrl = `${baseUrl}/posts/`;
 
-    const result = await fetchStealth(postsUrl);
+    const opts: StealthOptions = {};
+    const cookiesEnv = process.env.LINKEDIN_COOKIES;
+    if (cookiesEnv) {
+      try {
+        opts.cookies = JSON.parse(cookiesEnv);
+      } catch {
+        console.warn(
+          '[LinkedIn Posts] LINKEDIN_COOKIES env var is not valid JSON — ignoring',
+        );
+      }
+    } else {
+      console.warn(
+        '[LinkedIn Posts] LINKEDIN_COOKIES not set — auth wall will likely block scraping',
+      );
+    }
+
+    const result = await fetchStealth(postsUrl, opts);
 
     // Basic failure check
     if (!result.ok || result.html.length < 300) {

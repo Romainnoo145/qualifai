@@ -221,59 +221,13 @@ function isConstructionOrInstall(industryRaw: string | null): boolean {
   );
 }
 
-function reviewSourceSeeds(
-  companyName: string,
-  domain: string,
-): EvidenceDraft[] {
+/** Return the 3 review seed URLs (Google search, Maps, Trustpilot) for a company. */
+export function reviewSeedUrls(companyName: string, domain: string): string[] {
   const encodedCompany = encodeURIComponent(companyName);
-  const reviewQueryUrl = `https://www.google.com/search?q=${encodedCompany}+reviews`;
-  const localPackUrl = `https://www.google.com/maps/search/${encodedCompany}`;
-  const trustpilotUrl = `https://www.trustpilot.com/review/${domain}`;
-
   return [
-    {
-      sourceType: 'REVIEWS',
-      sourceUrl: reviewQueryUrl,
-      title: 'Customer review themes (search)',
-      snippet:
-        'Review summaries frequently expose scheduling delays, communication gaps, and aftercare friction.',
-      workflowTag: 'planning',
-      confidenceScore: 0.82,
-      metadata: {
-        adapter: 'reviews-first',
-        signalCluster: ['scheduling-delay', 'response-time', 'expectation-gap'],
-      },
-    },
-    {
-      sourceType: 'REVIEWS',
-      sourceUrl: localPackUrl,
-      title: 'Google Maps service feedback',
-      snippet:
-        'Local review comments reveal handoff consistency between office intake, planning, and field execution.',
-      workflowTag: 'handoff',
-      confidenceScore: 0.8,
-      metadata: {
-        adapter: 'reviews-first',
-        signalCluster: [
-          'handoff-friction',
-          'service-quality',
-          'status-visibility',
-        ],
-      },
-    },
-    {
-      sourceType: 'REVIEWS',
-      sourceUrl: trustpilotUrl,
-      title: 'Trust and billing sentiment',
-      snippet:
-        'Public review sentiment often highlights disputes around quote clarity, change requests, and invoice timing.',
-      workflowTag: 'billing',
-      confidenceScore: 0.78,
-      metadata: {
-        adapter: 'reviews-first',
-        signalCluster: ['quote-dispute', 'invoice-delay', 'scope-clarity'],
-      },
-    },
+    `https://www.google.com/search?q=${encodedCompany}+reviews`,
+    `https://www.google.com/maps/search/${encodedCompany}`,
+    `https://www.trustpilot.com/review/${domain}`,
   ];
 }
 
@@ -351,9 +305,9 @@ export function generateEvidenceDrafts(
     );
   }
 
-  const drafts = reviewFirstMode
-    ? [...reviewSourceSeeds(companyName, prospect.domain), ...baseDrafts]
-    : baseDrafts;
+  // Review seed URLs are now fetched live via ingestReviewEvidenceDrafts —
+  // no longer prepend synthetic reviewSourceSeeds metadata.
+  const drafts = baseDrafts;
 
   for (const url of manualUrls) {
     const sourceType = inferSourceType(url);

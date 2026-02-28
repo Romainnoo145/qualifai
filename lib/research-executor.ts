@@ -5,6 +5,7 @@ import {
   generateHypothesisDraftsAI,
   generateOpportunityDrafts,
   runSummaryPayload,
+  reviewSeedUrls,
 } from '@/lib/workflow-engine';
 import { ingestReviewEvidenceDrafts } from '@/lib/review-adapters';
 import { ingestWebsiteEvidenceDrafts } from '@/lib/web-evidence-adapter';
@@ -207,9 +208,14 @@ export async function executeResearchRun(
         },
       });
 
-  const reviewUrls = input.manualUrls.filter(
+  const manualReviewUrls = input.manualUrls.filter(
     (url) => inferSourceType(url) === 'REVIEWS',
   );
+  const seedUrls = reviewSeedUrls(
+    prospect.companyName ?? prospect.domain,
+    prospect.domain,
+  );
+  const reviewUrls = uniqueUrls([...manualReviewUrls, ...seedUrls]);
   const nonReviewManualUrls = input.manualUrls.filter(
     (url) => inferSourceType(url) !== 'REVIEWS',
   );
