@@ -6,7 +6,7 @@
 - ✅ **v1.1 Evidence-Backed Multi-Touch Outreach** — Phases 6-11 (shipped 2026-02-21)
 - ✅ **v1.2 Autopilot with Oversight** — Phases 12-15 (shipped 2026-02-22)
 - ✅ **v2.0 Streamlined Flow** — Phases 17-22 (shipped 2026-02-23)
-- 🚧 **v2.1 Production Bootstrap** — Phases 23-27 (in progress)
+- 🚧 **v2.1 Production Bootstrap** — Phases 23-27.1 (in progress)
 - 🆕 **v2.2 Verified Pain Intelligence (Browser + Google)** — Phases 28-30 (planned)
 
 ## Phases
@@ -168,7 +168,27 @@ Plans:
 Plans:
 
 - [x] 27-01-PLAN.md — DNS pre-flight + send 2 real outreach emails via Resend to info@klarifai.nl, verify delivery
-- [ ] 27-02-PLAN.md — Post 2 realistic replies to inbound webhook, verify triage (interested + not-interested)
+- [x] 27-02-PLAN.md — Post 2 realistic replies to inbound webhook, verify triage (interested + not-interested)
+
+---
+
+#### Phase 27.1: Cal.com Booking Validation (INSERTED — Gap Closure)
+
+**Goal:** Validate the Cal.com booking → call prep generation flow end-to-end with a simulated BOOKING_CREATED webhook event.
+**Depends on:** Phase 27 (outreach E2E baseline must exist)
+**Requirements:** E2E-03
+**Gap Closure:** Closes unsatisfied E2E-03 from v2.1 audit
+**Success Criteria** (what must be TRUE):
+
+1. A simulated Cal.com BOOKING_CREATED event is POSTed to `/api/webhooks/calcom` with valid HMAC signature
+2. The webhook handler creates a `callPrepPlan` record linked to the prospect's research run
+3. Sequence, step, contact, and prospect status updates are verified in the database
+
+**Plans:** TBD
+
+Plans:
+
+- [ ] 27.1-01-PLAN.md — E2E Cal.com booking test script + call prep generation verification
 
 ---
 

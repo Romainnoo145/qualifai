@@ -33,7 +33,7 @@ Requirements for Production Bootstrap milestone. Each maps to roadmap phases.
 
 - [x] **E2E-01**: Admin sends real outreach email via the send queue to a real prospect
 - [x] **E2E-02**: Reply webhooks correctly receive and triage real email responses
-- [x] **E2E-03**: Cal.com booking triggers automatic meeting brief generation
+- [ ] **E2E-03**: Cal.com booking triggers automatic meeting brief generation
 
 ## v2.2 Requirements
 
@@ -73,27 +73,27 @@ Requirements for Verified Pain Intelligence milestone. Focus: better evidence ac
 
 ## Traceability
 
-| Requirement | Phase                          | Status   |
-| ----------- | ------------------------------ | -------- |
-| SEED-01     | Phase 23 — Use Case Extractors | Complete |
-| SEED-02     | Phase 23 — Use Case Extractors | Complete |
-| SEED-03     | Phase 24 — Data Population     | Complete |
-| DISC-01     | Phase 24 — Data Population     | Complete |
-| DISC-02     | Phase 24 — Data Population     | Complete |
-| PIPE-01     | Phase 25 — Pipeline Hardening  | Complete |
-| PIPE-02     | Phase 25 — Pipeline Hardening  | Complete |
-| PIPE-03     | Phase 25 — Pipeline Hardening  | Complete |
-| QUAL-01     | Phase 26 — Quality Calibration | Complete |
-| QUAL-02     | Phase 26 — Quality Calibration | Complete |
-| E2E-01      | Phase 27 — End-to-End Cycle    | Complete |
-| E2E-02      | Phase 27 — End-to-End Cycle    | Complete |
-| E2E-03      | Phase 27 — End-to-End Cycle    | Complete |
-| VPI-01      | Phase 28 — Source Discovery    | Pending  |
-| VPI-02      | Phase 28 — Source Discovery    | Pending  |
-| VPI-03      | Phase 29 — Browser Extraction  | Pending  |
-| VPI-04      | Phase 29 — Browser Extraction  | Pending  |
-| VPI-05      | Phase 30 — Pain Gate           | Pending  |
-| VPI-06      | Phase 30 — Pain Gate           | Pending  |
+| Requirement | Phase                                   | Status   |
+| ----------- | --------------------------------------- | -------- |
+| SEED-01     | Phase 23 — Use Case Extractors          | Complete |
+| SEED-02     | Phase 23 — Use Case Extractors          | Complete |
+| SEED-03     | Phase 24 — Data Population              | Complete |
+| DISC-01     | Phase 24 — Data Population              | Complete |
+| DISC-02     | Phase 24 — Data Population              | Complete |
+| PIPE-01     | Phase 25 — Pipeline Hardening           | Complete |
+| PIPE-02     | Phase 25 — Pipeline Hardening           | Complete |
+| PIPE-03     | Phase 25 — Pipeline Hardening           | Complete |
+| QUAL-01     | Phase 26 — Quality Calibration          | Complete |
+| QUAL-02     | Phase 26 — Quality Calibration          | Complete |
+| E2E-01      | Phase 27 — End-to-End Cycle             | Complete |
+| E2E-02      | Phase 27 — End-to-End Cycle             | Complete |
+| E2E-03      | Phase 27.1 — Cal.com Booking Validation | Pending  |
+| VPI-01      | Phase 28 — Source Discovery             | Pending  |
+| VPI-02      | Phase 28 — Source Discovery             | Pending  |
+| VPI-03      | Phase 29 — Browser Extraction           | Pending  |
+| VPI-04      | Phase 29 — Browser Extraction           | Pending  |
+| VPI-05      | Phase 30 — Pain Gate                    | Pending  |
+| VPI-06      | Phase 30 — Pain Gate                    | Pending  |
 
 **Coverage:**
 
@@ -107,4 +107,4 @@ Requirements for Verified Pain Intelligence milestone. Focus: better evidence ac
 ---
 
 _Requirements defined: 2026-02-23_
-_Last updated: 2026-02-27 after completing Phase 25-01/25-02/25-03/25-04 (PIPE-01/PIPE-02/PIPE-03)_
+_Last updated: 2026-03-01 after v2.1 audit — E2E-03 reset to Pending, reassigned to Phase 27.1_
