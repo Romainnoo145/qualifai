@@ -9,7 +9,11 @@ import {
 import type { OutreachContext } from '@/lib/ai/outreach-prompts';
 import { sendOutreachEmail } from '@/lib/outreach/send-email';
 import { processUnprocessedSignals } from '@/lib/automation/processor';
-import { CTA_STEP_1, CTA_STEP_2 } from '@/lib/workflow-engine';
+import {
+  CTA_STEP_1,
+  CTA_STEP_2,
+  computeTrafficLight,
+} from '@/lib/workflow-engine';
 import type { PrismaClient } from '@prisma/client';
 import { triageReplyText, type ReplyIntent } from '@/lib/outreach/reply-triage';
 import {
@@ -275,6 +279,51 @@ export const outreachRouter = router({
 
       if (!contact.primaryEmail) {
         throw new Error('Contact has no email address');
+      }
+
+      // Quality gate: check research quality before sending
+      const prospectId = contact.prospectId;
+      const latestRun = await ctx.db.researchRun.findFirst({
+        where: { prospectId },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          summary: true,
+          qualityApproved: true,
+        },
+      });
+
+      if (latestRun) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const gate = (latestRun.summary as any)?.gate;
+        const evidenceCount: number =
+          typeof gate?.evidenceCount === 'number' ? gate.evidenceCount : 0;
+        const sourceTypeCount: number =
+          typeof gate?.sourceTypeCount === 'number' ? gate.sourceTypeCount : 0;
+        const avgConf: number =
+          typeof gate?.averageConfidence === 'number'
+            ? gate.averageConfidence
+            : 0;
+
+        const tier = computeTrafficLight(
+          evidenceCount,
+          sourceTypeCount,
+          avgConf,
+        );
+
+        if (tier === 'red') {
+          throw new TRPCError({
+            code: 'PRECONDITION_FAILED',
+            message:
+              'Kwaliteitsgate gefaald: te weinig bewijsmateriaal om outreach te versturen. Voer eerst een onderzoek uit.',
+          });
+        }
+        if (tier === 'amber' && latestRun.qualityApproved !== true) {
+          throw new TRPCError({
+            code: 'PRECONDITION_FAILED',
+            message:
+              'Kwaliteitsgate: beperkte bronnen gevonden. Keur de kwaliteitsreview goed in het prospect-overzicht voordat je verstuurt.',
+          });
+        }
       }
 
       return sendOutreachEmail({
