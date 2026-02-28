@@ -15,6 +15,8 @@ import {
 } from '@/lib/enrichment/serp';
 import { ingestCrawl4aiEvidenceDrafts } from '@/lib/enrichment/crawl4ai';
 import { fetchLinkedInPosts } from '@/lib/enrichment/linkedin-posts';
+import { fetchGoogleReviews } from '@/lib/enrichment/google-reviews';
+import { fetchGoogleNewsRss } from '@/lib/enrichment/google-news';
 import {
   discoverSitemapUrls,
   type SitemapCache,
@@ -87,7 +89,9 @@ interface SourceDiagnostic {
     | 'google_mentions'
     | 'kvk'
     | 'linkedin'
-    | 'linkedin_posts';
+    | 'linkedin_posts'
+    | 'google_reviews'
+    | 'google_news';
   status: SourceStatus;
   message: string;
 }
@@ -382,6 +386,81 @@ export async function executeResearchRun(
         message: `Google mention discovery failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
       });
     }
+
+    // Google Reviews via Scrapling (EVID-REVIEWS)
+    try {
+      const reviewDrafts = await fetchGoogleReviews({
+        companyName: prospect.companyName ?? prospect.domain,
+        domain: prospect.domain,
+        mapsDataId: serpResult.mapsDataId,
+      });
+      allDrafts.push(...reviewDrafts);
+      // Empty result recording — always record the attempt
+      if (reviewDrafts.length === 0) {
+        allDrafts.push({
+          sourceType: 'REVIEWS',
+          sourceUrl: `https://www.google.com/search?q=${encodeURIComponent(prospect.companyName ?? prospect.domain)}+reviews`,
+          title: `${prospect.companyName ?? prospect.domain} - Google Reviews (geen resultaten)`,
+          snippet:
+            'Google Reviews scrape did not find review snippets for this company.',
+          workflowTag: 'workflow-context',
+          confidenceScore: 0.1,
+          metadata: { adapter: 'google-reviews-scrapling', notFound: true },
+        });
+      }
+      diagnostics.push({
+        source: 'google_reviews',
+        status: reviewDrafts.length > 0 ? 'ok' : 'warning',
+        message:
+          reviewDrafts.length > 0
+            ? `Google Reviews found ${reviewDrafts.length} review snippets.`
+            : 'Google Reviews returned no results; placeholder recorded.',
+      });
+    } catch (err) {
+      console.error('[Google Reviews] scrape failed:', err);
+      diagnostics.push({
+        source: 'google_reviews',
+        status: 'error',
+        message: `Google Reviews scrape failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      });
+    }
+
+    // Google News RSS (EVID-NEWS)
+    try {
+      const newsDrafts = await fetchGoogleNewsRss({
+        companyName: prospect.companyName ?? prospect.domain,
+        domain: prospect.domain,
+      });
+      allDrafts.push(...newsDrafts);
+      // Empty result recording — always record the attempt
+      if (newsDrafts.length === 0) {
+        allDrafts.push({
+          sourceType: 'NEWS',
+          sourceUrl: `https://news.google.com/rss/search?q=${encodeURIComponent(prospect.companyName ?? prospect.domain)}`,
+          title: `${prospect.companyName ?? prospect.domain} - Google News (geen resultaten)`,
+          snippet:
+            'Google News RSS returned no recent news coverage for this company.',
+          workflowTag: 'workflow-context',
+          confidenceScore: 0.1,
+          metadata: { adapter: 'google-news-rss', notFound: true },
+        });
+      }
+      diagnostics.push({
+        source: 'google_news',
+        status: newsDrafts.length > 0 ? 'ok' : 'warning',
+        message:
+          newsDrafts.length > 0
+            ? `Google News RSS found ${newsDrafts.length} news items.`
+            : 'Google News RSS returned no results; placeholder recorded.',
+      });
+    } catch (err) {
+      console.error('[Google News] RSS failed:', err);
+      diagnostics.push({
+        source: 'google_news',
+        status: 'error',
+        message: `Google News RSS failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      });
+    }
   } else {
     diagnostics.push({
       source: 'serp',
@@ -402,6 +481,16 @@ export async function executeResearchRun(
       source: 'linkedin_posts',
       status: 'skipped',
       message: 'LinkedIn posts skipped (deep crawl disabled).',
+    });
+    diagnostics.push({
+      source: 'google_reviews',
+      status: 'skipped',
+      message: 'Google Reviews skipped (deep crawl disabled).',
+    });
+    diagnostics.push({
+      source: 'google_news',
+      status: 'skipped',
+      message: 'Google News skipped (deep crawl disabled).',
     });
   }
 
