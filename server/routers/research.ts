@@ -6,6 +6,18 @@ import {
   manualUrlsFromSnapshot,
 } from '@/lib/research-executor';
 import { runResearchRefreshSweep } from '@/lib/research-refresh';
+import { discoverSitemapUrls } from '@/lib/enrichment/sitemap';
+import { discoverSerpUrls } from '@/lib/enrichment/serp';
+import {
+  buildSourceSet,
+  defaultResearchUrls,
+  extractSourceSet,
+} from '@/lib/enrichment/source-discovery';
+import type { Prisma } from '@prisma/client';
+
+function toJson(value: unknown): Prisma.InputJsonValue {
+  return value as Prisma.InputJsonValue;
+}
 
 export const researchRouter = router({
   startRun: adminProcedure
@@ -52,6 +64,90 @@ export const researchRouter = router({
         existingRunId: existing.id,
         deepCrawl,
       });
+    }),
+
+  rediscoverSources: adminProcedure
+    .input(
+      z.object({
+        runId: z.string(),
+        force: z.boolean().default(false), // bypass 24h SERP cache
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // 1. Fetch the ResearchRun
+      const run = await ctx.db.researchRun.findUniqueOrThrow({
+        where: { id: input.runId },
+        select: { id: true, prospectId: true, inputSnapshot: true },
+      });
+
+      // 2. Fetch the Prospect
+      const prospect = await ctx.db.prospect.findUniqueOrThrow({
+        where: { id: run.prospectId },
+        select: { domain: true, companyName: true },
+      });
+
+      // 3. Extract existing sourceSet from inputSnapshot
+      const existingSnapshot = run.inputSnapshot;
+      const existingSourceSet = extractSourceSet(existingSnapshot);
+
+      // 4. SERP cache guard
+      const serpAge = existingSourceSet?.serpDiscoveredAt
+        ? Date.now() - new Date(existingSourceSet.serpDiscoveredAt).getTime()
+        : Infinity;
+      const serpCacheHit = !input.force && serpAge < 24 * 60 * 60 * 1000;
+
+      // 5. Always refresh sitemap
+      const sitemapUrls = await discoverSitemapUrls(prospect.domain);
+
+      // 6. SERP discovery — skip if cache is fresh and force=false
+      let serpUrls: string[] = [];
+      let serpDiscoveredAt: string;
+
+      if (serpCacheHit && existingSourceSet?.serpDiscoveredAt) {
+        // Reuse cached SERP URLs from existing sourceSet
+        serpUrls = existingSourceSet.urls
+          .filter((u) => u.provenance === 'serp')
+          .map((u) => u.url);
+        serpDiscoveredAt = existingSourceSet.serpDiscoveredAt;
+      } else {
+        // Call SERP (stale cache or force bypass)
+        const serpResult = await discoverSerpUrls({
+          companyName: prospect.companyName,
+          domain: prospect.domain,
+        });
+        serpUrls = [...serpResult.reviewUrls, ...serpResult.jobUrls];
+        serpDiscoveredAt = new Date().toISOString();
+      }
+
+      // 7. Build new sourceSet
+      const sourceSet = buildSourceSet({
+        sitemapUrls,
+        serpUrls,
+        defaultUrls: defaultResearchUrls(prospect.domain),
+        serpDiscoveredAt,
+      });
+
+      // 8. Merge into existing inputSnapshot — spread all fields to preserve manualUrls, campaignId, deepCrawl, etc.
+      const existingFields =
+        existingSnapshot &&
+        typeof existingSnapshot === 'object' &&
+        !Array.isArray(existingSnapshot)
+          ? (existingSnapshot as Record<string, unknown>)
+          : {};
+
+      const updatedSnapshot = toJson({
+        ...existingFields,
+        sourceSet,
+      });
+
+      // 9. Update the ResearchRun — ONLY inputSnapshot.sourceSet, nothing else
+      await ctx.db.researchRun.update({
+        where: { id: input.runId },
+        data: { inputSnapshot: updatedSnapshot },
+      });
+
+      // 10. Return the new sourceSet
+      return { sourceSet };
     }),
 
   runRefreshSweep: adminProcedure
