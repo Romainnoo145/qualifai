@@ -39,6 +39,8 @@ export function buildDiscoverSlug(ref: DiscoverProspectRef): string {
 
   const lowerSlug = ref.slug.toLowerCase();
   if (label.toLowerCase().endsWith(`-${lowerSlug}`)) return label;
+  // Avoid doubling when slug is already the slugified company name (manual inserts)
+  if (label.toLowerCase() === lowerSlug) return label;
   return `${label}-${ref.slug}`;
 }
 

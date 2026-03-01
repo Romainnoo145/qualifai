@@ -45,10 +45,17 @@ function defaultResearchUrls(domain: string): string[] {
   const base = `https://${domain}`;
   return [
     `${base}`,
+    // Dutch paths (primary — most prospects are NL)
+    `${base}/over-ons`,
+    `${base}/diensten`,
+    `${base}/vacatures`,
+    `${base}/werken-bij`,
+    `${base}/projecten`,
+    // English fallbacks
+    `${base}/about`,
+    `${base}/services`,
     `${base}/careers`,
     `${base}/jobs`,
-    `${base}/docs`,
-    `${base}/help`,
   ];
 }
 
@@ -431,13 +438,24 @@ export async function executeResearchRun(
       });
     }
 
-    // Google News RSS (EVID-NEWS)
+    // Google News RSS (EVID-NEWS) — company name + industry context
     try {
-      const newsDrafts = await fetchGoogleNewsRss({
+      const companyNews = await fetchGoogleNewsRss({
         companyName: prospect.companyName ?? prospect.domain,
         domain: prospect.domain,
       });
-      allDrafts.push(...newsDrafts);
+      allDrafts.push(...companyNews);
+
+      // Industry + AI/automation news for broader context
+      if (prospect.industry) {
+        const industryNews = await fetchGoogleNewsRss({
+          companyName: `${prospect.industry} automatisering AI software`,
+          domain: prospect.domain,
+        });
+        allDrafts.push(...industryNews);
+      }
+
+      const newsDrafts = [...companyNews];
       // Empty result recording — always record the attempt
       if (newsDrafts.length === 0) {
         allDrafts.push({
