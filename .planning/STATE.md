@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 
 ## Current Position
 
-Phase: (none — between milestones)
+Phase: Not started (defining requirements)
 Plan: —
-Status: v2.1 shipped, v2.2 not yet started
-Last activity: 2026-03-02 — v2.1 Production Bootstrap milestone archived
+Status: Defining requirements
+Last activity: 2026-03-02 — Milestone v2.2 started
 
-Progress: [ ] 0% (v2.2 not started)
+Progress: [ ] 0% (v2.2 defining requirements)
 
 ## Milestones Shipped
 
@@ -57,5 +57,5 @@ Progress: [ ] 0% (v2.2 not started)
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: v2.1 milestone archived
-Resume with: `/gsd:new-milestone` to define v2.2 requirements and plan phases 28-30
+Stopped at: Starting v2.2 milestone
+Resume with: Define requirements → create roadmap
