@@ -16,7 +16,7 @@ import {
   Calendar,
   Linkedin,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { cn } from '@/lib/utils';
 import { PipelineChip } from '@/components/features/prospects/pipeline-chip';
 import { computePipelineStage } from '@/lib/pipeline-stage';
@@ -28,6 +28,34 @@ import { ResultsSection } from '@/components/features/prospects/results-section'
 import { ContactsSection } from '@/components/features/prospects/contacts-section';
 import { QualityChip } from '@/components/features/prospects/quality-chip';
 import { buildDiscoverPath } from '@/lib/prospect-url';
+
+// ---------------------------------------------------------------------------
+// Debug mode — toggle via browser console:
+//   localStorage.setItem('qualifai-debug', 'true')  → show debug sections
+//   localStorage.removeItem('qualifai-debug')        → hide debug sections
+// ---------------------------------------------------------------------------
+
+function subscribeDebugMode(onStoreChange: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === 'qualifai-debug') onStoreChange();
+  };
+  window.addEventListener('storage', onStorage);
+  return () => window.removeEventListener('storage', onStorage);
+}
+
+function getDebugModeSnapshot(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem('qualifai-debug') === 'true';
+}
+
+function useDebugMode(): boolean {
+  return useSyncExternalStore(
+    subscribeDebugMode,
+    getDebugModeSnapshot,
+    () => false,
+  );
+}
 
 const TABS = [
   { id: 'evidence', label: 'Evidence' },
@@ -43,6 +71,7 @@ export default function ProspectDetail() {
   const id = params.id as string;
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('evidence');
+  const debugMode = useDebugMode();
 
   const prospect = api.admin.getProspect.useQuery({ id });
   const researchRuns = api.research.listRuns.useQuery({ prospectId: id });
@@ -332,7 +361,7 @@ export default function ProspectDetail() {
           activeTab === 'evidence' ? '' : 'hidden',
         )}
       >
-        {latestRunId && (
+        {debugMode && latestRunId && (
           <SourceSetSection
             runId={latestRunId}
             inputSnapshot={latestRun?.inputSnapshot ?? null}
