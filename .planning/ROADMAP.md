@@ -7,7 +7,7 @@
 - ✅ **v1.2 Autopilot with Oversight** — Phases 12-15 (shipped 2026-02-22)
 - ✅ **v2.0 Streamlined Flow** — Phases 17-22 (shipped 2026-02-23)
 - ✅ **v2.1 Production Bootstrap** — Phases 23-27.1 (shipped 2026-03-02)
-- 🆕 **v2.2 Verified Pain Intelligence (Browser + Google)** — Phases 28-30 (planned)
+- 🆕 **v2.2 Verified Pain Intelligence** — Phases 28-30 (planned)
 
 ## Phases
 
@@ -65,95 +65,102 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 </details>
 
-### 🆕 v2.2 Verified Pain Intelligence (Planned)
+### v2.2 Verified Pain Intelligence (Planned)
 
-**Milestone Goal:** Confirm pain points from real external evidence (Google reviews, jobs, support/docs, website) using browser-rendered extraction before outreach is allowed.
+**Milestone Goal:** Confirm pain points from real external evidence using browser-rendered extraction before outreach is allowed. Better source discovery, better extraction, stricter gating with a full audit trail.
 
-#### Phase 28: Source Discovery Upgrade
+- [ ] **Phase 28: Source Discovery with Provenance** — Automatic per-prospect source URL discovery with deduplication, per-source caps, and provenance labels
+- [ ] **Phase 29: Browser-Rendered Evidence Extraction** — Two-tier extraction routing (stealth-first, browser escalation) with browser cap and per-type routing
+- [ ] **Phase 30: Pain Confirmation Gate + Override Audit** — Cross-source pain gate (advisory), admin UI integration, and immutable override audit trail
 
-**Goal:** Automatically discover high-signal evidence sources per prospect instead of relying on fixed URL guesses.
-**Depends on:** Phase 27 (stable end-to-end baseline)
-**Requirements:** VPI-01, VPI-02
+## Phase Details
+
+### Phase 28: Source Discovery with Provenance
+
+**Goal**: Admin can verify exactly which source URLs were discovered for a prospect, where they came from, and that no URL explosion or API credit burn occurred.
+
+**Depends on**: Phase 27.1 (stable end-to-end baseline)
+
+**Requirements**: DISC-01, DISC-02, DISC-03, DISC-04, DISC-05
+
 **Success Criteria** (what must be TRUE):
 
-1. Per prospect, system discovers and stores candidate source URLs for reviews, jobs, docs/help, and core website pages
-2. Discovery deduplicates URLs and keeps source provenance (google/sitemap/manual)
-3. Admin can inspect discovered sources before running extraction
-   **Plans:** TBD
+1. After running research, the pipeline persists a provenance-tagged source URL list (sitemap / serp / manual / default) to `inputSnapshot.sourceSet` — inspectable by reading the research run record
+2. Each discovered URL has a `jsHeavyHint` flag indicating whether browser rendering will be needed downstream
+3. Re-running research on a prospect within 24 hours does not trigger new SerpAPI calls — the cached `serpDiscoveredAt` timestamp is respected
+4. No single source type produces more than its configured cap of URLs — a prospect with a large sitemap does not flood the pipeline with 200+ URLs
+5. Duplicate URLs discovered via different methods (sitemap + SERP returning the same page) are collapsed to a single entry before any extraction runs
 
-Plans:
-
-- [ ] 28-01: Add source discovery layer (Google + sitemap + manual merge) with dedup and provenance
-- [ ] 28-02: Add admin source list visibility and selection controls
+**Plans**: TBD
 
 ---
 
-#### Phase 29: Browser Evidence Extraction
+### Phase 29: Browser-Rendered Evidence Extraction
 
-**Goal:** Extract evidence from JS-rendered pages reliably using browser automation rather than fetch-only HTML.
-**Depends on:** Phase 28 (source catalog must exist first)
-**Requirements:** VPI-03, VPI-04
+**Goal**: JS-heavy pages that previously returned empty or near-empty content now yield usable evidence, without slowing the pipeline beyond the acceptable ceiling.
+
+**Depends on**: Phase 28 (jsHeavyHint flags and provenance-tagged sourceSet must be available)
+
+**Requirements**: EXTR-01, EXTR-02, EXTR-03
+
 **Success Criteria** (what must be TRUE):
 
-1. JS-rendered pages produce evidence records with snippet, source URL, timestamp, and source type
-2. Extraction handles anti-bot or failed loads with explicit status (not silent empty results)
-3. Review and vacature sources consistently yield usable evidence for scoring
-   **Plans:** TBD
+1. Static pages attempt Scrapling stealth fetch first; only pages returning fewer than 500 characters escalate to Crawl4AI browser extraction
+2. Pages with source types REVIEWS, CAREERS, or JOB_BOARD route directly through Crawl4AI without attempting stealth first
+3. A single research run never uses browser extraction on more than 5 URLs — the pipeline enforces this cap regardless of how many JS-heavy pages are discovered
 
-Plans:
-
-- [ ] 29-01: Introduce browser-rendered extractor pipeline (Playwright/Crawl4AI-compatible adapter)
-- [ ] 29-02: Persist normalized extraction diagnostics and user-visible failure reasons
+**Plans**: TBD
 
 ---
 
-#### Phase 30: Pain Confirmation Gate
+### Phase 30: Pain Confirmation Gate + Override Audit
 
-**Goal:** Block outreach drafts unless minimum cross-source pain confirmation is met.
-**Depends on:** Phase 29 (browser evidence must be available first)
-**Requirements:** VPI-05, VPI-06
+**Goal**: Admin sees a cross-source pain confirmation status before approving outreach, and every decision to proceed despite unconfirmed pain is permanently recorded with a written reason.
+
+**Depends on**: Phase 29 (full evidence set including browser-extracted items must be available before gate evaluates)
+
+**Requirements**: GATE-01, GATE-02, GATE-03, GATE-04, GATE-05, AUDT-01, AUDT-02, AUDT-03, AUDT-04
+
 **Success Criteria** (what must be TRUE):
 
-1. Outreach queue enforces a hard gate based on confirmed pain evidence thresholds
-2. Gate explains exactly what is missing (e.g. no review proof, weak vacature signal)
-3. Manual override is tracked with explicit reason and audit metadata
-   **Plans:** TBD
+1. After research completes, the system computes which workflowTags are confirmed (evidence from 2+ distinct sourceTypes) and which are only suspected (single sourceType or none)
+2. The send queue displays confirmed and unconfirmed pain tags alongside the existing quality gate traffic light — admin sees both signals before clicking send
+3. Proceeding with outreach that has unconfirmed pain tags requires the admin to type a reason — the form does not submit without it
+4. Every gate bypass is recorded in the `GateOverrideAudit` table with actor, timestamp, reason, gate type, and point-in-time gate snapshot — the record cannot be deleted
+5. Prospects where any gate was overridden display a "Bypassed" badge in the admin prospect list, and the full override history is visible on the research run detail view
 
-Plans:
-
-- [ ] 30-01: Implement pain-confirmation scoring and minimum evidence thresholds
-- [ ] 30-02: Enforce gate in draft creation/approval flows with explicit override audit trail
+**Plans**: TBD
 
 ---
 
 ## Progress
 
-| Phase                               | Milestone | Plans Complete | Status      | Completed  |
-| ----------------------------------- | --------- | -------------- | ----------- | ---------- |
-| 1-5. MVP                            | v1.0      | —              | Complete    | 2026-02-20 |
-| 6. Use Cases Foundation             | v1.1      | 3/3            | Complete    | 2026-02-20 |
-| 7. Evidence Approval Gate           | v1.1      | 2/2            | Complete    | 2026-02-20 |
-| 8. Deep Evidence Pipeline           | v1.1      | 3/3            | Complete    | 2026-02-21 |
-| 9. Engagement Triggers              | v1.1      | 2/2            | Complete    | 2026-02-21 |
-| 10. Cadence Engine                  | v1.1      | 4/4            | Complete    | 2026-02-21 |
-| 11. Prospect Dashboard              | v1.1      | 2/2            | Complete    | 2026-02-21 |
-| 12. Navigation and Language         | v1.2      | 2/2            | Complete    | 2026-02-21 |
-| 13. Prospect Story Flow             | v1.2      | 5/5            | Complete    | 2026-02-22 |
-| 14. Campaign Reporting              | v1.2      | 2/2            | Complete    | 2026-02-22 |
-| 15. Action Queue Dashboard          | v1.2      | 2/2            | Complete    | 2026-02-22 |
-| 17. Evidence Pipeline Enrichment    | v2.0      | 3/3            | Complete    | 2026-02-22 |
-| 18. Research Quality Gate           | v2.0      | 3/3            | Complete    | 2026-02-22 |
-| 19. Client Hypothesis Validation    | v2.0      | 2/2            | Complete    | 2026-02-23 |
-| 20. One-Click Send Queue + Pipeline | v2.0      | 3/3            | Complete    | 2026-02-23 |
-| 21. Prospect Discovery + Cleanup    | v2.0      | 2/2            | Complete    | 2026-02-23 |
-| 22. Hypothesis Flow Fix             | v2.0      | 1/1            | Complete    | 2026-02-23 |
-| 23. Use Case Extractors             | v2.1      | 2/2            | Complete    | 2026-02-24 |
-| 24. Data Population and Discovery   | v2.1      | 2/2            | Complete    | 2026-02-25 |
-| 25. Pipeline Hardening              | v2.1      | 4/4            | Complete    | 2026-02-27 |
-| 26. Quality Calibration             | v2.1      | 2/2            | Complete    | 2026-02-28 |
-| 26.1. Evidence Pipeline Expansion   | v2.1      | 3/3            | Complete    | 2026-02-28 |
-| 27. End-to-End Cycle                | v2.1      | 2/2            | Complete    | 2026-02-28 |
-| 27.1. Cal.com Booking Validation    | v2.1      | 1/1            | Complete    | 2026-03-01 |
-| 28. Source Discovery Upgrade        | v2.2      | 0/2            | Not started | -          |
-| 29. Browser Evidence Extraction     | v2.2      | 0/2            | Not started | -          |
-| 30. Pain Confirmation Gate          | v2.2      | 0/2            | Not started | -          |
+| Phase                                | Milestone | Plans Complete | Status      | Completed  |
+| ------------------------------------ | --------- | -------------- | ----------- | ---------- |
+| 1-5. MVP                             | v1.0      | —              | Complete    | 2026-02-20 |
+| 6. Use Cases Foundation              | v1.1      | 3/3            | Complete    | 2026-02-20 |
+| 7. Evidence Approval Gate            | v1.1      | 2/2            | Complete    | 2026-02-20 |
+| 8. Deep Evidence Pipeline            | v1.1      | 3/3            | Complete    | 2026-02-21 |
+| 9. Engagement Triggers               | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 10. Cadence Engine                   | v1.1      | 4/4            | Complete    | 2026-02-21 |
+| 11. Prospect Dashboard               | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 12. Navigation and Language          | v1.2      | 2/2            | Complete    | 2026-02-21 |
+| 13. Prospect Story Flow              | v1.2      | 5/5            | Complete    | 2026-02-22 |
+| 14. Campaign Reporting               | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 15. Action Queue Dashboard           | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 17. Evidence Pipeline Enrichment     | v2.0      | 3/3            | Complete    | 2026-02-22 |
+| 18. Research Quality Gate            | v2.0      | 3/3            | Complete    | 2026-02-22 |
+| 19. Client Hypothesis Validation     | v2.0      | 2/2            | Complete    | 2026-02-23 |
+| 20. One-Click Send Queue + Pipeline  | v2.0      | 3/3            | Complete    | 2026-02-23 |
+| 21. Prospect Discovery + Cleanup     | v2.0      | 2/2            | Complete    | 2026-02-23 |
+| 22. Hypothesis Flow Fix              | v2.0      | 1/1            | Complete    | 2026-02-23 |
+| 23. Use Case Extractors              | v2.1      | 2/2            | Complete    | 2026-02-24 |
+| 24. Data Population and Discovery    | v2.1      | 2/2            | Complete    | 2026-02-25 |
+| 25. Pipeline Hardening               | v2.1      | 4/4            | Complete    | 2026-02-27 |
+| 26. Quality Calibration              | v2.1      | 2/2            | Complete    | 2026-02-28 |
+| 26.1. Evidence Pipeline Expansion    | v2.1      | 3/3            | Complete    | 2026-02-28 |
+| 27. End-to-End Cycle                 | v2.1      | 2/2            | Complete    | 2026-02-28 |
+| 27.1. Cal.com Booking Validation     | v2.1      | 1/1            | Complete    | 2026-03-01 |
+| 28. Source Discovery with Provenance | v2.2      | 0/TBD          | Not started | -          |
+| 29. Browser-Rendered Extraction      | v2.2      | 0/TBD          | Not started | -          |
+| 30. Pain Confirmation Gate + Audit   | v2.2      | 0/TBD          | Not started | -          |

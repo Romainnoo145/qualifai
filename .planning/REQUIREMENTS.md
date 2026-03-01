@@ -61,31 +61,31 @@ Requirements for Verified Pain Intelligence milestone. Each maps to roadmap phas
 
 | Requirement | Phase | Status  |
 | ----------- | ----- | ------- |
-| DISC-01     | —     | Pending |
-| DISC-02     | —     | Pending |
-| DISC-03     | —     | Pending |
-| DISC-04     | —     | Pending |
-| DISC-05     | —     | Pending |
-| EXTR-01     | —     | Pending |
-| EXTR-02     | —     | Pending |
-| EXTR-03     | —     | Pending |
-| GATE-01     | —     | Pending |
-| GATE-02     | —     | Pending |
-| GATE-03     | —     | Pending |
-| GATE-04     | —     | Pending |
-| GATE-05     | —     | Pending |
-| AUDT-01     | —     | Pending |
-| AUDT-02     | —     | Pending |
-| AUDT-03     | —     | Pending |
-| AUDT-04     | —     | Pending |
+| DISC-01     | 28    | Pending |
+| DISC-02     | 28    | Pending |
+| DISC-03     | 28    | Pending |
+| DISC-04     | 28    | Pending |
+| DISC-05     | 28    | Pending |
+| EXTR-01     | 29    | Pending |
+| EXTR-02     | 29    | Pending |
+| EXTR-03     | 29    | Pending |
+| GATE-01     | 30    | Pending |
+| GATE-02     | 30    | Pending |
+| GATE-03     | 30    | Pending |
+| GATE-04     | 30    | Pending |
+| GATE-05     | 30    | Pending |
+| AUDT-01     | 30    | Pending |
+| AUDT-02     | 30    | Pending |
+| AUDT-03     | 30    | Pending |
+| AUDT-04     | 30    | Pending |
 
 **Coverage:**
 
-- v2.2 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15 ⚠️
+- v2.2 requirements: 17 total
+- Mapped to phases: 17
+- Unmapped: 0 ✓
 
 ---
 
 _Requirements defined: 2026-03-02_
-_Last updated: 2026-03-02 after initial definition_
+_Last updated: 2026-03-02 after roadmap creation_

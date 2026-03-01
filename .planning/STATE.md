@@ -4,17 +4,17 @@
 
 See: .planning/PROJECT.md (updated 2026-03-02)
 
-**Core value:** Every outreach message is backed by real evidence, matched to a service Klarifai actually delivers.
-**Current focus:** v2.2 Verified Pain Intelligence — Phases 28-30: source discovery, browser extraction, pain confirmation gate
+**Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service Klarifai actually delivers.
+**Current focus:** v2.2 Verified Pain Intelligence — Phases 28-30 (source discovery, browser extraction, pain confirmation gate + audit)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 28 — Source Discovery with Provenance
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-02 — Milestone v2.2 started
+Status: Not started (roadmap complete, ready for plan-phase)
+Last activity: 2026-03-02 — Roadmap created for v2.2
 
-Progress: [ ] 0% (v2.2 defining requirements)
+Progress: [ ] 0% (v2.2: 0/3 phases complete)
 
 ## Milestones Shipped
 
@@ -39,9 +39,21 @@ Progress: [ ] 0% (v2.2 defining requirements)
 
 ## Accumulated Context
 
+### Architectural Decisions (v2.2)
+
+- Pain gate is advisory-only — AMBER quality gate remains the single hard block; pain confirmation is a second signal, not a second block
+- Two-tier extraction enforced: stealth-first for static pages, browser only for <500 chars or jsHeavyHint=true; 5-URL cap per run
+- SerpAPI cache guarded at prospect level via serpDiscoveredAt timestamp — skip if <24h old, never trigger at import time
+- GateOverrideAudit is a proper relational model (not JSON in inputSnapshot) — enables querying, joining to prospect/user tables
+- Pain gate thresholds must be calibrated against 7 real prospects before writing constants — run calibration SQL first
+- Schema migration (painGatePassed, painGateDetails on ResearchRun; GateOverrideAudit model) is deferred to Phase 30 — minimises migration risk on live data
+- Phases 28 and 29 can ship to production before Phase 30 schema migration runs
+
 ### Pending Todos
 
 - Run real prospect validation session on /discover/ before building features that depend on hypothesis confirmation signal
+- Verify Crawl4AI service is on v0.8.x before Phase 29 ships (remove_consent_popups and flatten_shadow_dom are v0.8.x features)
+- Run pain gate calibration SQL against 7 real prospects before writing PAIN*GATE*\* constants in quality-config.ts
 
 ### Tech Debt (Carried Forward)
 
@@ -57,5 +69,5 @@ Progress: [ ] 0% (v2.2 defining requirements)
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Starting v2.2 milestone
-Resume with: Define requirements → create roadmap
+Stopped at: Roadmap created for v2.2
+Resume with: `/gsd:plan-phase 28`
