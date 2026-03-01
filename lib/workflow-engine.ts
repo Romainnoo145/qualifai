@@ -351,6 +351,7 @@ const PAIN_WORKFLOW_TAGS = new Set([
   'billing',
   'lead-intake',
   'field-reporting',
+  'workflow-context',
 ]);
 
 function parseEvidenceMetadata(value: unknown): {
@@ -370,7 +371,11 @@ function isObservedEvidence(item: EvidenceInput): boolean {
   if (!metadata.adapter) return false;
   if (SYNTHETIC_ADAPTERS.has(metadata.adapter)) return false;
   if (metadata.fallback) return false;
-  return item.confidenceScore >= 0.62;
+  // With AI scoring, items with aiRelevance >= 0.5 are genuine observations
+  // even if their honest confidence is below the old 0.62 static threshold
+  const aiRelevance = parseAiRelevanceFromEvidence(item);
+  if (aiRelevance !== null) return aiRelevance >= 0.5;
+  return item.confidenceScore >= 0.55;
 }
 
 function evaluatePainConfirmation(items: EvidenceInput[]): {
@@ -409,8 +414,8 @@ function evaluatePainConfirmation(items: EvidenceInput[]): {
       'At least 1 confirmed external pain source required (reviews or jobs)',
     );
   }
-  if (distinctPainTags < 2) {
-    reasons.push('Pain confirmation needs at least 2 workflow tags');
+  if (distinctPainTags < 1) {
+    reasons.push('Pain confirmation needs at least 1 workflow tag');
   }
 
   return {
@@ -423,20 +428,49 @@ function evaluatePainConfirmation(items: EvidenceInput[]): {
   };
 }
 
+function isPlaceholder(item: EvidenceInput): boolean {
+  const meta = parseEvidenceMetadata(item.metadata);
+  if ((item.metadata as Record<string, unknown> | null)?.notFound === true)
+    return true;
+  if (meta.fallback) return true;
+  return false;
+}
+
+function parseAiRelevanceFromEvidence(item: EvidenceInput): number | null {
+  if (
+    !item.metadata ||
+    typeof item.metadata !== 'object' ||
+    Array.isArray(item.metadata)
+  )
+    return null;
+  const meta = item.metadata as Record<string, unknown>;
+  return typeof meta.aiRelevance === 'number' ? meta.aiRelevance : null;
+}
+
 export function evaluateQualityGate(items: EvidenceInput[]): QualityGateResult {
   const reasons: string[] = [];
   const evidenceCount = items.length;
   const sourceTypeCount = new Set(items.map((item) => item.sourceType)).size;
+
+  // Exclude placeholders and noise (aiRelevance < 0.50) from confidence average
+  // Items below 0.5 relevance are generic context, not workflow signal
+  const scorableItems = items.filter((item) => {
+    if (isPlaceholder(item)) return false;
+    const aiRelevance = parseAiRelevanceFromEvidence(item);
+    if (aiRelevance !== null && aiRelevance < 0.5) return false;
+    return true;
+  });
+
   const averageConfidence = round2(
-    average(items.map((item) => item.confidenceScore)),
+    average(scorableItems.map((item) => item.confidenceScore)),
   );
   const painConfirmation = evaluatePainConfirmation(items);
 
   if (evidenceCount < 3) reasons.push('Minimum 3 evidence items required');
   if (sourceTypeCount < 2)
     reasons.push('At least 2 evidence source types required');
-  if (averageConfidence < 0.65)
-    reasons.push('Average confidence must be >= 0.65');
+  if (averageConfidence < MIN_AVERAGE_CONFIDENCE)
+    reasons.push(`Average confidence must be >= ${MIN_AVERAGE_CONFIDENCE}`);
   reasons.push(...painConfirmation.reasons);
 
   return {
@@ -451,6 +485,7 @@ export function evaluateQualityGate(items: EvidenceInput[]): QualityGateResult {
 
 // Re-export from quality-config (client-safe module) to avoid breaking existing imports
 export { computeTrafficLight, type TrafficLight } from '@/lib/quality-config';
+import { MIN_AVERAGE_CONFIDENCE } from '@/lib/quality-config';
 import type { TrafficLight } from '@/lib/quality-config';
 
 export interface QualityBreakdown {
@@ -491,6 +526,18 @@ interface AIEvidenceInput {
   snippet: string;
   sourceUrl: string;
   title: string | null;
+  metadata?: unknown;
+}
+
+function parseAiRelevance(item: AIEvidenceInput): number | null {
+  if (
+    !item.metadata ||
+    typeof item.metadata !== 'object' ||
+    Array.isArray(item.metadata)
+  )
+    return null;
+  const meta = item.metadata as Record<string, unknown>;
+  return typeof meta.aiRelevance === 'number' ? meta.aiRelevance : null;
 }
 
 interface AIProspectContext {
@@ -526,29 +573,51 @@ export async function generateHypothesisDraftsAI(
   };
 
   const VALID_WORKFLOW_TAGS = new Set([
-    'content-production',
-    'client-reporting',
-    'project-management',
+    // Universal
     'lead-intake',
-    'creative-briefing',
+    'project-management',
     'billing',
     'handoff',
+    'scheduling',
+    'reporting',
+    'quality-control',
+    // Marketing/creative
+    'content-production',
+    'client-reporting',
+    'creative-briefing',
+    // Construction/field service
+    'field-dispatch',
+    'site-coordination',
+    'material-procurement',
+    // Services
+    'client-onboarding',
+    'deliverable-tracking',
+    // Operations
+    'inventory-management',
+    'supplier-coordination',
   ]);
 
   try {
-    // Filter to confident, non-empty snippet items and take top 12
+    // Filter to non-empty snippet items, sort by AI relevance then confidence, take top 15
     const filteredEvidence = evidence
       .filter(
-        (item) => item.confidenceScore >= 0.6 && item.snippet.trim().length > 0,
+        (item) => item.confidenceScore >= 0.3 && item.snippet.trim().length > 0,
       )
-      .sort((a, b) => b.confidenceScore - a.confidenceScore)
-      .slice(0, 12);
+      .sort((a, b) => {
+        // Sort by aiRelevance if available, then by confidenceScore
+        const aRelevance = parseAiRelevance(a) ?? a.confidenceScore;
+        const bRelevance = parseAiRelevance(b) ?? b.confidenceScore;
+        return bRelevance - aRelevance;
+      })
+      .slice(0, 15);
 
     const evidenceLines = filteredEvidence
-      .map(
-        (item) =>
-          `[${item.sourceType}] ${item.sourceUrl}: ${item.snippet.slice(0, 200)}`,
-      )
+      .map((item) => {
+        const relevance = parseAiRelevance(item);
+        const relevanceTag =
+          relevance !== null ? ` (relevance: ${relevance.toFixed(2)})` : '';
+        return `[${item.sourceType}]${relevanceTag} ${item.sourceUrl}: ${item.snippet.slice(0, 600)}`;
+      })
       .join('\n');
 
     const specialtiesStr =
@@ -556,26 +625,31 @@ export async function generateHypothesisDraftsAI(
         ? prospectContext.specialties.join(', ')
         : 'unknown';
 
-    const prompt = `You are analyzing evidence from a Dutch marketing bureau's public web presence to identify specific workflow automation pain points that Klarifai (an AI implementation consultancy) could solve.
+    const industryLabel = prospectContext.industry ?? 'B2B services';
+    const validTagsList = Array.from(VALID_WORKFLOW_TAGS).join(', ');
 
-IMPORTANT: These are marketing agencies (bureaus), not construction companies. Focus on marketing/creative workflow pain: content production bottlenecks, client reporting overhead, briefing-to-delivery friction, project management chaos, manual campaign reporting, etc.
+    const prompt = `You are analyzing evidence from a Dutch company's public web presence and external sources to identify specific workflow automation pain points that Klarifai (an AI/automation implementation consultancy) could solve.
 
 Only output JSON. No markdown fences. No explanation.
 
 Company context:
 - Name: ${prospectContext.companyName ?? 'Unknown'}
-- Industry: ${prospectContext.industry ?? 'Marketing/digital agency'}
+- Industry: ${industryLabel}
 - Specialties: ${specialtiesStr}
 - Description: ${prospectContext.description ?? 'No description available'}
 
-Evidence gathered from their public web presence:
+Evidence gathered (sorted by relevance — higher-relevance items are stronger signals):
 ${evidenceLines || 'No specific evidence snippets available — reason from company context only.'}
 
-Based on the company context and evidence above, identify 3 distinct workflow pain hypotheses specific to this company's industry and activities. Each hypothesis must:
-- Be specific to marketing/creative/digital agency workflows (NOT construction, field-service, or generic)
-- Be grounded in the evidence or company context provided
-- Have a workflowTag from this list ONLY: content-production, client-reporting, project-management, lead-intake, creative-briefing, billing, handoff
-- Have a confidenceScore between 0.6 and 0.9 reflecting how specifically the evidence supports the pain
+Based on the company context and evidence above, identify 3 distinct workflow pain hypotheses specific to THIS company's actual industry (${industryLabel}) and activities. Each hypothesis must:
+- Be specific to ${industryLabel} workflows — ground them in what this company actually does
+- Be supported by evidence: must include at least one quoted evidence snippet in the problemStatement (use "..." quotes)
+- Have a workflowTag from this list ONLY: ${validTagsList}
+- Have a confidenceScore between 0.60 and 0.95 reflecting how specifically the evidence supports the pain:
+  - 0.60-0.70: Inferred from context, no direct evidence
+  - 0.70-0.80: Indirect evidence (hiring patterns, service descriptions)
+  - 0.80-0.90: Direct evidence (employee reviews, explicit process mentions)
+  - 0.90-0.95: Strong direct evidence with quoted specifics
 - Include 2-3 evidenceRefs (sourceUrls from the evidence list above that support this hypothesis)
 
 Return ONLY a JSON array with exactly this schema:
@@ -666,6 +740,7 @@ Return ONLY a JSON array with exactly this schema:
         workflowTag: item.workflowTag,
         confidenceScore: item.confidenceScore,
       })),
+      prospectContext,
     );
   }
 }
@@ -676,26 +751,103 @@ export { generateFallbackHypothesisDrafts as generateHypothesisDrafts };
 
 function generateFallbackHypothesisDrafts(
   evidence: EvidenceInput[],
+  prospectContext?: AIProspectContext,
 ): HypothesisDraft[] {
   const fallback = defaultEvidenceRefs(evidence);
   const planningRefs = selectEvidenceIdsByTag(evidence, 'planning', fallback);
   const handoffRefs = selectEvidenceIdsByTag(evidence, 'handoff', fallback);
   const billingRefs = selectEvidenceIdsByTag(evidence, 'billing', fallback);
 
+  // Select industry-appropriate templates
+  if (prospectContext && isConstructionOrInstall(prospectContext.industry)) {
+    return [
+      {
+        title: 'Planning and dispatch coordination bottleneck',
+        problemStatement:
+          'Field project scheduling and crew dispatch likely involve manual coordination across calls, WhatsApp, and spreadsheets, creating delays before work starts on site.',
+        assumptions: [
+          'Planning is distributed across inboxes, calls, and spreadsheets',
+          'Priority changes require manual coordination with field crews',
+        ],
+        confidenceScore: 0.72,
+        evidenceRefs: planningRefs,
+        validationQuestions: [
+          'How long does planning-to-start typically take for a new project?',
+          'How are crew schedules and material availability coordinated?',
+        ],
+        hoursSavedWeekLow: 6,
+        hoursSavedWeekMid: 10,
+        hoursSavedWeekHigh: 16,
+        handoffSpeedGainPct: 28,
+        errorReductionPct: 21,
+        revenueLeakageRecoveredLow: 450,
+        revenueLeakageRecoveredMid: 900,
+        revenueLeakageRecoveredHigh: 1800,
+      },
+      {
+        title: 'Field-to-office reporting creates rework',
+        problemStatement:
+          'Site completion data, progress photos, and quality checks likely require manual re-entry from field to office systems, causing delays and errors.',
+        assumptions: [
+          'Field workers report via WhatsApp or phone calls',
+          'Office staff re-enter information into project management tools',
+        ],
+        confidenceScore: 0.7,
+        evidenceRefs: handoffRefs,
+        validationQuestions: [
+          'How do field teams report completion and quality issues?',
+          'How many times is project data re-entered across systems?',
+        ],
+        hoursSavedWeekLow: 4,
+        hoursSavedWeekMid: 8,
+        hoursSavedWeekHigh: 14,
+        handoffSpeedGainPct: 33,
+        errorReductionPct: 18,
+        revenueLeakageRecoveredLow: 350,
+        revenueLeakageRecoveredMid: 700,
+        revenueLeakageRecoveredHigh: 1450,
+      },
+      {
+        title: 'Quote-to-invoice workflow leaks margin on change orders',
+        problemStatement:
+          'Scope changes and additional work on construction projects likely go untracked until invoice time, causing missed billable hours and disputes.',
+        assumptions: [
+          'Change orders are communicated verbally on site',
+          'Invoice preparation requires manual compilation from multiple sources',
+        ],
+        confidenceScore: 0.68,
+        evidenceRefs: billingRefs,
+        validationQuestions: [
+          'How are scope changes documented during a project?',
+          'What percentage of change orders are captured before invoicing?',
+        ],
+        hoursSavedWeekLow: 3,
+        hoursSavedWeekMid: 6,
+        hoursSavedWeekHigh: 12,
+        handoffSpeedGainPct: 24,
+        errorReductionPct: 16,
+        revenueLeakageRecoveredLow: 600,
+        revenueLeakageRecoveredMid: 1400,
+        revenueLeakageRecoveredHigh: 3000,
+      },
+    ];
+  }
+
+  // Default templates — generic enough for any B2B service company
   return [
     {
-      title: 'Planning bottleneck between requests and execution',
+      title: 'Intake and request routing bottleneck',
       problemStatement:
-        'Intake, planning, and dispatch likely involve manual coordination across tools, creating avoidable delay before execution starts.',
+        'Incoming requests and leads likely flow through manual triage, creating avoidable delay between first contact and action.',
       assumptions: [
-        'Planning is distributed across inboxes, calls, and spreadsheets',
-        'Priority changes are handled ad hoc by coordinators',
+        'Intake is distributed across inboxes, forms, and phone calls',
+        'Priority and routing decisions are made ad hoc',
       ],
-      confidenceScore: 0.76,
+      confidenceScore: 0.72,
       evidenceRefs: planningRefs,
       validationQuestions: [
-        'How long does planning-to-start typically take?',
-        'How many handoffs happen before a job is confirmed?',
+        'How long does it take from first request to confirmed action?',
+        'How many people touch a request before it reaches the right team?',
       ],
       hoursSavedWeekLow: 6,
       hoursSavedWeekMid: 10,
@@ -707,18 +859,18 @@ function generateFallbackHypothesisDrafts(
       revenueLeakageRecoveredHigh: 1800,
     },
     {
-      title: 'Office-to-field handoff creates rework',
+      title: 'Internal handoffs lose context and create rework',
       problemStatement:
-        'Operational handoffs likely lose context, causing rework, duplicate communication, and delays in delivery updates.',
+        'Operational handoffs between teams likely lose context, causing duplicate communication, re-work, and delays.',
       assumptions: [
-        'Delivery details are re-entered multiple times',
-        'Status reporting depends on manual follow-up',
+        'Key details are re-entered or re-communicated at each handoff',
+        'Status updates depend on manual follow-up',
       ],
-      confidenceScore: 0.74,
+      confidenceScore: 0.7,
       evidenceRefs: handoffRefs,
       validationQuestions: [
-        'Where is job context re-entered or clarified most often?',
-        'How many daily updates are chased manually?',
+        'Where does context get lost most often between teams?',
+        'How many status updates are chased manually per day?',
       ],
       hoursSavedWeekLow: 4,
       hoursSavedWeekMid: 8,
@@ -737,11 +889,11 @@ function generateFallbackHypothesisDrafts(
         'Change orders are tracked outside a single system',
         'Invoice readiness is checked manually',
       ],
-      confidenceScore: 0.72,
+      confidenceScore: 0.68,
       evidenceRefs: billingRefs,
       validationQuestions: [
         'How often are changes implemented before being invoiced?',
-        'What is average delay between job completion and invoice send?',
+        'What is average delay between work completion and invoice send?',
       ],
       hoursSavedWeekLow: 3,
       hoursSavedWeekMid: 6,

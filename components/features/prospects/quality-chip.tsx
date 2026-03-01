@@ -128,13 +128,23 @@ export function QualityChip({
   const sourceTypeCount2 = new Set(
     evidenceItems.map((e: { sourceType: string }) => e.sourceType),
   ).size;
+  // Exclude placeholders (notFound) and noise (aiRelevance < 0.5) from average
+  const scorableItems = evidenceItems.filter(
+    (e: { confidenceScore: number; metadata?: unknown }) => {
+      const meta = e.metadata as Record<string, unknown> | null;
+      if (meta?.notFound === true) return false;
+      if (typeof meta?.aiRelevance === 'number' && meta.aiRelevance < 0.5)
+        return false;
+      return true;
+    },
+  );
   const avgConf2 =
-    evidenceItems.length > 0
-      ? evidenceItems.reduce(
+    scorableItems.length > 0
+      ? scorableItems.reduce(
           (sum: number, e: { confidenceScore: number }) =>
             sum + e.confidenceScore,
           0,
-        ) / evidenceItems.length
+        ) / scorableItems.length
       : 0;
   const fullTrafficLight = fullRun
     ? computeTrafficLight(evidenceCount2, sourceTypeCount2, avgConf2)

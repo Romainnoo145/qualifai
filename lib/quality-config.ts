@@ -13,10 +13,11 @@
  * Note: AMBER is a HARD gate (not soft warn-and-proceed). The send queue will
  * not allow outreach for AMBER prospects unless qualityApproved === true.
  *
- * Calibrated: 2026-02-28 against 5 real prospects with expanded evidence pipeline (5 source types).
- * Distribution: 4 GREEN, 1 AMBER, 0 RED. MIN_AVERAGE_CONFIDENCE=0.65 is a meaningful secondary signal.
+ * Calibrated: 2026-03-02 against 7 prospects with AI-scored evidence pipeline.
+ * AI scoring (evidence-scorer.ts) assigns relevance/depth per item, quality gate
+ * excludes items with aiRelevance < 0.50 from average. The honest scoring centers
+ * lower than the old static scores — 0.55 threshold separates weak from strong.
  * Active source types: WEBSITE, CAREERS, LINKEDIN, NEWS, REVIEWS (KVK/REGISTRY inactive — no API key).
- * See: .planning/phases/26-quality-calibration/26-01-SUMMARY.md for calibration data.
  */
 
 /** Minimum number of evidence items required to avoid RED */
@@ -28,8 +29,8 @@ export const AMBER_MIN_SOURCE_TYPES = 2;
 /** Source type count threshold for GREEN (must meet or exceed this to be GREEN) */
 export const GREEN_MIN_SOURCE_TYPES = 3;
 
-/** Minimum average confidence score (secondary signal, used when source types alone are borderline) */
-export const MIN_AVERAGE_CONFIDENCE = 0.65;
+/** Minimum average confidence score (secondary signal — computed over items with aiRelevance >= 0.50 only) */
+export const MIN_AVERAGE_CONFIDENCE = 0.55;
 
 /** Traffic light tier for prospect quality gating */
 export type TrafficLight = 'red' | 'amber' | 'green';

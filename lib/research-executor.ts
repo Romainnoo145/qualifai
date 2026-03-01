@@ -17,7 +17,14 @@ import {
 import { ingestCrawl4aiEvidenceDrafts } from '@/lib/enrichment/crawl4ai';
 import { fetchLinkedInPosts } from '@/lib/enrichment/linkedin-posts';
 import { fetchGoogleReviews } from '@/lib/enrichment/google-reviews';
-import { fetchGoogleNewsRss } from '@/lib/enrichment/google-news';
+import {
+  fetchGoogleNewsRss,
+  fetchDutchIndustryNews,
+} from '@/lib/enrichment/google-news';
+import { fetchEmployeeReviews } from '@/lib/enrichment/employee-reviews';
+import { fetchLinkedInJobs } from '@/lib/enrichment/linkedin-jobs';
+import { fetchCustomerReviews } from '@/lib/enrichment/google-reviews';
+import { scoreEvidenceBatch, type ScoredEvidence } from '@/lib/evidence-scorer';
 import {
   discoverSitemapUrls,
   type SitemapCache,
@@ -51,6 +58,16 @@ function defaultResearchUrls(domain: string): string[] {
     `${base}/vacatures`,
     `${base}/werken-bij`,
     `${base}/projecten`,
+    // Dutch business process pages — high-value for workflow analysis
+    `${base}/werkwijze`,
+    `${base}/aanpak`,
+    `${base}/wat-we-doen`,
+    `${base}/ons-proces`,
+    `${base}/zo-werken-wij`,
+    `${base}/tarieven`,
+    `${base}/offerte`,
+    `${base}/offerte-aanvragen`,
+    `${base}/contact`,
     // English fallbacks
     `${base}/about`,
     `${base}/services`,
@@ -99,7 +116,12 @@ interface SourceDiagnostic {
     | 'linkedin'
     | 'linkedin_posts'
     | 'google_reviews'
-    | 'google_news';
+    | 'google_news'
+    | 'employee_reviews'
+    | 'linkedin_jobs'
+    | 'customer_reviews'
+    | 'dutch_industry_news'
+    | 'evidence_scoring';
   status: SourceStatus;
   message: string;
 }
@@ -485,6 +507,104 @@ export async function executeResearchRun(
         message: `Google News RSS failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
       });
     }
+
+    // Employee reviews from Indeed/Glassdoor
+    try {
+      const employeeReviewDrafts = await fetchEmployeeReviews({
+        companyName: prospect.companyName ?? prospect.domain,
+        domain: prospect.domain,
+      });
+      allDrafts.push(...employeeReviewDrafts);
+      diagnostics.push({
+        source: 'employee_reviews',
+        status: employeeReviewDrafts.length > 0 ? 'ok' : 'warning',
+        message:
+          employeeReviewDrafts.length > 0
+            ? `Employee reviews found ${employeeReviewDrafts.length} review items.`
+            : 'Employee reviews returned no results.',
+      });
+    } catch (err) {
+      console.error('[Employee Reviews] failed:', err);
+      diagnostics.push({
+        source: 'employee_reviews',
+        status: 'error',
+        message: `Employee reviews failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      });
+    }
+
+    // LinkedIn job postings analysis
+    try {
+      const jobDrafts = await fetchLinkedInJobs({
+        companyName: prospect.companyName ?? prospect.domain,
+        domain: prospect.domain,
+      });
+      allDrafts.push(...jobDrafts);
+      diagnostics.push({
+        source: 'linkedin_jobs',
+        status: jobDrafts.length > 0 ? 'ok' : 'warning',
+        message:
+          jobDrafts.length > 0
+            ? `LinkedIn jobs found ${jobDrafts.length} job postings.`
+            : 'LinkedIn jobs returned no results.',
+      });
+    } catch (err) {
+      console.error('[LinkedIn Jobs] failed:', err);
+      diagnostics.push({
+        source: 'linkedin_jobs',
+        status: 'error',
+        message: `LinkedIn jobs failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      });
+    }
+
+    // Customer reviews from Trustpilot/Werkspot
+    try {
+      const customerReviewDrafts = await fetchCustomerReviews({
+        companyName: prospect.companyName ?? prospect.domain,
+        domain: prospect.domain,
+      });
+      allDrafts.push(...customerReviewDrafts);
+      diagnostics.push({
+        source: 'customer_reviews',
+        status: customerReviewDrafts.length > 0 ? 'ok' : 'warning',
+        message:
+          customerReviewDrafts.length > 0
+            ? `Customer reviews found ${customerReviewDrafts.length} review items.`
+            : 'Customer reviews returned no results.',
+      });
+    } catch (err) {
+      console.error('[Customer Reviews] failed:', err);
+      diagnostics.push({
+        source: 'customer_reviews',
+        status: 'error',
+        message: `Customer reviews failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      });
+    }
+
+    // Dutch industry media news
+    if (prospect.industry) {
+      try {
+        const industryMediaDrafts = await fetchDutchIndustryNews({
+          industry: prospect.industry,
+          domain: prospect.domain,
+        });
+        allDrafts.push(...industryMediaDrafts);
+        diagnostics.push({
+          source: 'dutch_industry_news',
+          status: industryMediaDrafts.length > 0 ? 'ok' : 'warning',
+          message:
+            industryMediaDrafts.length > 0
+              ? `Dutch industry news found ${industryMediaDrafts.length} articles.`
+              : 'Dutch industry news returned no results.',
+        });
+      } catch (err) {
+        console.error('[Dutch Industry News] failed:', err);
+        diagnostics.push({
+          source: 'dutch_industry_news',
+          status: 'error',
+          message: `Dutch industry news failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        });
+      }
+    }
   } else {
     diagnostics.push({
       source: 'serp',
@@ -635,7 +755,43 @@ export async function executeResearchRun(
     });
   }
 
-  const evidenceDrafts = dedupeEvidenceDrafts(allDrafts).slice(0, 48);
+  const evidenceDrafts = dedupeEvidenceDrafts(allDrafts).slice(0, 60);
+
+  // AI evidence scoring — score all items for workflow/automation relevance
+  const scoredMap = new Map<number, ScoredEvidence>();
+  try {
+    const toScore = evidenceDrafts.map((draft, index) => ({
+      index,
+      sourceType:
+        draft.sourceType as import('@prisma/client').EvidenceSourceType,
+      sourceUrl: draft.sourceUrl,
+      title: draft.title,
+      snippet: draft.snippet,
+      metadata: draft.metadata,
+    }));
+
+    const scored = await scoreEvidenceBatch(toScore, {
+      companyName: prospect.companyName,
+      industry: prospect.industry,
+    });
+
+    for (const s of scored) {
+      scoredMap.set(s.index, s);
+    }
+
+    diagnostics.push({
+      source: 'evidence_scoring',
+      status: 'ok',
+      message: `AI scoring completed for ${scored.length} evidence items.`,
+    });
+  } catch (err) {
+    console.error('[Evidence Scorer] AI scoring failed:', err);
+    diagnostics.push({
+      source: 'evidence_scoring',
+      status: 'error',
+      message: `AI scoring failed: ${err instanceof Error ? err.message : 'Unknown error'}. Using source-type defaults.`,
+    });
+  }
 
   const evidenceRecords: Array<{
     id: string;
@@ -650,7 +806,27 @@ export async function executeResearchRun(
     metadata: unknown;
   }> = [];
 
-  for (const draft of evidenceDrafts) {
+  for (let i = 0; i < evidenceDrafts.length; i++) {
+    const draft = evidenceDrafts[i]!;
+    const aiScore = scoredMap.get(i);
+
+    // Use AI-scored confidence if available, otherwise keep original
+    const finalConfidence = aiScore
+      ? aiScore.finalConfidence
+      : draft.confidenceScore;
+
+    // Merge AI scoring data into metadata
+    const metadata = {
+      ...(draft.metadata as Record<string, unknown> | undefined),
+      ...(aiScore
+        ? {
+            aiRelevance: aiScore.aiRelevance,
+            aiDepth: aiScore.aiDepth,
+            aiReason: aiScore.aiReason,
+          }
+        : {}),
+    };
+
     const record = await db.evidenceItem.create({
       data: {
         researchRunId: run.id,
@@ -660,8 +836,8 @@ export async function executeResearchRun(
         title: draft.title,
         snippet: draft.snippet,
         workflowTag: draft.workflowTag,
-        confidenceScore: draft.confidenceScore,
-        metadata: draft.metadata ? toJson(draft.metadata) : undefined,
+        confidenceScore: finalConfidence,
+        metadata: toJson(metadata),
       },
       select: {
         id: true,
@@ -701,6 +877,7 @@ export async function executeResearchRun(
       snippet: item.snippet,
       sourceUrl: item.sourceUrl,
       title: item.title,
+      metadata: item.metadata,
     })),
     {
       companyName: prospect.companyName,

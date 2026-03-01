@@ -132,12 +132,75 @@ function detectTechClues(html: string): string[] {
   );
 }
 
+const WORKFLOW_KEYWORDS = [
+  // Dutch
+  'werkwijze',
+  'proces',
+  'stappen',
+  'handmatig',
+  'overdracht',
+  'planning',
+  'factuur',
+  'offerte',
+  'wachttijd',
+  'doorlooptijd',
+  'aanvraag',
+  'intake',
+  'afstemming',
+  'registratie',
+  'controle',
+  'kwaliteit',
+  // English
+  'workflow',
+  'automation',
+  'process',
+  'manual',
+  'handoff',
+  'scheduling',
+  'intake',
+  'invoice',
+  'quote',
+];
+
+function paragraphRelevanceScore(text: string): number {
+  const lower = text.toLowerCase();
+  return WORKFLOW_KEYWORDS.filter((kw) => lower.includes(kw)).length;
+}
+
+function extractRelevantParagraphs(text: string): string {
+  const normalized = normalizeWhitespace(text);
+  const paragraphs = normalized
+    .split(/(?<=[.!?])\s+/)
+    .map((p) => normalizeWhitespace(p))
+    .filter((p) => p.length >= 40 && p.length <= 1000);
+
+  // Score by workflow keyword density, take top 3
+  const scored = paragraphs
+    .map((p) => ({ text: p, score: paragraphRelevanceScore(p) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+
+  return scored.map((s) => s.text).join(' ');
+}
+
 function firstReadableSnippet(text: string): string {
-  const sentences = normalizeWhitespace(text)
+  const normalized = normalizeWhitespace(text);
+
+  // Prefer body text with workflow relevance over generic first sentence
+  if (normalized.length > 200) {
+    const relevant = extractRelevantParagraphs(text);
+    if (relevant.length >= 60) {
+      return relevant.slice(0, 2000);
+    }
+  }
+
+  const sentences = normalized
     .split(/(?<=[.!?])\s+/)
     .map((line) => normalizeWhitespace(line))
-    .filter((line) => line.length >= 35 && line.length <= 700);
-  return sentences[0] ?? normalizeWhitespace(text).slice(0, 600);
+    .filter((line) => line.length >= 35 && line.length <= 1000);
+  return (
+    sentences.slice(0, 3).join(' ').slice(0, 2000) || normalized.slice(0, 2000)
+  );
 }
 
 function baseConfidence(sourceType: EvidenceSourceType): number {
@@ -176,7 +239,10 @@ export function extractWebsiteEvidenceFromHtml(input: {
   const title = extractTitle(input.html);
   const metaDescription = extractMetaDescription(input.html);
   const text = stripHtml(input.html);
-  const snippet = metaDescription ?? firstReadableSnippet(text);
+  // Prefer body text over meta description when body has substantial content
+  const bodySnippet = firstReadableSnippet(text);
+  const snippet =
+    bodySnippet.length > 200 ? bodySnippet : (metaDescription ?? bodySnippet);
   const workflowTag = detectWorkflowTag(
     input.sourceType,
     `${title} ${snippet}`,

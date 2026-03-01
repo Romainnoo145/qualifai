@@ -1,3 +1,4 @@
+import { getJson, config as serpConfig } from 'serpapi';
 import type { EvidenceDraft } from '@/lib/workflow-engine';
 
 const TWELVE_MONTHS_MS = 365 * 24 * 60 * 60 * 1000;
@@ -166,4 +167,95 @@ function stripHtmlTags(html: string): string {
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+const CONSTRUCTION_INDUSTRIES = [
+  'construction',
+  'bouw',
+  'kozijn',
+  'install',
+  'infra',
+  'vastgoed',
+  'real estate',
+  'aannem',
+];
+
+function isConstructionIndustry(industry: string | null): boolean {
+  if (!industry) return false;
+  const lower = industry.toLowerCase();
+  return CONSTRUCTION_INDUSTRIES.some((kw) => lower.includes(kw));
+}
+
+/**
+ * Fetch industry-specific news from Dutch media via SerpAPI.
+ *
+ * Searches sector-specific publications for automation/digitalization articles
+ * relevant to the prospect's industry. Sources include:
+ * - General: emerce.nl, sprout.nl, mt.nl
+ * - Construction: cobouw.nl, bouwkennis.nl
+ *
+ * Returns up to 5 EvidenceDraft items with sourceType NEWS.
+ */
+export async function fetchDutchIndustryNews(input: {
+  industry: string | null;
+  domain: string;
+}): Promise<EvidenceDraft[]> {
+  const apiKey = process.env.SERP_API_KEY;
+  if (!apiKey || !input.industry) return [];
+
+  serpConfig.api_key = apiKey;
+
+  // Build site filter based on industry
+  let siteFilter = 'site:emerce.nl OR site:sprout.nl OR site:mt.nl';
+  if (isConstructionIndustry(input.industry)) {
+    siteFilter += ' OR site:cobouw.nl OR site:bouwkennis.nl';
+  }
+
+  const query = `"${input.industry}" automatisering digitalisering ${siteFilter}`;
+
+  try {
+    const result = (await getJson({
+      engine: 'google',
+      q: query,
+      gl: 'nl',
+      hl: 'nl',
+      google_domain: 'google.nl',
+      num: 5,
+    })) as {
+      organic_results?: Array<{
+        link?: string;
+        title?: string;
+        snippet?: string;
+        date?: string;
+      }>;
+    };
+
+    return (result.organic_results ?? [])
+      .filter(
+        (r) =>
+          r.link &&
+          r.title &&
+          r.snippet &&
+          r.snippet.length >= 30 &&
+          !r.link.includes(input.domain),
+      )
+      .slice(0, 5)
+      .map(
+        (r): EvidenceDraft => ({
+          sourceType: 'NEWS',
+          sourceUrl: r.link!,
+          title: r.title!.slice(0, 120),
+          snippet: r.snippet!.slice(0, 600),
+          workflowTag: 'workflow-context',
+          confidenceScore: 0.75,
+          metadata: {
+            adapter: 'dutch-industry-media',
+            source: new URL(r.link!).hostname,
+            industry: input.industry,
+          },
+        }),
+      );
+  } catch {
+    return [];
+  }
 }
