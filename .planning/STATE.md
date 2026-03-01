@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 28 — Source Discovery with Provenance
-Plan: —
-Status: Not started (roadmap complete, ready for plan-phase)
-Last activity: 2026-03-02 — Roadmap created for v2.2
+Plan: 01 (complete) — advancing to Plan 02
+Status: In progress (Plan 01 complete)
+Last activity: 2026-03-02 — Completed 28-01 source-discovery.ts module with 55 unit tests
 
-Progress: [ ] 0% (v2.2: 0/3 phases complete)
+Progress: [=] ~5% (v2.2: 0/3 phases complete, 1 plan done)
 
 ## Milestones Shipped
 
@@ -48,6 +48,7 @@ Progress: [ ] 0% (v2.2: 0/3 phases complete)
 - Pain gate thresholds must be calibrated against 7 real prospects before writing constants — run calibration SQL first
 - Schema migration (painGatePassed, painGateDetails on ResearchRun; GateOverrideAudit model) is deferred to Phase 30 — minimises migration risk on live data
 - Phases 28 and 29 can ship to production before Phase 30 schema migration runs
+- source-discovery.ts is a pure module (zero side effects, no Prisma) — CAPS.serp=15 (5 review + 5 job + 5 search), defaultResearchUrls has 19 paths verbatim from research-executor.ts
 
 ### Pending Todos
 
@@ -69,5 +70,5 @@ Progress: [ ] 0% (v2.2: 0/3 phases complete)
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Roadmap created for v2.2
-Resume with: `/gsd:plan-phase 28`
+Stopped at: Completed 28-01-PLAN.md (source-discovery.ts module, 55 unit tests)
+Resume with: `/gsd:execute-phase 28 02`
