@@ -128,3 +128,11 @@ None — no external service configuration required.
 
 _Phase: 28-source-discovery-with-provenance_
 _Completed: 2026-03-02_
+
+## Self-Check: PASSED
+
+- FOUND: lib/enrichment/source-discovery.ts
+- FOUND: lib/enrichment/source-discovery.test.ts
+- FOUND: .planning/phases/28-source-discovery-with-provenance/28-01-SUMMARY.md
+- FOUND: commit e23062a (feat: source-discovery.ts)
+- FOUND: commit 463895d (test: 55 unit tests)
