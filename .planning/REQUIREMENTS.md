@@ -1,0 +1,91 @@
+# Requirements: Qualifai
+
+**Defined:** 2026-03-02
+**Core Value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service Klarifai actually delivers.
+
+## v2.2 Requirements
+
+Requirements for Verified Pain Intelligence milestone. Each maps to roadmap phases.
+
+### Source Discovery
+
+- [ ] **DISC-01**: System discovers source URLs from sitemap, SERP, and manual seeds with provenance labels (sitemap/serp/manual)
+- [ ] **DISC-02**: System detects JS-heavy pages and flags them with `jsHeavyHint` for downstream browser extraction routing
+- [ ] **DISC-03**: SERP discovery results are cached at prospect level (`serpDiscoveredAt`) to prevent API credit burn on re-runs
+- [ ] **DISC-04**: Per-source URL caps prevent URL explosion during the merge step
+- [ ] **DISC-05**: Duplicate URLs are deduplicated during merge via normalized URL comparison
+
+### Browser Extraction
+
+- [ ] **EXTR-01**: Static pages route through Scrapling stealth fetcher first; pages returning <500 chars escalate to Crawl4AI
+- [ ] **EXTR-02**: REVIEWS, CAREERS, and JOB_BOARD source types route directly through Crawl4AI browser extraction
+- [ ] **EXTR-03**: Maximum 5 URLs per prospect use browser-rendered extraction to control pipeline duration
+
+### Pain Gate
+
+- [ ] **GATE-01**: System computes cross-source pain confirmation per workflowTag (count of distinct sourceTypes per tag)
+- [ ] **GATE-02**: Quality gate output includes `confirmedPainTags` and `unconfirmedPainTags` arrays
+- [ ] **GATE-03**: Pain confirmation gate is advisory-only (warning, not blocking) to accommodate thin-presence Dutch SMBs
+- [ ] **GATE-04**: Send queue shows pain confirmation status alongside existing quality gate indicator
+- [ ] **GATE-05**: Admin must provide a reason when proceeding with outreach that has unconfirmed pain tags
+
+### Override Audit
+
+- [ ] **AUDT-01**: `GateOverrideAudit` model records every gate bypass with actor, timestamp, reason, and gate type
+- [ ] **AUDT-02**: Override reason is mandatory in the UI when bypassing any gate
+- [ ] **AUDT-03**: "Bypassed" badge appears in admin prospect list for prospects with overridden gates
+- [ ] **AUDT-04**: Override history is visible on research run detail view
+
+## Future Requirements
+
+### Pain Gate Enhancements
+
+- **GATE-06**: Configurable gate strictness per campaign (soft default, hard opt-in via `Campaign.strictGate`)
+- **GATE-07**: Auto-calibrated thresholds based on industry/sector evidence availability
+
+### Source Discovery Enhancements
+
+- **DISC-06**: Admin can manually add/remove source URLs per prospect via UI
+- **DISC-07**: Source discovery scheduling (periodic re-discovery for active prospects)
+
+## Out of Scope
+
+| Feature                           | Reason                                                                                                |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Hard-blocking pain gate           | Dutch SMBs structurally fail cross-source confirmation through thin web presence, not absence of pain |
+| Crawl4AI for all URLs             | 3-5x pipeline slowdown; two-tier routing (Scrapling-first) is validated architecture                  |
+| Real-time source monitoring       | Overkill for current prospect volumes (20-50)                                                         |
+| Pain gate per-industry thresholds | Insufficient data to calibrate; defer to v2.3+ after more prospects                                   |
+
+## Traceability
+
+| Requirement | Phase | Status  |
+| ----------- | ----- | ------- |
+| DISC-01     | —     | Pending |
+| DISC-02     | —     | Pending |
+| DISC-03     | —     | Pending |
+| DISC-04     | —     | Pending |
+| DISC-05     | —     | Pending |
+| EXTR-01     | —     | Pending |
+| EXTR-02     | —     | Pending |
+| EXTR-03     | —     | Pending |
+| GATE-01     | —     | Pending |
+| GATE-02     | —     | Pending |
+| GATE-03     | —     | Pending |
+| GATE-04     | —     | Pending |
+| GATE-05     | —     | Pending |
+| AUDT-01     | —     | Pending |
+| AUDT-02     | —     | Pending |
+| AUDT-03     | —     | Pending |
+| AUDT-04     | —     | Pending |
+
+**Coverage:**
+
+- v2.2 requirements: 15 total
+- Mapped to phases: 0
+- Unmapped: 15 ⚠️
+
+---
+
+_Requirements defined: 2026-03-02_
+_Last updated: 2026-03-02 after initial definition_
