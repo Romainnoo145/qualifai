@@ -1,147 +1,221 @@
 # Pitfalls Research
 
-**Domain:** Admin UX redesign for existing sales automation tool — adding oversight console, research quality gating, client-side approval shift, one-click send queues, and pipeline visualizations on top of a complete backend
-**Researched:** 2026-02-22
-**Confidence:** HIGH (derived from direct codebase analysis — all patterns verified against actual code in `server/routers/`, `app/admin/`, `prisma/schema.prisma`)
+**Domain:** Adding automatic source discovery, browser-rendered evidence extraction, pain confirmation gates, and override audit trails to an existing 8-source sales intelligence pipeline targeting Dutch/Belgian SMBs with thin web presence
+**Researched:** 2026-03-02
+**Confidence:** HIGH — derived from direct codebase analysis (`lib/research-executor.ts`, `lib/enrichment/serp.ts`, `lib/enrichment/crawl4ai.ts`, `lib/evidence-scorer.ts`, `lib/quality-config.ts`, `lib/workflow-engine.ts`, `prisma/schema.prisma`) plus web research on domain-specific failure modes
 
 ---
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites, data corruption, or trust-breaking double-sends.
+Mistakes that cause pipeline failures, system-wide blocks, or outreach quality regressions.
 
 ---
 
-### Pitfall 1: Double-Send on One-Click Approve (Race Condition via Optimistic UI)
+### Pitfall 1: URL Discovery Explosion Breaking Per-Prospect Crawl Budget
 
-**What goes wrong:** When Phase 16 adds a one-click "Send" button to each draft row, clicking the button fires `approveDraft` and the UI optimistically removes the row. If the user clicks before the tRPC mutation resolves (network latency, slow send), a second click fires a second `approveDraft` call on the same `OutreachLog` ID. The first call deletes the record on success (`ctx.db.outreachLog.delete({ where: { id: input.id } })`). The second call hits `findUniqueOrThrow` and throws a Prisma 404 — but by then the first email already sent. Worse: if two admin tabs are open, both tabs show the same draft and can trigger two sends independently.
+**What goes wrong:**
+Automatic source discovery per prospect (Google + sitemap + manual merge) generates far more URLs than the existing pipeline's `slice(0, 10)` cap in `ingestCrawl4aiEvidenceDrafts`. A large e-commerce or franchise prospect can have a sitemap with thousands of URLs. The current `discoverSitemapUrls` already feeds into `researchUrls` — adding automatic Google source discovery on top multiplies this. If no deduplication-aware cap is enforced per source category, a single prospect run can attempt 100+ Crawl4AI extractions, each with a 60-second timeout, turning one research run into a 90-minute blocking operation.
 
-**Why it happens:** The `approveDraft` mutation (line 496 of `server/routers/outreach.ts`) has no idempotency guard. It does not check whether the draft was already sent before calling `sendOutreachEmail`. The ORM-level delete is not a lock — between `findUniqueOrThrow` and `delete`, another request can pass the same `findUniqueOrThrow` and also proceed to send.
+**Why it happens:**
+The current pipeline caps `ingestCrawl4aiEvidenceDrafts` at 10 URLs (`capped = urls.slice(0, 10)`) but does not cap the sitemap URL pool fed to `ingestWebsiteEvidenceDrafts`. When automatic discovery merges Google-discovered URLs with sitemap URLs with manual seeds, the pre-cap merge can produce 200+ URLs before any slice is applied. Developers add the merge without auditing the total URL count entering each extractor.
 
 **How to avoid:**
 
-- Add an optimistic lock: before calling `sendOutreachEmail`, update the status from `'draft'` to `'sending'` in a single atomic write. Use `updateMany` with `where: { id, status: 'draft' }` and check `count === 1` before proceeding. If count is 0, a concurrent send already claimed it — return early without sending.
-- Disable the send button on the first click and keep it disabled until the mutation resolves or errors, never re-enabling silently after first submission.
-- Do not delete `OutreachLog` records on send success — change the record to `status: 'sent'` instead. Deletion removes the ability to audit and breaks idempotency.
-- Apply the same guard to `bulkApproveLowRisk`: filter only `status: 'draft'` records, then use a status-update atomic claim before sending.
+- Enforce per-source-category URL caps **before** feeding into extractors, not inside them:
+  - Sitemap URLs: max 20 (prioritize `/over`, `/diensten`, `/werkwijze`, `/vacatures` paths)
+  - Google-discovered URLs: max 10 (already in `discoverGoogleSearchMentions` with `slice(0, 12)`)
+  - Manual seed URLs: max 10 (user-provided, high-quality)
+  - SERP job/review URLs: max 5 each (already in `discoverSerpUrls` with `slice(0, 5)`)
+- Add a total pre-extraction URL count log: if total > 30, emit a diagnostic warning with count
+- Keep the `evidenceDrafts.slice(0, 60)` ceiling already in place as the final safety net
+- Score-and-prune before Crawl4AI: score snippets from SerpAPI alone first; only browser-extract URLs where the snippet score is insufficient to establish evidence
 
-**Warning signs:** Resend dashboard shows duplicate messages to the same recipient. `OutreachLog` records show `status: 'retry'` for records that Resend received successfully. Contacts report receiving the same email twice.
+**Warning signs:**
+Research runs exceeding 3 minutes per prospect. Crawl4AI service logging concurrent connection saturation. Memory usage on the Scrapling service spiking during research. `evidenceRecords.length` regularly hitting the 60-item cap (means input was much larger and important items may be cut).
 
-**Phase to address:** Phase 16 (Draft Queue Redesign) — the idempotency guard and status-machine approach must be designed before any "one-click send" UI is built.
+**Phase to address:** Source discovery phase — define per-source URL caps as named constants in `quality-config.ts` before writing the discovery merge logic.
 
 ---
 
-### Pitfall 2: Moving Hypothesis Approval to Client Breaks the /voor/ Dashboard Display
+### Pitfall 2: Pain Confirmation Gate Becomes a Stricter Hard Block for Thin-Presence Prospects
 
-**What goes wrong:** The `/voor/[slug]` page reads `workflowHypotheses` filtered to `status: 'ACCEPTED'`. Currently, approval lives entirely in admin. If v2.0 adds any mechanism for clients to "confirm" or "acknowledge" pain points on the prospect dashboard, and those interactions mutate hypothesis status or create new display content, the existing filter `where: { status: 'ACCEPTED' }` becomes ambiguous — does `ACCEPTED` mean admin-approved, client-confirmed, or both? Displaying unreviewed AI output on the client dashboard risks surfacing wrong or embarrassing hypotheses to the prospect.
+**What goes wrong:**
+The existing quality gate learned from experience that hard blocking Dutch SMBs creates an unusable system (`Out of Scope: Research completeness as hard blocker — Makes system unusable for thin-presence Dutch SMBs`). The v2.2 pain confirmation gate adds a stricter requirement: minimum cross-source evidence confirming pain. If this gate is implemented as a second hard block (like AMBER already is), thin-presence prospects will never pass two sequential hard gates. The admin will face a queue of permanently blocked prospects with no path to outreach.
 
-**Why it happens:** The approval flow is one-sided by design (admin-only), which is stated as the product differentiator in `REQUIREMENTS.md` (`Auto-approval of hypotheses: Out of Scope`). Introducing any client-side acknowledgment mechanism without adding a separate status field creates implicit state coupling between two independent flows.
+**Why it happens:**
+The existing `evaluatePainConfirmation` in `workflow-engine.ts` (lines 381-428) already requires: 3+ observed evidence items, 1+ context source, 1+ external pain source (reviews or jobs), 1+ distinct pain workflow tag. These conditions often cannot be satisfied for a small Dutch tradesperson with no Glassdoor presence, no job listings, and no Google reviews. Adding a new gate that also requires cross-source confirmation on top of these existing checks is additive blocking.
 
 **How to avoid:**
 
-- Keep `WorkflowHypothesis.status` values (`DRAFT`, `ACCEPTED`, `REJECTED`) as admin-only. These represent whether admin has reviewed and signed off.
-- If client interaction needs tracking (e.g., "client viewed this pain point"), add a separate model (`HypothesisClientView`) or a boolean column (`clientAcknowledgedAt DateTime?`) — never reuse the admin status enum.
-- The `/voor/` page query must always filter `status: 'ACCEPTED'` and never fall back to `DRAFT` even when no hypotheses are accepted. Show empty state rather than unreviewed content.
-- Audit all query paths that touch `workflowHypothesis` before adding any client-facing interactions.
+- The pain confirmation gate must be a soft gate only — show the admin WHY pain confirmation is weak, but do not block outreach a second time
+- Use the traffic-light metaphor: pain gate shows its own AMBER/RED/GREEN state next to the existing quality gate — admin sees both, decides whether to proceed
+- Never make two sequential hard blocks — the current AMBER quality gate is the single hard block; pain confirmation must be advisory
+- Define "thin presence" explicitly: if `sourceTypeCount < 3` (which triggers AMBER on the quality gate), the pain gate should automatically label itself as "limited signal — thin web presence expected" rather than firing another warning
+- The pain confirmation gate's purpose is to tell admin "this outreach is backed by X cross-source pain signals" — not to block low-scoring prospects
 
-**Warning signs:** `/voor/` page shows hypotheses that have not been reviewed by admin. Client receives an email about a pain point that admin never approved. Hypothesis list on admin page and client dashboard show different counts for the same prospect.
+**Warning signs:**
+Prospects with `gateStatus: 'amber'` that also fail pain confirmation creating a backlog with no action path. Admin reports "nothing can be sent" despite researched prospects in the queue. The `qualityApproved` override gets used on 80%+ of prospects (indicates gate is too strict for the market).
 
-**Phase to address:** Phase 16 if any client-visible approval concept is introduced — enforce the admin-only gate as an explicit constraint at the router level before building client interactions.
+**Phase to address:** Pain confirmation gate phase — design the gate as a display/advisory widget alongside the existing traffic-light, not as a new `qualityApproved`-style field that blocks the send queue.
 
 ---
 
-### Pitfall 3: Research Quality Gate Creates Infinite Loop Without Explicit Exit Conditions
+### Pitfall 3: Browser Extraction Used Systematically for All Sources, Not Just JS-Heavy Pages
 
-**What goes wrong:** A "research quality gate" — where admin can mark a prospect's research as insufficient and trigger re-research — has no natural stopping point. The loop is: research runs → admin reviews → marks insufficient → research runs again → admin reviews again → repeat. Without explicit exit criteria (minimum evidence count, maximum re-run attempts, or a "proceed anyway" override), a single difficult prospect blocks the entire pipeline indefinitely. When the 404-skip fix (`commit 1ae3470`) caused thin evidence pools, re-triggering research produces the same thin results, and the gate loops forever.
+**What goes wrong:**
+Crawl4AI (`extractMarkdown` with `wait_for_timeout: 15000` and `delay_before_return_html: 2`) is expensive per call — each extraction takes 5-20 seconds for a real browser render. If v2.2 "systematically uses browser extraction for all sources," it means every discovered URL (sitemap, Google mentions, SERP jobs, manual seeds) gets routed through Crawl4AI instead of through the faster `web-evidence-adapter` (which uses the Scrapling stealth fetcher). This multiplies extraction time by 3-5x for pages that would return equivalent content via a plain HTTP fetch.
 
-**Why it happens:** Quality gates are designed around the happy path (research improves on retry). For Dutch SMBs with minimal web presence, the evidence pool is structurally limited — no Glassdoor, few public reviews, constructed URLs 404. Re-running research does not improve evidence when the problem is the source, not the scraper.
+**Why it happens:**
+The current pipeline uses two extractors at two cost levels: `ingestWebsiteEvidenceDrafts` (fast, stealth HTTP) for homepage/sitemap URLs and `ingestCrawl4aiEvidenceDrafts` (slow, full browser) for SERP-discovered URLs. Systematizing browser extraction collapses this distinction in the name of consistency, ignoring the cost difference.
 
 **How to avoid:**
 
-- Define explicit exit conditions before building the gate UI:
-  - `maxRetries: 3` — after 3 re-runs, the gate auto-approves with a warning that evidence is thin
-  - `proceedAnywayButton` — admin can manually override the gate and mark research "sufficient despite thin evidence"
-  - `minimumEvidenceCount` — what constitutes "sufficient" must be a hard number (e.g., 3 evidence items with `confidenceScore >= 0.5`), not a vague judgment call
-- Store `researchAttempts: Int` on `ResearchRun` or on the prospect — the gate reads this counter before prompting re-run
-- Show the admin exactly why quality is insufficient (e.g., "2 of 5 URLs returned 404, 1 is a cookie wall") so they can make an informed "proceed anyway" decision
-- Do NOT make the gate mandatory on every review — make it opt-in ("flag this research as needing improvement") so that most prospects flow through without blocking
+- Keep the two-tier approach: use Scrapling stealth fetcher for static/server-rendered pages; use Crawl4AI only for URLs that return low-content after a stealth fetch (`markdown.length < 500`)
+- Add a routing decision: attempt stealth fetch first → if `markdown.length >= 500`, use that content; if `< 500`, escalate to Crawl4AI
+- Tag the extraction path in metadata (`adapter: 'scrapling-stealth'` vs `adapter: 'crawl4ai'`) so diagnostics show which tier handled each URL
+- Only auto-escalate to Crawl4AI for domains known to require JS render (SPAs, cookie-wall sites)
 
-**Warning signs:** The same prospect shows up in the hypothesis review queue multiple times with identical (thin) evidence. `ResearchRun` count for a single prospect exceeds 3. Admin is waiting on research that never improves.
+**Warning signs:**
+Research run time exceeding 5 minutes per prospect. Crawl4AI service timeout errors appearing in diagnostics for simple HTML pages. Scrapling service underutilized (showing near-zero requests in logs while Crawl4AI service is saturated).
 
-**Phase to address:** Phase 16 or the research quality gate phase — define the exit conditions and counter field in the data model before building any gate UI.
+**Phase to address:** Browser extraction phase — write a routing function that decides stealth vs. browser based on content length, before connecting discovery to extraction.
 
 ---
 
-### Pitfall 4: Pipeline Stage Counts Show Inflated or Wrong Numbers (Funnel Arithmetic Error)
+### Pitfall 4: Override Audit Trail Stored in Unqueryable JSON Metadata
 
-**What goes wrong:** The campaign funnel in `server/routers/campaigns.ts` uses cumulative counting: a prospect classified as `replied` also counts toward `imported`, `researched`, `approved`, and `emailed`. The code at lines 322–328 implements this correctly. But when Phase 16 adds a "one-click send" queue that creates `OutreachLog` records with `status: 'draft'` before the admin sends, the `funnelStage` logic classifies prospects as `emailed` based on `EMAILED_SEQUENCE_STATUSES` containing `'SENT'`. If a draft exists but is not sent, and the cadence engine has already set the sequence status to `SENT` prematurely (Pitfall 8 from v1.1 research), a prospect appears in `emailed` funnel stage before any email was actually delivered.
+**What goes wrong:**
+The existing pattern for storing auxiliary information in the codebase is to embed it in `inputSnapshot` (a `Json` column on `ResearchRun`) or in `metadata` (a `Json` column on `EvidenceItem`). If the override audit trail for manual gate bypasses is stored the same way, it becomes unqueryable — you cannot efficiently answer "how many overrides happened this week" or "which admin user bypassed the gate for prospect X" without scanning and parsing all JSON rows. This defeats the purpose of an audit trail: accountability requires queryable, indexed records.
 
-**Why it happens:** Funnel stage is derived from `outreachSequences[].status` and `contacts[].outreachStatus` — both of which can be updated by the cadence engine or by partial approval flows independently of whether Resend actually delivered the email. Sequence status `SENT` is set by `markSequenceStepAfterSend` whenever a step is sent, but the function does not verify delivery — it fires on `result.success` from `sendOutreachEmail`, which itself only checks that the Resend API accepted the request, not that the email was delivered.
+**Why it happens:**
+Adding a JSON column is one migration with no schema design cost. Adding a proper `GateOverride` table requires defining the model, the relation, running a migration, and writing a new router. Developers under time pressure take the JSON path.
 
 **How to avoid:**
 
-- Add a `deliveredAt DateTime?` field to `OutreachStep` that is set only after a Resend delivery webhook fires, not after send attempt
-- The funnel's `isEmailed` check should use `deliveredAt IS NOT NULL` not `status IN ('SENT', ...)`
-- Until delivery webhooks are wired, the funnel is technically measuring "send attempts" not "emails received" — document this clearly in the UI ("X emailed (send attempted)") to set correct expectations
-- When redesigning the pipeline view in Phase 16, show draft count separately from sent count so admin can see the distinction
+- Create a dedicated `GateOverride` model in the Prisma schema:
+  ```
+  model GateOverride {
+    id          String   @id @default(cuid())
+    prospectId  String
+    runId       String?
+    overriddenBy String  // admin userId or 'system'
+    reason      String?
+    gateBefore  String   // 'amber' | 'red'
+    createdAt   DateTime @default(now())
+    prospect    Prospect @relation(fields: [prospectId], references: [id])
+  }
+  ```
+- Do NOT store override records inside `inputSnapshot` or `metadata` — those are unindexed blobs
+- The override audit trail's primary use cases require SQL queries: "who approved this", "how often is AMBER overridden", "show all overrides for this prospect" — these require proper columns and indexes
+- The `overriddenBy` field must be the admin session user ID, not just a boolean flag
 
-**Warning signs:** Funnel `emailed` count exceeds the number of emails Resend shows delivered. Prospects classified as `emailed` have no record in Resend's dashboard. Campaign response rate shows 0% despite high `emailed` count.
+**Warning signs:**
+Reporting on override frequency requires raw SQL with `jsonb_path_exists`. Override records cannot be joined to user or prospect tables. Audit review means manually reading the `inputSnapshot` JSON blob per run.
 
-**Phase to address:** Phase 16 (Draft Queue Redesign) — the funnel query and draft/sent distinction must be resolved before the queue redesign makes the distinction meaningful.
+**Phase to address:** Override audit trail phase — design the `GateOverride` model before writing any UI that triggers overrides.
 
 ---
 
-### Pitfall 5: UX Redesign Breaks Hidden Backend State That Pages Implicitly Depend On
+### Pitfall 5: Source Provenance Lost When Automatic Discovery Merges with Manual Seeds
 
-**What goes wrong:** When admin pages are restructured (Phase 13 replaced 7 tabs with 4 sections), each section imports a separate component (`EvidenceSection`, `AnalysisSection`, `OutreachPreviewSection`, `ResultsSection`). The original 7-tab implementation may have mounted components eagerly on page load — sharing state between tabs via a single tRPC query result. The new implementation uses `hidden` CSS (`display: none`) on inactive sections, which keeps all sections mounted. This means 4 tRPC queries fire on every page load instead of lazily on tab switch. If any query has side effects (e.g., marking items as "viewed" on fetch), those side effects fire immediately on page open regardless of which section is active.
+**What goes wrong:**
+The current pipeline takes `manualUrls` from the research run input and merges them with sitemap-discovered URLs and SERP-discovered URLs in `researchUrls`. When automatic source discovery adds another origin (Google search results), the merged URL list loses provenance — there is no way to tell which evidence item came from which discovery method. When a hypothesis references an evidence item, the admin cannot tell whether that item came from a manually-provided URL (high credibility) or an automatically-discovered URL that may be a false match (lower credibility).
 
-**Why it happens:** Restructuring page layout changes the React mount lifecycle. Moving from lazy-mounted tabs to always-mounted-but-hidden sections changes when queries fire. Developers focus on the visual layout change and miss the implicit timing assumptions in the data layer.
+**Why it happens:**
+The `uniqueUrls` function and `dedupeEvidenceDrafts` operate on raw URL strings and draft objects. The draft's `metadata` field exists but is only populated with adapter type, not with the discovery method that found the URL. Provenance is discarded at the merge step.
 
 **How to avoid:**
 
-- Audit every tRPC query in each section component for side effects before merging section components into an always-mounted layout
-- If any query has a mutation as a side effect (e.g., `markAsViewed` called from `useEffect` on mount), wrap it with a condition checking whether the section is actually visible (`isVisible` prop) before firing
-- The current Phase 13 implementation uses `hidden` CSS (`activeTab === 'evidence' ? '' : 'hidden'`), which mounts all 4 sections on page load — verify that all 4 section queries are read-only and have no mount-time mutations
+- Add a `discoveryMethod` field to `EvidenceDraft.metadata` at the point of discovery:
+  - `'manual'` — admin-provided URL
+  - `'sitemap'` — found in `sitemap.xml`
+  - `'serp-google-maps'` — found via SerpAPI Maps engine
+  - `'serp-google-jobs'` — found via SerpAPI Jobs engine
+  - `'serp-google-search'` — found via Google search mentions
+  - `'auto-google-discovery'` — new v2.2 source discovery
+- This field is already conceptually available in `adapter` in the current metadata but is not set for sitemap-sourced evidence
+- Display discovery method in the admin evidence tab — admins need to know "this came from an auto-discovered Google result" vs "this came from the site's own sitemap"
 
-**Warning signs:** Prospects show `status: 'VIEWED'` in the admin list immediately after being opened, before the admin actually reads anything. Signal counts change unexpectedly after a page reload. Notification logs show events that should only trigger on explicit action.
+**Warning signs:**
+Admin cannot explain to a prospect why a particular piece of evidence was included. Evidence items with suspicious URLs (unrelated domains) cannot be filtered. Hypothesis AI incorrectly weights auto-discovered noise as high-credibility manual evidence.
 
-**Phase to address:** Phase 13 is already shipped; this pitfall is a verification task. Any future page restructure must include an audit of query side effects.
+**Phase to address:** Source discovery phase — add `discoveryMethod` to the draft metadata contract before the merge step is built.
 
 ---
 
-### Pitfall 6: Approval Responsibility Shift Creates Authorization Gap
+### Pitfall 6: SerpAPI Credit Burn from Automatic Per-Prospect Discovery
 
-**What goes wrong:** If v2.0 moves hypothesis approval from admin-only (guarded by `adminProcedure`) to an endpoint that clients can reach (e.g., a prospect clicking "Yes, this is a pain point I recognize"), the authorization model changes. The `hypotheses.setStatus` mutation currently uses `adminProcedure`, which checks for admin session. If a new client-facing endpoint is added that calls the same mutation without admin auth, or calls a new endpoint that modifies hypothesis status, any person who knows the prospect's URL can approve or reject hypotheses without admin oversight.
+**What goes wrong:**
+The current pipeline uses SerpAPI only in `deepCrawl` mode, which is manually triggered. v2.2 adds automatic source discovery per prospect, which may trigger SerpAPI calls on every new prospect import (or every re-run). SerpAPI's current plan has a monthly quota, and the plan's hourly cap is 20% of the monthly quota. Each prospect research run already burns 3-5 SerpAPI calls (Maps lookup + Maps reviews + Jobs search + 3 Google Search queries). Automatic discovery that triggers on every prospect import could burn through the quota in hours if a batch of 20 prospects is imported.
 
-**Why it happens:** The `/voor/[slug]` page is public — no authentication required. The slug is a random ID but is shared with the prospect via email. If client-confirmation calls an unauthenticated tRPC procedure that modifies `WorkflowHypothesis.status`, it bypasses the entire admin approval gate.
+**Why it happens:**
+The discovery logic is triggered in response to a prospect event (import or re-run). Without a per-prospect daily discovery cache that is respected across re-runs, each re-run triggers fresh SerpAPI calls. The current SERP cache in `inputSnapshot` only persists across re-runs of the same `existingRunId` — a new run created from scratch bypasses the cache.
 
 **How to avoid:**
 
-- Client-facing procedures that affect hypothesis display must use a separate procedure type (not `adminProcedure` and not `publicProcedure`) — create a `prospectProcedure` that validates the slug against a prospect record and checks that the caller is the intended recipient
-- Never expose `hypotheses.setStatus` to client routes, even read-only variants — create a separate `clientFeedback` router with its own schema and authorization
-- Rate-limit client-facing state-mutation endpoints — slugs are guessable if the random namespace is small, and a brute-force attempt could mass-approve hypotheses
+- Store a `serpDiscoveredAt` timestamp directly on the `Prospect` model (not just in `ResearchRun.inputSnapshot`), so all re-runs for the same prospect check prospect-level cache before calling SerpAPI
+- Add a global SerpAPI call counter (Redis incr or DB counter) per day — emit a warning diagnostic when calls-per-day exceeds a configured threshold (e.g., 50)
+- Never auto-trigger SerpAPI discovery on batch imports — discovery should be triggered lazily when a research run is started, not at import time
+- The `discoverGoogleSearchMentions` function runs 3 queries per call — the v2.2 automatic discovery must not add additional parallel discovery calls without also caching results at the prospect level
 
-**Warning signs:** Hypothesis status changes without any admin action recorded in the admin audit trail. Prospects receive content that admin did not explicitly approve. `WorkflowHypothesis.status` shows `ACCEPTED` for records where no admin user session touched the mutation.
+**Warning signs:**
+SerpAPI dashboard shows unexpected quota spikes. `serpDiscoveredAt` is missing from the prospect record and every run triggers fresh calls. Research runs creating new `ResearchRun` records (not reusing `existingRunId`) always hit SerpAPI even for recently-researched prospects.
 
-**Phase to address:** Any phase that adds client-interaction to hypothesis data — must be gated behind explicit authorization design before implementation begins.
+**Phase to address:** Source discovery phase — add prospect-level SerpAPI cache column before building automatic discovery logic.
 
 ---
 
-### Pitfall 7: Prospect Pipeline View Stage Transitions Are Not Reversible (One-Way Ratchet)
+### Pitfall 7: Crawl4AI Timeout Cascade Blocking the Entire Research Run
 
-**What goes wrong:** The funnel stage logic in `campaigns.ts` is purely additive — once a prospect is classified as `emailed`, it stays `emailed` even if the outreach sequence fails, the email bounces, or the admin deletes the draft. There is no downgrade path. A prospect in `replied` stage cannot move back to `approved` if the reply is marked as unsubscribe. This makes the funnel view misleading during a campaign cleanup where admin removes failed sequences.
+**What goes wrong:**
+The current `extractMarkdown` in `crawl4ai.ts` sets a 60-second `AbortController` timeout. This means a single slow URL (e.g., a JS-heavy SPA that never finishes loading) blocks one Crawl4AI slot for 60 seconds. The current code extracts URLs sequentially (`for (const url of capped)`) — 10 URLs × 60-second timeout = up to 10 minutes of blocking time if all URLs are JS-heavy or unreachable. If v2.2 systematically routes more URLs through Crawl4AI, this cascade becomes worse.
 
-**Why it happens:** Funnel stage is computed from the presence of records (`outreachSequences.some(...)`, `contacts.some(...)`), not from an explicit stage field. Deleting a sequence removes the evidence for `emailed` stage but the admin rarely deletes sequences — they mark them `CLOSED_LOST`. `CLOSED_LOST` is not in `EMAILED_SEQUENCE_STATUSES`, so a `CLOSED_LOST` sequence correctly removes the prospect from `emailed` stage. But this creates a different problem: admin closing out a lost sequence moves a prospect backward in the funnel unexpectedly.
+**Why it happens:**
+Sequential extraction is safe (no concurrency management needed) but slow. The `AbortController` timeout is per-request, not per-batch. There is no "fast timeout" for clearly broken pages and a "slow timeout" for pages that are loading — all pages get 60 seconds regardless of whether they returned a 404 in 100ms or are a live SPA.
 
 **How to avoid:**
 
-- Add explicit documentation in the funnel UI explaining what each stage means and that stages can move backward when sequences are closed
-- The current funnel stages are: `imported → researched → approved → emailed → replied → booked`. Add a `lost` stage that is separate from downgrading — a prospect that replied with "not interested" should show as `replied/lost` not fall back to `emailed`
-- Do not add new pipeline stages without also defining how transitions work bidirectionally — each new stage needs both promotion and demotion logic
+- Implement a two-phase timeout: fast head request (3 seconds) to check if URL is reachable before committing a full browser render
+- For URLs that respond quickly with short content (< 500 chars), skip Crawl4AI and use the content as-is
+- Reduce Crawl4AI timeout from 60 seconds to 30 seconds for non-SPA pages (use `wait_until: 'domcontentloaded'` instead of `wait_for_timeout: 15000`)
+- Run Crawl4AI extractions with `Promise.allSettled` with a concurrency limit of 3 (not sequentially) — this keeps total batch time bounded at `ceil(urls.length / 3) * 30s`
+- Add a circuit breaker: if 3 consecutive Crawl4AI calls time out, stop extracting that batch and emit an `error` diagnostic
 
-**Warning signs:** Campaign funnel count decreases unexpectedly after admin marks sequences as `CLOSED_LOST`. Admin reports that a prospect "disappeared from the funnel" after closing a lost opportunity. Funnel count is lower than expected after a batch cleanup.
+**Warning signs:**
+Research runs regularly taking 5+ minutes. Crawl4AI service logs showing many simultaneous timeout events. The `diagnostics` array showing `crawl4ai: error` for most URL batches. Scrapling service idle while Crawl4AI service is saturated.
 
-**Phase to address:** Phase 14 is already shipped with the current logic; this is a design constraint for any future pipeline stage additions.
+**Phase to address:** Browser extraction pipeline phase — rewrite sequential extraction to concurrent with circuit breaker before expanding the URL set fed to Crawl4AI.
+
+---
+
+### Pitfall 8: Pain Confirmation Gate Thresholds Not Calibrated Against Actual Prospect Data
+
+**What goes wrong:**
+The existing quality gate thresholds (`MIN_EVIDENCE_COUNT = 3`, `MIN_AVERAGE_CONFIDENCE = 0.55`, `GREEN_MIN_SOURCE_TYPES = 3`) were calibrated against 7 real prospects before v2.1 shipped. The pain confirmation gate for v2.2 introduces new thresholds (minimum cross-source pain evidence). If those thresholds are set during development without calibration against the same 7 real prospects, they will produce either an always-RED gate (too strict, blocks everything) or an always-GREEN gate (too lenient, adds no value).
+
+**Why it happens:**
+New thresholds are typically chosen from intuition ("3 sources seems right") without testing against real data. The Dutch SMB market has structurally different evidence availability than the UK/US market that most pain gate benchmarks assume.
+
+**How to avoid:**
+
+- Before implementing the pain confirmation gate logic, run a calibration query against the 7 existing prospects in DB to see what cross-source pain evidence they currently have:
+  ```sql
+  SELECT p.companyName, ei.sourceType, COUNT(*)
+  FROM "EvidenceItem" ei
+  JOIN "Prospect" p ON ei.prospectId = p.id
+  WHERE ei.confidenceScore >= 0.55
+  GROUP BY p.companyName, ei.sourceType
+  ORDER BY p.companyName, ei.sourceType;
+  ```
+- The gate thresholds must pass at least 5 of the 7 existing prospects — if they don't, the thresholds are wrong for this market
+- Store thresholds in `quality-config.ts` alongside existing thresholds — not hardcoded in the gate component
+- The first implementation should be a display-only gate (shows scores, no blocking) — run it for one milestone before adding any blocking behavior
+
+**Warning signs:**
+All 7 existing prospects fail the pain confirmation gate on first implementation. Gate is disabled immediately after shipping because it blocks everything. Gate thresholds are hardcoded in the gate component, not in `quality-config.ts`.
+
+**Phase to address:** Pain confirmation gate phase — run calibration query before writing any gate logic.
 
 ---
 
@@ -149,83 +223,85 @@ Mistakes that cause rewrites, data corruption, or trust-breaking double-sends.
 
 Shortcuts that seem reasonable but create long-term problems.
 
-| Shortcut                                                                                     | Immediate Benefit                                    | Long-term Cost                                                        | When Acceptable                                                                                                             |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Delete `OutreachLog` after send success (current in `approveDraft`)                          | Simple — no status management                        | No audit trail, breaks idempotency, double-send risk                  | Never — change to status update                                                                                             |
-| Store `dueAt` in JSON metadata (current touch task pattern)                                  | Fast to implement                                    | Cannot index for cron queries, must parse in application              | Acceptable until cadence volume requires indexed queries (already migrated for cadence — apply same pattern to touch tasks) |
-| Use CSS `hidden` on inactive tab sections (current Phase 13)                                 | All sections stay mounted, no re-fetch on tab switch | All 4 queries fire on page load — 4x DB cost per prospect open        | Acceptable for admin-only pages with small user count                                                                       |
-| Funnel stage derived from record presence not explicit field                                 | No schema migration needed                           | Cannot ratchet, no bidirectional transitions, stage is fragile        | Acceptable for MVP campaign reporting; will break at scale                                                                  |
-| `any` type casts on prospect data in prospect detail page (`const p = prospect.data as any`) | Avoids typing complex Prisma includes                | TypeScript cannot catch field renames, breaking changes at type level | Acceptable as technical debt, must be addressed before major page restructure                                               |
+| Shortcut                                                                       | Immediate Benefit       | Long-term Cost                                                                                                  | When Acceptable                                                        |
+| ------------------------------------------------------------------------------ | ----------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Store override audit in `inputSnapshot` JSON                                   | Zero schema migration   | Cannot query "who approved what when", cannot join to user table, compliance audit requires manual JSON parsing | Never — create a `GateOverride` model                                  |
+| Automatic discovery triggers SerpAPI on every re-run (no prospect-level cache) | Always fresh data       | Quota exhaustion on batch re-runs, unpredictable monthly cost                                                   | Never — add prospect-level `serpDiscoveredAt` column                   |
+| Route all discovered URLs through Crawl4AI for consistency                     | Simpler code            | Research runs 5-10x slower, Crawl4AI timeout cascade, no differentiation between static and JS pages            | Never — keep two-tier extraction (stealth + browser)                   |
+| Set pain gate thresholds based on intuition without calibration                | Faster implementation   | Always-RED or always-GREEN gate, gate is disabled after first use                                               | Never — calibrate against real prospect data first                     |
+| No per-source URL cap in the discovery merge step                              | Simpler URL merge logic | URL count explosion for large sitemaps, `slice(0, 60)` cuts important evidence                                  | Never — define per-source caps as named constants                      |
+| Use `qualityApproved` boolean on `ResearchRun` to track pain confirmation      | Reuses existing schema  | Conflates quality approval (existing) with pain confirmation (new), admin cannot tell which approval means what | Never — add a separate `painConfirmed` boolean or `GateOverride` table |
 
 ---
 
 ## Integration Gotchas
 
-Common mistakes when connecting to external services or internal APIs during the redesign.
+Common mistakes when connecting the new v2.2 features to the existing 8-source pipeline.
 
-| Integration                                  | Common Mistake                                                                                                            | Correct Approach                                                                                                               |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| tRPC cache invalidation after batch approve  | Invalidate only `outreachLog` queries but forget `admin.getActionQueue` — dashboard count badge stays stale               | After any mutation that changes OutreachLog status, invalidate both `outreach.*` and `admin.getActionQueue`                    |
-| Resend delivery webhook for funnel accuracy  | Using API response `success` as delivery confirmation                                                                     | Resend sends `email.delivered` webhook events — wire these to update `OutreachStep.deliveredAt` before trusting funnel counts  |
-| Cal.com booking as pipeline signal           | Cal.com fires booking webhook to `/api/webhooks/calcom` — sequence status must be updated there                           | Verify that `outreachSequence.status = 'BOOKED'` is set inside the Cal.com webhook handler, not just on wizard session         |
-| Multi-tab admin sessions                     | Two tabs open, both show same draft queue — first tab sends, second tab shows stale list                                  | Use `useQuery` with `refetchOnWindowFocus: true` (tRPC React Query default) and ensure mutation invalidates shared queries     |
-| Deep links from dashboard to prospect detail | Dashboard links to `/admin/prospects/${id}#analysis` — fragment routing is client-side only, page loads on `evidence` tab | Phase 13 implementation uses `useState('evidence')` — hash-based deep linking requires reading `window.location.hash` on mount |
+| Integration                                     | Common Mistake                                                                                     | Correct Approach                                                                                                          |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| SerpAPI + automatic discovery                   | Triggering discovery at prospect import time (before a research run exists)                        | Trigger SerpAPI discovery only when `executeResearchRun` is called, respect prospect-level cache                          |
+| Crawl4AI + two-tier extraction                  | Calling `ingestCrawl4aiEvidenceDrafts` for URLs that `ingestWebsiteEvidenceDrafts` already handled | Run stealth fetch first; only escalate to Crawl4AI for URLs returning `< 500` chars                                       |
+| Pain gate + existing `evaluatePainConfirmation` | Adding pain gate as a new hard block on top of the existing `passed: reasons.length === 0` check   | Pain gate must be advisory-only; `evaluateQualityGate` already includes pain confirmation reasons in its `reasons` array  |
+| Override audit + `qualityApproved`              | Using `qualityApproved = true` as the override record                                              | `qualityApproved` is a boolean — it records the outcome but not the reason, actor, or time of override                    |
+| Source discovery + deduplication                | Running `dedupeEvidenceDrafts` after discovery merges URLs, losing provenance                      | Add `discoveryMethod` to metadata before dedup, preserve it through the dedup pass                                        |
+| Manual seeds + automatic discovery              | Auto-discovery overwriting manual seed URLs when domains match                                     | Manual seeds take priority — mark them as `discoveryMethod: 'manual'` and prevent auto-discovery from re-classifying them |
 
 ---
 
 ## Performance Traps
 
-Patterns that work at small scale but fail as usage grows.
+Patterns that work at small scale but fail as prospect count grows.
 
-| Trap                                                                                                        | Symptoms                                                           | Prevention                                                                                                                                 | When It Breaks                    |
-| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
-| `getActionQueue` runs 4 parallel queries each fetching up to 50 records with full contact+prospect includes | Dashboard loads slowly as prospect count grows                     | Add `select` clauses to limit fields fetched — currently fetches entire contact records when only `companyName` and `domain` are displayed | At ~500 active outreach records   |
-| Campaign funnel query fetches all contacts and sequences per prospect to derive stage                       | `getCampaignFunnel` slow as contacts per prospect grows            | Move funnel stage derivation to a DB view or materialized column rather than application-side computation                                  | At ~1000 contacts per campaign    |
-| `bulkApproveLowRisk` loops sequentially through drafts calling `sendOutreachEmail` per draft                | Approval of 20 drafts takes 20 × network round-trip time to Resend | Batch the Resend API calls or run with `Promise.all` with concurrency limit (3-5 simultaneous)                                             | At 20+ drafts in a bulk approval  |
-| All sections mounted on prospect detail page loads 4 queries simultaneously                                 | Each prospect open fires 4 parallel DB queries                     | Convert inactive sections to lazy-mounted (only mount when tab is first clicked, then keep mounted)                                        | At ~100 concurrent admin sessions |
+| Trap                                                                | Symptoms                                                                              | Prevention                                                                                                      | When It Breaks                                                 |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Sequential Crawl4AI extraction (current: `for...of` loop)           | Research run time grows linearly with URL count                                       | Rewrite as `Promise.allSettled` with concurrency limit of 3                                                     | At 10+ URLs per run (already hitting this)                     |
+| Per-run SerpAPI calls without prospect-level cache                  | Monthly quota exhausted on re-run of 20 prospects                                     | Add `serpDiscoveredAt` to `Prospect` model; skip SerpAPI if cache < 24h                                         | At 15+ prospects with research re-runs                         |
+| AI evidence scoring (Gemini Flash) in a single batch of 60 items    | Gemini timeout errors when evidence item list is long                                 | Current batch size of 15 is correct — verify it stays respected when evidence count grows past 60               | At 80+ evidence items (currently capped at 60, so safe)        |
+| `evidenceDrafts.slice(0, 60)` cutting pain-signal items             | High-quality pain evidence (reviews, jobs) cut if they appear late in the merge order | Prioritize merge order: reviews + jobs first, website content last before the slice                             | Whenever URL discovery adds more than 40 website-content items |
+| `evaluateQualityGate` running over all items including placeholders | Confidence average skewed by 0.1-score notFound placeholders                          | Already filtered in `isPlaceholder` — verify new discovery sources also emit notFound placeholders consistently | If new sources skip the notFound placeholder pattern           |
 
 ---
 
 ## Security Mistakes
 
-Domain-specific security issues beyond general web security.
+Domain-specific security issues for the v2.2 features.
 
-| Mistake                                                            | Risk                                                                        | Prevention                                                                                                  |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Adding client-acknowledgment endpoint without prospect-scoped auth | Any public user who knows the slug can mutate hypothesis display state      | Create `prospectProcedure` that validates slug ownership before any write                                   |
-| One-click send endpoint without idempotency key                    | Duplicate emails to same prospect — relationship damage, spam reports       | Add optimistic-lock status transition (`draft → sending`) before calling Resend                             |
-| Exposing `admin.getActionQueue` data in client-facing pages        | Admin outreach context (company analysis, internal notes) leaks to prospect | Keep `adminProcedure` on all queue endpoints — never downgrade to `publicProcedure` for admin routes        |
-| Deep link to prospect detail includes `id` in URL                  | Prospect ID is a cuid — low risk but not semantic; readable slug is better  | Already partially solved with `readableSlug` for `/voor/` — admin internal URLs using raw id are acceptable |
+| Mistake                                                                                | Risk                                                                                                 | Prevention                                                                                                                                                              |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Override audit trail writable by any admin without reason capture                      | Gate override becomes a rubber stamp — no accountability, can't audit who and why                    | Require a `reason` string on the override form — can be short, but must be non-empty                                                                                    |
+| Automatic discovery submitting arbitrary user-provided domain as a Google search query | Company name with special characters or SQL injection patterns passed raw to SerpAPI                 | Already partially handled via `process.env.SERP_API_KEY` gating; ensure `companyName` is sanitized (strip quotes, limit length) before embedding in search query string |
+| Crawl4AI extracting content from user-supplied manual seed URLs without validation     | Admin accidentally submits an internal URL or a competitor's CRM page — content extracted and stored | Validate manual seed URLs against `prospect.domain` before running extraction — warn if URL domain does not match or is clearly unrelated                               |
+| Override audit records without `organizationId`                                        | Cross-tenant audit trail queries possible if `GateOverride` model lacks organization scoping         | Add `organizationId` to `GateOverride` model — all models require this per global multi-tenant rules                                                                    |
 
 ---
 
 ## UX Pitfalls
 
-Common user experience mistakes in this domain's admin console redesign.
+Common user experience mistakes specific to these v2.2 features.
 
-| Pitfall                                                                    | User Impact                                                           | Better Approach                                                                                  |
-| -------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Approval button active while mutation is in-flight                         | Admin clicks twice, sees confusing error or sends twice               | Disable button on first click, re-enable only on error, never on success (row should disappear)  |
-| Research quality gate with no "proceed anyway" option                      | Admin blocked indefinitely on thin-evidence prospects                 | Always provide override path with a warning: "Research is thin — proceed anyway?"                |
-| Pipeline funnel shows percentages at early stage when denominator is tiny  | "100% booked rate" when only 1 prospect has been emailed — misleading | Hide percentage metrics until denominator ≥ 5 prospects at that stage                            |
-| Dashboard action queue mixes urgency levels without clear visual hierarchy | Admin misses overdue calls buried among normal drafts                 | Sort order: overdue first (red indicator), then by age; group by type with visual section breaks |
-| One-click send shows no preview of what will be sent                       | Admin approves without seeing content — mistakes go out               | Show subject line and first 100 chars of body in the row before the send button                  |
-| Stage transition not confirmed to admin after one-click action             | Admin unsure if action succeeded; may click again                     | Show inline success state ("Sent") on the row for 2 seconds before removing it from the queue    |
+| Pitfall                                                                                              | User Impact                                                                                     | Better Approach                                                                                                                                                   |
+| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pain confirmation gate shown as a second red/amber badge next to the quality gate                    | Admin sees two conflicting signals with different colors and doesn't know which blocks outreach | One primary traffic-light (quality gate, the hard block); pain confirmation as a secondary text label "Pain confirmed by 2/3 required sources"                    |
+| Override form requires a long written justification                                                  | Admin avoids using override even when genuinely appropriate — pipeline stalls                   | Short required reason with a dropdown of common reasons: "thin presence expected", "direct referral prospect", "re-run won't improve", "manual verification done" |
+| Source discovery result shown to admin as raw URL list                                               | Admin must manually visit URLs to assess relevance                                              | Show source discovery results with domain + page title + discovery method — not raw URLs                                                                          |
+| No visual difference between manual-seeded evidence and auto-discovered evidence in the evidence tab | Admin cannot assess which evidence is high-trust vs. auto-generated noise                       | Show a badge on each evidence card: `manually added`, `auto-discovered`, `sitemap`, `SERP`                                                                        |
+| Override audit trail only visible in a separate "audit log" page                                     | Admin doesn't see prior overrides when deciding to override again                               | Show override history inline on the prospect research tab: "Overridden 1× on [date] — thin presence"                                                              |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-Things that appear complete in the UI but are missing critical backend pieces.
+Things that appear complete but are missing critical pieces.
 
-- [ ] **One-click send queue:** Often missing idempotency guard — verify that rapid double-clicks or multi-tab sessions cannot send the same email twice
-- [ ] **Research quality gate:** Often missing exit conditions — verify that `maxRetries` counter exists in DB and "proceed anyway" override is implemented before shipping the gate UI
-- [ ] **Pipeline stage visualization:** Often missing "send attempted vs. delivered" distinction — verify that funnel `emailed` count reflects Resend delivery confirmations, not just API acceptance
-- [ ] **Dashboard deep links:** Often missing hash fragment handling — verify that `/admin/prospects/${id}#analysis` actually opens the Analysis section on load, not just the default Evidence section
-- [ ] **Client-side hypothesis acknowledgment:** Often missing authorization scope — verify that any client-facing endpoint that reads or writes hypothesis data uses slug-scoped authorization, not admin auth
-- [ ] **Cache invalidation after bulk send:** Often missing cross-router invalidation — verify that `bulkApproveLowRisk` success invalidates both `outreach.listDrafts` and `admin.getActionQueue` so count badges update
-- [ ] **Empty state on quality gate:** Often shown as generic "No data" — verify that the gate distinguishes between "research not run yet", "research ran but thin", and "research sufficient" as three distinct states
-- [ ] **Funnel stage after sequence closure:** Often not tested — verify that marking a sequence `CLOSED_LOST` correctly removes the prospect from `emailed` funnel stage, not from `replied` or `booked`
+- [ ] **Source discovery:** Often missing prospect-level SerpAPI cache — verify that re-running research for the same prospect within 24 hours skips SerpAPI calls (check `Prospect.serpDiscoveredAt` or equivalent)
+- [ ] **URL deduplication with provenance:** Often missing `discoveryMethod` in metadata — verify that evidence items in the Evidence tab show which discovery path produced them
+- [ ] **Pain confirmation gate:** Often missing calibration — verify that all 7 existing real prospects produce a meaningful (not all-RED, not all-GREEN) gate result before shipping
+- [ ] **Crawl4AI two-tier routing:** Often missing the escalation decision — verify that static HTML pages (returning `>= 500 chars` from stealth fetch) are NOT sent to Crawl4AI
+- [ ] **Override audit model:** Often missing `organizationId` — verify the `GateOverride` model has `organizationId NOT NULL` before migration
+- [ ] **Override reason capture:** Often missing non-empty validation — verify that the override form cannot be submitted with an empty reason field
+- [ ] **URL cap constants:** Often missing centralization — verify that per-source URL caps are defined in `quality-config.ts` as named exports, not as inline `slice()` magic numbers
+- [ ] **SerpAPI credit guardrail:** Often missing daily counter — verify that a prospect batch import of 20 companies does not trigger 20× SerpAPI discovery calls in one shot
 
 ---
 
@@ -233,14 +309,14 @@ Things that appear complete in the UI but are missing critical backend pieces.
 
 When pitfalls occur despite prevention, how to recover.
 
-| Pitfall                                                 | Recovery Cost | Recovery Steps                                                                                                                                         |
-| ------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Double-send email delivered to prospect                 | HIGH          | Contact prospect to apologize, mark sequence `CLOSED_LOST`, investigate `OutreachLog` for duplicate records and add idempotency guard                  |
-| Research quality gate in infinite loop                  | MEDIUM        | Add `force_proceed` flag directly in DB for affected prospect, then fix exit conditions in code                                                        |
-| Wrong funnel counts visible in campaign reporting       | LOW           | Funnel is read-only computed data — fix the query logic and refresh, no data migration needed                                                          |
-| Client-side approval exposed unauthorized state changes | HIGH          | Immediately restrict endpoint to admin auth, audit all `WorkflowHypothesis` records for unauthorized status changes, revert affected records           |
-| Dashboard deep link opens wrong section                 | LOW           | Add `useEffect` to read `window.location.hash` on mount and set `activeTab` accordingly                                                                |
-| Bulk approve sends to blocked contacts                  | MEDIUM        | Resend accepts but bounces — check `contact.outreachStatus` filter in `bulkApproveLowRisk` includes `QUEUED` only, audit sent log for blocked contacts |
+| Pitfall                                                   | Recovery Cost | Recovery Steps                                                                                                                                                                    |
+| --------------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SerpAPI quota exhausted mid-month                         | MEDIUM        | Switch to `deepCrawl: false` mode for all new runs until next billing cycle; the pipeline still produces 3-source evidence from sitemap + website + KvK                           |
+| Crawl4AI timeout cascade making runs fail                 | LOW           | Reduce `wait_for_timeout` from 15000 to 8000 ms in `crawl4ai.ts`; accept that some JS pages will return less content                                                              |
+| Pain confirmation gate too strict, all prospects blocked  | LOW           | Set gate to advisory-only (remove any blocking behavior added); ship as display-only and recalibrate thresholds                                                                   |
+| Override audit stored in JSON (wrong approach taken)      | HIGH          | Requires data migration: parse existing JSON overrides, create `GateOverride` table, backfill records — this is why the correct approach must be chosen upfront                   |
+| URL explosion in a research run (run takes 15+ minutes)   | LOW           | Add per-source URL cap constants to `quality-config.ts` and apply `slice()` at discovery stage, not extraction stage; re-run affected prospects                                   |
+| Source provenance lost (merged without `discoveryMethod`) | MEDIUM        | Backfill is impractical (cannot reconstruct which source found which URL after the merge). Must fix the merge logic going forward; existing evidence records will lack provenance |
 
 ---
 
@@ -248,27 +324,26 @@ When pitfalls occur despite prevention, how to recover.
 
 How roadmap phases should address these pitfalls.
 
-| Pitfall                                         | Prevention Phase                              | Verification                                                                                      |
-| ----------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Double-send race condition                      | Phase 16 (Draft Queue Redesign)               | Verify: rapid double-click on send button in dev tools does not produce two Resend API calls      |
-| Hypothesis approval shift auth gap              | Phase 16 or any client-interaction phase      | Verify: unauthenticated POST to any hypothesis mutation endpoint returns 401                      |
-| Research quality gate infinite loop             | Research quality gate phase (not yet planned) | Verify: prospect with 0 evidence items hits "proceed anyway" after 3 re-runs                      |
-| Inflated funnel counts from draft-not-sent      | Phase 16 (Draft Queue Redesign)               | Verify: funnel `emailed` count matches Resend delivered count within 5%                           |
-| UX redesign breaks mounted-section side effects | Phase 13 (shipped) — retroactive verification | Verify: opening prospect detail does not set `status: 'VIEWED'` without admin viewing the content |
-| Authorization gap on client-facing procedures   | Any client-interaction phase                  | Verify: public slug URL cannot call any `adminProcedure` endpoint                                 |
-| Pipeline stage backward transition on closure   | Phase 14 (shipped) — design constraint        | Verify: campaign funnel correctly decrements `emailed` count when sequence is closed              |
-| Hash deep link not handled on page load         | Phase 16 or next prospect detail work         | Verify: `/admin/prospects/[id]#analysis` loads with Analysis section visible, not Evidence        |
+| Pitfall                         | Prevention Phase             | Verification                                                                                                         |
+| ------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| URL discovery explosion         | Source discovery phase       | Verify: research run on a prospect with a large sitemap (e.g., an e-commerce site) completes in under 3 minutes      |
+| Pain gate as second hard block  | Pain confirmation gate phase | Verify: all 7 existing prospects pass through the pain gate in display mode without triggering a new block           |
+| Crawl4AI systematic overuse     | Browser extraction phase     | Verify: static HTML pages bypass Crawl4AI (check `adapter` field in evidence metadata)                               |
+| Override audit in JSON metadata | Override audit phase         | Verify: `GateOverride` model exists in schema with `organizationId`, `overriddenBy`, `reason`, `createdAt` columns   |
+| Source provenance lost          | Source discovery phase       | Verify: all evidence items have `discoveryMethod` in metadata; no item has only `adapter` without a discovery origin |
+| SerpAPI credit burn             | Source discovery phase       | Verify: running research twice in 24h for the same prospect shows 0 SerpAPI calls on the second run                  |
+| Crawl4AI timeout cascade        | Browser extraction phase     | Verify: a batch of 10 unreachable URLs completes in under 90 seconds (not 10 minutes)                                |
+| Uncalibrated gate thresholds    | Pain confirmation gate phase | Verify: calibration query run against real DB before any threshold constant is written                               |
 
 ---
 
 ## Sources
 
-- Codebase analysis (direct): `server/routers/outreach.ts` (approveDraft, bulkApproveLowRisk, markSequenceStepAfterSend), `server/routers/admin.ts` (getActionQueue, getDashboardStats), `server/routers/campaigns.ts` (getCampaignFunnel, funnelStage derivation), `server/routers/hypotheses.ts` (setStatus mutation, authorization pattern), `app/admin/prospects/[id]/page.tsx` (hidden section pattern, activeTab state), `app/voor/[slug]/page.tsx` (hypothesis filter: status ACCEPTED only), `prisma/schema.prisma` (OutreachLog model, ResearchRun status enum)
-- Project memory: Known issues — `commit 1ae3470` (404 pages skipped, thin evidence pool), session memory (user wants "autopilot with oversight", manual approval gates are the product differentiator)
-- Engineering patterns: Optimistic locking via status-transition in distributed send queues; idempotency via pre-claim atomic writes; React mount lifecycle effects on always-mounted vs. lazy-mounted sections
-- Domain knowledge: Sales automation UX — one-click approval queues require idempotency; B2B Dutch SMB evidence is structurally thin (minimal web presence); funnel arithmetic errors common when stage is derived from record presence not explicit state field
+- Codebase analysis (direct): `lib/research-executor.ts` (full 8-source pipeline, URL merge logic, dedup, 60-item cap), `lib/enrichment/crawl4ai.ts` (sequential extraction, 60-second timeout, 10-URL cap), `lib/enrichment/serp.ts` (3 Google queries per run, Maps + Jobs discovery, 5-URL caps), `lib/evidence-scorer.ts` (Gemini Flash scoring, batch size 15, formula), `lib/quality-config.ts` (gate thresholds, MIN_EVIDENCE_COUNT, calibration note), `lib/workflow-engine.ts` (evaluatePainConfirmation logic, isObservedEvidence filter, evaluateQualityGate), `prisma/schema.prisma` (qualityApproved boolean, Json inputSnapshot pattern)
+- Web research: SerpAPI quota mechanics (20% hourly cap, no rollover, $7k/M at scale); Crawl4AI production failure modes (timeout cascades, version mismatches, sequential extraction bottlenecks); URL explosion patterns in sitemap-based crawling; audit trail database design (JSON vs. proper model tradeoffs); Dutch SMB web presence gap (27% of SMBs have no website — thin evidence is structural, not a pipeline bug)
+- Project memory: Validated architectural decisions — "Soft gate (amber = warn + proceed) because Dutch SMBs have thin web presence, hard block unusable"; "Research completeness as hard blocker — Out of Scope"; "Global research threshold — Different industries have different evidence availability"; "AI evidence scoring calibrated 2026-03-02 against 7 prospects, avg conf 0.59-0.70"
 
 ---
 
-_Pitfalls research for: Qualifai v2.0 admin UX redesign — oversight console, research quality gating, client-side approval, one-click send queues, pipeline visualization_
-_Researched: 2026-02-22_
+_Pitfalls research for: Qualifai v2.2 Verified Pain Intelligence — source discovery automation, browser-rendered extraction, pain confirmation gates, override audit trails_
+_Researched: 2026-03-02_

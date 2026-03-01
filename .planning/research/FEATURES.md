@@ -1,270 +1,344 @@
 # Feature Research
 
-**Domain:** Sales automation oversight console — admin UX for evidence-backed outbound prospecting
-**Researched:** 2026-02-22
-**Milestone:** v2.0 — Streamlined Oversight Console
-**Confidence:** MEDIUM-HIGH (industry patterns HIGH; client-side hypothesis validation LOW — novel pattern with no direct comparators)
+**Domain:** Sales Intelligence — Verified Pain Intelligence (v2.2 extension)
+**Researched:** 2026-03-02
+**Milestone:** v2.2 — Verified Pain Intelligence
+**Confidence:** HIGH (codebase analysis) / MEDIUM (industry patterns from WebSearch)
 
 ---
 
 ## Scope Boundary
 
-This file covers only what is NEW in v2.0. The following already exist and are not re-researched:
+This file covers only what is NEW in v2.2. The following already exist and are not re-researched:
 
-- Dashboard with action queue (hypotheses to review, drafts to approve, calls due, replies) — Phase 15
-- Prospect detail page with 4-section story flow (Evidence → Analysis → Outreach Preview → Results) — Phase 13
-- Campaign management with funnel metrics — Phase 14
-- Draft queue page at /admin/outreach — Phase 10–13
-- Signals feed — Phase 9
-- Use Cases catalog — Phase 6
-- Client-facing prospect dashboard at /voor/[slug] — Phase 11
-- Multi-touch cadence engine (Gmail, LinkedIn, WhatsApp, Call) — Phase 10
-- Research pipeline (SerpAPI + Crawl4AI) — Phase 8
-- Hypothesis generation + manual approval gate — Phase 7
+- 8-source evidence pipeline (sitemap, Google, KvK, LinkedIn, employee reviews, job postings, Google Reviews, industry news) — v2.1
+- AI evidence scoring via Gemini Flash (formula: sourceWeight*0.30 + relevance*0.45 + depth\*0.25) — v2.1
+- Traffic-light quality gate (RED/AMBER/GREEN) with AMBER as hard send blocker — v2.1
+- Manual URL seeds via `manualUrls` in `ResearchRun.inputSnapshot` — v1.1
+- `ResearchRun.qualityApproved`, `qualityReviewedAt`, `qualityNotes` schema fields — v2.0
+- Crawl4AI wired for SERP-discovered URLs in deep crawl path — v1.1
+- Sitemap discovery (`discoverSitemapUrls`) — v2.0
+- SerpAPI discovery (`discoverSerpUrls`) — v1.1
+- One-click send queue with idempotency guards — v2.0
+- Prospect pipeline stage tracking (7-stage chip) — v2.0
 
-The core insight for v2.0: **hypothesis approval moves from admin to the prospect's own /voor/ dashboard**. Admin's job narrows to: (1) verify research quality, (2) one-click send when ready, (3) track results. Remove the ~100-screen navigation maze.
+The four NEW features for v2.2:
+
+1. Automatic source URL discovery per prospect (stored with provenance)
+2. Browser-rendered evidence extraction for JS-heavy pages (expanded routing)
+3. Pain confirmation gate — cross-source evidence thresholds blocking outreach
+4. Override audit trail — mandatory reason + history surfaced in admin dashboard
 
 ---
 
 ## Industry Patterns Observed
 
-Research across Outreach.io, Salesloft, HubSpot Breeze Prospecting Agent, Apollo.io, Instantly.ai, Clay.com, and Salesforce reveals consistent patterns for oversight-console UIs:
+Research across sales intelligence tools (Apollo.io, Clay, Gong, Outreach, Lavender, Salesforce),
+web scraping platforms (Crawl4AI, Bright Data, ZenRows, Scrapfly), and audit/compliance tooling
+(Datadog, Salesforce audit trail, SOC2 guidance) reveals the following relevant patterns:
 
-**Task queue "play mode":** Users expect a queue they can step through. Outreach.io's Universal Taskflow lets a rep hit "play" and process tasks one-by-one with a popup — never navigating to individual records. Salesloft's AI draft review works the same way: drafts land in an outbox, rep scans and hits send. The pattern is "process without navigation."
+**Source discovery:** Commodity tools like Hunter.io crawl the web for email addresses and expose
+which domains were found and from where. Clay aggregates 150+ providers with "waterfall enrichment"
+that queries multiple sources and falls back when one fails. Neither tool stores a human-readable
+URL inventory per prospect with discovery method provenance — that is a Qualifai-specific gap that
+would improve admin trust.
 
-**Write-ahead drafting:** Salesloft generates AI email drafts the evening before they are due ("write-ahead"), so reps open to a pre-filled queue each morning. This is the pattern Qualifai's draft queue approximates but has not fully realized.
+**Browser-rendered extraction:** As of 2026, headless browser scraping is the default rather than
+the exception — the web is predominantly client-side rendered. Crawl4AI v0.8.x supports Playwright
+execution, shadow DOM flattening (`flatten_shadow_dom=True`), and session management for multi-step
+flows. Tools that rely on raw HTML fetch miss the majority of JS-heavy review sites, job boards,
+and careers pages — exactly the highest-signal sources for pain detection.
 
-**Human-in-the-loop with escalation thresholds:** The Instantly.ai AI Reply Agent has two modes — HITL (draft shown for approval) and Autopilot (sends automatically). Teams are advised to start in HITL, approve 20–30 drafts to calibrate trust, then switch to Autopilot. This calibration-before-trust pattern is relevant to Qualifai's approval workflow.
+**Evidence-based gating:** Signal-based personalization campaigns backed by validated signals
+achieve 15-25% reply rates versus 3.43% for unvalidated cold email (5x improvement, per AutoBound
+2026). The general pattern in tools like Clay and HubSpot Breeze is a score threshold that blocks
+sequence enrollment if the prospect score is below a configurable floor. No tool explicitly
+implements "cross-source pain confirmation" as a named gate — this is a Qualifai-specific
+architectural concept that extends the general evidence quality pattern into pain-point specificity.
 
-**Confidence score gating:** Modern AI sales tools (HubSpot Breeze, Apollo, Clay) assign a score to each prospect and set a minimum threshold before the prospect enters an action queue. Below threshold = back to enrichment. Above threshold = ready to process. No tool I found calls this "sufficient research" explicitly, but the score-gate pattern is universal.
-
-**Client-facing approval portals are novel:** No direct comparator found for the pattern of "prospect approves the messaging hypothesis on their own dashboard before outreach is sent." HubSpot's Breeze agent offers rep review, not prospect review. This is Qualifai's unique differentiator but has no established UX playbook to borrow from — treat as HIGH design risk.
-
----
-
-## Table Stakes
-
-Features the admin user (Romano) expects. Missing these = oversight console feels like a demo, not a tool.
-
-| Feature                                                    | Why Expected                                                                                                                                                                                                                                                  | Complexity | Notes                                                                                                                                                               |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Research quality indicator per prospect**                | Admin needs to know at a glance whether research is sufficient before investing time in a prospect. Score-gating is universal in AI prospecting tools (Clay, HubSpot, Apollo all do this).                                                                    | MEDIUM     | Compute from: evidence count, evidence confidence scores, hypothesis count, evidence recency. Surface as a simple traffic-light (red/amber/green) or score (0–100). |
-| **"Needs more research" action that re-triggers pipeline** | When research is insufficient, admin must have a one-click way to request re-research. Currently this is buried in prospect detail.                                                                                                                           | LOW        | Button triggers existing research pipeline endpoint. Sets prospect status to "research_pending".                                                                    |
-| **One-click send from draft queue**                        | Send a draft without navigating to the prospect detail page. Outreach/Salesloft pattern: scan draft, approve, next. The current /admin/outreach page shows drafts but the click flow is unclear.                                                              | MEDIUM     | Requires: draft preview inline, channel badge, send button, skip/defer option. No full page load between items.                                                     |
-| **Prospect pipeline stage as visible status**              | Admin needs to see where each prospect is in the flow: New → Research Running → Research Complete → Ready to Send → In Cadence → Responded → Closed. Currently scattered across DB fields with no UI representation.                                          | MEDIUM     | Map existing DB fields (researchStatus, cadenceState, replyStatus) to a unified stage enum. Stage chip shown on prospect list rows and prospect header.             |
-| **Clear stage transition triggers**                        | Each stage transition must have an obvious cause (research finishes → auto-advance; draft approved → auto-advance; prospect replies → auto-advance). Admin should never wonder why something changed stages.                                                  | MEDIUM     | Activity log or status explanation text shown beneath stage chip ("Research completed 2h ago").                                                                     |
-| **Bulk actions on draft queue**                            | When multiple drafts are ready, admin needs to approve all high-confidence ones in one action. Salesloft and Outreach both support batch approval.                                                                                                            | MEDIUM     | "Approve all above threshold X" button. Individual overrides still possible.                                                                                        |
-| **Empty state that explains next action**                  | When the action queue is empty, admin should not see a blank screen. They should see "All caught up — add a new prospect or wait for research to complete." The current empty state (CheckCircle2 + "All caught up!") exists but gives no next-step guidance. | LOW        | Update empty state copy to include one CTA button.                                                                                                                  |
-| **Research status surfaced on dashboard**                  | Currently the action queue shows hypotheses/drafts/tasks/replies but NOT research-in-progress. Admin has no visibility into background jobs running.                                                                                                          | LOW        | Add "Research Running" section to action queue dashboard with prospect name + progress indicator.                                                                   |
-
-**Confidence: HIGH** — All of these are established patterns in Outreach.io, HubSpot, Salesloft, and Apollo. The specific implementations vary but the expected behaviors are consistent.
-
----
-
-## Differentiators
-
-Features that make Qualifai's oversight console meaningfully different from generic sales tools.
-
-| Feature                                                                     | Value Proposition                                                                                                                                                                                                                                                                                      | Complexity | Notes                                                                                                                                                                                                                                                                                         |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Prospect-side hypothesis validation (on /voor/)**                         | Prospect sees the pain hypotheses the system identified about their business and can mark which resonate. Admin uses this signal to decide which hypothesis to send outreach about. Removes the "cold" from cold outreach — prospect has already acknowledged the pain point before first email lands. | HIGH       | No direct comparator found. Novel UX pattern. Prospect dashboard already exists at /voor/[slug]. Needs: hypothesis display on /voor/, confirm/dismiss interaction, webhook back to admin system, admin visibility of confirmed hypotheses. Design risk: may feel intrusive to some prospects. |
-| **Evidence quality breakdown per hypothesis**                               | Instead of a single research score, show admin which specific evidence items support each hypothesis. Admin can see "this hypothesis has 3 supporting evidence items with 0.8+ confidence" vs. "this hypothesis has 1 item at 0.3 confidence." Drives better approval decisions.                       | MEDIUM     | Depends on existing ProofMatch and EvidenceItem.confidenceScore data. Surfaced in Analysis section of prospect detail.                                                                                                                                                                        |
-| **"Need more research" specifies what's missing**                           | When research is insufficient, the system explains WHY: "No review evidence found. No job postings found. Only 2 evidence items total." Admin can then decide whether to wait, manually add URLs, or proceed anyway.                                                                                   | MEDIUM     | Compute gap explanation from evidence types present vs. expected. Show inline in research quality indicator.                                                                                                                                                                                  |
-| **Stage-aware draft queue (only show drafts for prospects in ready state)** | Draft queue today shows all pending drafts regardless of prospect stage. A prospect whose research is still running shouldn't have drafts in the queue yet. Filter by stage so admin only sees actionable items.                                                                                       | LOW        | Filter getActionQueue query by prospect stage.                                                                                                                                                                                                                                                |
-| **Confidence-gated auto-advance**                                           | When research completes and the quality score exceeds a threshold, auto-move prospect to "Ready to Send" stage and surface in action queue. Admin doesn't need to check in — system surfaces the prospect when it's ready.                                                                             | MEDIUM     | Requires: quality score computation after research job completes, stage transition logic, queue refresh trigger.                                                                                                                                                                              |
-| **Prospect activity as urgency signal**                                     | When a prospect visits their /voor/ dashboard or downloads the PDF, this should increase their urgency rank in the task queue. Currently wizard sessions exist but don't influence queue ordering.                                                                                                     | MEDIUM     | Read WizardSession signals (maxStepReached, pdfDownloaded, callBooked) into task priority score. Already identified in v1.1 FEATURES.md as a deferred differentiator — now is the time.                                                                                                       |
-
-**Confidence:** Prospect-side hypothesis validation — LOW (novel, no comparators). All others — MEDIUM-HIGH (build on existing codebase patterns, industry evidence).
+**Override audit trails:** The compliance standard for any SaaS with approval gates is: who
+approved, what was the decision, when did it happen, why (reason code or free text). This is
+required for SOC2 Type II and GDPR evidence trails. Salesforce, Datadog, and AuditBoard all
+implement this pattern. The "72% of organizations experienced compliance violations related to
+inadequate audit trails" finding (Deloitte 2026 Compliance Technology Study, per WebSearch)
+establishes this as a hygiene requirement, not a differentiator.
 
 ---
 
-## Anti-Features
+## Table Stakes (Users Expect These)
 
-Features that seem like good ideas for the oversight console but create real problems.
+Features the admin expects once the concept of "verified pain intelligence" is introduced.
+Missing these makes the system feel like research theater rather than a real gate.
 
-| Feature                                                        | Why Requested                                             | Why Problematic                                                                                                                                                                                                                                                                                                  | Alternative                                                                                                                                                                                                      |
-| -------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Fully automated send without approval gate**                 | Speed — remove the human step entirely                    | Core brand promise of Qualifai is evidence-backed, human-verified outreach. Auto-send also creates legal risk (GDPR, anti-spam) for the NL/BE market. Industry data: Instantly.ai advises starting in HITL mode and calibrating before moving to autopilot — this calibration has not happened yet for Qualifai. | Keep approval gate. Make it faster (one-click, inline preview). Remove it as an option only after trust is established through 50+ approved drafts.                                                              |
-| **Kanban board as primary pipeline view**                      | Visual, familiar from project management tools            | For a single-user tool with ~20-50 active prospects, a Kanban board adds visual complexity without actionability. Drag-and-drop stage transitions create data integrity questions (what triggers actually fired?).                                                                                               | List view with stage chip filter. Kanban is appropriate at 100+ active prospects.                                                                                                                                |
-| **Prospect approves all messaging before any email is sent**   | Maximize relevance — only send what prospect pre-approved | If every prospect must approve before first email, the outreach tool loses its outbound nature entirely. It becomes inbound-only. Also: how does the prospect find the /voor/ dashboard without being contacted first? Chicken-and-egg problem.                                                                  | Hypothesis validation on /voor/ is triggered AFTER first contact (prospect receives a warm email with a /voor/ link). Admin sends first email → prospect validates → subsequent emails use validated hypotheses. |
-| **Global research quality threshold (same for all prospects)** | Simple, consistent                                        | Different industry verticals have different evidence availability. A Dutch bakery has no Glassdoor reviews, no G2 profile, no job board presence — but has rich website content. A SaaS company has the inverse. One threshold fails both.                                                                       | Threshold as a starting point with per-prospect override. Or: compute score relative to expected evidence for that industry type.                                                                                |
-| **Prospect-facing "approve our email before we send it"**      | Maximum transparency                                      | Asking a prospect to approve the email text they'll receive defeats the purpose — they'd just not approve anything. Approval should be at the hypothesis level ("does this pain point resonate?") not the message level.                                                                                         | Prospect validates which pain points resonate on /voor/. Admin then drafts messages around validated hypotheses. Prospect never sees the draft.                                                                  |
-| **Research completeness as a hard blocker**                    | Quality gate prevents low-quality outreach                | If research can never complete for certain prospect types (thin web presence, Dutch SMB), a hard blocker means those prospects never get contacted.                                                                                                                                                              | Research quality is a soft gate: warn admin with amber indicator, but allow proceeding with explicit confirmation ("proceed with limited research").                                                             |
+| Feature                                         | Why Expected                                                                                                                                    | Complexity | Notes                                                                                                                                                            |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Source URL list visible per prospect            | Admin needs to know which URLs were checked. "Where did we look?" is a basic trust requirement for any research tool.                           | LOW        | Already partially exists via `sourceUrl` on every `EvidenceItem`. Gap is a deduplicated URL inventory surfaced in the UI — not new infrastructure.               |
+| Provenance label on each source URL             | Each URL should be tagged with how it was found ("via sitemap", "via SERP", "added manually") so admin understands research coverage            | LOW        | Already stored as `metadata.adapter` on `EvidenceItem`. Gap is standardizing provenance labels and surfacing them in the UI.                                     |
+| Manual URL seed input as first-class UI control | Admin must be able to add known URLs that automated discovery misses (Trustpilot page, sector association membership, specific review platform) | LOW        | Backend already built: `manualUrls` in `ResearchRun.inputSnapshot`. Gap is surfacing this as a UI control rather than a script/API parameter.                    |
+| Re-run research after adding new source URLs    | Once manual seeds are added, admin expects to re-trigger extraction without rebuilding all evidence from scratch                                | MEDIUM     | Re-run path exists via scripts. Gap is exposing this in UI with source-merge semantics (new sources appended, not a full reset that discards existing evidence). |
+| Clear gate status reason on send queue          | Admin expects transparency about WHY a prospect is blocked — not just a red badge but "blocked: 0 cross-source pain confirmations"              | LOW        | Existing AMBER hard gate already blocks send. Gap is making the threshold reason explicit in the UI surface.                                                     |
+| Reason field required when bypassing gate       | Any manual override of a quality gate should require a written reason. This is standard in any compliance-adjacent internal tool.               | LOW        | `ResearchRun.qualityNotes` already exists in schema. Gap is enforcing this field as mandatory in the UI when bypassing (client-side validation).                 |
 
-**Confidence: HIGH** — These are derived from the project's own anti-feature list (v1.1 FEATURES.md), industry pattern research, and direct product context (NL/BE market with thin-presence SMBs).
+### Confidence: HIGH
+
+These are all established patterns in compliance tooling, CRM systems, and sales intelligence
+platforms. The specific implementations vary but the expected behaviors are consistent.
+
+---
+
+## Differentiators (Competitive Advantage)
+
+Features that go beyond what any commodity sales intelligence tool provides.
+
+| Feature                                                                | Value Proposition                                                                                                                                                                                                                                                                                                                                  | Complexity | Notes                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Automatic source discovery (Google + sitemap combined) with provenance | Most tools rely on a single discovery method. Combining sitemap traversal (free, zero API cost) with SerpAPI discovery (paid, high-signal) produces a materially larger and more accurate source inventory. Storing the result as a named, per-prospect URL list with provenance lets admin see and trust the research coverage.                   | MEDIUM     | Sitemap discovery already exists. SerpAPI discovery already exists. Gap is persisting discovered URLs as a `discoveredSources` structure in `ResearchRun.inputSnapshot` with `{ url, discoveryMethod, discoveredAt }` per entry, then merging manual seeds into the same structure.                                                                                       |
+| Browser-rendered extraction as default for all high-signal URL types   | Most tools give up on JS-heavy pages (dynamic review sites, careers pages, job boards). Using Crawl4AI Playwright engine as the default for REVIEWS, CAREERS, and JOB_BOARD URL types — regardless of which discovery method found them — means Qualifai extracts evidence that competitors miss.                                                  | MEDIUM     | Crawl4AI already wired for SERP-discovered URLs in deepCrawl path. Gap is expanding routing: any URL whose inferred source type is REVIEWS, CAREERS, or JOB_BOARD gets routed through Crawl4AI, not the lightweight `ingestWebsiteEvidenceDrafts` fetcher. Originating URL must be preserved in evidence metadata.                                                        |
+| Cross-source pain confirmation threshold                               | Signal-based personalization achieves 5x better reply rates when backed by validated signals versus unconfirmed intent. A gate that requires the same pain point (`workflowTag`) to appear in 2+ distinct `sourceType` values converts "suspected pain" into "confirmed pain" — directly elevating the evidence-backed outreach value proposition. | HIGH       | No equivalent exists in current pipeline. Requires: (a) workflowTag clustering across source types, (b) threshold configuration (default: 2 source types per workflowTag), (c) gate evaluation extending `evaluateQualityGate` in workflow-engine.ts, (d) UI surfacing which pain tags are confirmed vs. suspected, (e) send queue blocking on unconfirmed-only evidence. |
+| Override audit trail with mandatory reason + history view              | Compliance-grade record of who bypassed which gate, when, and why. Enables quality review cadences and prevents "soft gate creep" where overrides become the default. Unlike generic audit logging, this is surfaced in the admin dashboard as a first-class data point — "bypassed N times" — so the admin can see patterns.                      | LOW        | Schema already supports this: `qualityApproved`, `qualityReviewedAt`, `qualityNotes` on `ResearchRun`. Gap is: (a) mandatory reason in UI on bypass, (b) "bypassed" badge visible in dashboard, (c) override history surfaced on research run detail.                                                                                                                     |
+| Source provenance chain ("where we found this → how we extracted it")  | Evidence items tagged with their full discovery chain ("discovered via SERP → extracted via Crawl4AI") give the admin a clear audit trail of the research process, not just the result.                                                                                                                                                            | LOW        | Partially exists via `metadata.adapter`. Gap is standardizing to a consistent provenance schema: `{ discoveryMethod, extractionMethod, discoveredAt }` stored in `EvidenceItem.metadata` for all items.                                                                                                                                                                   |
+
+### Confidence: MEDIUM-HIGH
+
+Cross-source pain confirmation gate: MEDIUM — no direct comparator in commercial tools. The
+underlying concept (validate signals from multiple sources before acting) is well-established in
+intent data platforms. The specific workflowTag-based cross-source implementation is novel.
+
+All others: HIGH — built directly on established infrastructure (Crawl4AI, SerpAPI, existing schema).
+
+---
+
+## Anti-Features (Commonly Requested, Often Problematic)
+
+| Feature                                                              | Why Requested                                                          | Why Problematic                                                                                                                                                                                                                          | Alternative                                                                                                                                                                                            |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Hard gate that blocks ALL outreach without cross-source confirmation | "Confirm pain is real before spending outreach budget" sounds rigorous | Dutch SMBs have thin web presence. A hard cross-source gate would block most NL prospects in the current 7-prospect DB. The existing decision to use soft AMBER gate was made explicitly for this reason (see PROJECT.md Key Decisions). | Keep as configurable threshold: default is SOFT (warn + require reason to proceed). Allow campaigns to opt into STRICT mode (hard block) via existing `Campaign.strictGate` boolean already in schema. |
+| Automatic URL discovery that replaces manual seeds entirely          | "Zero-maintenance research" sounds fast                                | Automated discovery misses proprietary URLs the admin knows about: a specific Trustpilot page, a sector association membership, an industry news mention. Removing manual seeds degrades coverage for thin-presence prospects.           | Keep manual seeds as first-class input, merge with automated discovery, show provenance for each.                                                                                                      |
+| Real-time source discovery triggered on prospect import              | "Discover sources immediately" sounds fast                             | Adds latency to import flow, burns SerpAPI credits on prospects that may never be researched, creates a partial state that confuses the research run status.                                                                             | Keep discovery as part of the research run trigger, not the import step.                                                                                                                               |
+| Store full rendered HTML per discovered URL                          | "We want to see the original page" sounds useful for debugging         | Full HTML per URL across 7+ sources per prospect × 50 prospects = significant storage bloat. Most of the content is irrelevant to pain signals.                                                                                          | Store extracted snippets with source URL link. Admin can click through to live URL. Only store rendered HTML on explicit debug request via a separate diagnostic endpoint.                             |
+| Per-source-type confidence thresholds                                | "REVIEWS should require 0.80+, WEBSITE only 0.55" sounds precise       | Adds configuration surface area that becomes a maintenance burden. The AI scoring formula already adjusts effective weight via source-type weights (REVIEWS 0.90, LINKEDIN 0.88).                                                        | Use AI scoring weights to influence final confidence; keep gate threshold as a single configurable number (current: `MIN_AVERAGE_CONFIDENCE = 0.55`).                                                  |
+| Pain confirmation gate that blocks at the hypothesis level           | "Only generate hypotheses with confirmed pain" sounds strict           | Hypotheses are generated from the full evidence set, including unconfirmed signals. Some of the most valuable hypotheses come from weak signals that probe the prospect's situation.                                                     | Gate at the outreach-send level, not the hypothesis-generation level. Generate hypotheses from all evidence. Block send until the specific hypothesis's pain tag is confirmed cross-source.            |
 
 ---
 
 ## Feature Dependencies
 
 ```
-Research Quality Indicator
-    └──requires──> Evidence items with confidenceScore (EXISTS in schema)
-    └──requires──> Hypothesis count per prospect (EXISTS via api.hypotheses.listByProspect)
-    └──computes──> Quality Score (NEW: scoring function in server)
-    └──surfaces──> Prospect list row chip (NEW: UI)
-    └──surfaces──> Prospect detail header (NEW: UI)
+[Automatic Source Discovery — stored with provenance]
+    └──produces──> [discoveredSources list in ResearchRun.inputSnapshot]
+                       └──feeds──> [Browser-Rendered Extraction routing]
+                       └──feeds──> [Pain Confirmation Gate evaluation]
+                       └──surfaces in──> [Source URL list UI panel]
 
-Research Quality Indicator
-    └──gates──> Draft queue visibility (NEW: filter in getActionQueue)
-    └──triggers──> Auto-advance to "Ready to Send" stage (NEW: post-research hook)
+[Browser-Rendered Extraction — expanded routing]
+    └──requires──> [URL type inference (inferSourceType — EXISTS)]
+    └──routes──> REVIEWS/CAREERS/JOB_BOARD URLs through Crawl4AI
+    └──produces──> [EvidenceItem records with provenance metadata]
+                       └──feeds──> [Pain Confirmation Gate]
 
-Prospect Pipeline Stage
-    └──requires──> Unified stage enum (NEW: maps existing fields)
-    └──surfaces──> Prospect list stage chip (NEW: UI)
-    └──surfaces──> Prospect detail header stage chip (NEW: UI, extends existing status badge)
-    └──enables──> Stage-aware draft queue filter (NEW: query predicate)
+[Pain Confirmation Gate]
+    └──requires──> [EvidenceItem.workflowTag clustering (EXISTS — data is there)]
+    └──requires──> [EvidenceItem.sourceType per item (EXISTS)]
+    └──extends──> [evaluateQualityGate in workflow-engine.ts (EXISTS)]
+    └──adds──> confirmedPainTags[] and unconfirmedPainTags[] to gate output
+    └──blocks──> [Send Queue] when confirmation threshold not met
+    └──enables──> [Override Audit Trail] when bypassed
 
-"Need More Research" flow
-    └──requires──> Research quality indicator (shows WHY insufficient)
-    └──triggers──> Existing research pipeline startResearch mutation (EXISTS)
-    └──sets──> Prospect stage back to "Research Running" (NEW: stage transition)
+[Override Audit Trail]
+    └──requires──> [Pain Confirmation Gate output] (something to audit)
+    └──extends──> [ResearchRun.qualityApproved/qualityReviewedAt/qualityNotes (EXISTS in schema)]
+    └──adds──> mandatory UI enforcement of qualityNotes on bypass
+    └──adds──> "bypassed" badge in admin dashboard
 
-One-Click Send from Draft Queue
-    └──requires──> Inline draft preview (NEW: modal or expand-in-place)
-    └──requires──> Existing sendDraft mutation (EXISTS in outreach router)
-    └──advances──> Prospect stage to "In Cadence" (NEW: post-send hook)
-
-Prospect-Side Hypothesis Validation (/voor/)
-    └──requires──> Hypothesis display on /voor/ page (NEW: component)
-    └──requires──> Confirm/dismiss interaction on /voor/ (NEW: API + UI)
-    └──requires──> First-contact email already sent (DEPENDENCY: outreach must precede validation)
-    └──signals──> Admin dashboard: "prospect confirmed pain points" (NEW: action queue item type)
-    └──feeds──> Draft generation: use validated hypotheses as primary angle (NEW: generation param)
-
-Prospect Activity Urgency Signal
-    └──requires──> WizardSession.maxStepReached, pdfDownloaded, callBooked (EXISTS in schema)
-    └──requires──> Task priority scoring update (NEW: sort key in getActionQueue)
-    └──surfaces──> Higher position in task queue (NEW: ordering change)
+[Existing 8-Source Pipeline] ──provides infrastructure for──> all four features
+[Existing Traffic-Light Gate] ──extended by──> [Pain Confirmation Gate]
+[Existing AMBER Hard Gate] ──extended by──> [Override Audit Trail]
+[Existing Crawl4AI integration] ──expanded by──> [Browser-Rendered Extraction routing]
+[Existing SerpAPI + Sitemap discovery] ──extended by──> [Automatic Source Discovery storage]
 ```
 
 ### Dependency Notes
 
-- **Research Quality Indicator must precede Draft Queue changes:** The draft queue filter (show only ready-stage prospects) depends on quality scores existing. Build scoring first.
-- **Prospect Pipeline Stage is foundational:** Almost every other feature references it. Map the stage enum and add it to the prospect list before building anything else.
-- **Prospect-Side Hypothesis Validation conflicts with "first email not yet sent":** Do not show hypothesis validation UI on /voor/ until admin has sent at least one outreach. Gate the /voor/ hypothesis section by `sequences.length > 0`.
-- **One-Click Send enhances but does not block Draft Queue:** Draft queue is already built. One-click send is an improvement layer. Build after stage and quality indicator work is done.
+- **Source discovery requires no new integrations**: sitemap (`discoverSitemapUrls`) and SERP
+  (`discoverSerpUrls`) are both already built. The gap is persisting their output as a named,
+  provenance-tagged `discoveredSources` structure in `ResearchRun.inputSnapshot` rather than
+  computing URLs inline during a research run and discarding them.
+
+- **Browser-rendered extraction requires source discovery to be maximally useful**: If source
+  discovery outputs a richer URL list, browser-rendered extraction has more high-signal URLs to
+  process. Build source discovery storage first, then expand Crawl4AI routing.
+
+- **Pain confirmation gate requires workflowTag clustering**: The existing pipeline already stores
+  `workflowTag` on every `EvidenceItem`. Cross-source confirmation is a query: count distinct
+  `sourceType` values for items sharing the same `workflowTag`. If count >= 2, the pain is
+  "confirmed". This is a query-level addition to `evaluateQualityGate`, not a schema change.
+
+- **Override audit trail requires the gate to exist first**: There is nothing to audit until the
+  pain confirmation gate produces a blockable state. Sequence: gate → audit trail.
+
+- **All four features depend on the existing evidence pipeline producing `sourceType`-tagged items**:
+  This is already the case. The pipeline produces `EvidenceItem` records with `sourceType` from
+  the `EvidenceSourceType` enum.
 
 ---
 
-## What "Sufficient Research" Looks Like
+## What "Confirmed Pain" Looks Like
 
-Based on industry patterns (Clay.com waterfall enrichment, HubSpot Breeze research quality, general AI prospecting scoring approaches) and Qualifai's specific evidence model:
+This is the operational definition for the pain confirmation gate.
 
-**Definition of sufficient research (recommended thresholds):**
+**A pain tag is "confirmed" when:**
 
-| Signal                                           | Minimum for Amber | Minimum for Green |
-| ------------------------------------------------ | ----------------- | ----------------- |
-| Evidence items total                             | 3+ items          | 8+ items          |
-| Evidence items with confidenceScore >= 0.6       | 1+ items          | 4+ items          |
-| Evidence source diversity (distinct sourceTypes) | 1 type            | 2+ types          |
-| Hypotheses generated                             | 1+ hypotheses     | 2+ hypotheses     |
-| Evidence age (most recent item)                  | < 30 days         | < 14 days         |
+- At least 2 distinct `sourceType` values have evidence items with `workflowTag` matching that pain tag
+- At least 1 of those items has `aiRelevance >= 0.50` (same threshold already used by quality gate)
 
-**Red (insufficient):** Any of — zero hypotheses, OR zero evidence items, OR all evidence items have confidenceScore < 0.4.
+**Example — confirmed:**
 
-**Amber (limited):** Meets minimums but not green thresholds. Admin can proceed with warning.
+- WEBSITE evidence: "We manually process invoices in Excel" (workflowTag: `document-processing`)
+- REVIEWS evidence: "Their finance team is overwhelmed with manual work" (workflowTag: `document-processing`)
+- Result: `document-processing` is confirmed (2 source types: WEBSITE, REVIEWS)
 
-**Green (sufficient):** Meets all green thresholds. Auto-advance to "Ready to Send" stage.
+**Example — not confirmed:**
 
-**Important caveat:** Dutch SMBs with thin web presence may never reach green thresholds through automated research alone. The system must make amber + manual proceed the comfortable fallback, not an error state.
+- WEBSITE evidence: "We use Excel for project tracking" (workflowTag: `project-management`)
+- More WEBSITE evidence: "Our process uses spreadsheets" (workflowTag: `project-management`)
+- Result: `project-management` is NOT confirmed (only 1 source type: WEBSITE)
 
-**Confidence: MEDIUM** — Thresholds derived from industry patterns and Qualifai's existing evidence model. Should be validated against actual prospect data after launch. These are starting hypotheses, not proven values.
+**Gate behavior:**
 
----
+- GREEN confirmed: at least 1 pain tag confirmed cross-source → outreach allowed
+- AMBER unconfirmed: no pain tags confirmed cross-source → send queue shows warning + requires reason
+- Campaign with `strictGate: true` → hard block on AMBER unconfirmed (cannot override without API)
 
-## What "Need More Research" Flows Look Like
-
-Based on how HubSpot Breeze, Clay.com, and Outreach.io handle insufficient data:
-
-**Expected flow:**
-
-1. Admin sees amber or red quality indicator on a prospect row or in prospect detail header
-2. Admin clicks indicator → tooltip or popover explains what's missing: "Found 2 evidence items. No review evidence. No job postings. 0 hypotheses generated."
-3. Admin sees two options:
-   - "Re-run Research" — triggers the existing research pipeline, sets stage to "Research Running"
-   - "Add URLs Manually" — opens the existing manual URL input (already in evidence section) to supplement
-4. If admin chooses to proceed anyway (amber state): "Proceed with limited research" explicit confirmation button. This bypasses the quality gate and moves to "Ready to Send" with a flag on the record.
-
-**What NOT to do:** Do not block the admin completely (hard gate). The Dutch SMB market has thin evidence and the product must still be usable for those prospects.
-
-**Confidence: MEDIUM** — Pattern derived from Clay.com's waterfall-then-warn approach and HubSpot Breeze's "review before send" model. No single tool implements exactly this flow but the components are established patterns.
+**Confidence: MEDIUM** — The 2-source-type threshold is a reasonable starting point based on the
+"multiple independent sources = stronger signal" principle established in evidence quality research.
+Should be validated against real prospect data after the first 20 prospects pass through the gate.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v2.0)
+### Launch With (v2.2)
 
-Minimum set to achieve "admin navigates Qualifai in under 5 screens, not 100."
+Minimum to deliver the "Verified Pain Intelligence" milestone value.
 
-- [ ] **Prospect pipeline stage chip** — visible on list view and prospect detail header; maps existing DB fields to a unified 7-stage enum — _blocks everything else_
-- [ ] **Research quality indicator** — traffic-light (red/amber/green) per prospect, shown on list row and prospect detail header — _unlocks quality-gated flows_
-- [ ] **"Need more research" popover** — explains what's missing + one-click re-run trigger — _closes the gap identification loop_
-- [ ] **Stage-aware action queue** — dashboard only surfaces prospects that are in actionable stages (removes noise from in-research prospects) — _makes dashboard usable daily_
-- [ ] **Inline draft preview + one-click send** — draft expands in place in queue, send without full page navigation — _reduces clicks from 6 to 2_
+- [ ] **Discovered source URL list stored per prospect with provenance** — foundation for admin
+      trust. Without this, the admin cannot see what was researched and cannot add targeted manual
+      seeds. Stores `{ url, discoveryMethod: 'sitemap'|'serp'|'manual', discoveredAt }` in
+      `ResearchRun.inputSnapshot`.
+- [ ] **Browser-rendered extraction for all REVIEWS/CAREERS/JOB_BOARD URL types** — unblocks
+      JS-heavy pages. Routes all URLs of these types through Crawl4AI regardless of discovery method.
+      Preserves originating URL in evidence metadata.
+- [ ] **Cross-source pain confirmation gate** — the core milestone deliverable. Extends
+      `evaluateQualityGate` to output `confirmedPainTags[]` and `unconfirmedPainTags[]`. Send queue
+      blocks when no pain tags are confirmed. UI shows which pains are confirmed vs. suspected.
+- [ ] **Override audit trail with mandatory reason** — reason field required in UI when bypassing.
+      Override logged to `ResearchRun.qualityNotes` with timestamp. "Bypassed" badge visible in admin
+      dashboard. History surfaced on research run detail view.
 
 ### Add After Validation (v2.x)
 
-- [ ] **Prospect-side hypothesis validation on /voor/** — depends on first-email flow being established; ship after 5+ prospects have received first emails
-- [ ] **Confidence-gated auto-advance** — auto-move to "Ready to Send" when score hits green; requires quality scoring to be stable for 2+ weeks first
-- [ ] **Bulk approve all drafts above threshold** — add after single-approve flow is working smoothly
-- [ ] **Prospect activity urgency signal in task queue** — depends on WizardSession data being non-empty (needs active /voor/ users)
+- [ ] **Source discovery UI panel** — dedicated interface to review discovered sources, add manual
+      seeds, remove false positives. Trigger: admin starts manually editing the source list more than
+      twice per week.
+- [ ] **Per-campaign confirmation threshold configuration** — allow campaigns to set their own
+      cross-source thresholds. Trigger: current defaults produce too many false blocks or false passes
+      across different prospect cohorts.
+- [ ] **Override analytics** — count of overrides per time period, which pain tags are most
+      commonly unconfirmed. Trigger: 20+ prospects with override patterns visible.
 
 ### Future Consideration (v3+)
 
-- [ ] **Kanban board view** — only warranted at 100+ active prospects
-- [ ] **Autopilot mode (auto-send without approval)** — only after 50+ manually approved drafts establish trust baseline; requires explicit opt-in
+- [ ] **Sector-specific source templates** — pre-seeded source lists for known sectors. Defer
+      until 50+ prospects across 5+ sectors to generalize.
+- [ ] **Source health monitoring** — alert when a previously productive source URL returns empty.
+      Defer until current volumes justify the maintenance overhead.
 
 ---
 
 ## Feature Prioritization Matrix
 
-| Feature                                      | User Value | Implementation Cost | Priority |
-| -------------------------------------------- | ---------- | ------------------- | -------- |
-| Prospect pipeline stage chip                 | HIGH       | MEDIUM              | P1       |
-| Research quality indicator                   | HIGH       | MEDIUM              | P1       |
-| Stage-aware action queue                     | HIGH       | LOW                 | P1       |
-| "Need more research" flow                    | HIGH       | LOW                 | P1       |
-| Inline draft preview + one-click send        | HIGH       | MEDIUM              | P1       |
-| Prospect-side hypothesis validation (/voor/) | HIGH       | HIGH                | P2       |
-| Confidence-gated auto-advance                | MEDIUM     | MEDIUM              | P2       |
-| Bulk approve above threshold                 | MEDIUM     | LOW                 | P2       |
-| Prospect activity urgency ranking            | MEDIUM     | LOW                 | P2       |
-| Research running visibility in dashboard     | LOW        | LOW                 | P2       |
-| Kanban board                                 | LOW        | HIGH                | P3       |
-| Autopilot auto-send                          | MEDIUM     | HIGH                | P3       |
+| Feature                                                           | User Value                                                      | Implementation Cost                                                                                 | Priority |
+| ----------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------- |
+| Discovered source URL list stored with provenance                 | HIGH — foundation for admin trust in research coverage          | LOW — no new integrations; gap is storage + light UI                                                | P1       |
+| Browser-rendered extraction expanded to all high-signal URL types | HIGH — unblocks JS-heavy review and careers pages               | MEDIUM — Crawl4AI already integrated; gap is routing logic + URL type detection                     | P1       |
+| Cross-source pain confirmation gate                               | HIGH — core milestone deliverable                               | HIGH — workflowTag clustering query, threshold config, gate evaluation extension, UI blocking logic | P1       |
+| Override audit trail (reason mandatory + history visible)         | MEDIUM — compliance and quality hygiene                         | LOW — schema already supports it; gap is UI enforcement and history display                         | P1       |
+| Source provenance labels in evidence UI                           | MEDIUM — improves admin confidence in individual evidence items | LOW — `metadata.adapter` already exists; gap is standardized schema and display                     | P2       |
+| Source discovery UI panel                                         | MEDIUM — useful once admin wants to inspect/edit sources        | MEDIUM — new UI component, manual seed merge logic                                                  | P2       |
+| Per-campaign gate thresholds                                      | LOW — useful for cohort segmentation                            | MEDIUM — config model extension + gate evaluation parameterization                                  | P3       |
+
+**Priority key:**
+
+- P1: Must have for v2.2 launch
+- P2: Should have, add when possible within v2.2 scope
+- P3: Future milestone
+
+---
+
+## Integration with Existing Pipeline
+
+### What Does NOT Change
+
+- Evidence scoring formula: `sourceWeight*0.30 + relevance*0.45 + depth*0.25` — unchanged
+- AI scoring via Gemini Flash — unchanged
+- Traffic-light thresholds (RED/AMBER/GREEN) defined in `quality-config.ts` — unchanged
+- AMBER as hard gate on send queue — unchanged
+- `EvidenceItem` schema — no new columns needed
+- `ResearchRun` schema — `qualityApproved`, `qualityReviewedAt`, `qualityNotes` already exist
+
+### What Changes
+
+**Storage:**
+
+- `discoveredSources` structure added to `ResearchRun.inputSnapshot`: `Array<{ url: string, discoveryMethod: 'sitemap'|'serp'|'manual', discoveredAt: string }>`
+- `EvidenceItem.metadata` standardized to include `{ discoveryMethod, extractionMethod, discoveredAt }` provenance fields
+
+**Routing:**
+
+- `research-executor.ts`: any URL with inferred sourceType of REVIEWS, CAREERS, or JOB_BOARD gets routed through `ingestCrawl4aiEvidenceDrafts` regardless of discovery method (not just SERP URLs as today)
+
+**Gate evaluation:**
+
+- `workflow-engine.ts` → `evaluateQualityGate`: extended to compute `confirmedPainTags[]` (workflowTags with 2+ distinct sourceTypes) and `unconfirmedPainTags[]` (workflowTags with only 1 sourceType)
+- Gate output type extended: `{ trafficLight, confirmedPainTags, unconfirmedPainTags, ... }`
+
+**UI:**
+
+- Send queue: show which pain tags are confirmed vs. suspected per prospect
+- Send queue: block send when no confirmed pain tags exist (unless admin provides override reason)
+- Override modal: `qualityNotes` field mandatory (client-side validation enforced)
+- Admin dashboard: "bypassed" badge on research run rows where `qualityApproved === true` and gate was not GREEN-confirmed
+- Research run detail: override history (`qualityNotes`, `qualityReviewedAt`) surfaced
 
 ---
 
 ## Competitor Feature Analysis
 
-| Feature                        | Outreach.io                                   | Salesloft                                   | HubSpot Breeze                                                            | Qualifai v2.0 Approach                                                |
-| ------------------------------ | --------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Queue-first daily processing   | Play button, step through tasks one-by-one    | AI drafts ready in outbox each morning      | Prospecting agent queue with review-before-send                           | Dashboard action queue (exists); add inline send to remove navigation |
-| Research quality gating        | Score threshold blocks sequence enrollment    | Not documented in public sources            | Breeze assigns research score; prospects below threshold stay in research | Traffic-light quality indicator; amber = warn, red = block            |
-| Draft review workflow          | Popup on task row — no page nav required      | Write-ahead: draft ready before step is due | Full explanation of why draft was crafted + edit/approve                  | Currently full page nav required; v2.0 adds inline expand             |
-| Prospect pipeline stage        | Configurable stages synced to Salesforce      | Pipeline dashboard per rep                  | Deal stage with automation triggers                                       | Unified stage enum mapped from existing DB fields                     |
-| Client-side content validation | Not found                                     | Not found                                   | Not found                                                                 | Novel: prospect confirms hypotheses on /voor/ — no comparator exists  |
-| "Need more research" flow      | Validation rules block enrollment, show error | Not documented                              | Breeze shows research gaps in agent interface                             | Popover with gap explanation + re-run button                          |
-| Urgency/priority ranking       | Urgent tasks get alerts + auto-queue          | Not documented                              | Not documented                                                            | WizardSession signals feed task priority score                        |
+No direct competitor implements all four features together.
+
+| Feature                           | Apollo.io                                                             | Clay                                                   | Qualifai v2.2 Approach                                                                                               |
+| --------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Source URL inventory per prospect | Not exposed to user                                                   | Not exposed; waterfall is internal logic               | Prospect-domain-specific URL list stored with discovery-method provenance, surfaced in admin UI                      |
+| JS-heavy page extraction          | Not a focus — relies on structured APIs                               | Relies on provider APIs, not direct extraction         | Crawl4AI Playwright engine for all REVIEWS/CAREERS/JOB_BOARD URL types; shadow DOM and session supported             |
+| Pain/signal confirmation gate     | Score threshold gates sequence enrollment; no cross-source validation | Data quality is user's responsibility; no gate concept | Configurable cross-source workflowTag confirmation threshold; blocks send queue                                      |
+| Override audit trail              | Enterprise Salesforce audit trail; not native to Apollo               | No audit trail concept                                 | Lightweight: reason required in UI, timestamp + reason persisted to existing schema field, bypass badge in dashboard |
 
 ---
 
 ## Sources
 
-- Outreach.io task queue patterns: [How To Manage Outreach Tasks](https://support.outreach.io/hc/en-us/articles/235250348-How-To-Manage-Outreach-Tasks), [Universal Task Flow Overview](https://support.outreach.io/hc/en-us/articles/115001689133-Outreach-Everywhere-Universal-Task-Flow-Overview) — MEDIUM confidence (search summary, not direct page read)
-- Salesloft AI draft step: [Draft an Email Step with AI](https://help.salesloft.com/s/article/Draft-an-Email-Step-with-AI?language=en_US), write-ahead pattern described in search results — MEDIUM confidence
-- HubSpot Breeze Prospecting Agent: [Set up and use the prospecting agent](https://knowledge.hubspot.com/prospecting/use-the-prospecting-agent), [eesel.ai deep dive](https://www.eesel.ai/blog/breeze-prospecting-agent) — MEDIUM confidence
-- Instantly.ai HITL mode: [AI Reply Agent for sales teams](https://instantly.ai/blog/ai-reply-agent-for-sales-teams/) — MEDIUM confidence
-- Clay.com enrichment quality: [Clay data enrichment overview](https://www.smarte.pro/blog/clay-data-enrichment), waterfall match rate data — MEDIUM confidence
-- Human-in-the-loop AI patterns: [Zapier HITL workflow guide](https://zapier.com/blog/human-in-the-loop/), [Permit.io HITL best practices](https://www.permit.io/blog/human-in-the-loop-for-ai-agents-best-practices-frameworks-use-cases-and-demo) — HIGH confidence (consistent across multiple authoritative sources)
-- Salesforce approval process patterns: [Salesforce Spring '26 Flow Approvals](https://automationchampion.com/2025/12/22/salesforce-spring26-release-quick-summary-2/) — MEDIUM confidence
-- Qualifai existing system: Phase 13–15 plan files, v1.1 FEATURES.md, project memory — HIGH confidence (direct source)
-- Client-side hypothesis validation: No comparator found. Treated as novel design pattern with LOW confidence on UX approach.
+- Codebase analysis: `/lib/research-executor.ts`, `/lib/quality-config.ts`, `/prisma/schema.prisma` (HIGH confidence — direct read)
+- [Crawl4AI Documentation v0.8.x — Page Interaction](https://docs.crawl4ai.com/core/page-interaction/) — Playwright, shadow DOM, session management (HIGH confidence)
+- [Best Ways to Scrape JavaScript-Heavy Sites — Bright Data 2026](https://brightdata.com/blog/web-data/scraping-js-heavy-websites) — headless as default (MEDIUM confidence)
+- [G2's 2026 Report: State of AI Sales Intelligence in Prospecting](https://learn.g2.com/ai-sales-intelligence-in-prospecting) — data quality as primary criterion, 94-97% accuracy tier (MEDIUM confidence)
+- [Signal-Driven Personalization — AutoBound 2026](https://www.autobound.ai/blog/signal-driven-personalization-buyer-signals-outreach-converts) — 5x reply rate from validated signals (MEDIUM confidence)
+- [Audit Log Best Practices — Fortra](https://www.fortra.com/blog/audit-log-best-practices-security-compliance) — who/when/why requirements (HIGH confidence)
+- [Best Practices for Audit Logging in SaaS — Chris Dermody](https://chrisdermody.com/best-practices-for-audit-logging-in-a-saas-business-app/) — event structure standards (MEDIUM confidence)
+- [Top 12 Sales Intelligence Platforms 2026 — Salesmotion](https://salesmotion.io/blog/best-sales-intelligence-platforms-2026) — Clay waterfall enrichment patterns (MEDIUM confidence)
+- PROJECT.md Key Decisions — soft gate rationale for Dutch SMBs, `Campaign.strictGate` boolean (HIGH confidence)
 
 ---
 
-_Feature research for: Qualifai v2.0 Streamlined Oversight Console_
-_Researched: 2026-02-22_
-_Supersedes: v1.1 FEATURES.md (which covered evidence pipeline and cadence features, not oversight UX)_
+_Feature research for: Qualifai v2.2 Verified Pain Intelligence_
+_Researched: 2026-03-02_
+_Supersedes: v2.0 FEATURES.md (which covered oversight console UX, not evidence pipeline intelligence)_

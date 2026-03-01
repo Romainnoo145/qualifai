@@ -1,668 +1,732 @@
-# Architecture Patterns
+# Architecture Research
 
-**Domain:** Evidence-backed B2B outbound — admin oversight console, research quality gate, client-side hypothesis validation, unified send queue, prospect pipeline view
-**Researched:** 2026-02-22
-**Milestone:** v2.0 — Streamlined Flow
-
----
-
-## Prior Architecture (v1.1 Research)
-
-The original ARCHITECTURE.md (written for v1.1) documents the integration of SerpAPI deep crawl, UseCase model, proof matching, engagement triggers, and the cadence engine. Those patterns are now **implemented and live**. This document supersedes it for v2.0 planning purposes.
-
-The key structural facts from that implementation that constrain v2.0:
-
-- `ResearchRun` tracks status via `ResearchStatus` enum (PENDING → CRAWLING → EXTRACTING → HYPOTHESIS → BRIEFING → FAILED → COMPLETED)
-- `WorkflowHypothesis` has `HypothesisStatus` enum: DRAFT | ACCEPTED | REJECTED — admin sets this via `hypotheses.setStatus`
-- `OutreachLog` stores both email drafts (`status: 'draft'`) and manual touch tasks (`status: 'touch_open'`, `channel: 'call'|'linkedin'|'whatsapp'|'email'`)
-- `getActionQueue` in admin router aggregates 4 parallel Prisma queries: DRAFT hypotheses + draft OutreachLogs + touch_open OutreachLogs + FOLLOW_UP received OutreachLogs
-- Prospect detail page at `/admin/prospects/[id]` has 4 CSS-hidden sections: Evidence, Analysis, Outreach Preview, Results
-- Client dashboard at `/voor/[slug]` shows only ACCEPTED hypotheses (server-side filter in `page.tsx`)
+**Domain:** Sales intelligence pipeline — verified pain evidence with source discovery, browser extraction, confirmation gating, and audit trail
+**Researched:** 2026-03-02
+**Confidence:** HIGH — based on direct codebase inspection, not search results
 
 ---
 
-## v2.0 Feature Map
+## Prior Architecture (v2.0–v2.1 Research)
 
-Five features must integrate with the existing architecture:
+The prior ARCHITECTURE.md (written for v2.0) documents the research quality gate, hypothesis status transitions, one-click send queue, and pipeline stage visibility. Those features are **implemented and live**. This document supersedes it for v2.2 planning purposes.
 
-| Feature                           | Description                                                                     |
-| --------------------------------- | ------------------------------------------------------------------------------- |
-| Admin oversight console           | Unified flow: enter prospect → review research → approve outreach → track       |
-| Research quality gate             | Admin reviews research _sufficiency_ (not hypothesis content), can request more |
-| Client-side hypothesis validation | Prospect validates hypotheses on /voor/ dashboard, not admin                    |
-| One-click send queue              | Per-channel send buttons per row, one click per action                          |
-| Prospect pipeline view            | Stage visibility across all prospects at a glance                               |
+The key structural facts from that implementation that constrain v2.2:
+
+- `ResearchRun` has `qualityApproved Boolean?`, `qualityReviewedAt DateTime?`, `qualityNotes String?` for the existing quality gate
+- `executeResearchRun()` in `lib/research-executor.ts` orchestrates the full pipeline synchronously
+- `inputSnapshot` JSON on `ResearchRun` already stores `sitemapCache` and `serpCache` objects with 24h TTL
+- Scrapling microservice at port 3010 already has `/fetch` (stealth) and `/fetch-dynamic` (browser) endpoints; `fetchDynamic()` in `lib/enrichment/scrapling.ts` exists but is not called from the pipeline
+- `evaluatePainConfirmation()` in `lib/workflow-engine.ts` is a prototype pain confirmation check embedded inside `evaluateQualityGate()` but its result is only advisory (stored in `summary.gate.painConfirmation`)
+- The send queue in `outreach.ts` checks `qualityApproved === true` before allowing sends
 
 ---
 
-## Question 1: Where Does Research Quality State Live?
+## v2.2 Feature Map
 
-**Finding:** Add two fields to the existing `ResearchRun` model. No new table needed.
+Four features must integrate with the existing architecture:
 
-**Rationale:** Research quality is a property of a specific research run, not the prospect as a whole. A prospect can have multiple runs; each run may or may not pass the quality gate. The admin reviews a run and decides whether to proceed with hypothesis generation or request more evidence.
+| Feature                                        | Integration Point                                                        |
+| ---------------------------------------------- | ------------------------------------------------------------------------ |
+| Automatic source URL discovery with provenance | Replaces inline sitemap + default-path logic in `research-executor.ts`   |
+| Browser-rendered evidence extraction           | New step in pipeline using existing `fetchDynamic()` from `scrapling.ts` |
+| Pain confirmation gate blocking outreach       | New gate evaluated in pipeline; checked in send queue                    |
+| Override audit trail                           | New DB model; written when admin bypasses failing gate                   |
 
-**Schema change (additive, no data migration needed):**
+---
+
+## System Overview
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│                         Admin Console (Next.js 16)                          │
+│  ┌─────────────────┐  ┌──────────────────┐  ┌──────────────────────────┐  │
+│  │  Research Panel  │  │  Evidence Viewer  │  │  Send Queue              │  │
+│  │  [Start Run]     │  │  [Approve items]  │  │  [blocked by pain gate]  │  │
+│  └────────┬─────────┘  └────────┬──────────┘  └─────────────┬────────────┘  │
+└───────────┼────────────────────┼─────────────────────────────┼──────────────┘
+            │ tRPC               │ tRPC                         │ tRPC
+┌───────────▼────────────────────▼─────────────────────────────▼──────────────┐
+│                         tRPC Routers (server/routers/)                        │
+│  research.ts — startRun / retryRun / approveQuality [+ write GateOverrideAudit]│
+│  outreach.ts — send queue [+ check painGatePassed OR override exists]          │
+└────────────────────────────┬─────────────────────────────────────────────────┘
+                             │ calls
+┌────────────────────────────▼─────────────────────────────────────────────────┐
+│                   Research Executor (lib/research-executor.ts)                 │
+│                                                                                │
+│  Phase 1: Source Discovery                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │  [NEW] discoverSourcesForProspect() → ProspectSourceSet                 │ │
+│  │    sitemap  → provenance: 'sitemap'                                     │ │
+│  │    SERP     → provenance: 'serp'     (if deepCrawl)                     │ │
+│  │    manual   → provenance: 'manual'                                      │ │
+│  │    defaults → provenance: 'default'  (if sitemap empty)                 │ │
+│  │    Sets jsHeavyHint: true for SPA-fingerprinted URLs                    │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                │
+│  Phase 2: Evidence Extraction                                                  │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │  ingestWebsiteEvidenceDrafts()     → Scrapling /fetch  (unchanged)      │ │
+│  │  [NEW] ingestBrowserEvidenceDrafts() → Scrapling /fetch-dynamic         │ │
+│  │    └─ only for jsHeavyHint=true or stealth < 500 chars; capped at 5     │ │
+│  │  [8 other source adapters: KvK, LinkedIn, Google News, etc. — unchanged]│ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                │
+│  Phase 3: Scoring + Gating                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │  scoreEvidenceBatch()          → Gemini Flash  (unchanged)              │ │
+│  │  evaluateQualityGate()         → TrafficLight  (unchanged)              │ │
+│  │  [NEW] evaluatePainConfirmationGate() → PainGateResult                  │ │
+│  │    - min 1 external source (REVIEWS or JOB_BOARD, aiRelevance >= 0.65)  │ │
+│  │    - min 1 non-own-website confirmed source (cross-source requirement)  │ │
+│  │    - min 2 distinct workflowTags with aiRelevance >= 0.65               │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                │
+│  Phase 4: Hypothesis Generation (unchanged)                                    │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │  generateHypothesisDraftsAI() / generateOpportunityDrafts()             │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                │
+│  Persist: ResearchRun with painGatePassed + painGateDetails (new fields)       │
+└────────────────────────────┬─────────────────────────────────────────────────┘
+                             │ HTTP
+┌────────────────────────────▼─────────────────────────────────────────────────┐
+│                          External Services                                      │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────────┐   │
+│  │ Scrapling :3010   │  │ Crawl4AI :11235  │  │ SerpAPI (cloud)          │   │
+│  │ /fetch (stealth)  │  │ /crawl (browser) │  │ google + maps + jobs     │   │
+│  │ /fetch-dynamic    │  │                  │  │                          │   │
+│  └──────────────────┘  └──────────────────┘  └──────────────────────────┘   │
+│  ┌──────────────────┐  ┌──────────────────┐                                  │
+│  │ Gemini Flash      │  │ KvK API          │                                  │
+│  │ evidence scoring  │  │ registry data    │                                  │
+│  └──────────────────┘  └──────────────────┘                                  │
+└────────────────────────────────────────────────────────────────────────────────┘
+                             │
+┌────────────────────────────▼─────────────────────────────────────────────────┐
+│                          PostgreSQL (Prisma)                                    │
+│  ResearchRun (+painGatePassed, +painGateDetails)                               │
+│  EvidenceItem  WorkflowHypothesis  [NEW: GateOverrideAudit]                    │
+└────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Component Responsibilities
+
+| Component                            | Responsibility                                    | Status for v2.2                                                    |
+| ------------------------------------ | ------------------------------------------------- | ------------------------------------------------------------------ |
+| `lib/research-executor.ts`           | Orchestrates all pipeline phases                  | MODIFY — integrate source discovery, browser extraction, pain gate |
+| `lib/enrichment/sitemap.ts`          | Discovers URLs from domain sitemap.xml            | UNCHANGED                                                          |
+| `lib/enrichment/serp.ts`             | SerpAPI discovery (Google Maps, Jobs, Search)     | UNCHANGED                                                          |
+| `lib/enrichment/scrapling.ts`        | Scrapling client; `fetchDynamic()` already exists | UNCHANGED — just needs to be called                                |
+| `lib/enrichment/crawl4ai.ts`         | Crawl4AI browser extraction for SERP URLs         | UNCHANGED                                                          |
+| `lib/web-evidence-adapter.ts`        | Converts HTML to EvidenceDraft objects            | UNCHANGED — reused by browser adapter                              |
+| `lib/evidence-scorer.ts`             | Gemini Flash AI scoring                           | UNCHANGED                                                          |
+| `lib/workflow-engine.ts`             | Quality gate, pain confirmation prototype         | UNCHANGED — pain gate promoted to new file                         |
+| `lib/quality-config.ts`              | Traffic-light thresholds                          | ADD pain gate constants                                            |
+| `server/routers/research.ts`         | tRPC research endpoints                           | MODIFY — audit log write in `approveQuality`                       |
+| `server/routers/outreach.ts`         | Send queue                                        | MODIFY — add pain gate check                                       |
+| `lib/enrichment/source-discovery.ts` | Unified URL discovery with provenance tagging     | NEW                                                                |
+| `lib/browser-evidence-adapter.ts`    | JS-heavy page extraction via `/fetch-dynamic`     | NEW                                                                |
+| `lib/pain-gate.ts`                   | Cross-source pain confirmation gate               | NEW                                                                |
+| Schema: `ResearchRun` pain fields    | `painGatePassed`, `painGateDetails`               | NEW FIELDS                                                         |
+| Schema: `GateOverrideAudit` model    | Immutable override audit log                      | NEW MODEL                                                          |
+
+---
+
+## Recommended Project Structure
+
+v2.2 features slot into the existing structure with no new top-level directories:
+
+```
+lib/
+├── enrichment/
+│   ├── sitemap.ts              # UNCHANGED
+│   ├── serp.ts                 # UNCHANGED
+│   ├── scrapling.ts            # UNCHANGED — fetchDynamic() called by new adapter
+│   ├── crawl4ai.ts             # UNCHANGED
+│   ├── source-discovery.ts     # NEW — unified discovery with provenance tags
+│   └── ...
+├── web-evidence-adapter.ts     # UNCHANGED — extractWebsiteEvidenceFromHtml() reused
+├── browser-evidence-adapter.ts # NEW — wraps fetchDynamic() for JS-heavy pages
+├── pain-gate.ts                # NEW — cross-source confirmation gate
+├── quality-config.ts           # MODIFIED — add PAIN_GATE_* constants
+├── research-executor.ts        # MODIFIED — wire all three new components
+├── workflow-engine.ts          # UNCHANGED — evaluatePainConfirmation stays as-is
+└── evidence-scorer.ts          # UNCHANGED
+
+server/routers/
+├── research.ts                 # MODIFIED — GateOverrideAudit write in approveQuality
+├── outreach.ts                 # MODIFIED — pain gate check in send queue
+└── ...
+
+prisma/
+└── schema.prisma               # ADD painGatePassed, painGateDetails, GateOverrideAudit
+```
+
+---
+
+## Architectural Patterns
+
+### Pattern 1: Provenance-Tagged Source URLs
+
+**What:** Every URL entering the evidence pipeline carries a `provenance` field indicating how it was discovered: `'sitemap'`, `'serp'`, `'manual'`, or `'default'`.
+
+**When to use:** In the new `discoverSourcesForProspect()` function that consolidates all URL sources.
+
+**Trade-offs:** Provenance in memory only (not persisted to DB) is cheapest. Persisting in `inputSnapshot` is the right balance — consistent with existing `sitemapCache`/`serpCache` pattern, queryable after the fact, no new table.
+
+**Example:**
+
+```typescript
+// lib/enrichment/source-discovery.ts
+export interface ProspectSourceUrl {
+  url: string;
+  provenance: 'sitemap' | 'serp' | 'manual' | 'default';
+  discoveredAt: string;
+  jsHeavyHint?: boolean; // detected from stealth response fingerprint
+}
+
+export interface ProspectSourceSet {
+  urls: ProspectSourceUrl[];
+  discoveredAt: string;
+}
+
+export async function discoverSourcesForProspect(input: {
+  domain: string;
+  companyName: string | null;
+  manualUrls: string[];
+  deepCrawl: boolean;
+  priorSitemapCache?: SitemapCache | null;
+  priorSerpCache?: SerpDiscoveryResult | null;
+}): Promise<ProspectSourceSet> {
+  // 1. Sitemap (with 24h cache reuse)
+  // 2. SERP if deepCrawl (with 24h cache reuse)
+  // 3. Manual URLs with provenance: 'manual'
+  // 4. Default guessed paths if sitemap is empty, with provenance: 'default'
+  // 5. Dedup — manual wins over default, sitemap wins over default
+  // Returns merged, deduplicated ProspectSourceSet
+}
+```
+
+**Storage:** Persist as `inputSnapshot.sourceSet` on `ResearchRun`. Backward compat: the existing `extractSitemapCache()` / `extractSerpCache()` functions continue to work if `sourceSet` is absent (old runs).
+
+### Pattern 2: Tiered Extraction — Stealth First, Browser Fallback
+
+**What:** Website URLs go through Scrapling `/fetch` (stealth, fast ~2s). URLs where stealth returns <500 chars, or that carry `jsHeavyHint: true`, are escalated to Scrapling `/fetch-dynamic` (browser, ~10s). Capped at 5 dynamic URLs per run to bound pipeline time.
+
+**When to use:** For all website-type URLs in the evidence pipeline.
+
+**Trade-offs:**
+
+- The escalation heuristic (< 500 chars) catches SPAs and lazy-loaded pages without requiring upfront classification
+- 5-URL cap keeps worst-case pipeline time addition at ~50s, acceptable at current volume
+- `fetchDynamic()` in `lib/enrichment/scrapling.ts` already exists — no service changes needed
+
+**JS-heavy detection heuristics (in stealth response):**
+
+- HTML contains `__NEXT_DATA__` or `_next/static` → Next.js SPA
+- HTML contains `<div id="root"></div>` or `<div id="app"></div>` with body text < 200 chars → React/Vue SPA
+- Response length < 500 chars despite HTTP 200 → likely deferred rendering
+
+**Example:**
+
+```typescript
+// lib/browser-evidence-adapter.ts
+export async function ingestBrowserEvidenceDrafts(
+  urls: ProspectSourceUrl[], // pre-filtered: jsHeavyHint=true or stealth failed
+): Promise<EvidenceDraft[]> {
+  const capped = urls.slice(0, 5);
+  const drafts: EvidenceDraft[] = [];
+
+  for (const sourceUrl of capped) {
+    const result = await fetchDynamic(sourceUrl.url);
+    if (!result.ok || result.html.length < 200) continue;
+
+    drafts.push(
+      ...extractWebsiteEvidenceFromHtml({
+        sourceUrl: sourceUrl.url,
+        sourceType: sourceTypeForUrl(sourceUrl.url),
+        html: result.html,
+      }).map((draft) => ({
+        ...draft,
+        metadata: {
+          ...(draft.metadata ?? {}),
+          adapter: 'browser-dynamic',
+          provenance: sourceUrl.provenance,
+        },
+      })),
+    );
+  }
+
+  return drafts;
+}
+```
+
+`metadata.adapter = 'browser-dynamic'` is critical — `isObservedEvidence()` in `workflow-engine.ts` checks that adapter is not in `SYNTHETIC_ADAPTERS`, so browser-extracted items are counted as real observations in the pain gate.
+
+### Pattern 3: Pain Confirmation Gate as a Separate Concern
+
+**What:** A new gate (`evaluatePainConfirmationGate` in `lib/pain-gate.ts`) that checks minimum cross-source evidence. Runs after `evaluateQualityGate()`. Result persisted to `ResearchRun.painGatePassed` and `painGateDetails`. Send queue checks this field before allowing outreach.
+
+**When to use:** Always — for every completed research run.
+
+**Why it is separate from the quality gate:**
+
+The quality gate measures evidence sufficiency (count, source type diversity, confidence average). The pain confirmation gate measures _cross-source pain signal_ specifically — whether external sources (reviews, job postings) corroborate pain, not just whether the website was crawled. A prospect could pass GREEN quality gate with 5 high-confidence WEBSITE items and still have no external confirmation.
+
+The prototype in `workflow-engine.ts` (`evaluatePainConfirmation`) already captures this logic in advisory form. The v2.2 work promotes it to a gate that actually blocks the send queue.
+
+**Thresholds (to add to `quality-config.ts`):**
+
+```typescript
+// lib/quality-config.ts additions
+export const PAIN_GATE_MIN_EXTERNAL_ITEMS = 1; // REVIEWS or JOB_BOARD with aiRelevance >= 0.65
+export const PAIN_GATE_MIN_CROSS_SOURCE_ITEMS = 1; // non-own-website confirmed source
+export const PAIN_GATE_MIN_DISTINCT_PAIN_TAGS = 2; // distinct workflowTags with aiRelevance >= 0.65
+export const PAIN_GATE_AI_RELEVANCE_THRESHOLD = 0.65; // higher than quality gate's 0.50
+```
+
+**Example:**
+
+```typescript
+// lib/pain-gate.ts
+export interface PainGateResult {
+  passed: boolean;
+  requiresOverride: boolean;
+  externalConfirmationCount: number;
+  crossSourceCount: number;
+  distinctPainTags: number;
+  reasons: string[];
+}
+
+export function evaluatePainConfirmationGate(
+  items: EvidenceInput[],
+  domain: string,
+): PainGateResult {
+  const confirmed = items.filter((item) => {
+    const aiRelevance = parseAiRelevanceFromEvidence(item);
+    return (
+      aiRelevance !== null && aiRelevance >= PAIN_GATE_AI_RELEVANCE_THRESHOLD
+    );
+  });
+
+  const externalConfirmed = confirmed.filter(
+    (item) => item.sourceType === 'REVIEWS' || item.sourceType === 'JOB_BOARD',
+  );
+  const crossSource = confirmed.filter(
+    (item) => !item.sourceUrl.includes(domain),
+  );
+  const distinctPainTags = new Set(
+    confirmed
+      .map((item) => item.workflowTag)
+      .filter((tag) => PAIN_WORKFLOW_TAGS.has(tag)),
+  ).size;
+
+  const reasons: string[] = [];
+  if (externalConfirmed.length < PAIN_GATE_MIN_EXTERNAL_ITEMS) {
+    reasons.push(
+      `Min ${PAIN_GATE_MIN_EXTERNAL_ITEMS} external confirmation required (REVIEWS or JOB_BOARD with aiRelevance >= 0.65)`,
+    );
+  }
+  if (crossSource.length < PAIN_GATE_MIN_CROSS_SOURCE_ITEMS) {
+    reasons.push('At least 1 confirmed non-own-website source required');
+  }
+  if (distinctPainTags < PAIN_GATE_MIN_DISTINCT_PAIN_TAGS) {
+    reasons.push(
+      `Min ${PAIN_GATE_MIN_DISTINCT_PAIN_TAGS} distinct pain workflow tags required`,
+    );
+  }
+
+  return {
+    passed: reasons.length === 0,
+    requiresOverride: reasons.length > 0,
+    externalConfirmationCount: externalConfirmed.length,
+    crossSourceCount: crossSource.length,
+    distinctPainTags,
+    reasons,
+  };
+}
+```
+
+### Pattern 4: Override Audit Trail as Append-Only Log
+
+**What:** A `GateOverrideAudit` model that records every admin bypass of a failing gate. Written in `research.approveQuality` when `approved: true` AND either gate is not passed.
+
+**When to use:** Any time the admin proceeds despite a gate failure. Both the quality gate and the pain gate should be audited.
+
+**Why not extend `qualityNotes` on ResearchRun:**
+
+`qualityNotes` is a single overwrite field — it is already used and gets replaced on each review. The audit trail must be immutable and append-only. A run may be reviewed multiple times (re-run → new gate result → another override). Each bypass event must be individually preserved. A separate model is the correct design.
+
+**Schema:**
+
+```prisma
+model GateOverrideAudit {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+
+  researchRunId String
+  researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
+
+  gateType      String   // 'quality_gate' | 'pain_gate'
+  gatePassed    Boolean  // gate state at time of override (always false here)
+  overrideReason String  // min 12 chars, same enforcement as existing qualityNotes check
+  overriddenBy  String   // admin session identifier
+
+  gateSnapshot  Json?    // QualityGateResult or PainGateResult snapshot
+
+  @@index([researchRunId])
+  @@index([createdAt])
+}
+```
+
+**tRPC integration:** In `research.approveQuality`:
+
+```typescript
+// server/routers/research.ts (inside approveQuality mutation)
+if (input.approved) {
+  const qualityGatePassed = gate?.passed === true;
+  const painGatePassed = run.painGatePassed === true;
+
+  if (!qualityGatePassed) {
+    await ctx.db.gateOverrideAudit.create({
+      data: {
+        researchRunId: input.runId,
+        gateType: 'quality_gate',
+        gatePassed: false,
+        overrideReason: overrideReason,
+        overriddenBy: ctx.session?.user?.email ?? 'admin',
+        gateSnapshot: toJson(gate),
+      },
+    });
+  }
+
+  if (!painGatePassed) {
+    await ctx.db.gateOverrideAudit.create({
+      data: {
+        researchRunId: input.runId,
+        gateType: 'pain_gate',
+        gatePassed: false,
+        overrideReason: overrideReason,
+        overriddenBy: ctx.session?.user?.email ?? 'admin',
+        gateSnapshot: toJson(run.painGateDetails),
+      },
+    });
+  }
+}
+```
+
+**UI:** Collapsible timeline in the research run detail view showing: timestamp, gate type, reason, gate state. Read-only. Include in `research.getRun` response via `include: { overrideAudits: true }`.
+
+---
+
+## Data Flow
+
+### v2.2 Pipeline Flow
+
+Changes from v2.1 are marked **[NEW]** and **[MODIFIED]**:
+
+```
+Admin: startRun(prospectId, manualUrls, deepCrawl)
+  → research-executor.ts
+    → [NEW] discoverSourcesForProspect()
+        reads priorSitemapCache + priorSerpCache from snapshot (backward compat)
+        sitemap   → provenance: 'sitemap'
+        SERP      → provenance: 'serp'   (if deepCrawl)
+        manual    → provenance: 'manual'
+        defaults  → provenance: 'default' (if sitemap empty)
+        sets jsHeavyHint per URL
+        persists as inputSnapshot.sourceSet
+    → ingestWebsiteEvidenceDrafts(non-jsHeavy urls)    [Scrapling stealth, UNCHANGED]
+    → [NEW] ingestBrowserEvidenceDrafts(jsHeavy urls)  [Scrapling /fetch-dynamic, cap 5]
+    → generateEvidenceDrafts()                         [synthetic base, UNCHANGED]
+    → ingestReviewEvidenceDrafts()                     [UNCHANGED]
+    → if deepCrawl:
+        → ingestCrawl4aiEvidenceDrafts(serpUrls)       [UNCHANGED]
+        → discoverGoogleSearchMentions()               [UNCHANGED]
+        → [6 other deep sources unchanged]
+    → fetchKvkData()                                   [UNCHANGED]
+    → LinkedIn profile from Apollo                     [UNCHANGED]
+    → scoreEvidenceBatch()                             [UNCHANGED]
+    → evaluateQualityGate()                            [UNCHANGED]
+    → [NEW] evaluatePainConfirmationGate()             ← new gate
+    → generateHypothesisDraftsAI()                     [UNCHANGED]
+    → generateOpportunityDrafts()                      [UNCHANGED]
+    → [MODIFIED] ResearchRun.update(COMPLETED, summary,
+        painGatePassed,     ← new field
+        painGateDetails)    ← new field
+
+Admin: approveQuality(runId, approved=true, notes)
+  → [MODIFIED] if gate not passed AND approved:
+      → [NEW] GateOverrideAudit.create(gateType='quality_gate', ...)
+  → [MODIFIED] if painGatePassed=false AND approved:
+      → [NEW] GateOverrideAudit.create(gateType='pain_gate', ...)
+  → ResearchRun.update(qualityApproved=true)          [UNCHANGED logic]
+```
+
+### Send Queue Gate Check
+
+```
+Admin: send outreach for prospect
+  → outreach.ts send queue
+  → load ResearchRun for prospect
+  → EXISTING: researchRun.qualityApproved === true
+  → [NEW]: researchRun.painGatePassed === true
+      OR painGatePassed IS NULL   (null = old run, legacy pass-through)
+      OR GateOverrideAudit exists for this run with gateType='pain_gate'
+  → if blocked: throw TRPCError('Pain gate not passed — override required in research review')
+  → else: proceed with send
+```
+
+The `painGatePassed IS NULL` pass-through is critical for backward compat — the 7 existing prospects have no `painGatePassed` value and must not be suddenly blocked.
+
+---
+
+## Schema Changes Required
+
+### New Fields on ResearchRun
 
 ```prisma
 model ResearchRun {
   // ... all existing fields unchanged ...
 
-  // v2.0: Research quality gate
-  qualityApproved   Boolean?  // null = not reviewed, true = approved, false = rejected
-  qualityReviewedAt DateTime?
-  qualityNotes      String?   // admin's reason if rejecting / requesting more
+  // v2.2: Pain confirmation gate
+  painGatePassed    Boolean?  // null = not evaluated (old runs), true/false = result
+  painGateDetails   Json?     // full PainGateResult for display
+
+  // Relation for audit trail
+  overrideAudits    GateOverrideAudit[]
 }
 ```
 
-**Why not a new enum value on `ResearchStatus`?** The status enum tracks pipeline execution state (what the background job is doing). Quality approval is a human decision that can happen after COMPLETED. Mixing execution state with human approval state in one enum creates ambiguous transitions (e.g., COMPLETED → APPROVED or COMPLETED → REJECTED_QUALITY are meaningless to the pipeline). Separate Boolean is cleaner.
-
-**Why not on `Prospect`?** The prospect may have multiple research runs. The admin needs to see which run passed quality, and the latest run's quality state drives what's available. Storing on ResearchRun allows the UI to show "Run 3 of 3 — approved" without ambiguity.
-
-**Where the state is read:**
-
-- `research.listRuns` query already includes the run; add `qualityApproved` to the select
-- Prospect detail Analysis tab: show quality indicator next to each run
-- `getActionQueue` in admin router: add a fourth query type — ResearchRuns that are COMPLETED but `qualityApproved IS NULL` — these are "runs needing quality review"
-
-**New tRPC procedures (add to `researchRouter`):**
-
-```typescript
-approveQuality: adminProcedure
-  .input(z.object({ runId: z.string(), notes: z.string().optional() }))
-  .mutation(async ({ ctx, input }) => {
-    return ctx.db.researchRun.update({
-      where: { id: input.runId },
-      data: {
-        qualityApproved: true,
-        qualityReviewedAt: new Date(),
-        qualityNotes: input.notes ?? null,
-      },
-    });
-  }),
-
-rejectQuality: adminProcedure
-  .input(z.object({ runId: z.string(), notes: z.string().optional() }))
-  .mutation(async ({ ctx, input }) => {
-    return ctx.db.researchRun.update({
-      where: { id: input.runId },
-      data: {
-        qualityApproved: false,
-        qualityReviewedAt: new Date(),
-        qualityNotes: input.notes ?? null,
-      },
-    });
-  }),
-```
-
----
-
-## Question 2: How Does "Request More Research" Work?
-
-**Finding:** Reuse the existing `research.retryRun` procedure with an enhanced input, and add a dedicated `research.requestDeeper` procedure that spawns a new run with extended config.
-
-**Current flow:** `research.retryRun` re-runs with the same `inputSnapshot` config (reusing `deepCrawl` flag and `manualUrls`). It deletes old evidence and hypotheses then calls `executeResearchRun` fresh.
-
-**Problem:** "Request more research" needs to convey _what kind_ of additional research the admin wants — more URLs, deeper crawl, specific sources. Simply retrying with the same config produces the same thin results.
-
-**Solution: New `research.requestDeeper` procedure:**
-
-```typescript
-requestDeeper: adminProcedure
-  .input(z.object({
-    runId: z.string(),
-    additionalUrls: z.array(z.string().url()).default([]),
-    deepCrawl: z.boolean().default(true),           // force deep crawl on retry
-    notes: z.string().optional(),                   // admin's note on what to look for
-  }))
-  .mutation(async ({ ctx, input }) => {
-    const existing = await ctx.db.researchRun.findUniqueOrThrow({
-      where: { id: input.runId },
-    });
-
-    // Mark current run as requiring more research (not quality-approved)
-    await ctx.db.researchRun.update({
-      where: { id: input.runId },
-      data: {
-        qualityApproved: false,
-        qualityNotes: input.notes ?? 'More research requested',
-      },
-    });
-
-    // Merge additional URLs with any from the original snapshot
-    const existingUrls = manualUrlsFromSnapshot(existing.inputSnapshot);
-    const mergedUrls = [...new Set([...existingUrls, ...input.additionalUrls])];
-
-    // Spawn a new run (does NOT delete the old run — keeps history)
-    return executeResearchRun(ctx.db, {
-      prospectId: existing.prospectId,
-      campaignId: existing.campaignId ?? undefined,
-      manualUrls: mergedUrls,
-      deepCrawl: input.deepCrawl,
-    });
-  }),
-```
-
-**Key decisions:**
-
-- **New run, not overwrite:** `retryRun` deletes old evidence and overwrites. For quality review, the admin may want to compare the original run to the new one. A new run preserves history and lets the admin see evidence count before/after.
-- **`deepCrawl: true` by default on requestDeeper:** The likely reason research is insufficient is that the default fetch-only crawl returned 404s or thin pages (as documented in MEMORY.md). Deeper crawl is the logical next step.
-- **No new background job infrastructure needed:** `executeResearchRun` is already async-capable; the existing callback route handles out-of-process execution if needed.
-
-**UI integration:** In the Evidence section of prospect detail, show a "Request More Research" button when `qualityApproved === false` or when evidence count is below threshold. This calls `research.requestDeeper`.
-
----
-
-## Question 3: Where Does Client-Side Hypothesis Approval Live?
-
-**Finding:** Extend the existing `HypothesisStatus` enum with a new value and add a client-accessible tRPC procedure. No new table needed.
-
-**Current state:** `HypothesisStatus` has `DRAFT | ACCEPTED | REJECTED`. Admin sets status via `hypotheses.setStatus`. The /voor/ dashboard shows only ACCEPTED hypotheses (server-side filter). The admin is expected to approve hypotheses on behalf of the prospect — which the v1.2 retrospective identified as wrong ("Hypothesis approval is in the wrong place").
-
-**v2.0 change:** The prospect approves or rejects hypotheses on their /voor/ dashboard. The admin no longer approves hypothesis content; admin only approves research quality (Question 1).
-
-**Schema change:**
+### New Model: GateOverrideAudit
 
 ```prisma
-enum HypothesisStatus {
-  DRAFT         // AI generated, not yet seen
-  PENDING       // Shown to prospect on /voor/, awaiting their response
-  ACCEPTED      // Prospect confirmed this pain point is real
-  REJECTED      // Admin rejected (low confidence, wrong data)
-  DECLINED      // Prospect said this doesn't apply to them
+model GateOverrideAudit {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+
+  researchRunId String
+  researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
+
+  gateType      String   // 'quality_gate' | 'pain_gate'
+  gatePassed    Boolean  // gate state at time of override
+  overrideReason String  // min 12 chars, enforced in tRPC
+  overriddenBy  String   // admin session identifier
+
+  gateSnapshot  Json?    // PainGateResult | QualityGateResult at override time
+
+  @@index([researchRunId])
+  @@index([createdAt])
 }
 ```
 
-**Why add PENDING and DECLINED rather than reuse existing values?**
-
-- PENDING distinguishes "sent to prospect but not yet responded" from DRAFT (not yet sent). This is needed for admin to know which hypotheses are awaiting prospect action.
-- DECLINED is distinct from REJECTED — REJECTED means admin culled it, DECLINED means the prospect said it doesn't fit. Different signals for sales strategy.
-
-**New tRPC procedure (public, no admin token):**
-
-This needs to be callable from /voor/ without authentication. The existing wizard router handles unauthenticated requests via session slug. The same pattern applies:
-
-```typescript
-// Add to server/routers/wizard.ts (or new client-facing router)
-validateHypothesis: publicProcedure
-  .input(z.object({
-    prospectSlug: z.string(),     // nanoid slug — proves caller is on the right page
-    hypothesisId: z.string(),
-    decision: z.enum(['ACCEPTED', 'DECLINED']),
-  }))
-  .mutation(async ({ ctx, input }) => {
-    // Verify hypothesis belongs to the prospect with this slug
-    const prospect = await ctx.db.prospect.findUnique({
-      where: { slug: input.prospectSlug },
-      select: { id: true },
-    });
-    if (!prospect) throw new TRPCError({ code: 'NOT_FOUND' });
-
-    const hypothesis = await ctx.db.workflowHypothesis.findFirst({
-      where: { id: input.hypothesisId, prospectId: prospect.id },
-    });
-    if (!hypothesis) throw new TRPCError({ code: 'NOT_FOUND' });
-
-    return ctx.db.workflowHypothesis.update({
-      where: { id: input.hypothesisId },
-      data: { status: input.decision },
-    });
-  }),
-```
-
-**Security:** The prospectSlug acts as a capability token — knowledge of it proves access to that prospect's dashboard. This is the same security model already used for the /voor/ route (slug in URL = access granted). No additional auth needed.
-
-**Admin flow change:** Admin no longer approves hypothesis content. Admin reviews research quality (Question 1). Once quality is approved, hypotheses are automatically marked PENDING and shown on the /voor/ dashboard. The admin's job is: enter prospect → approve research quality → track whether prospect validated hypotheses.
-
-**Transition to PENDING:** When admin calls `research.approveQuality`, add logic to update all DRAFT hypotheses for that run to PENDING:
-
-```typescript
-// Inside approveQuality mutation, after updating ResearchRun:
-await ctx.db.workflowHypothesis.updateMany({
-  where: { researchRunId: input.runId, status: 'DRAFT' },
-  data: { status: 'PENDING' },
-});
-```
-
-**Dashboard display:** /voor/ dashboard shows hypotheses with status PENDING or ACCEPTED. DECLINED hypotheses are hidden. A "Does this apply to your team?" UI element on each hypothesis card triggers `validateHypothesis`.
-
----
-
-## Question 4: How to Unify the Send Queue Across Channels?
-
-**Finding:** A single query against `OutreachLog` with discriminated status values already covers all channels. The unification is a UI refactor plus one new procedure, not a data model change.
-
-**Current state:** The send queue is fragmented:
-
-- Email drafts: `outreachLog.status = 'draft'`, `channel = 'email'` → `outreach.getDecisionInbox`
-- Touch tasks: `outreachLog.status = 'touch_open'`, `channel` ∈ {'call', 'linkedin', 'whatsapp', 'email'} → `outreach.getTouchTaskQueue`
-- These are two separate queries, two separate UI sections
-
-**Observation:** Both live in `OutreachLog`. The `channel` field discriminates email vs. non-email. The `status` field discriminates pending-send ('draft') from pending-action ('touch_open'). The data model is already unified — the UI just treats them separately.
-
-**New unified query (`outreach.getSendQueue`):**
-
-```typescript
-getSendQueue: adminProcedure
-  .input(z.object({
-    limit: z.number().min(1).max(200).default(100),
-  }).optional())
-  .query(async ({ ctx, input }) => {
-    const limit = input?.limit ?? 100;
-
-    const items = await ctx.db.outreachLog.findMany({
-      where: {
-        status: { in: ['draft', 'touch_open'] },
-        // Exclude internal system items if needed
-      },
-      orderBy: [
-        // Overdue tasks first, then by creation date
-        { createdAt: 'asc' },
-      ],
-      take: limit,
-      include: {
-        contact: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            primaryEmail: true,
-            primaryPhone: true,
-            linkedinUrl: true,
-            prospect: {
-              select: { id: true, companyName: true, domain: true },
-            },
-          },
-        },
-        outreachSteps: { orderBy: { stepOrder: 'asc' }, take: 1 },
-      },
-    });
-
-    // Enrich with risk classification for email drafts
-    return items.map((item) => ({
-      ...item,
-      actionType: item.status === 'draft'
-        ? 'send_email'
-        : `do_${item.channel}`,  // 'do_call', 'do_linkedin', 'do_whatsapp', 'do_email'
-      // Risk only applies to email drafts
-      risk: item.status === 'draft' ? classifyDraftRisk(item) : null,
-      isOverdue: item.status === 'touch_open'
-        ? isDueDatePast(item.metadata)
-        : false,
-    }));
-  }),
-```
-
-**Why not merge the existing procedures?** `getDecisionInbox` has risk classification logic; `getTouchTaskQueue` has overdue detection. The new `getSendQueue` merges both. The old procedures remain for backward compat but the new UI only uses `getSendQueue`. This is additive — no existing functionality breaks.
-
-**One-click actions per row:** The UI renders a single row per OutreachLog item. Each row has exactly one primary action button:
-
-| `actionType`  | Button Label  | Calls                                |
-| ------------- | ------------- | ------------------------------------ |
-| `send_email`  | "Send"        | `outreach.approveDraft({ id })`      |
-| `do_call`     | "Mark Called" | `outreach.completeTouchTask({ id })` |
-| `do_linkedin` | "Mark Done"   | `outreach.completeTouchTask({ id })` |
-| `do_whatsapp` | "Mark Sent"   | `outreach.completeTouchTask({ id })` |
-| `do_email`    | "Mark Sent"   | `outreach.completeTouchTask({ id })` |
-
-All existing mutation procedures (`approveDraft`, `completeTouchTask`, `bulkApproveLowRisk`) remain unchanged.
-
-**Bulk approve:** For low-risk email drafts, the existing `outreach.bulkApproveLowRisk` works. The new queue page can show a "Send All Low-Risk" button that calls this.
-
-**Channel content preview:** Each row expands to show content preview. For email drafts, show subject + body preview. For touch tasks, show notes + due date. This is all present in the current OutreachLog data; it's a UI-only change.
-
----
-
-## Question 5: What Pages Can Be Simplified or Removed vs. What Needs New Routes?
-
-**Finding based on full page audit:**
-
-### Pages to Remove
-
-| Current Route                   | Reason to Remove                                                                                                          |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `app/admin/hypotheses/page.tsx` | Hypothesis approval moving to client (/voor/). Admin no longer reviews hypothesis content. This page becomes unnecessary. |
-| `app/admin/research/page.tsx`   | Research management merges into prospect detail (Evidence tab). Standalone research page has no unique value.             |
-| `app/admin/briefs/page.tsx`     | Briefs (Call Prep / PDF) surface through prospect detail Outreach Preview tab. Standalone page is navigation dead-end.    |
-
-**Before removing:** Confirm these pages are reachable from nav. From layout.tsx, nav has 6 items: Dashboard, Companies, Campaigns, Draft Queue, Use Cases, Signals. Hypotheses, Research, and Briefs are NOT in the nav — they are only reachable via direct URL or links from other pages. Removing them is low-risk.
-
-### Pages to Modify
-
-| Current Route                          | v2.0 Change                                                                                                                                                                   |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app/admin/page.tsx`                   | Add "Research Quality Review" section to action queue. Currently shows: hypotheses, drafts, tasks, replies. Add: completed research runs with `qualityApproved IS NULL`.      |
-| `app/admin/outreach/page.tsx`          | Replace 4-tab view (Drafts Queue / Multi-touch Tasks / Replies / Sent History) with unified send queue. The "Drafts Queue" and "Multi-touch Tasks" tabs merge into one table. |
-| `app/voor/[slug]/dashboard-client.tsx` | Add hypothesis validation UI — "Does this apply to your team?" per hypothesis card. Calls `validateHypothesis` mutation.                                                      |
-| `app/admin/prospects/[id]/page.tsx`    | Replace Analysis tab hypothesis approval buttons with research quality gate. Admin now approves/rejects the _run_, not individual hypotheses.                                 |
-| `app/admin/prospects/page.tsx`         | Add pipeline stage column showing research status / outreach stage per row. Currently shows status badge only.                                                                |
-
-### New Routes Needed
-
-| New Route                                      | Purpose                                                                                                                   |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `app/admin/prospects/page.tsx` → pipeline view | Not a new route — modify the existing prospects list page to show pipeline stage per row as a visual funnel (stage pill). |
-
-No new top-level routes are needed. All v2.0 features integrate into existing page shells.
-
----
-
-## Component Boundaries: v2.0
-
-### New Components to Create
-
-| Component                  | Location                                                  | Purpose                                                                                       | Consumes                                                                      |
-| -------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `ResearchQualityGate`      | `components/features/prospects/research-quality-gate.tsx` | Shows evidence count, quality indicators, approve/reject buttons for a ResearchRun            | `research.approveQuality`, `research.rejectQuality`, `research.requestDeeper` |
-| `HypothesisValidationCard` | `components/features/voor/hypothesis-validation-card.tsx` | Client-facing hypothesis card with "applies / doesn't apply" buttons                          | `wizard.validateHypothesis`                                                   |
-| `SendQueueRow`             | `components/features/outreach/send-queue-row.tsx`         | Unified row for email draft or touch task — shows content, channel icon, single action button | `outreach.approveDraft` or `outreach.completeTouchTask`                       |
-| `ProspectPipelineRow`      | `components/features/prospects/prospect-pipeline-row.tsx` | Row in prospects list with research stage + outreach stage pills                              | Admin prospect data                                                           |
-
-### Components to Modify
-
-| Component                   | Location                                             | Change                                                                                                                                |
-| --------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `EvidenceSection`           | `components/features/prospects/evidence-section.tsx` | Embed `ResearchQualityGate` below evidence list. Show quality approval state for latest run.                                          |
-| `AnalysisSection`           | `components/features/prospects/analysis-section.tsx` | Remove approve/reject buttons from hypothesis cards (admin no longer approves). Show PENDING/ACCEPTED/DECLINED status badges instead. |
-| `DashboardClient`           | `app/voor/[slug]/dashboard-client.tsx`               | Wrap each hypothesis in `HypothesisValidationCard` when `status === 'PENDING'`.                                                       |
-| `AdminDashboard` (page.tsx) | `app/admin/page.tsx`                                 | Add research quality review section using extended `getActionQueue`.                                                                  |
-
----
-
-## Data Flow: v2.0 Oversight Console
-
-### Flow 1: Research Quality Gate
-
-```
-Admin creates prospect (admin.createAndProcess)
-    → Research pipeline runs automatically (executeResearchRun)
-    → ResearchRun.status = COMPLETED
-    → ResearchRun.qualityApproved = null (not yet reviewed)
-
-getActionQueue now includes:
-    → db.researchRun.findMany({
-        where: { status: 'COMPLETED', qualityApproved: null }
-      })
-    → Returns as type: 'research_review' action items
-
-Admin clicks "Research Quality Review" item
-    → Navigates to /admin/prospects/[id] → Evidence tab
-    → EvidenceSection shows ResearchQualityGate component
-    → Admin sees: evidence count, source diversity, confidence scores
-
-Admin approves quality:
-    → research.approveQuality({ runId })
-        → ResearchRun.qualityApproved = true
-        → WorkflowHypothesis.updateMany({ status: DRAFT → PENDING })
-
-Hypotheses now visible on /voor/[slug] dashboard
-```
-
-### Flow 2: Client-Side Hypothesis Validation
-
-```
-Prospect visits /voor/[slug]
-    → Server loads hypotheses WHERE status IN ('PENDING', 'ACCEPTED')
-    → DashboardClient renders HypothesisValidationCard per hypothesis
-
-Prospect clicks "Applies to us" on a hypothesis
-    → wizard.validateHypothesis({ prospectSlug, hypothesisId, decision: 'ACCEPTED' })
-        → WorkflowHypothesis.status = ACCEPTED
-
-Prospect clicks "Doesn't apply" on a hypothesis
-    → wizard.validateHypothesis({ prospectSlug, hypothesisId, decision: 'DECLINED' })
-        → WorkflowHypothesis.status = DECLINED
-        → Hypothesis hidden from dashboard on next render
-
-Admin sees in dashboard: prospect validated 2/3 hypotheses
-    → ACCEPTED hypotheses drive outreach generation
-```
-
-### Flow 3: One-Click Send Queue
-
-```
-Outreach sequence generated → OutreachLog.status = 'draft'
-Cadence engine fires → OutreachLog.status = 'touch_open'
-
-Admin opens /admin/outreach
-    → outreach.getSendQueue({ limit: 100 })
-    → Returns unified list: email drafts + touch tasks, sorted by urgency
-
-Admin sees row: "Pieter de Vries @ Agentuur BV — Send Email — [Risk: low]"
-    → Clicks "Send"
-    → outreach.approveDraft({ id })
-    → Email sent, OutreachLog deleted
-
-Admin sees row: "Pieter de Vries @ Agentuur BV — Call — [Overdue 2d]"
-    → Makes the call
-    → Clicks "Mark Called"
-    → outreach.completeTouchTask({ id })
-    → Cadence engine fires, schedules next step
-```
-
----
-
-## Schema Migration Plan
-
-All changes are **additive** — no existing fields removed, no data migration needed for existing rows.
-
-### Migration 1: ResearchRun quality fields
+**Migration via `docker exec psql` (established pattern from MEMORY.md):**
 
 ```sql
-ALTER TABLE "ResearchRun" ADD COLUMN "qualityApproved" BOOLEAN;
-ALTER TABLE "ResearchRun" ADD COLUMN "qualityReviewedAt" TIMESTAMP(3);
-ALTER TABLE "ResearchRun" ADD COLUMN "qualityNotes" TEXT;
+-- Add fields to ResearchRun
+ALTER TABLE "ResearchRun" ADD COLUMN "painGatePassed" BOOLEAN;
+ALTER TABLE "ResearchRun" ADD COLUMN "painGateDetails" JSONB;
+
+-- Create GateOverrideAudit table
+CREATE TABLE "GateOverrideAudit" (
+  "id" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "researchRunId" TEXT NOT NULL,
+  "gateType" TEXT NOT NULL,
+  "gatePassed" BOOLEAN NOT NULL,
+  "overrideReason" TEXT NOT NULL,
+  "overriddenBy" TEXT NOT NULL,
+  "gateSnapshot" JSONB,
+  CONSTRAINT "GateOverrideAudit_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "GateOverrideAudit_researchRunId_idx" ON "GateOverrideAudit"("researchRunId");
+CREATE INDEX "GateOverrideAudit_createdAt_idx" ON "GateOverrideAudit"("createdAt");
+ALTER TABLE "GateOverrideAudit" ADD CONSTRAINT "GateOverrideAudit_researchRunId_fkey"
+  FOREIGN KEY ("researchRunId") REFERENCES "ResearchRun"("id") ON DELETE CASCADE;
 ```
 
-Existing rows: `qualityApproved = NULL` (not yet reviewed). The null state is the correct initial state — it means "admin has not yet reviewed this run."
-
-### Migration 2: HypothesisStatus enum extension
-
-```sql
-ALTER TYPE "HypothesisStatus" ADD VALUE 'PENDING';
-ALTER TYPE "HypothesisStatus" ADD VALUE 'DECLINED';
-```
-
-PostgreSQL `ADD VALUE` does not require a table rewrite. Existing DRAFT/ACCEPTED/REJECTED rows are unaffected.
-
-**Prisma schema diff for HypothesisStatus:**
-
-```prisma
-enum HypothesisStatus {
-  DRAFT
-  PENDING    // NEW: shown to prospect, awaiting validation
-  ACCEPTED
-  REJECTED
-  DECLINED   // NEW: prospect said it doesn't apply
-}
-```
-
-No migration for PENDING rows — existing DRAFT hypotheses stay DRAFT until admin approves research quality (which transitions them to PENDING).
+**Backward compatibility:** All new fields are nullable or have defaults. Existing prospects and research runs are unaffected. `painGatePassed IS NULL` is treated as "gate not evaluated" (legacy pass-through in send queue).
 
 ---
 
-## Suggested Build Order
+## Build Order
 
-Dependencies flow strictly bottom-to-top. Each step is independently shippable.
+Dependencies determine order. Each phase is independently shippable and testable.
 
-### Step 1: Research Quality Gate (schema + backend)
+### Phase 28: Source Discovery with Provenance
 
-**What:** Add `qualityApproved`, `qualityReviewedAt`, `qualityNotes` to ResearchRun. Add `research.approveQuality`, `research.rejectQuality`, `research.requestDeeper` tRPC procedures.
+**Dependency:** None — standalone extraction from existing sitemap + SERP logic.
 
-**Why first:** Everything else depends on this. The quality gate is the new entry point to the approval flow. Hypothesis status transition (Step 2) is triggered by `approveQuality`. The send queue (Step 4) only surfaces items that have passed the quality gate.
+**Build:**
 
-**Files to change:**
+1. `lib/enrichment/source-discovery.ts` — `discoverSourcesForProspect()` returning `ProspectSourceSet` with provenance tags per URL. Internally calls the existing `discoverSitemapUrls()`, `discoverSerpUrls()`, and the default-path logic currently inline in `research-executor.ts`.
+2. Modify `lib/research-executor.ts` — replace inline sitemap + default-path block with `discoverSourcesForProspect()`. Store result in `inputSnapshot.sourceSet`. Backward compat: still read old `sitemapCache` / `serpCache` keys for retries of old runs.
+3. Set `jsHeavyHint: true` in source discovery when stealth fetch fingerprint indicates SPA.
 
-- `prisma/schema.prisma` — add 3 fields to ResearchRun
-- `server/routers/research.ts` — add 3 new procedures
-- `prisma/migrations/` — generate migration
+**Test:** Run a research run, inspect `inputSnapshot.sourceSet` — verify provenance tags present. Confirm sitemap URLs still discovered, SERP URLs still discovered, manual URLs preserved with `provenance: 'manual'`.
 
-**Test:** Run `research.approveQuality({ runId })`, verify ResearchRun updated, no side effects yet.
+**Rationale for first:** All other features depend on knowing how URLs were discovered. Browser extraction uses `jsHeavyHint`. The pain gate benefits from knowing evidence came from multiple distinct discovered sources.
 
-### Step 2: HypothesisStatus Extension + PENDING transition
+### Phase 29: Browser-Rendered Extraction
 
-**What:** Add PENDING and DECLINED to HypothesisStatus enum. Wire `approveQuality` to transition DRAFT → PENDING. Add `wizard.validateHypothesis` public procedure.
+**Dependency:** Phase 28 complete (needs `jsHeavyHint` flags from source discovery).
 
-**Why second:** Depends on Step 1 (approveQuality must exist to trigger PENDING transition). PENDING hypotheses are the input to the /voor/ client validation UI (Step 3).
+**Build:**
 
-**Files to change:**
+1. `lib/browser-evidence-adapter.ts` — `ingestBrowserEvidenceDrafts(urls: ProspectSourceUrl[])` wrapping `fetchDynamic()` from `lib/enrichment/scrapling.ts` and reusing `extractWebsiteEvidenceFromHtml()` from `lib/web-evidence-adapter.ts`. Cap at 5 URLs. Set `metadata.adapter = 'browser-dynamic'`.
+2. Wire into `lib/research-executor.ts` — after `ingestWebsiteEvidenceDrafts()`, collect URLs where stealth returned < 500 chars or `jsHeavyHint: true`, call `ingestBrowserEvidenceDrafts()` on them. Cap enforced inside the adapter.
 
-- `prisma/schema.prisma` — add PENDING, DECLINED to HypothesisStatus enum
-- `server/routers/research.ts` — extend approveQuality to updateMany hypotheses
-- `server/routers/wizard.ts` — add validateHypothesis public procedure
-- `app/voor/[slug]/page.tsx` — update WHERE clause to include PENDING status
+**No service changes:** Scrapling `/fetch-dynamic` endpoint and `fetchDynamic()` client function already exist.
 
-**Test:** Approve quality → verify hypotheses move to PENDING. Visit /voor/ → verify PENDING hypotheses visible. Call validateHypothesis → verify status changes.
+**Test:** Find a JS-heavy prospect (Next.js site like a SaaS product). Run pipeline. Verify evidence items with `metadata.adapter = 'browser-dynamic'` appear in DB with real content snippets (not empty fallback drafts).
 
-### Step 3: Client-Side Hypothesis Validation UI
+**Rationale for second:** Uses `jsHeavyHint` from Phase 28. Scrapling service is already running. Bounded risk — at most 5 URLs per run, ~50s additional pipeline time.
 
-**What:** Build `HypothesisValidationCard` component. Integrate into `DashboardClient` for PENDING hypotheses. Show decision confirmation state.
+### Phase 30: Pain Confirmation Gate + Override Audit
 
-**Why third:** Depends on Step 2 (PENDING status and validateHypothesis procedure). Pure UI work with no further backend deps.
+**Dependency:** Phases 28 and 29 complete (gate should evaluate the full evidence set including browser-extracted items).
 
-**Files to change:**
+**Build:**
 
-- `components/features/voor/hypothesis-validation-card.tsx` — NEW
-- `app/voor/[slug]/dashboard-client.tsx` — wrap hypotheses in validation card
-- Update `/voor/` page query to pass hypotheses with status
+1. Prisma schema — add `painGatePassed Boolean?`, `painGateDetails Json?` to `ResearchRun`; add `GateOverrideAudit` model and its relation on `ResearchRun`.
+2. Apply migration via `docker exec psql`.
+3. `lib/pain-gate.ts` — `evaluatePainConfirmationGate()` with `PainGateResult` return type.
+4. `lib/quality-config.ts` — add `PAIN_GATE_*` threshold constants.
+5. Wire into `lib/research-executor.ts` — call `evaluatePainConfirmationGate()` after `evaluateQualityGate()`. Persist `painGatePassed` and `painGateDetails` to `ResearchRun`.
+6. `server/routers/research.ts` `approveQuality` — add `GateOverrideAudit` creation when admin overrides failing gate. Extend `getRun` to include `overrideAudits`.
+7. `server/routers/outreach.ts` — add pain gate check to send queue guard (with `IS NULL` pass-through for legacy runs).
+8. UI — collapsible override audit timeline in the research run detail Evidence tab. Display `painGateDetails` reasons when gate fails.
 
-**Test:** Visit /voor/ as prospect, validate a hypothesis, verify status persists on refresh.
+**Test (sequential):**
 
-### Step 4: Research Quality Gate UI (admin)
+- Run research on a prospect with no external evidence (no reviews, no jobs) → verify `painGatePassed = false`
+- Try to send outreach → verify TRPCError thrown
+- Approve quality with notes → verify `GateOverrideAudit` row created
+- Try to send outreach again → verify it proceeds
+- Run research on a well-evidenced prospect → verify `painGatePassed = true`, outreach unblocked
 
-**What:** Build `ResearchQualityGate` component. Embed in EvidenceSection of prospect detail. Remove hypothesis approve/reject buttons from AnalysisSection. Update getActionQueue to include research_review items.
-
-**Why fourth:** Depends on Steps 1-2 (backend procedures must exist). UI work, no further backend deps.
-
-**Files to change:**
-
-- `components/features/prospects/research-quality-gate.tsx` — NEW
-- `components/features/prospects/evidence-section.tsx` — embed quality gate
-- `components/features/prospects/analysis-section.tsx` — remove approve/reject buttons, add status badges
-- `server/routers/admin.ts` (getActionQueue) — add research_review query
-- `app/admin/page.tsx` — add research review section to dashboard
-
-**Test:** Complete a research run. Verify it appears in action queue as research_review. Approve quality. Verify hypotheses move to PENDING. Verify they disappear from admin's analysis action queue.
-
-### Step 5: Unified Send Queue
-
-**What:** Add `outreach.getSendQueue` procedure. Build `SendQueueRow` component. Rewrite `/admin/outreach` page to use unified queue.
-
-**Why fifth:** Depends on Steps 1-4 (send queue should only surface prospects that passed quality gate — enforce this in the query via join to ResearchRun.qualityApproved). Can be built incrementally as a view change.
-
-**Files to change:**
-
-- `server/routers/outreach.ts` — add getSendQueue procedure
-- `components/features/outreach/send-queue-row.tsx` — NEW
-- `app/admin/outreach/page.tsx` — replace 4-tab view with unified queue
-
-**Test:** Create a draft OutreachLog and a touch_open OutreachLog. Call getSendQueue. Verify both appear in unified list. Complete each action. Verify correct mutation called.
-
-### Step 6: Prospect Pipeline View
-
-**What:** Add pipeline stage computation to `admin.listProspects`. Add stage pills to prospects list page.
-
-**Why last:** Depends on all other steps being in place so the pipeline stages make sense. Pure UI + query enrichment. No schema changes.
-
-**Files to change:**
-
-- `server/routers/admin.ts` (listProspects) — include pipeline stage in response
-- `app/admin/prospects/page.tsx` — add stage column to list
-- `components/features/prospects/prospect-pipeline-row.tsx` — NEW (optional extraction)
-
-**Pipeline stages computed from existing data:**
-
-```
-STAGE_IMPORTED    → Prospect exists, no ResearchRun
-STAGE_RESEARCHING → ResearchRun.status in (PENDING, CRAWLING, EXTRACTING, HYPOTHESIS, BRIEFING)
-STAGE_REVIEWING   → ResearchRun.status = COMPLETED, qualityApproved IS NULL
-STAGE_READY       → qualityApproved = true, no OutreachLog with status='draft'
-STAGE_SENDING     → OutreachLog.status = 'draft' exists
-STAGE_ENGAGED     → Prospect.status in (VIEWED, ENGAGED)
-STAGE_BOOKED      → OutreachSequence.status = BOOKED
-```
-
-This is fully derivable from existing columns — no new data needed.
+**Rationale for last:** Pain gate evaluation requires the full evidence set including browser-extracted items from Phase 29. Schema changes are safest last to minimize migration risk. Override audit is meaningless without the gate to override.
 
 ---
 
-## Anti-Patterns to Avoid
+## Integration Points
 
-### Anti-Pattern 1: Making HypothesisStatus Dual-Purpose
+### External Services — No Changes
 
-**What:** Reusing ACCEPTED to mean "client approved" and adding a separate `adminApproved` Boolean to WorkflowHypothesis.
+| Service         | Current Usage                               | v2.2 Change                                                               |
+| --------------- | ------------------------------------------- | ------------------------------------------------------------------------- |
+| Scrapling :3010 | `/fetch` (stealth) for all website URLs     | Add calls to `/fetch-dynamic` for JS-heavy URLs — endpoint already exists |
+| Crawl4AI :11235 | Browser extraction for SERP-discovered URLs | Unchanged                                                                 |
+| SerpAPI (cloud) | Google Maps + Jobs + Search discovery       | Unchanged                                                                 |
+| Gemini Flash    | Evidence scoring                            | Unchanged                                                                 |
+| KvK API         | Registry enrichment                         | Unchanged                                                                 |
 
-**Why bad:** Splits the concept of "approved" across two fields. Queries become `WHERE status = 'ACCEPTED' AND adminApproved = true`, which is confusing and the two can get out of sync.
+### Internal Boundaries
 
-**Instead:** The status enum is the single source of truth. ACCEPTED = prospect confirmed. DECLINED = prospect rejected. Admin no longer has an approval role on individual hypotheses; their gate is at the run level (qualityApproved on ResearchRun).
-
-### Anti-Pattern 2: New Table for Send Queue
-
-**What:** Creating a `SendQueueItem` table that aggregates email drafts and touch tasks.
-
-**Why bad:** OutreachLog already stores all this data. A secondary aggregation table would need to stay in sync with OutreachLog state changes, creating a dual-write problem. The existing status fields on OutreachLog (`'draft'` and `'touch_open'`) are the queue.
-
-**Instead:** `getSendQueue` is a query view over OutreachLog with a multi-status WHERE clause. No new table.
-
-### Anti-Pattern 3: Hypothesis Approval Gating Outreach Generation
-
-**What:** Blocking `generateOutreach` unless at least one hypothesis is ACCEPTED by the prospect.
-
-**Why bad:** The pipeline order is: quality gate → prospect sees PENDING hypotheses → prospect validates. But outreach generation (creating OutreachLog draft) happens before prospect validation — the admin sends the /voor/ link as part of the outreach. If outreach generation requires validated hypotheses, you have a circular dependency.
-
-**Instead:** Outreach generation gates on `ResearchRun.qualityApproved = true` (admin approved research quality), not on hypothesis validation. Prospect validation of hypotheses is feedback that informs future outreach, not a prerequisite for the first send.
-
-### Anti-Pattern 4: Removing Old Procedures Before New UI Ships
-
-**What:** Deleting `getDecisionInbox` and `getTouchTaskQueue` when the new `getSendQueue` is built.
-
-**Why bad:** Old procedures may be called from other parts of the UI (action queue dashboard, prospect detail Results tab). Removing them before verifying all consumers breaks the existing action queue.
-
-**Instead:** Add `getSendQueue` as a new procedure. The new outreach page uses it. The old procedures remain until all consumers are migrated. Only then remove.
+| Boundary                                               | Communication        | v2.2 Change                                      |
+| ------------------------------------------------------ | -------------------- | ------------------------------------------------ |
+| `research-executor.ts` ↔ `source-discovery.ts`         | Direct function call | NEW — replaces inline sitemap/serp/default logic |
+| `research-executor.ts` ↔ `browser-evidence-adapter.ts` | Direct function call | NEW                                              |
+| `research-executor.ts` ↔ `pain-gate.ts`                | Direct function call | NEW                                              |
+| `research.ts` (router) ↔ `GateOverrideAudit` (DB)      | Prisma               | NEW — written on override                        |
+| `outreach.ts` (router) ↔ `ResearchRun.painGatePassed`  | Prisma               | NEW — read in send queue check                   |
 
 ---
 
-## Scalability Considerations
+## Anti-Patterns
 
-| Concern                                         | Current (< 100 prospects)   | At 500 prospects                              | At 5000 prospects                                           |
-| ----------------------------------------------- | --------------------------- | --------------------------------------------- | ----------------------------------------------------------- |
-| `getSendQueue` query                            | Single query, < 1ms         | Add index on `OutreachLog(status, createdAt)` | Paginate; the queue should not be > 200 items               |
-| Research quality review items in getActionQueue | 4 parallel queries + 1 new  | Acceptable                                    | Add `@@index([status, qualityApproved])` on ResearchRun     |
-| HypothesisStatus PENDING queries for /voor/     | Point lookup by prospectId  | Acceptable                                    | `@@index([prospectId, status])` already exists              |
-| validateHypothesis (public endpoint)            | Low volume (1 per prospect) | Acceptable                                    | No rate limiting needed — slug is capability token          |
-| Pipeline stage computation in listProspects     | O(n) derived fields         | Acceptable — derive in query                  | If slow, add materialized `pipelineStage` field to Prospect |
+### Anti-Pattern 1: Storing Source URLs as a Separate DB Table
+
+**What people do:** Create a `ProspectSourceUrl` table in the DB to persist discovered URLs.
+
+**Why it's wrong:** The existing `inputSnapshot` JSON on `ResearchRun` already stores `sitemapCache` and `serpCache` with the same pattern and 24h TTL semantics. A separate table adds migration cost, join complexity, and a new model to maintain — for no query benefit at current volumes (7-50 prospects, <30 runs). Premature normalization.
+
+**Do this instead:** Persist `ProspectSourceSet` in `inputSnapshot.sourceSet` JSON. Upgrade to a DB table only when the admin needs to browse or filter discovered source URLs across runs — not in scope for v2.2.
+
+### Anti-Pattern 2: Running Browser Extraction for All URLs
+
+**What people do:** Replace all `ingestWebsiteEvidenceDrafts()` calls with browser extraction, reasoning "more sites will work."
+
+**Why it's wrong:** `fetchDynamic()` takes ~10s per URL. At 20 URLs per prospect (current average), that is 200s added to pipeline time. Scrapling `/fetch-dynamic` uses a full Playwright browser per request — high memory, `max_workers=4` is the current limit. The stealth fetcher already handles most sites.
+
+**Do this instead:** Use `jsHeavyHint` detection from source discovery plus stealth-failure detection to escalate only the URLs that genuinely need browser rendering. Cap at 5 URLs per run. Always run stealth first.
+
+### Anti-Pattern 3: Making the Pain Gate a Hard Block Without Override
+
+**What people do:** Make `painGatePassed === true` an absolute requirement with no override path.
+
+**Why it's wrong:** Dutch SMBs have thin web presence — this is documented in the decision log ("Soft gate: amber = warn + proceed-anyway" — Key Decisions in PROJECT.md). A hard pain gate would block outreach for legitimate prospects where evidence is sparse not because pain is absent but because the company has minimal online footprint.
+
+**Do this instead:** Gate blocks by default. Override requires a written reason (min 12 chars). Override is logged in `GateOverrideAudit`. Admin can proceed but the bypass is immutably recorded. Same pattern already proven with the quality gate.
+
+### Anti-Pattern 4: Putting Gate Logic in the tRPC Router
+
+**What people do:** Inline pain gate thresholds inside `outreach.ts` or `research.ts` router mutations.
+
+**Why it's wrong:** Gate logic is already split: `evaluateQualityGate()` is in `lib/workflow-engine.ts`, thresholds are in `lib/quality-config.ts`. Duplicating into routers makes logic untestable without HTTP setup and duplicates threshold values.
+
+**Do this instead:** Gate logic lives in `lib/pain-gate.ts` (pure functions, no DB dependency). Constants in `lib/quality-config.ts`. Routers call the library functions and throw `TRPCError` if gate fails. Consistent with the existing `evaluateQualityGate` / `computeTrafficLight` pattern.
+
+### Anti-Pattern 5: Two Separate Override Tables per Gate Type
+
+**What people do:** Create `QualityGateOverride` and `PainGateOverride` as separate models.
+
+**Why it's wrong:** Identical shape (runId, reason, timestamp, snapshot). Two tables for the same structure adds migration complexity with no benefit.
+
+**Do this instead:** Single `GateOverrideAudit` model with `gateType: String` discriminator. New gate types added as string values, no schema migration needed.
+
+---
+
+## Scaling Considerations
+
+At current volumes (7-50 prospects), none of these changes introduce scaling risk.
+
+| Scale            | Architecture Adjustment                                                                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0-50 prospects   | Current sync pipeline handles everything. Browser extraction cap of 5 URLs adds ~50s max — within acceptable admin wait time.                                                              |
+| 50-500 prospects | Move pipeline to background job queue (BullMQ + Redis already in docker-compose). Sync tRPC mutations will hit 30s serverless timeouts.                                                    |
+| 500+ prospects   | Scrapling service needs horizontal scaling (`max_workers` currently 4, browser sessions are memory-heavy). Pain gate query on `ResearchRun` needs `@@index([prospectId, painGatePassed])`. |
+
+**Immediate concern for v2.2:** The browser extraction step adds up to 5 × 10s = 50s to pipeline time. If the current admin UI shows a loading spinner with no timeout, it will appear hung. Add a UI note: "Browser extraction in progress (up to 60s)" when deepCrawl is enabled with JS-heavy URLs.
 
 ---
 
 ## Confidence Assessment
 
-| Area                                           | Confidence | Notes                                                              |
-| ---------------------------------------------- | ---------- | ------------------------------------------------------------------ |
-| ResearchRun quality fields                     | HIGH       | Schema fully read; additive change, no migration complexity        |
-| HypothesisStatus extension                     | HIGH       | PostgreSQL ADD VALUE is safe; existing rows unaffected             |
-| validateHypothesis security model              | HIGH       | Matches existing /voor/ slug-as-capability pattern; read wizard.ts |
-| getSendQueue unification                       | HIGH       | OutreachLog schema fully read; status values fully understood      |
-| approveQuality → PENDING transition            | HIGH       | updateMany is a one-liner; pattern well established                |
-| Pipeline stage derivation                      | HIGH       | All source fields exist and indexed                                |
-| Pages to remove (hypotheses, research, briefs) | MEDIUM     | Not in nav; need to verify no remaining deep links before deleting |
-| Build order dependencies                       | HIGH       | Each step tested before next proceeds                              |
+| Area                                | Confidence | Notes                                                                                                                                                                                                       |
+| ----------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Source discovery refactor           | HIGH       | Directly read `research-executor.ts` — the inline sitemap/default/serp logic is clear; refactoring into `source-discovery.ts` is mechanical                                                                 |
+| Browser extraction via fetchDynamic | HIGH       | `fetchDynamic()` exists in `scrapling.ts`, `/fetch-dynamic` endpoint in `services/scrapling/app.py` — just needs wiring                                                                                     |
+| Pain gate thresholds                | MEDIUM     | Thresholds (`aiRelevance >= 0.65`, 1 external item, 2 pain tags) are proposed based on understanding of the current scoring distribution; should be calibrated against the 7 real prospects before shipping |
+| Override audit model                | HIGH       | Append-only audit log is a standard pattern; schema is straightforward                                                                                                                                      |
+| Backward compatibility              | HIGH       | `painGatePassed IS NULL` pass-through in send queue is the critical guard; explicitly specified                                                                                                             |
+| Build order dependencies            | HIGH       | Each phase is independently verifiable                                                                                                                                                                      |
 
 ---
 
 ## Sources
 
-All sources are from reading the live codebase:
+All findings are from direct codebase inspection:
 
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/research-executor.ts` — full pipeline orchestration
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/workflow-engine.ts` — quality gate, pain confirmation prototype, evidence classification
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/enrichment/scrapling.ts` — `fetchStealth()`, `fetchDynamic()` clients
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/enrichment/crawl4ai.ts` — Crawl4AI client
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/enrichment/serp.ts` — SerpAPI discovery
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/enrichment/sitemap.ts` — sitemap discovery
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/evidence-scorer.ts` — AI scoring formula
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/quality-config.ts` — existing thresholds
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/web-evidence-adapter.ts` — HTML → EvidenceDraft conversion
+- `/home/klarifai/Documents/klarifai/projects/qualifai/server/routers/research.ts` — `approveQuality` mutation
+- `/home/klarifai/Documents/klarifai/projects/qualifai/server/routers/outreach.ts` — send queue
+- `/home/klarifai/Documents/klarifai/projects/qualifai/services/scrapling/app.py` — Scrapling service endpoints
 - `/home/klarifai/Documents/klarifai/projects/qualifai/prisma/schema.prisma` — full schema
-- `/home/klarifai/Documents/klarifai/projects/qualifai/server/routers/admin.ts` — getActionQueue, listProspects, getProspect
-- `/home/klarifai/Documents/klarifai/projects/qualifai/server/routers/research.ts` — startRun, retryRun, getRun
-- `/home/klarifai/Documents/klarifai/projects/qualifai/server/routers/hypotheses.ts` — listByProspect, setStatus
-- `/home/klarifai/Documents/klarifai/projects/qualifai/server/routers/outreach.ts` — getDecisionInbox, getTouchTaskQueue, approveDraft, bulkApproveLowRisk
-- `/home/klarifai/Documents/klarifai/projects/qualifai/server/routers/sequences.ts` — list, get, getCadenceState
-- `/home/klarifai/Documents/klarifai/projects/qualifai/app/admin/layout.tsx` — nav items (6 confirmed)
-- `/home/klarifai/Documents/klarifai/projects/qualifai/app/admin/page.tsx` — current action queue dashboard
-- `/home/klarifai/Documents/klarifai/projects/qualifai/app/admin/outreach/page.tsx` — current 4-tab outreach page
-- `/home/klarifai/Documents/klarifai/projects/qualifai/app/admin/prospects/[id]/page.tsx` — prospect detail with 4 CSS-hidden sections
-- `/home/klarifai/Documents/klarifai/projects/qualifai/app/voor/[slug]/dashboard-client.tsx` — client dashboard, hypothesis display
-- `/home/klarifai/Documents/klarifai/projects/qualifai/.planning/MILESTONES.md` — v1.2 retrospective findings
-- `/home/klarifai/Documents/klarifai/projects/qualifai/.planning/PROJECT.md` — v2.0 target features
-- `/home/klarifai/Documents/klarifai/projects/qualifai/.planning/ROADMAP.md` — phase 16 context
+- `/home/klarifai/Documents/klarifai/projects/qualifai/.planning/PROJECT.md` — v2.2 target features, key decisions
+
+---
+
+_Architecture research for: Qualifai v2.2 — Verified Pain Intelligence_
+_Researched: 2026-03-02_
