@@ -69,7 +69,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 **Milestone Goal:** Confirm pain points from real external evidence using browser-rendered extraction before outreach is allowed. Better source discovery, better extraction, stricter gating with a full audit trail.
 
-- [ ] **Phase 28: Source Discovery with Provenance** — Automatic per-prospect source URL discovery with deduplication, per-source caps, and provenance labels
+- [x] **Phase 28: Source Discovery with Provenance** — Automatic per-prospect source URL discovery with deduplication, per-source caps, and provenance labels
 - [ ] **Phase 29: Browser-Rendered Evidence Extraction** — Two-tier extraction routing (stealth-first, browser escalation) with browser cap and per-type routing
 - [ ] **Phase 30: Pain Confirmation Gate + Override Audit** — Cross-source pain gate (advisory), admin UI integration, and immutable override audit trail
 
@@ -91,13 +91,13 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 4. No single source type produces more than its configured cap of URLs — a prospect with a large sitemap does not flood the pipeline with 200+ URLs
 5. Duplicate URLs discovered via different methods (sitemap + SERP returning the same page) are collapsed to a single entry before any extraction runs
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans executed
 
 Plans:
 
-- [ ] 28-01-PLAN.md — Source discovery module with TDD (types, buildSourceSet, caps, dedup, jsHeavyHint)
-- [ ] 28-02-PLAN.md — Research executor integration + rediscoverSources tRPC mutation
-- [ ] 28-03-PLAN.md — SourceSetSection UI component + prospect detail wiring
+- [x] 28-01-PLAN.md — Source discovery module with TDD (types, buildSourceSet, caps, dedup, jsHeavyHint)
+- [x] 28-02-PLAN.md — Research executor integration + rediscoverSources tRPC mutation
+- [x] 28-03-PLAN.md — SourceSetSection UI component + prospect detail wiring (debug-only)
 
 ---
 
@@ -167,6 +167,6 @@ Plans:
 | 26.1. Evidence Pipeline Expansion    | v2.1      | 3/3            | Complete    | 2026-02-28 |
 | 27. End-to-End Cycle                 | v2.1      | 2/2            | Complete    | 2026-02-28 |
 | 27.1. Cal.com Booking Validation     | v2.1      | 1/1            | Complete    | 2026-03-01 |
-| 28. Source Discovery with Provenance | 2/3       | In Progress    |             | -          |
+| 28. Source Discovery with Provenance | v2.2      | 3/3            | Complete    | 2026-03-02 |
 | 29. Browser-Rendered Extraction      | v2.2      | 0/TBD          | Not started | -          |
 | 30. Pain Confirmation Gate + Audit   | v2.2      | 0/TBD          | Not started | -          |

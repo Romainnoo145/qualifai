@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 28 — Source Discovery with Provenance
-Plan: 02 (complete) — advancing to Plan 03
-Status: In progress (Plans 01 + 02 complete)
-Last activity: 2026-03-02 — Completed 28-02 buildSourceSet integration and rediscoverSources mutation
+Plan: 03 (complete) — Phase 28 complete
+Status: In progress (Plans 01 + 02 + 03 complete — Phase 28 done)
+Last activity: 2026-03-02 — Completed 28-03 SourceSetSection component + debug toggle
 
-Progress: [==] ~10% (v2.2: 0/3 phases complete, 2 plans done)
+Progress: [====] ~33% (v2.2: 1/3 phases complete, 3 plans done)
 
 ## Milestones Shipped
 
@@ -41,6 +41,9 @@ Progress: [==] ~10% (v2.2: 0/3 phases complete, 2 plans done)
 ## Accumulated Context
 
 ### Architectural Decisions (v2.2)
+
+- SourceSetSection is debug-only UI — hidden by default, toggled via `localStorage.setItem('qualifai-debug', 'true')` in browser console; backend provenance tracking unchanged
+- Debug-only UI pattern: guard render with `{debugMode && ...}` where `useDebugMode` uses `useSyncExternalStore` on localStorage key `qualifai-debug`
 
 - Pain gate is advisory-only — AMBER quality gate remains the single hard block; pain confirmation is a second signal, not a second block
 - Two-tier extraction enforced: stealth-first for static pages, browser only for <500 chars or jsHeavyHint=true; 5-URL cap per run
@@ -74,5 +77,5 @@ Progress: [==] ~10% (v2.2: 0/3 phases complete, 2 plans done)
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 28-02-PLAN.md (buildSourceSet integration into research-executor.ts, rediscoverSources mutation)
-Resume with: `/gsd:execute-phase 28 03`
+Stopped at: Completed 28-03-PLAN.md (SourceSetSection component + debug toggle via localStorage 'qualifai-debug')
+Resume with: `/gsd:execute-phase 29 01`
