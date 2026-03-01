@@ -29,6 +29,12 @@ import {
   discoverSitemapUrls,
   type SitemapCache,
 } from '@/lib/enrichment/sitemap';
+import {
+  buildSourceSet,
+  defaultResearchUrls as defaultResearchUrlsFn,
+  extractSourceSet,
+  type SourceSet,
+} from '@/lib/enrichment/source-discovery';
 import { fetchKvkData, kvkDataToEvidenceDraft } from '@/lib/enrichment/kvk';
 import type { Prisma, PrismaClient } from '@prisma/client';
 
@@ -46,34 +52,6 @@ export function manualUrlsFromSnapshot(snapshot: unknown): string[] {
 
 function uniqueUrls(urls: string[]): string[] {
   return Array.from(new Set(urls.map((url) => url.trim()).filter(Boolean)));
-}
-
-function defaultResearchUrls(domain: string): string[] {
-  const base = `https://${domain}`;
-  return [
-    `${base}`,
-    // Dutch paths (primary — most prospects are NL)
-    `${base}/over-ons`,
-    `${base}/diensten`,
-    `${base}/vacatures`,
-    `${base}/werken-bij`,
-    `${base}/projecten`,
-    // Dutch business process pages — high-value for workflow analysis
-    `${base}/werkwijze`,
-    `${base}/aanpak`,
-    `${base}/wat-we-doen`,
-    `${base}/ons-proces`,
-    `${base}/zo-werken-wij`,
-    `${base}/tarieven`,
-    `${base}/offerte`,
-    `${base}/offerte-aanvragen`,
-    `${base}/contact`,
-    // English fallbacks
-    `${base}/about`,
-    `${base}/services`,
-    `${base}/careers`,
-    `${base}/jobs`,
-  ];
 }
 
 function extractSerpCache(snapshot: unknown): SerpDiscoveryResult | null {
@@ -151,7 +129,7 @@ export async function executeResearchRun(
     },
   });
 
-  // Pre-read existing snapshot for sitemap cache BEFORE run create/update overwrites it
+  // Pre-read existing snapshot for sitemap cache AND sourceSet BEFORE run create/update overwrites it
   const priorSnapshot = input.existingRunId
     ? (
         await db.researchRun.findUnique({
@@ -165,6 +143,11 @@ export async function executeResearchRun(
     sitemapCache &&
     Date.now() - new Date(sitemapCache.discoveredAt).getTime() <
       24 * 60 * 60 * 1000;
+  const priorSourceSet = extractSourceSet(priorSnapshot);
+  const serpAge = priorSourceSet?.serpDiscoveredAt
+    ? Date.now() - new Date(priorSourceSet.serpDiscoveredAt).getTime()
+    : Infinity;
+  const useSerpFromSourceSet = serpAge < 24 * 60 * 60 * 1000;
 
   const campaign = input.campaignId
     ? await db.campaign.findUnique({
@@ -206,6 +189,27 @@ export async function executeResearchRun(
       ? { discoveredAt: new Date().toISOString(), urls: sitemapUrls }
       : undefined;
 
+  // Build initial sourceSet with sitemap + default URLs (SERP URLs added later in deepCrawl block)
+  // nonReviewManualUrls are included in the default bucket alongside standard research paths
+  const nonReviewManualUrlsForSourceSet = input.manualUrls.filter(
+    (url) => inferSourceType(url) !== 'REVIEWS',
+  );
+  const initialSourceSet: SourceSet = buildSourceSet({
+    sitemapUrls,
+    serpUrls: useSerpFromSourceSet
+      ? (priorSourceSet?.urls
+          .filter((u) => u.provenance === 'serp')
+          .map((u) => u.url) ?? [])
+      : [],
+    defaultUrls: [
+      ...defaultResearchUrlsFn(prospect.domain),
+      ...nonReviewManualUrlsForSourceSet,
+    ],
+    ...(useSerpFromSourceSet && priorSourceSet?.serpDiscoveredAt
+      ? { serpDiscoveredAt: priorSourceSet.serpDiscoveredAt }
+      : {}),
+  });
+
   const run = input.existingRunId
     ? await db.researchRun.update({
         where: { id: input.existingRunId },
@@ -219,6 +223,7 @@ export async function executeResearchRun(
             campaignId: input.campaignId,
             deepCrawl: input.deepCrawl ?? false,
             ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
+            sourceSet: initialSourceSet,
           }),
         },
       })
@@ -233,6 +238,7 @@ export async function executeResearchRun(
             campaignId: input.campaignId,
             deepCrawl: input.deepCrawl ?? false,
             ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
+            sourceSet: initialSourceSet,
           }),
         },
       });
@@ -249,12 +255,11 @@ export async function executeResearchRun(
     (url) => inferSourceType(url) !== 'REVIEWS',
   );
 
-  // Use sitemap URLs if available, fall back to guessed paths
-  const researchUrls = uniqueUrls(
-    sitemapUrls.length > 0
-      ? [...sitemapUrls, ...nonReviewManualUrls]
-      : [...defaultResearchUrls(prospect.domain), ...nonReviewManualUrls],
-  );
+  // Derive researchUrls from sourceSet — provenance-tagged, deduped, capped
+  // (sourceSet.urls excludes serp URLs at this point; deepCrawl SERP URLs are passed to Crawl4AI separately)
+  const researchUrls = initialSourceSet.urls
+    .filter((u) => u.provenance !== 'serp')
+    .map((u) => u.url);
 
   const websiteEvidenceDrafts = await ingestWebsiteEvidenceDrafts(researchUrls);
   if (websiteEvidenceDrafts.length > 0) {
@@ -296,7 +301,10 @@ export async function executeResearchRun(
   ];
 
   if (input.deepCrawl) {
-    // Check cache (24-hour TTL)
+    // SERP cache guard: use sourceSet.serpDiscoveredAt (set at pre-read stage via useSerpFromSourceSet)
+    // The deepCrawl branch reads from the already-computed useSerpFromSourceSet flag.
+    // Secondary safety: also check serpCache for backward compatibility with runs that
+    // predate the sourceSet field.
     const existingSnapshot = input.existingRunId
       ? (
           await db.researchRun.findUnique({
@@ -306,10 +314,12 @@ export async function executeResearchRun(
         )?.inputSnapshot
       : null;
     const serpCache = extractSerpCache(existingSnapshot);
+    // Primary guard: sourceSet serpDiscoveredAt; fallback: legacy serpCache
     const isCacheValid =
-      serpCache &&
-      Date.now() - new Date(serpCache.discoveredAt).getTime() <
-        24 * 60 * 60 * 1000;
+      useSerpFromSourceSet ||
+      (serpCache !== null &&
+        Date.now() - new Date(serpCache.discoveredAt).getTime() <
+          24 * 60 * 60 * 1000);
 
     const serpApiConfigured = Boolean(process.env.SERP_API_KEY);
     if (!serpApiConfigured) {
@@ -322,7 +332,15 @@ export async function executeResearchRun(
     }
 
     const serpResult: SerpDiscoveryResult = isCacheValid
-      ? serpCache
+      ? (serpCache ?? {
+          reviewUrls:
+            priorSourceSet?.urls
+              .filter((u) => u.provenance === 'serp')
+              .map((u) => u.url) ?? [],
+          jobUrls: [],
+          discoveredAt:
+            priorSourceSet?.serpDiscoveredAt ?? new Date().toISOString(),
+        })
       : await discoverSerpUrls({
           companyName: prospect.companyName,
           domain: prospect.domain,
@@ -343,8 +361,24 @@ export async function executeResearchRun(
       });
     }
 
-    // Persist cache in inputSnapshot for future retries
-    if (!isCacheValid) {
+    // Rebuild sourceSet with SERP URLs now that we have them
+    const serpDiscoveredAt = !isCacheValid
+      ? new Date().toISOString()
+      : (priorSourceSet?.serpDiscoveredAt ??
+        serpCache?.discoveredAt ??
+        new Date().toISOString());
+    const fullSourceSet: SourceSet = buildSourceSet({
+      sitemapUrls,
+      serpUrls: [...serpResult.reviewUrls, ...serpResult.jobUrls],
+      defaultUrls: [
+        ...defaultResearchUrlsFn(prospect.domain),
+        ...nonReviewManualUrls,
+      ],
+      serpDiscoveredAt,
+    });
+
+    // Persist updated sourceSet + serpCache in inputSnapshot
+    if (!isCacheValid || !priorSourceSet) {
       await db.researchRun.update({
         where: { id: run.id },
         data: {
@@ -354,6 +388,22 @@ export async function executeResearchRun(
             deepCrawl: true,
             serpCache: serpResult,
             ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
+            sourceSet: fullSourceSet,
+          }),
+        },
+      });
+    } else {
+      // Cache hit — still update sourceSet with full SERP-enriched set
+      await db.researchRun.update({
+        where: { id: run.id },
+        data: {
+          inputSnapshot: toJson({
+            manualUrls: input.manualUrls,
+            campaignId: input.campaignId,
+            deepCrawl: true,
+            ...(serpCache ? { serpCache } : {}),
+            ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
+            sourceSet: fullSourceSet,
           }),
         },
       });
