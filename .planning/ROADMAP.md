@@ -91,7 +91,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 4. No single source type produces more than its configured cap of URLs — a prospect with a large sitemap does not flood the pipeline with 200+ URLs
 5. Duplicate URLs discovered via different methods (sitemap + SERP returning the same page) are collapsed to a single entry before any extraction runs
 
-**Plans:** 3/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 
@@ -167,6 +167,6 @@ Plans:
 | 26.1. Evidence Pipeline Expansion    | v2.1      | 3/3            | Complete    | 2026-02-28 |
 | 27. End-to-End Cycle                 | v2.1      | 2/2            | Complete    | 2026-02-28 |
 | 27.1. Cal.com Booking Validation     | v2.1      | 1/1            | Complete    | 2026-03-01 |
-| 28. Source Discovery with Provenance | v2.2      | 3/3            | Complete    | 2026-03-02 |
+| 28. Source Discovery with Provenance | v2.2      | Complete       | 2026-03-01  | 2026-03-02 |
 | 29. Browser-Rendered Extraction      | v2.2      | 0/TBD          | Not started | -          |
 | 30. Pain Confirmation Gate + Audit   | v2.2      | 0/TBD          | Not started | -          |

@@ -11,7 +11,7 @@ Requirements for Verified Pain Intelligence milestone. Each maps to roadmap phas
 
 - [x] **DISC-01**: System discovers source URLs from sitemap, SERP, and manual seeds with provenance labels (sitemap/serp/manual)
 - [x] **DISC-02**: System detects JS-heavy pages and flags them with `jsHeavyHint` for downstream browser extraction routing
-- [ ] **DISC-03**: SERP discovery results are cached at prospect level (`serpDiscoveredAt`) to prevent API credit burn on re-runs
+- [x] **DISC-03**: SERP discovery results are cached at prospect level (`serpDiscoveredAt`) to prevent API credit burn on re-runs
 - [x] **DISC-04**: Per-source URL caps prevent URL explosion during the merge step
 - [x] **DISC-05**: Duplicate URLs are deduplicated during merge via normalized URL comparison
 
@@ -63,7 +63,7 @@ Requirements for Verified Pain Intelligence milestone. Each maps to roadmap phas
 | ----------- | ----- | -------- |
 | DISC-01     | 28    | Complete |
 | DISC-02     | 28    | Complete |
-| DISC-03     | 28    | Pending  |
+| DISC-03     | 28    | Complete |
 | DISC-04     | 28    | Complete |
 | DISC-05     | 28    | Complete |
 | EXTR-01     | 29    | Pending  |
