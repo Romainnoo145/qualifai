@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Qualifai is the sales engine in the Klarifai ecosystem. It automates evidence-backed outbound prospecting for the Workflow Optimization Sprint proposition — finding companies with provable workflow pain points from multiple sources (sitemap crawling, Google search, KvK registry, LinkedIn), matching those to Klarifai's services via AI hypothesis generation, and running personalized multi-touch outreach grounded in real evidence. The admin operates through a streamlined oversight console: enter prospects, review research quality via traffic-light indicators, approve outreach with one click, and track pipeline stage — while prospects validate pain-point hypotheses themselves on their /voor/ dashboard. Built for marketing agencies in NL/BE.
+Qualifai is the sales engine in the Klarifai ecosystem. It automates evidence-backed outbound prospecting — finding companies with provable workflow pain points from 8+ sources (sitemap, Google search, KvK registry, LinkedIn, employee reviews, job postings, customer reviews, industry news), matching those to Klarifai's services via AI-scored hypothesis generation, and running personalized multi-touch outreach grounded in real evidence. The admin operates through a streamlined oversight console: enter prospects, review research quality via traffic-light indicators, approve outreach with one click, and track pipeline stage — while prospects validate pain-point hypotheses themselves on their /discover/ dashboard. The full cycle has been proven end-to-end: real emails sent, replies triaged, bookings triggering call prep. Built for any company that could benefit from workflow automations, especially non-tech companies in NL/BE.
 
 ## Core Value
 
@@ -48,16 +48,21 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - ✓ **Pipeline stage visibility** (7-stage chip on every prospect row) — v2.0
 - ✓ **Prospect discovery** (Apollo sector/location search with batch import) — v2.0
 - ✓ **Dead page cleanup** (/admin/hypotheses, /research, /briefs removed) — v2.0
+- ✓ **Use case population** (Obsidian vault reader + AI codebase analyzer, 77 use cases) — v2.1
+- ✓ **Prospect seeding** (10+ real companies via Apollo sector/location search) — v2.1
+- ✓ **Pipeline hardening** (Scrapling stealth fetcher, user-visible error handling, AI hypothesis generation) — v2.1
+- ✓ **Multi-source evidence pipeline** (8+ sources with AI scoring via Gemini Flash) — v2.1
+- ✓ **Quality threshold calibration** (traffic-light gate calibrated from real data, AMBER hard gate) — v2.1
+- ✓ **Full E2E outreach cycle** (send → reply triage → Cal.com booking → call prep generation) — v2.1
 
 ### Active
 
-<!-- v2.1 Production Bootstrap — being defined -->
+<!-- v2.2 Verified Pain Intelligence — planned -->
 
-- [ ] Use case population from Obsidian vault + AI-extracted project capabilities
-- [ ] Prospect seeding with known targets + Apollo discovery
-- [ ] Pipeline validation against real companies
-- [ ] Quality threshold calibration with real data
-- [ ] End-to-end outreach cycle (send → reply → booking)
+- [ ] Automatic source discovery per prospect (Google + sitemap + manual merge with provenance)
+- [ ] Browser-rendered evidence extraction for JS-heavy pages
+- [ ] Pain confirmation gate blocking outreach without minimum cross-source evidence
+- [ ] Override audit trail for manual gate bypasses
 
 ### Out of Scope
 
@@ -69,7 +74,7 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - WhatsApp API integration — Manual tasks for now, API too complex/expensive
 - LinkedIn API automation — ToS risk, manual tasks only
 - Bulk email sending without evidence — Contradicts core value
-- "Need more research" re-run button — Pipeline too narrow, same results; fix evidence sources first
+- "Need more research" re-run button — Pipeline now has 8+ sources; re-run available via scripts
 - Kanban board pipeline view — List with stage chips sufficient at current volumes (20-50 prospects)
 - Auto-send without approval — Trust not yet calibrated, GDPR/anti-spam risk for NL/BE
 - Research completeness as hard blocker — Makes system unusable for thin-presence Dutch SMBs
@@ -78,16 +83,17 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 ## Context
 
 - **Ecosystem:** Klarifai (holding) → Copifai (marketing) + Qualifai (sales)
-- **Target market:** Marketing agencies in NL/BE
+- **Target market:** Any company that could benefit from workflow automations, especially non-tech companies in NL/BE
 - **Proposition:** Workflow Optimization Sprint
 - **CTA pattern (enforced):** Step 1: "I made a 1-page Workflow Loss Map" → Step 2: "15-min teardown + live mini-demo"
 - **Current enrichment:** Apollo for company/contact data + KvK registry for Dutch company details
-- **Current research:** Multi-source pipeline (website crawl, sitemap, Google search, LinkedIn, KvK) + Crawl4AI browser extraction + SerpAPI discovery
-- **Proof matching:** In-app Use Cases management with Claude semantic scoring
-- **Email delivery:** Resend API with idempotency guards
-- **Scheduling:** Cal.com
-- **Current codebase:** ~15,000 LOC TypeScript, 76 files modified in v2.0 alone
-- **Shipped:** v1.0 (Feb 20) → v1.1 (Feb 21) → v1.2 (Feb 22) → v2.0 (Feb 23)
+- **Current research:** 8+ source pipeline (sitemap, Google search, KvK, LinkedIn, employee reviews, job postings, Google Reviews, industry news) + Scrapling stealth fetcher + SerpAPI discovery + AI scoring via Gemini Flash
+- **Proof matching:** In-app Use Cases management (77 use cases from 6 codebases) with Claude semantic scoring
+- **Email delivery:** Resend API with idempotency guards, DKIM/SPF/DMARC verified for klarifai.nl
+- **Scheduling:** Cal.com with HMAC-signed webhook → automatic call prep generation
+- **Current codebase:** ~32,500 LOC TypeScript
+- **Shipped:** v1.0 (Feb 20) → v1.1 (Feb 21) → v1.2 (Feb 22) → v2.0 (Feb 23) → v2.1 (Mar 2)
+- **Prospects in DB:** 7+ real companies, all passing quality gate after AI scoring overhaul
 
 ## Constraints
 
@@ -101,34 +107,39 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ## Key Decisions
 
-| Decision                                | Rationale                                                        | Outcome   |
-| --------------------------------------- | ---------------------------------------------------------------- | --------- |
-| SerpAPI for Google discovery            | Google aggressive with bot detection, not worth self-maintaining | ✓ Good    |
-| Crawl4AI for content extraction         | Handles JS-rendered pages, cookie consent, managed browser       | ✓ Good    |
-| Manual evidence approval (not auto)     | Quality over speed, wrong outreach damages brand                 | ✓ Good    |
-| Engagement-driven cadence (not fixed)   | Smarter resource allocation, respond to prospect behavior        | ✓ Good    |
-| WhatsApp/LinkedIn as manual tasks       | API integration too complex/expensive for now                    | ✓ Good    |
-| Admin reviews quality, not hypothesis   | Prospect is subject matter expert on their own pain points       | ✓ Good    |
-| Soft gate (amber = warn + proceed)      | Dutch SMBs have thin web presence, hard block unusable           | ✓ Good    |
-| Prospect validates hypotheses on /voor/ | Shifts validation from admin guesswork to prospect confirmation  | ✓ Good    |
-| Idempotency via atomic updateMany       | Database-level claim prevents double-sends, no external locks    | ✓ Good    |
-| List view with stage chips (not kanban) | Sufficient at current volumes (20-50 prospects)                  | — Pending |
-| Pipeline stage as computed value        | No schema change, derived from existing data                     | ✓ Good    |
+| Decision                                 | Rationale                                                                    | Outcome   |
+| ---------------------------------------- | ---------------------------------------------------------------------------- | --------- |
+| SerpAPI for Google discovery             | Google aggressive with bot detection, not worth self-maintaining             | ✓ Good    |
+| Crawl4AI for content extraction          | Handles JS-rendered pages, cookie consent, managed browser                   | ✓ Good    |
+| Manual evidence approval (not auto)      | Quality over speed, wrong outreach damages brand                             | ✓ Good    |
+| Engagement-driven cadence (not fixed)    | Smarter resource allocation, respond to prospect behavior                    | ✓ Good    |
+| WhatsApp/LinkedIn as manual tasks        | API integration too complex/expensive for now                                | ✓ Good    |
+| Admin reviews quality, not hypothesis    | Prospect is subject matter expert on their own pain points                   | ✓ Good    |
+| Soft gate (amber = warn + proceed)       | Dutch SMBs have thin web presence, hard block unusable                       | ✓ Good    |
+| Prospect validates hypotheses on /voor/  | Shifts validation from admin guesswork to prospect confirmation              | ✓ Good    |
+| Idempotency via atomic updateMany        | Database-level claim prevents double-sends, no external locks                | ✓ Good    |
+| List view with stage chips (not kanban)  | Sufficient at current volumes (20-50 prospects)                              | — Pending |
+| Pipeline stage as computed value         | No schema change, derived from existing data                                 | ✓ Good    |
+| Scrapling stealth fetcher over raw fetch | Bypasses bot detection on previously blocked domains                         | ✓ Good    |
+| AI evidence scoring (Gemini Flash)       | More accurate than hardcoded weights; formula: src*0.30+rel*0.45+depth\*0.25 | ✓ Good    |
+| Industry-dynamic hypothesis generation   | Hardcoded "marketing bureau" prompt fails for diverse sectors                | ✓ Good    |
+| AMBER as hard gate on send queue         | Prevents low-quality outreach; qualityApproved required                      | ✓ Good    |
+| 8+ evidence sources per prospect         | More cross-source validation, higher confidence scores                       | ✓ Good    |
+| E2E test scripts as regression harness   | Send/reply/booking scripts catch regressions automatically                   | ✓ Good    |
 
 ---
 
-## Current Milestone: v2.1 Production Bootstrap
+## Current Milestone: v2.2 Verified Pain Intelligence
 
-**Goal:** Populate the system with real Klarifai data, validate the full outreach cycle against real companies, and calibrate quality thresholds — proving the system works end-to-end before scaling.
+**Goal:** Confirm pain points from real external evidence using browser-rendered extraction before outreach is allowed. Better source discovery, better extraction, stricter gating.
 
 **Target features:**
 
-- Use case population (Obsidian import + AI extraction from project codebases)
-- Prospect seeding (known targets + Apollo sector/location discovery)
-- Research pipeline validation with real company data
-- Quality threshold calibration (amber/green from real results)
-- Full outreach cycle verification (send → reply handling → booking)
+- Automatic source URL discovery per prospect (Google + sitemap + manual seeds)
+- Browser-rendered evidence extraction for JS-heavy pages
+- Pain confirmation gate with minimum cross-source evidence thresholds
+- Override audit trail for manual gate bypasses
 
 ---
 
-_Last updated: 2026-02-23 after v2.1 milestone start_
+_Last updated: 2026-03-02 after v2.1 milestone completion_

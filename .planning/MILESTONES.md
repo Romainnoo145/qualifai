@@ -122,3 +122,34 @@
 - List-view quality indicators can use approximate values (source diversity not in list query) — detail is definitive
 
 ---
+
+## v2.1 — Production Bootstrap (Completed)
+
+**Started:** 2026-02-23
+**Shipped:** 2026-03-02
+**Phases:** 23–27.1 (7 phases, 16 plans, including inserted 26.1 + 27.1)
+**Files:** 137 changed, +19,271 / -3,052
+**Commits:** 89
+**Codebase:** 32,535 LOC TypeScript
+
+### What shipped:
+
+- Use case population from Klarifai knowledge assets — Obsidian vault reader + AI codebase analyzer populated 77 use cases from 6 project codebases (Phase 23)
+- Real prospect seeding — 10+ companies imported via Apollo sector/location search for NL SMBs (Phase 24)
+- Pipeline hardening with Scrapling stealth fetcher — replaced raw fetch() with StealthyFetcher microservice, user-visible API error handling, AI-generated hypotheses replacing hardcoded templates (Phase 25)
+- Multi-source evidence pipeline expanded from 4 to 8+ sources: LinkedIn posts, Google Reviews via SerpAPI, Google News RSS, employee reviews, job postings — with AI scoring via Gemini Flash (relevance + depth) (Phase 26.1)
+- Quality threshold calibration — traffic-light gate calibrated against real data, AMBER hard gate enforced on send queue, list-view chip using real summary data (Phase 26)
+- Full E2E outreach cycle verified — 2 real emails sent + delivered via Resend, 2 Dutch replies triaged (interested → book_teardown, not_fit → close_lost) (Phase 27)
+- Cal.com booking → call prep pipeline verified end-to-end with HMAC-signed webhook simulation, all 6 DB state checks passing (Phase 27.1)
+
+### Key learnings:
+
+- AI evidence scoring (Gemini Flash) is far more effective than hardcoded source weights — formula: sourceWeight*0.30 + relevance*0.45 + depth\*0.25
+- Dutch SMBs have thin web presence — quality gates need careful calibration (0.55 min avg confidence, not 0.85)
+- Scrapling StealthyFetcher outperforms raw fetch() for bot-detected sites — returns HTML on previously blocked domains
+- Hypothesis generation must be industry-dynamic — hardcoded "marketing bureau" prompt fails for construction, consumer goods, etc.
+- E2E test scripts (send, reply, booking) are essential regression harness — each follows same pattern: set up DB state → trigger → verify side effects
+- DKIM/SPF/DMARC verification is prerequisite for production email at volume
+- Milestone audit → gap closure workflow (Phase 27.1 inserted for E2E-03) proves the audit-then-fix cycle works
+
+---
