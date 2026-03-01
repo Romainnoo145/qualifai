@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { PipelineChip } from '@/components/features/prospects/pipeline-chip';
 import { computePipelineStage } from '@/lib/pipeline-stage';
 import { EvidenceSection } from '@/components/features/prospects/evidence-section';
+import { SourceSetSection } from '@/components/features/prospects/source-set-section';
 import { AnalysisSection } from '@/components/features/prospects/analysis-section';
 import { OutreachPreviewSection } from '@/components/features/prospects/outreach-preview-section';
 import { ResultsSection } from '@/components/features/prospects/results-section';
@@ -325,7 +326,18 @@ export default function ProspectDetail() {
       </nav>
 
       {/* All sections stay mounted, inactive ones hidden via CSS */}
-      <div className={cn('pt-1', activeTab === 'evidence' ? '' : 'hidden')}>
+      <div
+        className={cn(
+          'pt-1 space-y-4',
+          activeTab === 'evidence' ? '' : 'hidden',
+        )}
+      >
+        {latestRunId && (
+          <SourceSetSection
+            runId={latestRunId}
+            inputSnapshot={latestRun?.inputSnapshot ?? null}
+          />
+        )}
         <EvidenceSection
           prospectId={id}
           signals={p.signals}
