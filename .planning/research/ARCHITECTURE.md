@@ -1,732 +1,657 @@
-# Architecture Research
+# Architecture Patterns
 
-**Domain:** Sales intelligence pipeline — verified pain evidence with source discovery, browser extraction, confirmation gating, and audit trail
+**Project:** Qualifai — v3.0 Sharp Analysis milestone
+**Domain:** Hypothesis generation rewrite + tech debt cleanup in existing Next.js sales automation app
 **Researched:** 2026-03-02
-**Confidence:** HIGH — based on direct codebase inspection, not search results
+**Confidence:** HIGH — all findings from direct codebase inspection
 
 ---
 
-## Prior Architecture (v2.0–v2.1 Research)
+## Existing Architecture (Stable — No Structural Changes)
 
-The prior ARCHITECTURE.md (written for v2.0) documents the research quality gate, hypothesis status transitions, one-click send queue, and pipeline stage visibility. Those features are **implemented and live**. This document supersedes it for v2.2 planning purposes.
+The pipeline is established. v3.0 makes targeted edits inside specific functions, not structural changes.
 
-The key structural facts from that implementation that constrain v2.2:
-
-- `ResearchRun` has `qualityApproved Boolean?`, `qualityReviewedAt DateTime?`, `qualityNotes String?` for the existing quality gate
-- `executeResearchRun()` in `lib/research-executor.ts` orchestrates the full pipeline synchronously
-- `inputSnapshot` JSON on `ResearchRun` already stores `sitemapCache` and `serpCache` objects with 24h TTL
-- Scrapling microservice at port 3010 already has `/fetch` (stealth) and `/fetch-dynamic` (browser) endpoints; `fetchDynamic()` in `lib/enrichment/scrapling.ts` exists but is not called from the pipeline
-- `evaluatePainConfirmation()` in `lib/workflow-engine.ts` is a prototype pain confirmation check embedded inside `evaluateQualityGate()` but its result is only advisory (stored in `summary.gate.painConfirmation`)
-- The send queue in `outreach.ts` checks `qualityApproved === true` before allowing sends
-
----
-
-## v2.2 Feature Map
-
-Four features must integrate with the existing architecture:
-
-| Feature                                        | Integration Point                                                        |
-| ---------------------------------------------- | ------------------------------------------------------------------------ |
-| Automatic source URL discovery with provenance | Replaces inline sitemap + default-path logic in `research-executor.ts`   |
-| Browser-rendered evidence extraction           | New step in pipeline using existing `fetchDynamic()` from `scrapling.ts` |
-| Pain confirmation gate blocking outreach       | New gate evaluated in pipeline; checked in send queue                    |
-| Override audit trail                           | New DB model; written when admin bypasses failing gate                   |
-
----
-
-## System Overview
+### Pipeline Overview
 
 ```
-┌────────────────────────────────────────────────────────────────────────────┐
-│                         Admin Console (Next.js 16)                          │
-│  ┌─────────────────┐  ┌──────────────────┐  ┌──────────────────────────┐  │
-│  │  Research Panel  │  │  Evidence Viewer  │  │  Send Queue              │  │
-│  │  [Start Run]     │  │  [Approve items]  │  │  [blocked by pain gate]  │  │
-│  └────────┬─────────┘  └────────┬──────────┘  └─────────────┬────────────┘  │
-└───────────┼────────────────────┼─────────────────────────────┼──────────────┘
-            │ tRPC               │ tRPC                         │ tRPC
-┌───────────▼────────────────────▼─────────────────────────────▼──────────────┐
-│                         tRPC Routers (server/routers/)                        │
-│  research.ts — startRun / retryRun / approveQuality [+ write GateOverrideAudit]│
-│  outreach.ts — send queue [+ check painGatePassed OR override exists]          │
-└────────────────────────────┬─────────────────────────────────────────────────┘
-                             │ calls
-┌────────────────────────────▼─────────────────────────────────────────────────┐
-│                   Research Executor (lib/research-executor.ts)                 │
-│                                                                                │
-│  Phase 1: Source Discovery                                                     │
-│  ┌─────────────────────────────────────────────────────────────────────────┐ │
-│  │  [NEW] discoverSourcesForProspect() → ProspectSourceSet                 │ │
-│  │    sitemap  → provenance: 'sitemap'                                     │ │
-│  │    SERP     → provenance: 'serp'     (if deepCrawl)                     │ │
-│  │    manual   → provenance: 'manual'                                      │ │
-│  │    defaults → provenance: 'default'  (if sitemap empty)                 │ │
-│  │    Sets jsHeavyHint: true for SPA-fingerprinted URLs                    │ │
-│  └─────────────────────────────────────────────────────────────────────────┘ │
-│                                                                                │
-│  Phase 2: Evidence Extraction                                                  │
-│  ┌─────────────────────────────────────────────────────────────────────────┐ │
-│  │  ingestWebsiteEvidenceDrafts()     → Scrapling /fetch  (unchanged)      │ │
-│  │  [NEW] ingestBrowserEvidenceDrafts() → Scrapling /fetch-dynamic         │ │
-│  │    └─ only for jsHeavyHint=true or stealth < 500 chars; capped at 5     │ │
-│  │  [8 other source adapters: KvK, LinkedIn, Google News, etc. — unchanged]│ │
-│  └─────────────────────────────────────────────────────────────────────────┘ │
-│                                                                                │
-│  Phase 3: Scoring + Gating                                                     │
-│  ┌─────────────────────────────────────────────────────────────────────────┐ │
-│  │  scoreEvidenceBatch()          → Gemini Flash  (unchanged)              │ │
-│  │  evaluateQualityGate()         → TrafficLight  (unchanged)              │ │
-│  │  [NEW] evaluatePainConfirmationGate() → PainGateResult                  │ │
-│  │    - min 1 external source (REVIEWS or JOB_BOARD, aiRelevance >= 0.65)  │ │
-│  │    - min 1 non-own-website confirmed source (cross-source requirement)  │ │
-│  │    - min 2 distinct workflowTags with aiRelevance >= 0.65               │ │
-│  └─────────────────────────────────────────────────────────────────────────┘ │
-│                                                                                │
-│  Phase 4: Hypothesis Generation (unchanged)                                    │
-│  ┌─────────────────────────────────────────────────────────────────────────┐ │
-│  │  generateHypothesisDraftsAI() / generateOpportunityDrafts()             │ │
-│  └─────────────────────────────────────────────────────────────────────────┘ │
-│                                                                                │
-│  Persist: ResearchRun with painGatePassed + painGateDetails (new fields)       │
-└────────────────────────────┬─────────────────────────────────────────────────┘
-                             │ HTTP
-┌────────────────────────────▼─────────────────────────────────────────────────┐
-│                          External Services                                      │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────────┐   │
-│  │ Scrapling :3010   │  │ Crawl4AI :11235  │  │ SerpAPI (cloud)          │   │
-│  │ /fetch (stealth)  │  │ /crawl (browser) │  │ google + maps + jobs     │   │
-│  │ /fetch-dynamic    │  │                  │  │                          │   │
-│  └──────────────────┘  └──────────────────┘  └──────────────────────────┘   │
-│  ┌──────────────────┐  ┌──────────────────┐                                  │
-│  │ Gemini Flash      │  │ KvK API          │                                  │
-│  │ evidence scoring  │  │ registry data    │                                  │
-│  └──────────────────┘  └──────────────────┘                                  │
-└────────────────────────────────────────────────────────────────────────────────┘
-                             │
-┌────────────────────────────▼─────────────────────────────────────────────────┐
-│                          PostgreSQL (Prisma)                                    │
-│  ResearchRun (+painGatePassed, +painGateDetails)                               │
-│  EvidenceItem  WorkflowHypothesis  [NEW: GateOverrideAudit]                    │
-└────────────────────────────────────────────────────────────────────────────────┘
+[Admin triggers research]
+        │
+        ▼
+server/routers/research.ts
+  → executeResearchRun() in lib/research-executor.ts
+        │
+        ├── Source discovery (sitemap, SERP, manual URLs)
+        ├── Web ingestion    lib/web-evidence-adapter.ts
+        │   └── Scrapling stealth + Crawl4AI two-tier
+        ├── Deep sources     lib/enrichment/*.ts adapters
+        │   └── reviews, LinkedIn, Google News, employee reviews, LinkedIn jobs, KvK
+        ├── AI evidence scoring  lib/evidence-scorer.ts       ← Gemini Flash (unchanged)
+        ├── Quality gate         lib/workflow-engine.ts       ← unchanged
+        │
+        ▼  ← ALL v3.0 CHANGES ARE HERE
+        ├── generateHypothesisDraftsAI()  lib/workflow-engine.ts
+        │   → pre-process evidence into tiers
+        │   → configurable model (Gemini Flash or Claude Sonnet)
+        │   → 1-3 hypotheses (not forced 3)
+        │   → metrics: AI-estimated or null (not hardcoded)
+        │   → HypothesisDraft[] → WorkflowHypothesis records in DB
+        │
+        └── generateOpportunityDrafts()  (unchanged)
 ```
+
+### Component Boundaries
+
+| Component            | File                                                   | Responsibility                  | Status for v3.0                                 |
+| -------------------- | ------------------------------------------------------ | ------------------------------- | ----------------------------------------------- |
+| Research router      | `server/routers/research.ts`                           | tRPC entry points               | MODIFY — add optional `hypothesisModel` input   |
+| Research executor    | `lib/research-executor.ts`                             | Orchestrates full pipeline      | MODIFY — thread `model` param, fix SERP re-read |
+| Hypothesis generator | `lib/workflow-engine.ts::generateHypothesisDraftsAI()` | AI evidence → hypotheses        | MODIFY — prompt, tiering, model, count, metrics |
+| Evidence scorer      | `lib/evidence-scorer.ts`                               | Score items for relevance/depth | UNCHANGED — stays Gemini Flash                  |
+| Web adapter          | `lib/web-evidence-adapter.ts`                          | Two-tier web extraction         | UNCHANGED                                       |
+| Quality config       | `lib/quality-config.ts`                                | Shared threshold constants      | UNCHANGED                                       |
+| Prospect detail page | `app/admin/prospects/[id]/page.tsx`                    | Admin UI                        | MODIFY — fix `as any` casts                     |
+| Dashboard client     | `components/public/prospect-dashboard-client.tsx`      | Client-facing UI                | MODIFY — remove unused `logoUrl` prop           |
 
 ---
 
-## Component Responsibilities
+## Change 1: Evidence Pre-processing and Prompt Rewrite
 
-| Component                            | Responsibility                                    | Status for v2.2                                                    |
-| ------------------------------------ | ------------------------------------------------- | ------------------------------------------------------------------ |
-| `lib/research-executor.ts`           | Orchestrates all pipeline phases                  | MODIFY — integrate source discovery, browser extraction, pain gate |
-| `lib/enrichment/sitemap.ts`          | Discovers URLs from domain sitemap.xml            | UNCHANGED                                                          |
-| `lib/enrichment/serp.ts`             | SerpAPI discovery (Google Maps, Jobs, Search)     | UNCHANGED                                                          |
-| `lib/enrichment/scrapling.ts`        | Scrapling client; `fetchDynamic()` already exists | UNCHANGED — just needs to be called                                |
-| `lib/enrichment/crawl4ai.ts`         | Crawl4AI browser extraction for SERP URLs         | UNCHANGED                                                          |
-| `lib/web-evidence-adapter.ts`        | Converts HTML to EvidenceDraft objects            | UNCHANGED — reused by browser adapter                              |
-| `lib/evidence-scorer.ts`             | Gemini Flash AI scoring                           | UNCHANGED                                                          |
-| `lib/workflow-engine.ts`             | Quality gate, pain confirmation prototype         | UNCHANGED — pain gate promoted to new file                         |
-| `lib/quality-config.ts`              | Traffic-light thresholds                          | ADD pain gate constants                                            |
-| `server/routers/research.ts`         | tRPC research endpoints                           | MODIFY — audit log write in `approveQuality`                       |
-| `server/routers/outreach.ts`         | Send queue                                        | MODIFY — add pain gate check                                       |
-| `lib/enrichment/source-discovery.ts` | Unified URL discovery with provenance tagging     | NEW                                                                |
-| `lib/browser-evidence-adapter.ts`    | JS-heavy page extraction via `/fetch-dynamic`     | NEW                                                                |
-| `lib/pain-gate.ts`                   | Cross-source pain confirmation gate               | NEW                                                                |
-| Schema: `ResearchRun` pain fields    | `painGatePassed`, `painGateDetails`               | NEW FIELDS                                                         |
-| Schema: `GateOverrideAudit` model    | Immutable override audit log                      | NEW MODEL                                                          |
+### Current Behavior
 
----
+Evidence sorted by `aiRelevance ?? confidenceScore`, top 15 items passed to prompt. All items get a 600-char snippet cap. Prompt says "sorted by relevance" but treats all source types identically. Model is instructed to produce exactly 3 hypotheses regardless of evidence quality.
 
-## Recommended Project Structure
+### Problem
 
-v2.2 features slot into the existing structure with no new top-level directories:
+Reviews, employee reviews, and job postings carry the strongest pain signal (source weights: REVIEWS 0.90, LINKEDIN 0.88, CAREERS/JOB_BOARD 0.85) but are truncated the same as WEBSITE items (weight 0.65). The AI model has no way to know which sources are high-signal external pain indicators versus generic website context. Hypothesis count is forced to 3 even when evidence supports only 1 credible hypothesis.
 
-```
-lib/
-├── enrichment/
-│   ├── sitemap.ts              # UNCHANGED
-│   ├── serp.ts                 # UNCHANGED
-│   ├── scrapling.ts            # UNCHANGED — fetchDynamic() called by new adapter
-│   ├── crawl4ai.ts             # UNCHANGED
-│   ├── source-discovery.ts     # NEW — unified discovery with provenance tags
-│   └── ...
-├── web-evidence-adapter.ts     # UNCHANGED — extractWebsiteEvidenceFromHtml() reused
-├── browser-evidence-adapter.ts # NEW — wraps fetchDynamic() for JS-heavy pages
-├── pain-gate.ts                # NEW — cross-source confirmation gate
-├── quality-config.ts           # MODIFIED — add PAIN_GATE_* constants
-├── research-executor.ts        # MODIFIED — wire all three new components
-├── workflow-engine.ts          # UNCHANGED — evaluatePainConfirmation stays as-is
-└── evidence-scorer.ts          # UNCHANGED
+### Integration Points
 
-server/routers/
-├── research.ts                 # MODIFIED — GateOverrideAudit write in approveQuality
-├── outreach.ts                 # MODIFIED — pain gate check in send queue
-└── ...
+Single function: `generateHypothesisDraftsAI()` in `lib/workflow-engine.ts` — the prompt construction block and response handling. No schema changes. No new files.
 
-prisma/
-└── schema.prisma               # ADD painGatePassed, painGateDetails, GateOverrideAudit
-```
+### Approach: Evidence Tiering
 
----
-
-## Architectural Patterns
-
-### Pattern 1: Provenance-Tagged Source URLs
-
-**What:** Every URL entering the evidence pipeline carries a `provenance` field indicating how it was discovered: `'sitemap'`, `'serp'`, `'manual'`, or `'default'`.
-
-**When to use:** In the new `discoverSourcesForProspect()` function that consolidates all URL sources.
-
-**Trade-offs:** Provenance in memory only (not persisted to DB) is cheapest. Persisting in `inputSnapshot` is the right balance — consistent with existing `sitemapCache`/`serpCache` pattern, queryable after the fact, no new table.
-
-**Example:**
+Add `tierEvidence()` helper inside `workflow-engine.ts`. This is a pure function, not exported.
 
 ```typescript
-// lib/enrichment/source-discovery.ts
-export interface ProspectSourceUrl {
-  url: string;
-  provenance: 'sitemap' | 'serp' | 'manual' | 'default';
-  discoveredAt: string;
-  jsHeavyHint?: boolean; // detected from stealth response fingerprint
+const HIGH_SIGNAL_SOURCES = new Set<EvidenceSourceType>([
+  'REVIEWS',
+  'LINKEDIN',
+  'CAREERS',
+  'JOB_BOARD',
+  'NEWS',
+  'REGISTRY',
+]);
+
+interface EvidenceTier {
+  tierA: AIEvidenceInput[]; // external pain signals — reviews, hiring, LinkedIn, news, KvK
+  tierB: AIEvidenceInput[]; // context — website, docs, help center, manual URLs
 }
 
-export interface ProspectSourceSet {
-  urls: ProspectSourceUrl[];
-  discoveredAt: string;
-}
-
-export async function discoverSourcesForProspect(input: {
-  domain: string;
-  companyName: string | null;
-  manualUrls: string[];
-  deepCrawl: boolean;
-  priorSitemapCache?: SitemapCache | null;
-  priorSerpCache?: SerpDiscoveryResult | null;
-}): Promise<ProspectSourceSet> {
-  // 1. Sitemap (with 24h cache reuse)
-  // 2. SERP if deepCrawl (with 24h cache reuse)
-  // 3. Manual URLs with provenance: 'manual'
-  // 4. Default guessed paths if sitemap is empty, with provenance: 'default'
-  // 5. Dedup — manual wins over default, sitemap wins over default
-  // Returns merged, deduplicated ProspectSourceSet
-}
-```
-
-**Storage:** Persist as `inputSnapshot.sourceSet` on `ResearchRun`. Backward compat: the existing `extractSitemapCache()` / `extractSerpCache()` functions continue to work if `sourceSet` is absent (old runs).
-
-### Pattern 2: Tiered Extraction — Stealth First, Browser Fallback
-
-**What:** Website URLs go through Scrapling `/fetch` (stealth, fast ~2s). URLs where stealth returns <500 chars, or that carry `jsHeavyHint: true`, are escalated to Scrapling `/fetch-dynamic` (browser, ~10s). Capped at 5 dynamic URLs per run to bound pipeline time.
-
-**When to use:** For all website-type URLs in the evidence pipeline.
-
-**Trade-offs:**
-
-- The escalation heuristic (< 500 chars) catches SPAs and lazy-loaded pages without requiring upfront classification
-- 5-URL cap keeps worst-case pipeline time addition at ~50s, acceptable at current volume
-- `fetchDynamic()` in `lib/enrichment/scrapling.ts` already exists — no service changes needed
-
-**JS-heavy detection heuristics (in stealth response):**
-
-- HTML contains `__NEXT_DATA__` or `_next/static` → Next.js SPA
-- HTML contains `<div id="root"></div>` or `<div id="app"></div>` with body text < 200 chars → React/Vue SPA
-- Response length < 500 chars despite HTTP 200 → likely deferred rendering
-
-**Example:**
-
-```typescript
-// lib/browser-evidence-adapter.ts
-export async function ingestBrowserEvidenceDrafts(
-  urls: ProspectSourceUrl[], // pre-filtered: jsHeavyHint=true or stealth failed
-): Promise<EvidenceDraft[]> {
-  const capped = urls.slice(0, 5);
-  const drafts: EvidenceDraft[] = [];
-
-  for (const sourceUrl of capped) {
-    const result = await fetchDynamic(sourceUrl.url);
-    if (!result.ok || result.html.length < 200) continue;
-
-    drafts.push(
-      ...extractWebsiteEvidenceFromHtml({
-        sourceUrl: sourceUrl.url,
-        sourceType: sourceTypeForUrl(sourceUrl.url),
-        html: result.html,
-      }).map((draft) => ({
-        ...draft,
-        metadata: {
-          ...(draft.metadata ?? {}),
-          adapter: 'browser-dynamic',
-          provenance: sourceUrl.provenance,
-        },
-      })),
-    );
-  }
-
-  return drafts;
-}
-```
-
-`metadata.adapter = 'browser-dynamic'` is critical — `isObservedEvidence()` in `workflow-engine.ts` checks that adapter is not in `SYNTHETIC_ADAPTERS`, so browser-extracted items are counted as real observations in the pain gate.
-
-### Pattern 3: Pain Confirmation Gate as a Separate Concern
-
-**What:** A new gate (`evaluatePainConfirmationGate` in `lib/pain-gate.ts`) that checks minimum cross-source evidence. Runs after `evaluateQualityGate()`. Result persisted to `ResearchRun.painGatePassed` and `painGateDetails`. Send queue checks this field before allowing outreach.
-
-**When to use:** Always — for every completed research run.
-
-**Why it is separate from the quality gate:**
-
-The quality gate measures evidence sufficiency (count, source type diversity, confidence average). The pain confirmation gate measures _cross-source pain signal_ specifically — whether external sources (reviews, job postings) corroborate pain, not just whether the website was crawled. A prospect could pass GREEN quality gate with 5 high-confidence WEBSITE items and still have no external confirmation.
-
-The prototype in `workflow-engine.ts` (`evaluatePainConfirmation`) already captures this logic in advisory form. The v2.2 work promotes it to a gate that actually blocks the send queue.
-
-**Thresholds (to add to `quality-config.ts`):**
-
-```typescript
-// lib/quality-config.ts additions
-export const PAIN_GATE_MIN_EXTERNAL_ITEMS = 1; // REVIEWS or JOB_BOARD with aiRelevance >= 0.65
-export const PAIN_GATE_MIN_CROSS_SOURCE_ITEMS = 1; // non-own-website confirmed source
-export const PAIN_GATE_MIN_DISTINCT_PAIN_TAGS = 2; // distinct workflowTags with aiRelevance >= 0.65
-export const PAIN_GATE_AI_RELEVANCE_THRESHOLD = 0.65; // higher than quality gate's 0.50
-```
-
-**Example:**
-
-```typescript
-// lib/pain-gate.ts
-export interface PainGateResult {
-  passed: boolean;
-  requiresOverride: boolean;
-  externalConfirmationCount: number;
-  crossSourceCount: number;
-  distinctPainTags: number;
-  reasons: string[];
-}
-
-export function evaluatePainConfirmationGate(
-  items: EvidenceInput[],
-  domain: string,
-): PainGateResult {
-  const confirmed = items.filter((item) => {
-    const aiRelevance = parseAiRelevanceFromEvidence(item);
-    return (
-      aiRelevance !== null && aiRelevance >= PAIN_GATE_AI_RELEVANCE_THRESHOLD
-    );
-  });
-
-  const externalConfirmed = confirmed.filter(
-    (item) => item.sourceType === 'REVIEWS' || item.sourceType === 'JOB_BOARD',
-  );
-  const crossSource = confirmed.filter(
-    (item) => !item.sourceUrl.includes(domain),
-  );
-  const distinctPainTags = new Set(
-    confirmed
-      .map((item) => item.workflowTag)
-      .filter((tag) => PAIN_WORKFLOW_TAGS.has(tag)),
-  ).size;
-
-  const reasons: string[] = [];
-  if (externalConfirmed.length < PAIN_GATE_MIN_EXTERNAL_ITEMS) {
-    reasons.push(
-      `Min ${PAIN_GATE_MIN_EXTERNAL_ITEMS} external confirmation required (REVIEWS or JOB_BOARD with aiRelevance >= 0.65)`,
-    );
-  }
-  if (crossSource.length < PAIN_GATE_MIN_CROSS_SOURCE_ITEMS) {
-    reasons.push('At least 1 confirmed non-own-website source required');
-  }
-  if (distinctPainTags < PAIN_GATE_MIN_DISTINCT_PAIN_TAGS) {
-    reasons.push(
-      `Min ${PAIN_GATE_MIN_DISTINCT_PAIN_TAGS} distinct pain workflow tags required`,
-    );
-  }
-
+function tierEvidence(evidence: AIEvidenceInput[]): EvidenceTier {
   return {
-    passed: reasons.length === 0,
-    requiresOverride: reasons.length > 0,
-    externalConfirmationCount: externalConfirmed.length,
-    crossSourceCount: crossSource.length,
-    distinctPainTags,
-    reasons,
+    tierA: evidence.filter((e) => HIGH_SIGNAL_SOURCES.has(e.sourceType)),
+    tierB: evidence.filter((e) => !HIGH_SIGNAL_SOURCES.has(e.sourceType)),
   };
 }
 ```
 
-### Pattern 4: Override Audit Trail as Append-Only Log
-
-**What:** A `GateOverrideAudit` model that records every admin bypass of a failing gate. Written in `research.approveQuality` when `approved: true` AND either gate is not passed.
-
-**When to use:** Any time the admin proceeds despite a gate failure. Both the quality gate and the pain gate should be audited.
-
-**Why not extend `qualityNotes` on ResearchRun:**
-
-`qualityNotes` is a single overwrite field — it is already used and gets replaced on each review. The audit trail must be immutable and append-only. A run may be reviewed multiple times (re-run → new gate result → another override). Each bypass event must be individually preserved. A separate model is the correct design.
-
-**Schema:**
-
-```prisma
-model GateOverrideAudit {
-  id            String   @id @default(cuid())
-  createdAt     DateTime @default(now())
-
-  researchRunId String
-  researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
-
-  gateType      String   // 'quality_gate' | 'pain_gate'
-  gatePassed    Boolean  // gate state at time of override (always false here)
-  overrideReason String  // min 12 chars, same enforcement as existing qualityNotes check
-  overriddenBy  String   // admin session identifier
-
-  gateSnapshot  Json?    // QualityGateResult or PainGateResult snapshot
-
-  @@index([researchRunId])
-  @@index([createdAt])
-}
-```
-
-**tRPC integration:** In `research.approveQuality`:
+Then in `generateHypothesisDraftsAI()`, replace the current flat sort + slice with:
 
 ```typescript
-// server/routers/research.ts (inside approveQuality mutation)
-if (input.approved) {
-  const qualityGatePassed = gate?.passed === true;
-  const painGatePassed = run.painGatePassed === true;
+const tiers = tierEvidence(filteredEvidence);
 
-  if (!qualityGatePassed) {
-    await ctx.db.gateOverrideAudit.create({
-      data: {
-        researchRunId: input.runId,
-        gateType: 'quality_gate',
-        gatePassed: false,
-        overrideReason: overrideReason,
-        overriddenBy: ctx.session?.user?.email ?? 'admin',
-        gateSnapshot: toJson(gate),
-      },
-    });
-  }
+// Sort each tier by aiRelevance, take top items from each tier
+const topTierA = tiers.tierA
+  .sort(
+    (a, b) =>
+      (parseAiRelevance(b) ?? b.confidenceScore) -
+      (parseAiRelevance(a) ?? a.confidenceScore),
+  )
+  .slice(0, 8); // up to 8 high-signal items
 
-  if (!painGatePassed) {
-    await ctx.db.gateOverrideAudit.create({
-      data: {
-        researchRunId: input.runId,
-        gateType: 'pain_gate',
-        gatePassed: false,
-        overrideReason: overrideReason,
-        overriddenBy: ctx.session?.user?.email ?? 'admin',
-        gateSnapshot: toJson(run.painGateDetails),
-      },
-    });
-  }
-}
+const topTierB = tiers.tierB
+  .sort(
+    (a, b) =>
+      (parseAiRelevance(b) ?? b.confidenceScore) -
+      (parseAiRelevance(a) ?? a.confidenceScore),
+  )
+  .slice(0, 7); // up to 7 context items (8+7 = 15 total, same budget)
+
+// Build evidence lines with different snippet budgets
+const tierALines = topTierA.map((item) => {
+  const relevance = parseAiRelevance(item);
+  const tag = relevance !== null ? ` (relevance: ${relevance.toFixed(2)})` : '';
+  return `[HIGH-SIGNAL: ${item.sourceType}]${tag} ${item.sourceUrl}: ${item.snippet.slice(0, 1200)}`;
+});
+
+const tierBLines = topTierB.map((item) => {
+  const relevance = parseAiRelevance(item);
+  const tag = relevance !== null ? ` (relevance: ${relevance.toFixed(2)})` : '';
+  return `[CONTEXT: ${item.sourceType}]${tag} ${item.sourceUrl}: ${item.snippet.slice(0, 400)}`;
+});
 ```
 
-**UI:** Collapsible timeline in the research run detail view showing: timestamp, gate type, reason, gate state. Read-only. Include in `research.getRun` response via `include: { overrideAudits: true }`.
+### Prompt Changes
 
----
-
-## Data Flow
-
-### v2.2 Pipeline Flow
-
-Changes from v2.1 are marked **[NEW]** and **[MODIFIED]**:
+Replace the current instruction `"identify 3 distinct workflow pain hypotheses"` with:
 
 ```
-Admin: startRun(prospectId, manualUrls, deepCrawl)
-  → research-executor.ts
-    → [NEW] discoverSourcesForProspect()
-        reads priorSitemapCache + priorSerpCache from snapshot (backward compat)
-        sitemap   → provenance: 'sitemap'
-        SERP      → provenance: 'serp'   (if deepCrawl)
-        manual    → provenance: 'manual'
-        defaults  → provenance: 'default' (if sitemap empty)
-        sets jsHeavyHint per URL
-        persists as inputSnapshot.sourceSet
-    → ingestWebsiteEvidenceDrafts(non-jsHeavy urls)    [Scrapling stealth, UNCHANGED]
-    → [NEW] ingestBrowserEvidenceDrafts(jsHeavy urls)  [Scrapling /fetch-dynamic, cap 5]
-    → generateEvidenceDrafts()                         [synthetic base, UNCHANGED]
-    → ingestReviewEvidenceDrafts()                     [UNCHANGED]
-    → if deepCrawl:
-        → ingestCrawl4aiEvidenceDrafts(serpUrls)       [UNCHANGED]
-        → discoverGoogleSearchMentions()               [UNCHANGED]
-        → [6 other deep sources unchanged]
-    → fetchKvkData()                                   [UNCHANGED]
-    → LinkedIn profile from Apollo                     [UNCHANGED]
-    → scoreEvidenceBatch()                             [UNCHANGED]
-    → evaluateQualityGate()                            [UNCHANGED]
-    → [NEW] evaluatePainConfirmationGate()             ← new gate
-    → generateHypothesisDraftsAI()                     [UNCHANGED]
-    → generateOpportunityDrafts()                      [UNCHANGED]
-    → [MODIFIED] ResearchRun.update(COMPLETED, summary,
-        painGatePassed,     ← new field
-        painGateDetails)    ← new field
+Identify 1 to 3 distinct workflow pain hypotheses, depending on how many are genuinely
+supported by evidence. Only output hypotheses with confidenceScore >= 0.65. If the
+evidence only clearly supports 1 hypothesis, return 1. Do not fabricate hypotheses
+to reach a count of 3.
 
-Admin: approveQuality(runId, approved=true, notes)
-  → [MODIFIED] if gate not passed AND approved:
-      → [NEW] GateOverrideAudit.create(gateType='quality_gate', ...)
-  → [MODIFIED] if painGatePassed=false AND approved:
-      → [NEW] GateOverrideAudit.create(gateType='pain_gate', ...)
-  → ResearchRun.update(qualityApproved=true)          [UNCHANGED logic]
+HIGH-SIGNAL evidence (reviews, hiring, LinkedIn, news, registry) is external validation
+from third parties — weight it heavily. CONTEXT evidence (website pages) is supporting
+background — use it to understand the company but do not treat it as pain confirmation
+unless HIGH-SIGNAL evidence corroborates it.
 ```
 
-### Send Queue Gate Check
+### Response Handling Change
 
-```
-Admin: send outreach for prospect
-  → outreach.ts send queue
-  → load ResearchRun for prospect
-  → EXISTING: researchRun.qualityApproved === true
-  → [NEW]: researchRun.painGatePassed === true
-      OR painGatePassed IS NULL   (null = old run, legacy pass-through)
-      OR GateOverrideAudit exists for this run with gateType='pain_gate'
-  → if blocked: throw TRPCError('Pain gate not passed — override required in research review')
-  → else: proceed with send
-```
+Remove implicit expectation of 3 items. Keep only the `parsed.length === 0` rejection. Add a post-parse quality filter:
 
-The `painGatePassed IS NULL` pass-through is critical for backward compat — the 7 existing prospects have no `painGatePassed` value and must not be suddenly blocked.
-
----
-
-## Schema Changes Required
-
-### New Fields on ResearchRun
-
-```prisma
-model ResearchRun {
-  // ... all existing fields unchanged ...
-
-  // v2.2: Pain confirmation gate
-  painGatePassed    Boolean?  // null = not evaluated (old runs), true/false = result
-  painGateDetails   Json?     // full PainGateResult for display
-
-  // Relation for audit trail
-  overrideAudits    GateOverrideAudit[]
-}
-```
-
-### New Model: GateOverrideAudit
-
-```prisma
-model GateOverrideAudit {
-  id            String   @id @default(cuid())
-  createdAt     DateTime @default(now())
-
-  researchRunId String
-  researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
-
-  gateType      String   // 'quality_gate' | 'pain_gate'
-  gatePassed    Boolean  // gate state at time of override
-  overrideReason String  // min 12 chars, enforced in tRPC
-  overriddenBy  String   // admin session identifier
-
-  gateSnapshot  Json?    // PainGateResult | QualityGateResult at override time
-
-  @@index([researchRunId])
-  @@index([createdAt])
-}
-```
-
-**Migration via `docker exec psql` (established pattern from MEMORY.md):**
-
-```sql
--- Add fields to ResearchRun
-ALTER TABLE "ResearchRun" ADD COLUMN "painGatePassed" BOOLEAN;
-ALTER TABLE "ResearchRun" ADD COLUMN "painGateDetails" JSONB;
-
--- Create GateOverrideAudit table
-CREATE TABLE "GateOverrideAudit" (
-  "id" TEXT NOT NULL,
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "researchRunId" TEXT NOT NULL,
-  "gateType" TEXT NOT NULL,
-  "gatePassed" BOOLEAN NOT NULL,
-  "overrideReason" TEXT NOT NULL,
-  "overriddenBy" TEXT NOT NULL,
-  "gateSnapshot" JSONB,
-  CONSTRAINT "GateOverrideAudit_pkey" PRIMARY KEY ("id")
+```typescript
+const validHypotheses = parsed.filter(
+  (item) =>
+    typeof item.confidenceScore === 'number' && item.confidenceScore >= 0.6,
 );
-CREATE INDEX "GateOverrideAudit_researchRunId_idx" ON "GateOverrideAudit"("researchRunId");
-CREATE INDEX "GateOverrideAudit_createdAt_idx" ON "GateOverrideAudit"("createdAt");
-ALTER TABLE "GateOverrideAudit" ADD CONSTRAINT "GateOverrideAudit_researchRunId_fkey"
-  FOREIGN KEY ("researchRunId") REFERENCES "ResearchRun"("id") ON DELETE CASCADE;
+if (validHypotheses.length === 0) {
+  throw new Error(
+    'AI returned no hypotheses meeting minimum quality threshold',
+  );
+}
 ```
 
-**Backward compatibility:** All new fields are nullable or have defaults. Existing prospects and research runs are unaffected. `painGatePassed IS NULL` is treated as "gate not evaluated" (legacy pass-through in send queue).
+### Build Order Dependency
+
+None. Self-contained change to `generateHypothesisDraftsAI()`. Implement and test first before adding model selection.
+
+---
+
+## Change 2: Configurable Model Selection
+
+### Current State
+
+`generateHypothesisDraftsAI()` hardcodes `getGenAI().getGenerativeModel({ model: 'gemini-2.0-flash' })`. The `@anthropic-ai/sdk: ^0.73.0` package is already installed. `ANTHROPIC_API_KEY` is already declared optional in `env.mjs`. The file already uses Anthropic SDK elsewhere — `scoreWithClaude()` for proof matching at line 1408.
+
+### Integration Points
+
+- `lib/workflow-engine.ts` — function signature, new client init, Claude invocation path
+- `lib/research-executor.ts` — pass optional `model` param through to `generateHypothesisDraftsAI()`
+- `server/routers/research.ts` — add optional `hypothesisModel` input to `startRun` and `retryRun`
+- `env.mjs` — no changes needed (ANTHROPIC_API_KEY already there)
+
+### Approach: Per-Run Parameter, Not Global Config
+
+Add `model` as an optional parameter to `generateHypothesisDraftsAI()` with a default of `'gemini-flash'`. Existing callers need zero changes because of the default.
+
+```typescript
+type HypothesisModel = 'gemini-flash' | 'claude-sonnet';
+
+export async function generateHypothesisDraftsAI(
+  evidence: AIEvidenceInput[],
+  prospectContext: AIProspectContext,
+  options?: { model?: HypothesisModel },
+): Promise<HypothesisDraft[]>;
+```
+
+Add a lazy Anthropic client alongside the existing `genaiClient`, following the same pattern:
+
+```typescript
+import Anthropic from '@anthropic-ai/sdk';
+
+let anthropicClient: Anthropic | null = null;
+function getAnthropic(): Anthropic {
+  if (!anthropicClient) {
+    anthropicClient = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY! });
+  }
+  return anthropicClient;
+}
+```
+
+Inside `generateHypothesisDraftsAI()`, branch on model only for the actual API call. All evidence pre-processing (tiering, snippet truncation, prompt construction) is shared:
+
+```typescript
+let text: string;
+if (options?.model === 'claude-sonnet') {
+  const response = await getAnthropic().messages.create({
+    model: 'claude-sonnet-4-5',
+    max_tokens: 2048,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  text = response.content[0].type === 'text' ? response.content[0].text : '';
+} else {
+  // default: Gemini Flash
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-2.0-flash' });
+  const response = await model.generateContent(prompt);
+  text = response.response.text();
+}
+```
+
+Use `claude-sonnet-4-5` as the Claude model — production-grade balance of quality vs. cost. Opus is too expensive per research run (~$0.15 vs ~$0.02 for Sonnet). Flash is already available for the Gemini path.
+
+### Router Change
+
+```typescript
+// server/routers/research.ts — startRun input
+z.object({
+  prospectId: z.string(),
+  campaignId: z.string().optional(),
+  manualUrls: z.array(z.string().url()).default([]),
+  deepCrawl: z.boolean().default(false),
+  hypothesisModel: z.enum(['gemini-flash', 'claude-sonnet']).optional(), // NEW
+});
+```
+
+Thread through `executeResearchRun()` in `research-executor.ts`:
+
+```typescript
+// lib/research-executor.ts — executeResearchRun signature
+export async function executeResearchRun(
+  db: PrismaClient,
+  input: {
+    prospectId: string;
+    campaignId?: string;
+    manualUrls: string[];
+    existingRunId?: string;
+    deepCrawl?: boolean;
+    hypothesisModel?: 'gemini-flash' | 'claude-sonnet'; // NEW
+  },
+);
+```
+
+Pass to the call site:
+
+```typescript
+const hypotheses = await generateHypothesisDraftsAI(
+  evidenceRecords.map(...),
+  { companyName: ..., industry: ..., specialties: ..., description: ... },
+  { model: input.hypothesisModel }, // NEW
+);
+```
+
+### Build Order Dependency
+
+Implement after Change 1. The prompt rewrite should be tested and verified working before adding model-routing complexity. Both share the same prompt string, so verifying the prompt is correct on one model first reduces debugging surface.
+
+---
+
+## Change 3: Variable Hypothesis Count (1-3)
+
+Covered in Change 1 (prompt instruction change and response validation). No separate integration work beyond what is described there.
+
+The `WorkflowHypothesis` table accepts any number of rows per run. `research-executor.ts` iterates `hypotheses` array with `for...of` — a single hypothesis is as valid as three. No schema change needed.
+
+---
+
+## Change 4: Remove or Derive Metric Defaults
+
+### Current Behavior
+
+`METRIC_DEFAULTS` constant in `generateHypothesisDraftsAI()` spreads hardcoded numbers onto every hypothesis:
+
+```typescript
+const METRIC_DEFAULTS = {
+  hoursSavedWeekLow: 4,
+  hoursSavedWeekMid: 8,
+  hoursSavedWeekHigh: 14,
+  handoffSpeedGainPct: 28,
+  errorReductionPct: 20,
+  revenueLeakageRecoveredLow: 400,
+  revenueLeakageRecoveredMid: 900,
+  revenueLeakageRecoveredHigh: 2000,
+};
+```
+
+### Schema Constraint
+
+`WorkflowHypothesis` already has all metric fields as nullable (`Int?`, `Float?`). No schema migration needed to pass `null`.
+
+### Critical Dependency Check Required Before Implementing
+
+The loss map generator reads metrics from hypothesis records. Before removing `METRIC_DEFAULTS`, read `generateWorkflowLossMapContent()` in `lib/workflow-engine.ts` (not read in this research pass — file was too large). Determine whether it reads `hoursSavedWeekLow/Mid/High` from the DB record or re-computes them from evidence.
+
+**If metrics are read from DB:** Removing defaults will produce null metrics in the loss map. The loss map generator must be updated to handle nulls (e.g., fallback to evidence-derived estimates or omit the metric block).
+
+**If metrics are re-computed:** Remove `METRIC_DEFAULTS` safely, pass `null` for all metric fields to `db.workflowHypothesis.create()`.
+
+### Recommended Approach (after dependency check)
+
+Option A — Ask AI to estimate metrics (preferred when the dependency check clears):
+
+Add metric fields to the JSON schema in the prompt:
+
+```
+"hoursSavedWeekLow": <integer, estimated hours saved per week, conservative>,
+"hoursSavedWeekMid": <integer, estimated hours saved per week, realistic>,
+"hoursSavedWeekHigh": <integer, estimated hours saved per week, optimistic>,
+"errorReductionPct": <integer 0-50, estimated error rate reduction percentage>
+```
+
+Keep `METRIC_DEFAULTS` as a fallback if AI returns null/invalid values. The defaults become a last-resort fallback rather than the primary value.
+
+### Build Order Dependency
+
+Phase C — do after Changes 1 and 2 are verified. Read loss map generator first.
+
+---
+
+## Tech Debt Fixes: Integration Map
+
+Each fix is independent. All can be done in a single cleanup phase.
+
+### TD-1: Import Ordering in workflow-engine.ts
+
+**Location:** Lines 538-544. A `export { ... }` re-export of `computeTrafficLight` appears before two `import` statements from the same module (`@/lib/quality-config`).
+
+```typescript
+// Line 539: export first (wrong position)
+export { computeTrafficLight, type TrafficLight } from '@/lib/quality-config';
+// Lines 540-544: imports after export (wrong — ESM hoisting makes it work but misleads readers)
+import {
+  MIN_AVERAGE_CONFIDENCE,
+  PAIN_CONFIRMATION_MIN_SOURCES,
+} from '@/lib/quality-config';
+import type { TrafficLight } from '@/lib/quality-config';
+```
+
+**Fix:** Move the two `import` statements to the top import block of the file. Move the `export` re-export with the other re-exports (around line 539). The file already has a logical import section at the top — these two imports should be there.
+
+**Risk:** Low. Pure cosmetic ordering. No runtime impact.
+
+---
+
+### TD-2: Unused logoUrl Prop in DashboardClient
+
+**Location:** `components/public/prospect-dashboard-client.tsx` line 72 — `logoUrl: string | null` in `DashboardClientProps`.
+
+**Verification needed first:** The grep shows `app/discover/[slug]/page.tsx:247: logoUrl={prospect.logoUrl}` — the prop IS being passed. Search inside `DashboardClient` component body for actual usage of `logoUrl` (rendering a logo image element). If the prop is in the interface but never accessed in the JSX render, it is dead code.
+
+**Fix if unused:** Remove `logoUrl: string | null` from `DashboardClientProps` interface. Remove `logoUrl={prospect.logoUrl}` from the call site in `app/discover/[slug]/page.tsx` line 247. TypeScript will confirm no other usages.
+
+**Risk:** Low. TypeScript catches any missed usages at compile time.
+
+---
+
+### TD-3: Detail-View `as any` Prisma Cast
+
+**Location:** `app/admin/prospects/[id]/page.tsx` lines 155, 179, 194, 198, 201.
+
+**Root cause:** The `research.listRuns` query uses `include` without explicit `select`, which should include all scalar fields. The `as any` casts appear because tRPC's deep type inference fails (TS2589 — type instantiation too deep) on the complex Prisma return type. This is the established project pattern per MEMORY.md: "TS2589 deep inference: cast Prisma results as any, re-type via helper functions."
+
+**Fix:** Create a typed helper in the component file:
+
+```typescript
+// In app/admin/prospects/[id]/page.tsx
+
+// tRPC inferred return type from research.listRuns
+type ResearchRunRow = NonNullable<
+  ReturnType<typeof api.research.listRuns.useQuery>['data']
+>[number];
+
+function getRunFields(run: ResearchRunRow) {
+  // Cast once here, re-typed by the return shape
+  const r = run as typeof run & {
+    qualityApproved: boolean | null;
+    qualityReviewedAt: Date | null;
+    summary: Record<string, unknown> | null;
+  };
+  return {
+    qualityApproved: r.qualityApproved ?? null,
+    qualityReviewedAt: r.qualityReviewedAt ?? null,
+    summary: r.summary,
+  };
+}
+```
+
+Then replace `(researchRuns.data[0] as any).qualityApproved` → `getRunFields(researchRuns.data[0]).qualityApproved` etc.
+
+**Risk:** Low. Improves type safety. Runtime behavior unchanged.
+
+---
+
+### TD-4: TS2589 Deep Prisma `as any` Casts (Broader)
+
+**Affected files:** `app/admin/prospects/page.tsx`, `app/admin/contacts/[id]/page.tsx`, `app/admin/outreach/page.tsx`, `app/admin/signals/page.tsx`, `app/admin/campaigns/[id]/page.tsx`, `app/admin/contacts/page.tsx`.
+
+**Pattern:** Same root cause as TD-3. Apply the same typed-helper approach per file. Each cast site is a 5-10 line fix.
+
+**Priority within tech debt:** Lower than TD-3. Fix TD-3 first as the canonical example, then apply same pattern to other files.
+
+**Risk:** Low individually. Medium in aggregate (6 files). Run `npm run check` after each file.
+
+---
+
+### TD-5: E2E Send Test Bypasses tRPC Quality Gate
+
+**Location:** Test script calls Resend API directly, bypassing the tRPC `outreach.sendSequence` mutation and its quality gate checks.
+
+**Fix:** Rewrite the E2E send test to:
+
+1. Set up a test prospect with `qualityApproved: true` in the DB (via tRPC `research.approveQuality` mutation)
+2. Call `outreach.sendSequence` tRPC mutation (not Resend directly)
+3. Assert expected Resend calls via mock/stub
+
+**Risk:** Medium. Test infrastructure change. Validate the new test passes before removing the old one. This fix may surface bugs in the quality gate check — which is the point.
+
+---
+
+### TD-6: SERP Cache Re-read After Overwrite
+
+**Location:** `lib/research-executor.ts` — the `deepCrawl` block re-reads `inputSnapshot` from DB (line ~320) after `run.create/update` already overwrote it earlier in the function.
+
+**Root cause:** The function reads the prior snapshot for sitemap/SERP cache before the run create/update (`priorSnapshot`). Then after the run is created/updated (which overwrites `inputSnapshot`), the deepCrawl block does another `db.researchRun.findUnique` to get `serpCache`. This second read returns the newly-written snapshot which may not have the old `serpCache` key — or may have it if the write preserved it. The `useSerpFromSourceSet` flag computed before the overwrite is the correct primary guard.
+
+**Fix:**
+
+```typescript
+// Remove this block inside the deepCrawl branch (~line 316-330):
+const existingSnapshot = input.existingRunId
+  ? (await db.researchRun.findUnique({ where: { id: input.existingRunId }, select: { inputSnapshot: true } }))?.inputSnapshot
+  : null;
+const serpCache = extractSerpCache(existingSnapshot);
+const isCacheValid = useSerpFromSourceSet || (serpCache !== null && ...);
+```
+
+Replace with:
+
+```typescript
+// Use only useSerpFromSourceSet (computed before the overwrite, from priorSourceSet)
+const isCacheValid = useSerpFromSourceSet;
+```
+
+If `isCacheValid` is true, reconstruct the serpResult from `priorSourceSet.urls` (filtered to `provenance === 'serp'`) — this data was already extracted before the overwrite.
+
+**Risk:** Medium. Cache logic is subtle. Verify with a re-run test that the SERP cache is correctly reused when `serpDiscoveredAt` is less than 24 hours old, and correctly refreshed when older.
+
+---
+
+## Data Flow: Before and After
+
+### Before (current v2.2)
+
+```
+evidence[] (up to 60 items, deduped)
+  → scoreEvidenceBatch()    → aiRelevance/aiDepth/finalConfidence on each
+  → sort all by aiRelevance, take top 15
+  → truncate all snippets to 600 chars
+  → single Gemini Flash call → exactly 3 hypotheses
+  → spread METRIC_DEFAULTS onto each
+  → save to DB
+```
+
+### After (v3.0 target)
+
+```
+evidence[] (up to 60 items, deduped)
+  → scoreEvidenceBatch()    → aiRelevance/aiDepth/finalConfidence on each (unchanged)
+  → tierEvidence()          → Tier A (REVIEWS/LINKEDIN/CAREERS/JOB_BOARD/NEWS/REGISTRY)
+                               + Tier B (WEBSITE/DOCS/HELP_CENTER/MANUAL_URL)
+  → sort each tier by aiRelevance
+  → take top 8 Tier A + top 7 Tier B (= 15 total, same budget)
+  → Tier A: 1200-char snippets; Tier B: 400-char snippets
+  → prompt explicitly labels HIGH-SIGNAL vs CONTEXT evidence
+  → configurable model: Gemini Flash (default) or Claude Sonnet (optional)
+  → 1-3 hypotheses based on evidence quality (not forced 3)
+  → metrics: AI-estimated with METRIC_DEFAULTS fallback (or null if loss map verified)
+  → save to DB
+```
+
+### What Does Not Change
+
+- All 8+ evidence source adapters
+- `evidence-scorer.ts` — stays Gemini Flash (latency-sensitive, no benefit from Claude here)
+- `evaluateQualityGate()` — unchanged
+- `WorkflowHypothesis` DB schema — metric fields already nullable
+- `research-executor.ts` orchestration — only the `generateHypothesisDraftsAI()` call site changes
+- tRPC router structure — one new optional field per mutation
 
 ---
 
 ## Build Order
 
-Dependencies determine order. Each phase is independently shippable and testable.
+### Phase A: Prompt Rewrite + Evidence Tiering (highest value, lowest risk)
 
-### Phase 28: Source Discovery with Provenance
+1. Add `tierEvidence()` helper function inside `lib/workflow-engine.ts`
+2. Replace flat sort + 600-char truncation with tiered approach (8 Tier A + 7 Tier B)
+3. Rewrite prompt to label HIGH-SIGNAL vs CONTEXT evidence
+4. Change "exactly 3" to "1 to 3 based on quality"
+5. Add post-parse quality filter (`confidenceScore >= 0.60`)
+6. Verify with manual test run against real prospects
 
-**Dependency:** None — standalone extraction from existing sitemap + SERP logic.
+### Phase B: Configurable Model Selection
 
-**Build:**
+Dependency: Phase A complete and verified.
 
-1. `lib/enrichment/source-discovery.ts` — `discoverSourcesForProspect()` returning `ProspectSourceSet` with provenance tags per URL. Internally calls the existing `discoverSitemapUrls()`, `discoverSerpUrls()`, and the default-path logic currently inline in `research-executor.ts`.
-2. Modify `lib/research-executor.ts` — replace inline sitemap + default-path block with `discoverSourcesForProspect()`. Store result in `inputSnapshot.sourceSet`. Backward compat: still read old `sitemapCache` / `serpCache` keys for retries of old runs.
-3. Set `jsHeavyHint: true` in source discovery when stealth fetch fingerprint indicates SPA.
+1. Add `anthropicClient` lazy init alongside existing `genaiClient` in `lib/workflow-engine.ts`
+2. Add `model?: HypothesisModel` parameter to `generateHypothesisDraftsAI()`
+3. Add Claude invocation path (branch on model, share all pre-processing)
+4. Add `hypothesisModel` optional input to `research.startRun` and `research.retryRun` in router
+5. Thread parameter through `executeResearchRun()` in `research-executor.ts`
 
-**Test:** Run a research run, inspect `inputSnapshot.sourceSet` — verify provenance tags present. Confirm sitemap URLs still discovered, SERP URLs still discovered, manual URLs preserved with `provenance: 'manual'`.
+### Phase C: Metric Defaults (verify dependency first)
 
-**Rationale for first:** All other features depend on knowing how URLs were discovered. Browser extraction uses `jsHeavyHint`. The pain gate benefits from knowing evidence came from multiple distinct discovered sources.
+Dependency: Read `generateWorkflowLossMapContent()` before implementing.
 
-### Phase 29: Browser-Rendered Extraction
+1. Read loss map generator — determine if metrics come from DB or are re-computed
+2. If re-computed: remove `METRIC_DEFAULTS`, pass null to DB
+3. If read from DB: add metric estimation to prompt, keep METRIC_DEFAULTS as fallback
 
-**Dependency:** Phase 28 complete (needs `jsHeavyHint` flags from source discovery).
+### Phase D: Tech Debt (independent, any sub-order)
 
-**Build:**
-
-1. `lib/browser-evidence-adapter.ts` — `ingestBrowserEvidenceDrafts(urls: ProspectSourceUrl[])` wrapping `fetchDynamic()` from `lib/enrichment/scrapling.ts` and reusing `extractWebsiteEvidenceFromHtml()` from `lib/web-evidence-adapter.ts`. Cap at 5 URLs. Set `metadata.adapter = 'browser-dynamic'`.
-2. Wire into `lib/research-executor.ts` — after `ingestWebsiteEvidenceDrafts()`, collect URLs where stealth returned < 500 chars or `jsHeavyHint: true`, call `ingestBrowserEvidenceDrafts()` on them. Cap enforced inside the adapter.
-
-**No service changes:** Scrapling `/fetch-dynamic` endpoint and `fetchDynamic()` client function already exist.
-
-**Test:** Find a JS-heavy prospect (Next.js site like a SaaS product). Run pipeline. Verify evidence items with `metadata.adapter = 'browser-dynamic'` appear in DB with real content snippets (not empty fallback drafts).
-
-**Rationale for second:** Uses `jsHeavyHint` from Phase 28. Scrapling service is already running. Bounded risk — at most 5 URLs per run, ~50s additional pipeline time.
-
-### Phase 30: Pain Confirmation Gate + Override Audit
-
-**Dependency:** Phases 28 and 29 complete (gate should evaluate the full evidence set including browser-extracted items).
-
-**Build:**
-
-1. Prisma schema — add `painGatePassed Boolean?`, `painGateDetails Json?` to `ResearchRun`; add `GateOverrideAudit` model and its relation on `ResearchRun`.
-2. Apply migration via `docker exec psql`.
-3. `lib/pain-gate.ts` — `evaluatePainConfirmationGate()` with `PainGateResult` return type.
-4. `lib/quality-config.ts` — add `PAIN_GATE_*` threshold constants.
-5. Wire into `lib/research-executor.ts` — call `evaluatePainConfirmationGate()` after `evaluateQualityGate()`. Persist `painGatePassed` and `painGateDetails` to `ResearchRun`.
-6. `server/routers/research.ts` `approveQuality` — add `GateOverrideAudit` creation when admin overrides failing gate. Extend `getRun` to include `overrideAudits`.
-7. `server/routers/outreach.ts` — add pain gate check to send queue guard (with `IS NULL` pass-through for legacy runs).
-8. UI — collapsible override audit timeline in the research run detail Evidence tab. Display `painGateDetails` reasons when gate fails.
-
-**Test (sequential):**
-
-- Run research on a prospect with no external evidence (no reviews, no jobs) → verify `painGatePassed = false`
-- Try to send outreach → verify TRPCError thrown
-- Approve quality with notes → verify `GateOverrideAudit` row created
-- Try to send outreach again → verify it proceeds
-- Run research on a well-evidenced prospect → verify `painGatePassed = true`, outreach unblocked
-
-**Rationale for last:** Pain gate evaluation requires the full evidence set including browser-extracted items from Phase 29. Schema changes are safest last to minimize migration risk. Override audit is meaningless without the gate to override.
+- TD-1: Import ordering in `workflow-engine.ts` (5 min)
+- TD-2: `logoUrl` prop — verify rendering, then remove (15 min)
+- TD-3: Detail-view `as any` casts via `getRunFields()` helper (30 min)
+- TD-6: SERP cache re-read removal in `research-executor.ts` (45 min, logic-sensitive)
+- TD-4: Remaining `as any` casts in admin pages (60 min, systematic across 6 files)
+- TD-5: E2E send test tRPC refactor (60 min, requires test env)
 
 ---
 
-## Integration Points
+## New vs Modified Components
 
-### External Services — No Changes
+| Component                                              | Status   | What Changes                                                       |
+| ------------------------------------------------------ | -------- | ------------------------------------------------------------------ |
+| `lib/workflow-engine.ts::generateHypothesisDraftsAI()` | Modified | Prompt, evidence tiering, model selection, variable count          |
+| `lib/workflow-engine.ts` (module level)                | Modified | New `anthropicClient` lazy init, new `tierEvidence()` helper       |
+| `lib/workflow-engine.ts` (import ordering)             | Modified | Move imports to top, fix export ordering                           |
+| `lib/research-executor.ts`                             | Modified | Thread optional `model` param, remove SERP cache re-read           |
+| `server/routers/research.ts`                           | Modified | Add optional `hypothesisModel` input to `startRun`/`retryRun`      |
+| `app/admin/prospects/[id]/page.tsx`                    | Modified | Replace `as any` casts with `getRunFields()` typed helper          |
+| `components/public/prospect-dashboard-client.tsx`      | Modified | Remove unused `logoUrl` prop from interface                        |
+| `app/discover/[slug]/page.tsx`                         | Modified | Remove `logoUrl={prospect.logoUrl}` from DashboardClient call site |
+| Other admin pages (6 files)                            | Modified | Apply typed-helper pattern for remaining `as any` casts            |
 
-| Service         | Current Usage                               | v2.2 Change                                                               |
-| --------------- | ------------------------------------------- | ------------------------------------------------------------------------- |
-| Scrapling :3010 | `/fetch` (stealth) for all website URLs     | Add calls to `/fetch-dynamic` for JS-heavy URLs — endpoint already exists |
-| Crawl4AI :11235 | Browser extraction for SERP-discovered URLs | Unchanged                                                                 |
-| SerpAPI (cloud) | Google Maps + Jobs + Search discovery       | Unchanged                                                                 |
-| Gemini Flash    | Evidence scoring                            | Unchanged                                                                 |
-| KvK API         | Registry enrichment                         | Unchanged                                                                 |
-
-### Internal Boundaries
-
-| Boundary                                               | Communication        | v2.2 Change                                      |
-| ------------------------------------------------------ | -------------------- | ------------------------------------------------ |
-| `research-executor.ts` ↔ `source-discovery.ts`         | Direct function call | NEW — replaces inline sitemap/serp/default logic |
-| `research-executor.ts` ↔ `browser-evidence-adapter.ts` | Direct function call | NEW                                              |
-| `research-executor.ts` ↔ `pain-gate.ts`                | Direct function call | NEW                                              |
-| `research.ts` (router) ↔ `GateOverrideAudit` (DB)      | Prisma               | NEW — written on override                        |
-| `outreach.ts` (router) ↔ `ResearchRun.painGatePassed`  | Prisma               | NEW — read in send queue check                   |
+**No new files required.** All changes are in-place modifications to existing files.
 
 ---
 
-## Anti-Patterns
+## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Storing Source URLs as a Separate DB Table
+### Anti-Pattern 1: Global Model Config via Environment Variable
 
-**What people do:** Create a `ProspectSourceUrl` table in the DB to persist discovered URLs.
+Defining `HYPOTHESIS_MODEL=claude` in `.env`, read in `workflow-engine.ts`.
 
-**Why it's wrong:** The existing `inputSnapshot` JSON on `ResearchRun` already stores `sitemapCache` and `serpCache` with the same pattern and 24h TTL semantics. A separate table adds migration cost, join complexity, and a new model to maintain — for no query benefit at current volumes (7-50 prospects, <30 runs). Premature normalization.
+**Why bad:** Makes per-run model comparison impossible. Couples model selection to deployment config, not user intent. The correct scope is per-run parameter.
 
-**Do this instead:** Persist `ProspectSourceSet` in `inputSnapshot.sourceSet` JSON. Upgrade to a DB table only when the admin needs to browse or filter discovered source URLs across runs — not in scope for v2.2.
-
-### Anti-Pattern 2: Running Browser Extraction for All URLs
-
-**What people do:** Replace all `ingestWebsiteEvidenceDrafts()` calls with browser extraction, reasoning "more sites will work."
-
-**Why it's wrong:** `fetchDynamic()` takes ~10s per URL. At 20 URLs per prospect (current average), that is 200s added to pipeline time. Scrapling `/fetch-dynamic` uses a full Playwright browser per request — high memory, `max_workers=4` is the current limit. The stealth fetcher already handles most sites.
-
-**Do this instead:** Use `jsHeavyHint` detection from source discovery plus stealth-failure detection to escalate only the URLs that genuinely need browser rendering. Cap at 5 URLs per run. Always run stealth first.
-
-### Anti-Pattern 3: Making the Pain Gate a Hard Block Without Override
-
-**What people do:** Make `painGatePassed === true` an absolute requirement with no override path.
-
-**Why it's wrong:** Dutch SMBs have thin web presence — this is documented in the decision log ("Soft gate: amber = warn + proceed-anyway" — Key Decisions in PROJECT.md). A hard pain gate would block outreach for legitimate prospects where evidence is sparse not because pain is absent but because the company has minimal online footprint.
-
-**Do this instead:** Gate blocks by default. Override requires a written reason (min 12 chars). Override is logged in `GateOverrideAudit`. Admin can proceed but the bypass is immutably recorded. Same pattern already proven with the quality gate.
-
-### Anti-Pattern 4: Putting Gate Logic in the tRPC Router
-
-**What people do:** Inline pain gate thresholds inside `outreach.ts` or `research.ts` router mutations.
-
-**Why it's wrong:** Gate logic is already split: `evaluateQualityGate()` is in `lib/workflow-engine.ts`, thresholds are in `lib/quality-config.ts`. Duplicating into routers makes logic untestable without HTTP setup and duplicates threshold values.
-
-**Do this instead:** Gate logic lives in `lib/pain-gate.ts` (pure functions, no DB dependency). Constants in `lib/quality-config.ts`. Routers call the library functions and throw `TRPCError` if gate fails. Consistent with the existing `evaluateQualityGate` / `computeTrafficLight` pattern.
-
-### Anti-Pattern 5: Two Separate Override Tables per Gate Type
-
-**What people do:** Create `QualityGateOverride` and `PainGateOverride` as separate models.
-
-**Why it's wrong:** Identical shape (runId, reason, timestamp, snapshot). Two tables for the same structure adds migration complexity with no benefit.
-
-**Do this instead:** Single `GateOverrideAudit` model with `gateType: String` discriminator. New gate types added as string values, no schema migration needed.
+**Instead:** Optional `model` parameter on the function, defaulting to `gemini-flash`.
 
 ---
 
-## Scaling Considerations
+### Anti-Pattern 2: Separate Module for Claude Hypothesis Generation
 
-At current volumes (7-50 prospects), none of these changes introduce scaling risk.
+Creating `lib/claude-hypothesis-generator.ts` that duplicates evidence formatting and prompt logic.
 
-| Scale            | Architecture Adjustment                                                                                                                                                                    |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 0-50 prospects   | Current sync pipeline handles everything. Browser extraction cap of 5 URLs adds ~50s max — within acceptable admin wait time.                                                              |
-| 50-500 prospects | Move pipeline to background job queue (BullMQ + Redis already in docker-compose). Sync tRPC mutations will hit 30s serverless timeouts.                                                    |
-| 500+ prospects   | Scrapling service needs horizontal scaling (`max_workers` currently 4, browser sessions are memory-heavy). Pain gate query on `ResearchRun` needs `@@index([prospectId, painGatePassed])`. |
+**Why bad:** Splits hypothesis generation across two files. Prompt improvements must be mirrored. Evidence tiering is shared regardless of model.
 
-**Immediate concern for v2.2:** The browser extraction step adds up to 5 × 10s = 50s to pipeline time. If the current admin UI shows a loading spinner with no timeout, it will appear hung. Add a UI note: "Browser extraction in progress (up to 60s)" when deepCrawl is enabled with JS-heavy URLs.
+**Instead:** Single `generateHypothesisDraftsAI()` function that branches on `options.model` only for the API call. All pre-processing is shared.
+
+---
+
+### Anti-Pattern 3: Second AI Call to Re-rank Evidence
+
+Adding another Gemini call to summarize or rank evidence before passing it to hypothesis generation.
+
+**Why bad:** `evidence-scorer.ts` already provides `aiRelevance` on every item. The issue is not that relevance scores are absent — it is that the prompt does not communicate source-type priority to the model. Adding a second AI call doubles latency and cost for zero gain.
+
+**Instead:** Use existing `aiRelevance` scores for sort order within each tier. Use source type membership to determine tier. Zero extra API calls.
+
+---
+
+### Anti-Pattern 4: Removing METRIC_DEFAULTS Without Checking Downstream
+
+Deleting `METRIC_DEFAULTS` and passing all-null metrics to the DB without first verifying what reads those fields.
+
+**Why bad:** `generateWorkflowLossMapContent()` in `workflow-engine.ts` may read metric fields from the DB record to populate the loss map PDF. Null metrics would break loss map generation silently — the loss map would render with no numbers, which is a worse user experience than hardcoded numbers.
+
+**Instead:** Read the loss map generator first. If it reads from DB, update it to handle nulls before removing defaults.
+
+---
+
+## Scalability Considerations
+
+Not an immediate concern at 7 prospects, documented for reference.
+
+| Concern                          | At 50 prospects        | At 500 prospects                                    |
+| -------------------------------- | ---------------------- | --------------------------------------------------- |
+| Claude Sonnet per hypothesis run | ~$0.02/run, negligible | ~$10/month if all re-run monthly — still negligible |
+| Gemini Flash evidence scoring    | ~$0.0004/run           | ~$0.20/month — negligible                           |
+| Hypothesis count variability     | No impact              | Slightly reduces token output                       |
 
 ---
 
 ## Confidence Assessment
 
-| Area                                | Confidence | Notes                                                                                                                                                                                                       |
-| ----------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Source discovery refactor           | HIGH       | Directly read `research-executor.ts` — the inline sitemap/default/serp logic is clear; refactoring into `source-discovery.ts` is mechanical                                                                 |
-| Browser extraction via fetchDynamic | HIGH       | `fetchDynamic()` exists in `scrapling.ts`, `/fetch-dynamic` endpoint in `services/scrapling/app.py` — just needs wiring                                                                                     |
-| Pain gate thresholds                | MEDIUM     | Thresholds (`aiRelevance >= 0.65`, 1 external item, 2 pain tags) are proposed based on understanding of the current scoring distribution; should be calibrated against the 7 real prospects before shipping |
-| Override audit model                | HIGH       | Append-only audit log is a standard pattern; schema is straightforward                                                                                                                                      |
-| Backward compatibility              | HIGH       | `painGatePassed IS NULL` pass-through in send queue is the critical guard; explicitly specified                                                                                                             |
-| Build order dependencies            | HIGH       | Each phase is independently verifiable                                                                                                                                                                      |
+| Area                          | Confidence | Notes                                                                         |
+| ----------------------------- | ---------- | ----------------------------------------------------------------------------- |
+| Evidence tiering approach     | HIGH       | Source weights are documented in `evidence-scorer.ts` and confirmed accurate  |
+| Model selection via parameter | HIGH       | Anthropic SDK already installed and used in the same file                     |
+| Variable hypothesis count     | HIGH       | Schema supports any count; response handling needs only minor change          |
+| Metric defaults removal       | MEDIUM     | Depends on reading `generateWorkflowLossMapContent()` — not read in this pass |
+| TD-1 through TD-4             | HIGH       | All confirmed via direct code inspection                                      |
+| TD-5 (E2E test)               | MEDIUM     | Test infrastructure complexity unknown without reading test files             |
+| TD-6 (SERP cache)             | MEDIUM     | Logic is subtle; the fix approach is clear but carries regression risk        |
 
 ---
 
 ## Sources
 
-All findings are from direct codebase inspection:
+All findings are from direct codebase inspection (2026-03-02):
 
-- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/research-executor.ts` — full pipeline orchestration
-- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/workflow-engine.ts` — quality gate, pain confirmation prototype, evidence classification
-- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/enrichment/scrapling.ts` — `fetchStealth()`, `fetchDynamic()` clients
-- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/enrichment/crawl4ai.ts` — Crawl4AI client
-- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/enrichment/serp.ts` — SerpAPI discovery
-- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/enrichment/sitemap.ts` — sitemap discovery
-- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/evidence-scorer.ts` — AI scoring formula
-- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/quality-config.ts` — existing thresholds
-- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/web-evidence-adapter.ts` — HTML → EvidenceDraft conversion
-- `/home/klarifai/Documents/klarifai/projects/qualifai/server/routers/research.ts` — `approveQuality` mutation
-- `/home/klarifai/Documents/klarifai/projects/qualifai/server/routers/outreach.ts` — send queue
-- `/home/klarifai/Documents/klarifai/projects/qualifai/services/scrapling/app.py` — Scrapling service endpoints
-- `/home/klarifai/Documents/klarifai/projects/qualifai/prisma/schema.prisma` — full schema
-- `/home/klarifai/Documents/klarifai/projects/qualifai/.planning/PROJECT.md` — v2.2 target features, key decisions
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/workflow-engine.ts` — full `generateHypothesisDraftsAI()` function, `METRIC_DEFAULTS`, import ordering anomaly, `scoreWithClaude()` Anthropic pattern
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/research-executor.ts` — full orchestration, SERP re-read location, `generateHypothesisDraftsAI()` call site
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/evidence-scorer.ts` — source weights, Gemini Flash integration pattern
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/web-evidence-adapter.ts` — evidence extraction, snippet lengths
+- `/home/klarifai/Documents/klarifai/projects/qualifai/lib/quality-config.ts` — existing threshold constants
+- `/home/klarifai/Documents/klarifai/projects/qualifai/server/routers/research.ts` — `startRun`, `retryRun`, `listRuns` query shape
+- `/home/klarifai/Documents/klarifai/projects/qualifai/app/admin/prospects/[id]/page.tsx` — `as any` cast locations
+- `/home/klarifai/Documents/klarifai/projects/qualifai/components/public/prospect-dashboard-client.tsx` — `logoUrl` prop location
+- `/home/klarifai/Documents/klarifai/projects/qualifai/prisma/schema.prisma` — `WorkflowHypothesis` nullable metric fields confirmed
+- `/home/klarifai/Documents/klarifai/projects/qualifai/package.json` — `@anthropic-ai/sdk: ^0.73.0` confirmed installed, `@google/generative-ai: ^0.24.1` confirmed
+- `/home/klarifai/Documents/klarifai/projects/qualifai/env.mjs` — `ANTHROPIC_API_KEY` and `GOOGLE_AI_API_KEY` both declared optional
 
 ---
 
-_Architecture research for: Qualifai v2.2 — Verified Pain Intelligence_
+_Architecture research for: Qualifai v3.0 — Sharp Analysis_
 _Researched: 2026-03-02_

@@ -1,242 +1,228 @@
 # Project Research Summary
 
-**Project:** Qualifai v2.2 — Verified Pain Intelligence
-**Domain:** Sales intelligence pipeline — automated evidence gathering with cross-source pain confirmation
+**Project:** Qualifai — v3.0 Sharp Analysis
+**Domain:** AI-powered B2B hypothesis generation quality improvement + tech debt resolution
 **Researched:** 2026-03-02
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Qualifai v2.2 extends a mature, 8-source AI-scored evidence pipeline (already shipping in v2.1) with four tightly-scoped capabilities: automatic source URL discovery with provenance, browser-rendered extraction for JS-heavy pages, a cross-source pain confirmation gate, and an immutable override audit trail. All four capabilities are achievable with zero new npm dependencies — the existing stack (Next.js 16, tRPC 11, Prisma 7, Scrapling, Crawl4AI, SerpAPI, Gemini Flash, Zod 4) already provides every primitive needed. The architectural pattern is consistent across all four features: extend existing modules rather than replace them, persist structured data to the existing Prisma schema, and keep gate logic in pure TypeScript library functions with no I/O — matching the already-validated `evaluateQualityGate` / `quality-config.ts` pattern.
+Qualifai v3.0 is a targeted precision milestone, not a platform expansion. The research is unanimous: the root cause of shallow hypothesis output is a prompt reasoning failure, not an evidence scarcity problem. The current `generateHypothesisDraftsAI()` function has four structural deficiencies — no source-tier priority, no anti-parroting constraint, no mandatory quote requirement, and hardcoded metric defaults that fabricate identical precision across every prospect. All four are fixable with prompt engineering and minor code changes, requiring zero new dependencies and no schema migrations. The existing Anthropic SDK (`@anthropic-ai/sdk: ^0.73.0`) is already installed and already used for proof matching, making Claude model selection a low-effort, high-value addition that enables systematic quality benchmarking against Gemini Flash.
 
-The recommended approach is a sequential three-phase build: source discovery with provenance first (Phase 28), browser-rendered extraction second (Phase 29), and the pain gate plus audit trail last (Phase 30). This order is dictated by hard data dependencies — the pain gate evaluates the full evidence set including browser-extracted items, so extraction must be wired before the gate runs. Source discovery must be refactored first because it produces the `jsHeavyHint` flags that control browser extraction routing. The schema migration (two new fields on `ResearchRun`, one new `GateOverrideAudit` model) is safest in the final phase, minimising migration risk on a live system with 7 real prospects.
+The architecture is surgically clear: all meaningful v3.0 changes land inside a single function (`generateHypothesisDraftsAI()` in `lib/workflow-engine.ts`) and its call chain. No structural pipeline changes, no new files required. The recommended build order — tech debt cleanup first, then evidence tiering plus prompt rewrite, then model selection, then metric derivation — produces a clean baseline before each progressive change and minimizes debugging surface area at every step.
 
-The primary risk is the Dutch SMB "thin web presence" problem, already documented in the decision log. The pain confirmation gate must be implemented as a soft advisory gate, not a second hard block layered on top of the existing AMBER quality gate. Hard-blocking on cross-source confirmation would leave most Dutch SMB prospects permanently unactionable — a failure mode explicitly ruled out in v2.1 design decisions. A second risk is SerpAPI credit burn if automatic discovery is not guarded by a prospect-level cache. Both risks have concrete, research-validated mitigations.
-
----
+The primary risk is a silent quality regression: the system continues to generate valid JSON but with shallower, less-evidenced hypotheses after the prompt rewrite. Prevention requires capturing a golden baseline from all 7 real prospects before touching any prompt text, then doing a structured side-by-side comparison after. Secondary risks cluster around downstream consumers of hypothesis data — the workflow loss map PDF, outreach templates, and the `/discover/` dashboard all have implicit assumptions about metric presence and hypothesis count that must be audited before removing hardcoded defaults or enabling variable output count.
 
 ## Key Findings
 
 ### Recommended Stack
 
-Zero new npm dependencies are required for v2.2. All four capability areas are handled by the existing dependency tree, verified against the codebase directly. The only schema additions are two new Prisma models (`inputSnapshot.sourceSet` JSON structure and `GateOverrideAudit` as a proper relational model) and two new fields on `ResearchRun` (`painGatePassed Boolean?`, `painGateDetails Json?`).
+Zero new npm dependencies. The existing stack — Next.js 16, tRPC 11, Prisma 7, `@anthropic-ai/sdk ^0.73.0`, `@google/generative-ai ^0.24.1` — covers all v3.0 requirements without additions. The one proactive action is upgrading all `gemini-2.0-flash` model strings to `gemini-2.5-flash` before the June 1, 2026 retirement date; this is a string change across 4 files (workflow-engine.ts, evidence-scorer.ts, serp.ts, review-adapters.ts) with no API or code changes.
 
-**Core technologies — v2.2 usage:**
+**Core technologies:**
 
-- `sitemapper@^4.1.4` + `serpapi@^2.2.1`: Source URL discovery — already installed and functional; gap is persisting discovered URLs as a provenance-tagged `sourceSet` in `inputSnapshot` rather than computing inline and discarding
-- Scrapling `/fetch-dynamic` endpoint: Browser-rendered extraction — `fetchDynamic()` in `lib/enrichment/scrapling.ts` already exists but is not called from the main pipeline; needs wiring, not new code
-- Crawl4AI v0.8.x with `remove_consent_popups`, `flatten_shadow_dom`, `process_iframes`: Enhanced extraction for review platforms and job boards — configuration-only change, no library update
-- Prisma 7 `$transaction` + composite unique index: Atomic override logging — established pattern already used in the send queue idempotency guard
-- `@google/generative-ai@^0.24.1` (Gemini Flash): Existing `scoreEvidenceBatch()` unchanged; pain gate evaluates already-scored `aiRelevance` fields
-- Built-in `URL` class (Node.js stdlib): URL normalisation — 4 lines of logic, no new dependency needed
+- `@anthropic-ai/sdk ^0.73.0`: Claude hypothesis generation — already installed, already used for proof matching at `workflow-engine.ts:1408`; zero additional setup required
+- `@google/generative-ai ^0.24.1`: Gemini Flash evidence scoring (unchanged) + default hypothesis model; stays as-is
+- Prisma 7 + PostgreSQL: `WorkflowHypothesis` metric fields already nullable (`Int?`, `Float?`) — no schema migration needed for metric derivation changes
 
-**Critical version constraint:** Crawl4AI service must be on v0.8.x for `remove_consent_popups` and `flatten_shadow_dom` to be available. Verify service version before deploying enhanced config.
+**Model selection:** Use `claude-sonnet-4-5` as the Claude model option. Sonnet is the correct quality/cost balance at approximately $0.02/run — Opus costs roughly 7x more. Gemini Flash remains the default (backward-compatible, zero disruption to existing runs).
+
+**Deferred:** `@google/generative-ai` to `@google/genai` SDK migration (deadline June 24, 2026) deferred to v4.x.
 
 See `.planning/research/STACK.md` for full capability-by-capability analysis.
 
 ### Expected Features
 
-All four features are rated P1 — all must ship in v2.2 for the "Verified Pain Intelligence" milestone to deliver value.
+**Must have (table stakes — regression fixes):**
 
-**Must have (table stakes — v2.2):**
+- Source-tier priority instruction in prompt — tells LLM that REVIEWS/CAREERS/LINKEDIN evidence is diagnostic; WEBSITE is context only
+- Source-type diagnostic labeling — each evidence block labeled with what the source type means (reviews = customer pain, careers = operational gaps, website = marketing self-image)
+- Anti-parroting constraint — explicit instruction not to derive hypotheses from the company's own website copy
+- Mandatory quote/citation requirement — each `problemStatement` must contain a verbatim quoted snippet from a non-WEBSITE source
+- Remove hardcoded `METRIC_DEFAULTS` — eliminates identical fabricated numbers across every prospect (pending downstream audit first)
+- Configurable model selection — `model?: 'gemini-flash' | 'claude-sonnet'` per-run parameter on `generateHypothesisDraftsAI()`
 
-- Discovered source URL list stored per prospect with provenance — admin trust foundation; without this, there is no way to verify what was researched or add targeted manual seeds
-- Browser-rendered extraction for all REVIEWS, CAREERS, and JOB_BOARD URL types — unblocks JS-heavy pages that are the highest-signal sources for pain detection
-- Cross-source pain confirmation gate — the core milestone deliverable; extends `evaluateQualityGate` to output `confirmedPainTags[]` and `unconfirmedPainTags[]`, displayed to admin before send; soft gate with mandatory override reason
-- Override audit trail with mandatory reason — reason field enforced in UI on bypass; `GateOverrideAudit` row created in same `$transaction` as approval; "bypassed" badge visible in dashboard
+**Should have (differentiators):**
 
-**Should have (competitive differentiators — add within v2.2 scope if time allows):**
+- Source signal summary injection — structured preamble before evidence block showing tier counts (e.g., "High-value signals: 4 REVIEWS, 2 CAREERS. Low-value: 6 WEBSITE") to prime LLM before raw evidence
+- Variable hypothesis count (1-3 based on confirmed pain tags) — eliminates fabricated third hypothesis for thin-evidence prospects; `min(confirmedPainTags.size, 3)`, minimum 1
+- Confidence score tier instruction — maps source type to confidence range (REVIEWS/LINKEDIN = 0.80-0.95; website-only = 0.60-0.65)
 
-- Source provenance labels on individual evidence cards (`manually added`, `auto-discovered`, `sitemap`, `SERP`) — improves admin confidence in individual items with minimal implementation cost
-- Source discovery UI panel — dedicated interface to review discovered sources and add manual seeds; implement once admin is manually editing source lists more than twice per week
+**Defer to follow-up:**
 
-**Defer to v2.x (after validation):**
+- Two-pass chain-of-thought reasoning — validate items 1-6 first; may be sufficient without CoT overhead
+- Primary source attribution badge in admin UI
+- `/discover/` validation session (separate activity, not a code feature — pending since v2.1)
+- Fine-tuning, RAG, or automated training loops (insufficient validated data; 7 prospects is far below minimum viable)
 
-- Per-campaign confirmation threshold configuration — premature at current 7-50 prospect volumes
-- Override analytics (frequency charts, most-commonly-unconfirmed pain tags) — meaningful only after 20+ prospects with visible override patterns
-- Sector-specific source URL templates — defer until 50+ prospects across 5+ sectors
+**Success signal for MVP:** STB-kozijnen hypotheses cite reviews or hiring signals, not service page copy; Mujjo hypotheses cite customer support reviews (0.85 confidence already confirmed); no two prospects share identical metric numbers; Claude Sonnet selectable via `hypothesisModel` run input.
 
-**Anti-features confirmed as out of scope:**
-
-- Hard cross-source pain gate blocking ALL outreach (Dutch SMBs have thin web presence — would block most NL prospects)
-- Real-time source discovery triggered on prospect import (burns SerpAPI credits on prospects that may never be researched)
-- Storing full rendered HTML per discovered URL (storage bloat, no practical benefit at current volumes)
-- Per-source-type confidence thresholds (configuration surface area; AI source weights already handle this)
-
-See `.planning/research/FEATURES.md` for full competitor comparison and feature dependency graph.
+See `.planning/research/FEATURES.md` for full feature dependency graph and evidence quality citations.
 
 ### Architecture Approach
 
-The v2.2 architecture follows a strict "extend, don't replace" philosophy. Three new library modules are added, two existing files are modified, and two tRPC routers receive targeted additions. All other existing modules are unchanged. The pipeline orchestrator (`lib/research-executor.ts`) remains the single integration point — new modules are called from within it in sequence.
+All v3.0 changes are targeted edits inside `generateHypothesisDraftsAI()` and its call chain. The pipeline structure (`research-executor.ts` → `workflow-engine.ts` → AI model → DB) is unchanged. The key architectural pattern is evidence tiering: a new pure `tierEvidence()` helper splits evidence into Tier A (REVIEWS, LINKEDIN, CAREERS, JOB_BOARD, NEWS, REGISTRY) and Tier B (WEBSITE, DOCS, MANUAL_URL) before prompt construction. Tier A items get 1200-char snippets; Tier B gets 400-char snippets. This preserves the 15-item context budget while giving high-signal evidence proportionally more attention.
 
-**Major components:**
+**Major components and their v3.0 status:**
 
-1. `lib/enrichment/source-discovery.ts` (NEW) — `discoverSourcesForProspect()` returning `ProspectSourceSet` with provenance-tagged URLs (`sitemap`, `serp`, `manual`, `default`) and `jsHeavyHint` flags per URL; consolidates inline sitemap + SERP + default-path logic currently scattered in `research-executor.ts`; persists to `inputSnapshot.sourceSet`
-2. `lib/browser-evidence-adapter.ts` (NEW) — wraps existing `fetchDynamic()` from `scrapling.ts`; receives URLs where stealth returned < 500 chars or `jsHeavyHint: true`; caps at 5 URLs per run (~50s worst-case addition); sets `metadata.adapter = 'browser-dynamic'` so pain gate counts these as observed evidence
-3. `lib/pain-gate.ts` (NEW) — pure function `evaluatePainConfirmationGate(items, domain)` with no I/O; threshold constants in `quality-config.ts`; returns `PainGateResult` with `passed`, `reasons`, `externalConfirmationCount`, `distinctPainTags`; called after `evaluateQualityGate()` in pipeline; result persisted to `ResearchRun.painGatePassed` and `painGateDetails`
-4. `GateOverrideAudit` schema model (NEW) — append-only, immutable audit log; `gateType` discriminator (`'quality_gate'` | `'pain_gate'`) covers both gates with one model; includes `gateSnapshot` JSON for point-in-time record; relation on `ResearchRun` enables `getRun` to include full override history
-5. `lib/research-executor.ts` (MODIFIED) — pipeline orchestration updated to call source discovery, browser extraction, and pain gate in sequence; backward-compatible with existing `sitemapCache` / `serpCache` keys for retries of old runs; `painGatePassed IS NULL` pass-through in send queue protects existing 7 prospects from sudden blocking
+1. `lib/workflow-engine.ts::generateHypothesisDraftsAI()` — Modified: evidence tiering, full prompt rewrite, model branching, variable count, metric derivation
+2. `lib/workflow-engine.ts` (module level) — Modified: new `anthropicClient` lazy init following existing `genaiClient` pattern; new `tierEvidence()` pure helper function
+3. `lib/research-executor.ts` — Modified: thread optional `model` param; remove SERP cache re-read bug (second `findUnique` in deepCrawl block)
+4. `server/routers/research.ts` — Modified: add optional `hypothesisModel: z.enum(['gemini-flash', 'claude-sonnet'])` to `startRun` and `retryRun`
+5. Admin and public pages (8 files) — Modified: TS2589 `as any` cast cleanup using typed helper pattern by category
 
-**Key patterns to enforce:**
+**No new files required.** The anti-pattern of a separate `lib/claude-hypothesis-generator.ts` is explicitly rejected — all pre-processing is shared; only the API call branches by model. Defining a `generateWithAI(prompt, model): Promise<string>` abstraction handles both providers cleanly without splitting logic.
 
-- Gate logic as pure functions in lib modules with no I/O — matches `evaluateQualityGate` / `assessEmailForOutreach` pattern
-- Thresholds as named exports in `quality-config.ts` — never hardcoded in gate components or routers
-- Override as explicit `db.gateOverrideAudit.create()` in `$transaction` — not Prisma middleware or DB triggers
-- Two-tier extraction: stealth-first, browser escalation only for < 500 chars or `jsHeavyHint: true`
-
-See `.planning/research/ARCHITECTURE.md` for full data flow diagrams, component boundary table, and schema SQL.
+See `.planning/research/ARCHITECTURE.md` for full data flow diagrams, component boundary table, and exact code patterns.
 
 ### Critical Pitfalls
 
-Research identified 8 pitfalls derived from direct codebase analysis and validated architectural decisions. Top 5 by severity:
+Research identified 11 pitfalls (7 critical, 4 moderate) derived from direct codebase analysis. Top 5 by severity:
 
-1. **Pain confirmation gate implemented as a second hard block** — Dutch SMBs with thin web presence structurally cannot pass cross-source confirmation; adding a second hard block on top of AMBER creates a permanently blocked prospect queue with no action path. Prevention: implement as advisory only; AMBER quality gate remains the single hard block; pain confirmation displays its state but always permits override with a written reason.
+1. **Silent quality regression after prompt rewrite** — The system continues to produce valid JSON with shallower hypotheses and nobody notices until real prospects receive irrelevant outreach. Prevention: capture golden baseline JSON from all 7 real prospects BEFORE touching any prompt text. After rewriting, run side-by-side and verify `problemStatement` fields contain quoted text, `confidenceScore` distribution is similar, and `evidenceRefs` resolve to real IDs. Add smoke test: `hypotheses.every(h => h.problemStatement.includes('"'))`.
 
-2. **Source provenance lost when automatic discovery merges with manual seeds** — without `discoveryMethod` in `EvidenceDraft.metadata` before the deduplicate pass, provenance is permanently discarded; evidence items cannot be traced to their origin; admin cannot distinguish manually-seeded (high-credibility) from auto-discovered (lower-credibility) evidence. Prevention: add `discoveryMethod` to draft metadata at point of discovery, before any merge or dedup step.
+2. **Model swap breaks JSON parsing due to API response format differences** — Gemini returns `response.response.text()`; Anthropic SDK returns `message.content[0].text`. These are incompatible shapes. If Claude is wired as an inline conditional without abstracting the provider interface, Claude calls silently fall back to template output. Prevention: define `generateWithAI(prompt, model): Promise<string>` abstraction first; both providers return raw text; Claude also benefits from XML-structured prompts (`<evidence>`, `<instruction>`) vs Gemini's plain text blocks.
 
-3. **Override audit trail stored in `inputSnapshot` JSON** — JSON blobs cannot be efficiently queried; compliance questions ("who approved what, when") require manual JSON parsing; override records cannot be joined to user or prospect tables. Prevention: always use a proper `GateOverrideAudit` relational model with indexed columns; never store override records in unstructured JSON fields.
+3. **Metric removal breaks workflow loss map PDF and outreach email templates** — `METRIC_DEFAULTS` feeds three downstream consumers: `lib/pdf-render.ts`, outreach email draft templates, and the `/discover/` prospect dashboard. Removing defaults without auditing all consumers produces broken PDFs, unresolved template variables, or "NaN" values visible to real prospects. Prevention: grep all metric field consumers (`hoursSavedWeekLow`, `handoffSpeedGainPct`, `errorReductionPct`, `revenueLeakageRecoveredLow`) before touching the constant. Schema fields are already nullable — keep `METRIC_DEFAULTS` as last-resort fallback, not deleted entirely.
 
-4. **SerpAPI credit burn from automatic per-prospect discovery** — without a prospect-level cache, every re-run triggers 3-5 SerpAPI calls per prospect; a batch re-run of 20 prospects exhausts monthly quota in hours. Prevention: store `serpDiscoveredAt` timestamp at prospect level; skip SerpAPI if cache is < 24h old; never trigger SerpAPI at import time.
+4. **Variable hypothesis count breaks downstream code expecting exactly 3** — UI components may render 3-column grids; outreach drafts may hardcode "three specific bottlenecks"; templates may access `hypotheses[0]`, `hypotheses[1]`, `hypotheses[2]` by index. Prevention: audit all these patterns before changing the prompt count. This is a breaking interface change, not a prompt-only change.
 
-5. **Pain gate thresholds not calibrated against actual prospect data** — intuition-derived thresholds produce always-RED (too strict) or always-GREEN (too lenient) gates; the Dutch NL/BE market has structurally thinner web evidence than UK/US benchmarks assume. Prevention: run calibration SQL against the 7 existing real prospects before writing any threshold constants; thresholds must pass at least 5 of 7 existing prospects.
+5. **TS2589 cast cleanup introduces runtime errors via wrong fix pattern** — The 45 `as any` casts across 15 files fall into three distinct categories: TS2589 depth limit (fix with `Prisma.XGetPayload`), tRPC v11 mutation pattern (fix with correct v11 access pattern), and Prisma `Json` field access (fix with typed helper). Treating all categories the same produces false type safety that compiles but fails at runtime. Prevention: categorize first, fix by category, run `npm run check` after each batch.
 
-See `.planning/research/PITFALLS.md` for remaining pitfalls, recovery strategies, performance traps, and the "looks done but isn't" checklist.
-
----
+See `.planning/research/PITFALLS.md` for all 11 pitfalls with detection signals, recovery strategies, and the "looks done but isn't" checklist.
 
 ## Implications for Roadmap
 
-Research is unambiguous on build order. All three phases are independently shippable and testable. Phase 30 gates on both Phase 28 and Phase 29 completing first.
+Research is unambiguous on build order. The dependency chain flows from clean baseline → verified prompt → model comparison → metric derivation.
 
-### Phase 28: Source Discovery with Provenance
+### Phase 1: Tech Debt Foundation
 
-**Rationale:** Foundation for everything else. Browser extraction uses `jsHeavyHint` flags from source discovery. Pain gate benefits from knowing evidence came from distinct discovered sources. Provenance metadata must be attached to `EvidenceDraft` before any merge step — once the merge runs without provenance, the information is unrecoverable. This phase also establishes the prospect-level SerpAPI cache that prevents credit exhaustion in all subsequent runs.
+**Rationale:** `workflow-engine.ts` is 1400+ lines and already has an import ordering anomaly and a known SERP cache re-read bug. Adding hypothesis generation changes on top of this without cleaning first compounds debugging complexity. Tech debt fixes also establish a passing `npm run check` — the health baseline required to validate all subsequent changes. The import ordering fix (5 minutes) should be the first commit so further edits don't compound the anomaly.
 
-**Delivers:** `lib/enrichment/source-discovery.ts` with `discoverSourcesForProspect()` and `ProspectSourceSet` type; `discoveryMethod` field in evidence draft metadata contract; `inputSnapshot.sourceSet` persisted per research run; per-source URL caps as named constants in `quality-config.ts` (`MAX_SITEMAP_URLS = 20`, `MAX_SERP_URLS = 10`, etc.); prospect-level `serpDiscoveredAt` field (schema addition).
+**Delivers:** Clean `npm run check` pass; import ordering fixed in `workflow-engine.ts`; SERP cache re-read bug removed from `research-executor.ts`; TS2589 casts addressed by category across 8 files; unused `logoUrl` prop removed; `gemini-2.0-flash` upgraded to `gemini-2.5-flash` across 4 files.
 
-**Addresses:** Source URL list visible per prospect (table stakes), source provenance labels (differentiator), SerpAPI credit burn protection (critical pitfall).
+**Addresses:** TD-1 (import ordering), TD-2 (logoUrl prop), TD-3/TD-4 (as any casts categorized and fixed), TD-5 (E2E send test), TD-6 (SERP cache re-read), Gemini model string upgrade.
 
-**Avoids:** Source provenance lost at merge (Pitfall 2 in pitfalls research), URL discovery explosion (Pitfall 1 — per-source caps defined before discovery merge logic is written), SerpAPI credit burn (Pitfall 6).
+**Avoids:** Pitfall 7 (import anomaly compounds with new hypothesis code), Pitfall 11 (SERP bug expands if more executor logic is added before fix), Pitfall 6 (cast cleanup runtime errors prevented by categorical approach).
 
-**Research flag:** No additional research needed. Pattern is a mechanical refactor of inline `research-executor.ts` logic into a dedicated module. Direct codebase inspection gives HIGH confidence on all integration points.
-
----
-
-### Phase 29: Browser-Rendered Evidence Extraction
-
-**Rationale:** Depends on Phase 28's `jsHeavyHint` flags to identify which URLs need browser rendering. `fetchDynamic()` in `lib/enrichment/scrapling.ts` already exists — this phase is exclusively wiring, not new service code. Must complete before Phase 30 so the pain gate evaluates the full evidence set including browser-extracted items, giving calibration a realistic baseline.
-
-**Delivers:** `lib/browser-evidence-adapter.ts` wrapping `fetchDynamic()`; stealth-first routing in `research-executor.ts` with escalation to browser for URLs returning < 500 chars or with `jsHeavyHint: true`; 5-URL cap per run; `metadata.adapter = 'browser-dynamic'` provenance tag; Crawl4AI enhanced config (`remove_consent_popups`, `flatten_shadow_dom`, `process_iframes`, `word_count_threshold: 50`) applied to REVIEWS and JOB_BOARD URL types.
-
-**Addresses:** Browser-rendered extraction for high-signal URL types (P1 table stakes), JS-heavy page extraction as competitive differentiator.
-
-**Avoids:** Crawl4AI systematic overuse for all URLs (Pitfall 3 — stealth-first routing enforced), Crawl4AI timeout cascade (Pitfall 7 — 5-URL cap + reduced timeout for non-SPA pages), pipeline time explosion (50s max addition, acceptable at current admin console wait times).
-
-**Research flag:** No additional research needed. `fetchDynamic()` is confirmed in the codebase. Scrapling `/fetch-dynamic` endpoint is confirmed in `services/scrapling/app.py`. Crawl4AI v0.8.x parameters are verified against official documentation (HIGH confidence).
+**Research flag:** Standard patterns — no deeper research needed. All fixes fully specified in ARCHITECTURE.md with exact file locations and correct fix patterns for each category.
 
 ---
 
-### Phase 30: Pain Confirmation Gate + Override Audit Trail
+### Phase 2: Hypothesis Prompt Rewrite + Evidence Tiering
 
-**Rationale:** Requires Phases 28 and 29 complete so the gate evaluates the full evidence set including browser-extracted items. Schema migration is safest last — minimises the window where production data could be affected by migration issues. Override audit is meaningless without a gate to override. Pain gate and audit trail are logically coupled and jointly testable as a single phase.
+**Rationale:** Highest-value, lowest-risk change in the milestone. Pure prompt engineering and an in-function tiering helper — no new dependencies, no schema changes, no API integrations. Must come before model selection so the prompt is validated on Gemini (known baseline) before adding Claude routing complexity. Captures the regression fix that closes the core quality gap without any moving parts beyond the prompt text itself.
 
-**Delivers:** Prisma schema migration (`painGatePassed Boolean?`, `painGateDetails Json?` on `ResearchRun`; `GateOverrideAudit` model with `gateType`, `gatePassed`, `overrideReason`, `overriddenBy`, `gateSnapshot`); `lib/pain-gate.ts` pure gate function; `PAIN_GATE_*` threshold constants in `quality-config.ts` (calibrated against 7 real prospects before writing); pain gate wired into `research-executor.ts` after `evaluateQualityGate()`; `GateOverrideAudit.create()` in `$transaction` in `research.approveQuality` tRPC mutation; pain gate check in `outreach.ts` send queue with `IS NULL` legacy pass-through; UI: collapsible override audit timeline in research run detail, pain tag confirmed/suspected display in send queue, "bypassed" badge in admin dashboard, mandatory reason field enforcement on override form.
+**Delivers:** `tierEvidence()` pure helper inside `workflow-engine.ts`; evidence tiering with Tier A (8 items, 1200-char snippets) and Tier B (7 items, 400-char snippets); rewritten prompt with source-tier priority, diagnostic labeling, anti-parroting constraint, mandatory quote requirement, source signal summary injection, confidence score tier instruction; variable output count (1-3 based on confirmed pain tags); post-parse quality filter (`confidenceScore >= 0.60`).
 
-**Addresses:** Cross-source pain confirmation gate (core P1 milestone deliverable), override audit trail with mandatory reason (P1 compliance hygiene).
+**Addresses:** Features: source-tier priority, diagnostic labeling, anti-parroting constraint, quote requirement, variable hypothesis count, confidence score tier instruction, source signal summary injection.
 
-**Avoids:** Pain gate as second hard block (Pitfall 2 in pitfalls research — advisory only, AMBER quality gate remains single hard block), override audit in JSON metadata (Pitfall 4 — proper relational model enforced), uncalibrated thresholds (Pitfall 8 — run calibration SQL query against 7 real prospects before writing constants), `organizationId` missing from audit model (security mistake — all models require `organizationId` per global multi-tenant rules).
+**Avoids:** Pitfall 1 (silent regression) by capturing golden baseline before prompt change and doing structured side-by-side comparison after; Pitfall 4 (variable count) by auditing downstream UI and templates before changing count; Pitfall 5 (gate threshold drift) by treating snippet length as a calibrated constant.
 
-**Research flag:** Pain gate threshold calibration against real data is the one area of MEDIUM confidence. Run the calibration SQL query against the live DB before committing threshold values:
+**Research flag:** Standard patterns — prompt structure, evidence tiering code, and response validation logic are all fully specified in ARCHITECTURE.md. No additional research needed.
 
-```sql
-SELECT p."companyName", ei."sourceType", COUNT(*)
-FROM "EvidenceItem" ei
-JOIN "Prospect" p ON ei."prospectId" = p.id
-WHERE ei."confidenceScore" >= 0.55
-GROUP BY p."companyName", ei."sourceType"
-ORDER BY p."companyName", ei."sourceType";
-```
+---
 
-If fewer than 5 of 7 existing prospects would pass the proposed thresholds, reduce them before shipping. The architecture and code pattern are HIGH confidence; only the numeric values need empirical validation.
+### Phase 3: Configurable Model Selection (Claude vs Gemini)
+
+**Rationale:** Depends on Phase 2 having a verified, clean prompt on real prospects. Model comparison is meaningless if the prompt itself is broken. Once Phase 2 is verified, adding Claude as a selectable option enables per-run quality benchmarking. The Anthropic SDK is already in the file — this is a wiring task, not an integration task.
+
+**Delivers:** `generateWithAI(prompt, model): Promise<string>` provider abstraction handling both Gemini (`response.response.text()`) and Claude (`message.content[0].text`) response shapes; `getAnthropic()` lazy init alongside existing `getGenAI()`; `model?: HypothesisModel` optional parameter on `generateHypothesisDraftsAI()` defaulting to `'gemini-flash'`; `hypothesisModel` optional input on `research.startRun` and `research.retryRun`; parameter threaded through `executeResearchRun()`.
+
+**Addresses:** Feature: configurable model selection. Stack: `@anthropic-ai/sdk` Anthropic client following existing `scoreWithClaude()` pattern at line 1408.
+
+**Avoids:** Pitfall 2 (JSON parsing breaks on model swap) by building provider abstraction first before connecting to the model param; Pitfall 8 (env-var model config prevents per-run flexibility) by using per-run parameter, not global env var.
+
+**Research flag:** Standard patterns — Anthropic SDK call pattern already demonstrated in same file. XML tag formatting recommendation for Claude documented in PITFALLS.md. No additional research needed.
+
+---
+
+### Phase 4: Metric Derivation (Remove Hardcoded Defaults)
+
+**Rationale:** Last in sequence because it has the most downstream dependencies and one unresolved research gap (`generateWorkflowLossMapContent()` not read in this research pass). Requires auditing all consumers of metric fields before implementation. The schema is already nullable, so no migration risk, but the application-level consumer audit is a prerequisite.
+
+**Delivers:** AI-estimated metric ranges per prospect (hours saved, error reduction) in hypothesis output instead of hardcoded identical defaults; `METRIC_DEFAULTS` retained as last-resort fallback (not deleted); prompts updated with metric estimation instructions and wide-range labeling.
+
+**Addresses:** Feature: remove hardcoded metric defaults. Architecture: prompt schema update; consumer audit complete.
+
+**Avoids:** Pitfall 3 (metric removal breaks PDF and outreach) by auditing all downstream consumers before any implementation; the nullable schema columns are already in place so no migration risk once consumers are confirmed safe.
+
+**Research flag:** Needs deeper research during planning — `generateWorkflowLossMapContent()` was not read in this research pass and is the critical dependency. Phase planning must include reading that function and mapping all `hoursSavedWeekLow`, `handoffSpeedGainPct`, `errorReductionPct`, `revenueLeakageRecoveredLow` call sites before committing to an approach. Also grep outreach templates and `/discover/` components for metric field reads.
 
 ---
 
 ### Phase Ordering Rationale
 
-- **Source discovery must come first** because `jsHeavyHint` flags are a data dependency for browser extraction routing, and `discoveryMethod` metadata must be attached before the merge step — provenance is permanently unrecoverable once the merge runs without it.
-- **Browser extraction must come before the pain gate** because the gate evaluates the full evidence set; adding browser-extracted items after gate calibration would shift the threshold baseline and invalidate initial calibration.
-- **Schema migration is last** because it operates on a live production database with 7 real prospects. Phasing new nullable fields as the final step means Phases 28 and 29 can be verified with no migration risk.
-- **Override audit is bundled with the pain gate (not a separate phase)** because an audit trail for a gate that does not yet exist has no value. The two features are logically coupled and jointly testable.
-- **Each phase is independently shippable and testable** — Phase 28 can go to production before Phase 29 is built; Phase 29 can go to production before the schema migration in Phase 30.
+- Tech debt first establishes a clean build baseline and prevents the import anomaly and SERP cache bug from compounding with new code
+- Prompt rewrite before model selection validates correctness on the known Gemini baseline before adding branching complexity
+- Model selection before metric derivation — benchmarking model quality requires a stable, fully-tested prompt
+- Metric derivation last — highest downstream dependency surface; all other phases must be stable before touching this
+- Each phase is independently shippable and testable with real prospect data
 
 ### Research Flags
 
-Phases needing deeper research or calibration during planning:
+Phases needing deeper research during planning:
 
-- **Phase 30:** Pain gate threshold calibration — run the calibration SQL above against the live DB before writing `PAIN_GATE_*` constants in `quality-config.ts`. MEDIUM confidence on numeric values only.
+- **Phase 4 (Metric Derivation):** `generateWorkflowLossMapContent()` not read in this research pass. Must read and audit before implementing. Budget time to grep all metric field consumers across the full codebase before the phase plan is written.
 
 Phases with standard patterns (skip `/gsd:research-phase`):
 
-- **Phase 28:** Source discovery refactor is a mechanical extraction of inline logic into a dedicated module. No unknown integrations. HIGH confidence from direct codebase inspection.
-- **Phase 29:** Browser extraction wiring is fully confirmed from codebase — `fetchDynamic()` exists, Scrapling endpoint exists, Crawl4AI parameters are documented. No research needed.
-
----
+- **Phase 1 (Tech Debt):** All fixes fully specified in ARCHITECTURE.md with exact line numbers and correct fix patterns per category.
+- **Phase 2 (Prompt Rewrite):** Prompt structure, tiering code, and response validation logic all specified in ARCHITECTURE.md and FEATURES.md.
+- **Phase 3 (Model Selection):** Anthropic SDK pattern already demonstrated in same file at `scoreWithClaude()`. No new integrations.
 
 ## Confidence Assessment
 
-| Area         | Confidence | Notes                                                                                                                                                                                                                                                                                                                  |
-| ------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stack        | HIGH       | Zero new dependencies confirmed by direct codebase inspection. All capabilities trace back to already-installed packages. Only Crawl4AI service version needs pre-deploy verification (must be v0.8.x for `remove_consent_popups` and `flatten_shadow_dom`).                                                           |
-| Features     | HIGH       | Table stakes and differentiators derived from direct codebase analysis plus established industry patterns. Cross-source pain confirmation gate is novel but built entirely on verified primitives (`workflowTag`, `sourceType`, `aiRelevance` fields exist in schema and are already populated).                       |
-| Architecture | HIGH       | All findings from direct codebase inspection. `fetchDynamic()` confirmed in `scrapling.ts`. `evaluatePainConfirmation` prototype confirmed in `workflow-engine.ts`. `GateOverrideAudit` pattern confirmed against `NotificationLog` model. Backward compat strategy (`IS NULL` pass-through) is explicit and verified. |
-| Pitfalls     | HIGH       | Pitfalls derived from codebase analysis plus validated architectural decisions in MEMORY.md and PROJECT.md. The "thin web presence" constraint is already a Key Decision. SerpAPI quota mechanics confirmed from provider documentation.                                                                               |
+| Area         | Confidence | Notes                                                                                                                                                                                      |
+| ------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Stack        | HIGH       | All from direct `package.json` and `env.mjs` inspection; zero new dependencies confirmed; model string change confirmed across 4 files with exact locations                                |
+| Features     | HIGH       | Prompt deficiencies confirmed from direct codebase inspection of `workflow-engine.ts:686-721`; research citations for prompt engineering patterns from arXiv/ACL 2025 peer-reviewed papers |
+| Architecture | HIGH       | All findings from direct codebase inspection; exact file locations, line numbers, and code patterns provided for every change                                                              |
+| Pitfalls     | HIGH       | Derived from both codebase analysis and web research on LLM migration failure modes; all pitfalls have concrete detection signals and recovery steps                                       |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Pain gate numeric thresholds:** Architecture is clear but the specific values (`aiRelevance >= 0.65`, 1 external item, 2 distinct pain tags) are proposed, not calibrated. Run the calibration query against 7 real prospects before writing constants. If fewer than 5 of 7 pass, reduce thresholds.
-- **Prospect-level SerpAPI cache field:** The strategy (`serpDiscoveredAt` on `Prospect` model) is specified in pitfalls research but requires a schema addition not included in the main STACK.md schema summary. This field must be added in the Phase 28 migration — note it explicitly in the phase plan.
-- **Scrapling service `max_workers` limit:** The architecture notes a hard ceiling of 4 concurrent browser sessions. With a 5-URL cap and sequential processing, this is safe at current volumes. Revisit if runs are queued concurrently for multiple prospects.
-- **Crawl4AI v0.8.x service version:** The enhanced config parameters (`remove_consent_popups`, `flatten_shadow_dom`) are v0.8.x features. Verify the running service version before Phase 29 ships. If the service is on an older version, the params will silently fail (not error).
-- **`/discover/` validation session (existing tech debt):** MEMORY.md notes a pending validation session on the client-facing prospect dashboard before building features that depend on hypothesis confirmation. Phase 30's pain gate display is in the admin UI only and is independent of this. Do not build any v2.2 client-facing confirmation features until this session runs.
+- `generateWorkflowLossMapContent()` not read in this research pass — before Phase 4 planning, read this function and determine whether metric fields are read from DB records or recomputed. This determines whether metric derivation is safe as a prompt-only change or requires updating consumers simultaneously.
 
----
+- `/discover/` validation session timing — the pending validation session (running before this milestone if at all possible) provides ground truth on whether hypothesis quality issues are detectable by real prospects. If the session runs post-Phase 2, its feedback value shifts from product UX validation to prompt quality validation. Document which prompt version was active during the session.
+
+- Pain gate calibration SQL — should be run against current production data BEFORE Phase 2 ships to establish a before-state baseline for evidence confidence distribution. Run again after Phase 2 to confirm gate threshold stability. This is a 10-minute SQL operation, not a code feature.
+
+- E2E send test refactor (TD-5) — test infrastructure complexity not fully assessed in this research pass. May require a dedicated sub-plan if the current test setup doesn't support tRPC test client injection. Budget 60+ minutes and validate the new test passes before removing the old one.
 
 ## Sources
 
 ### Primary (HIGH confidence — direct codebase inspection)
 
-- `lib/research-executor.ts` — full 8-source pipeline orchestration, URL merge logic, 60-item cap
-- `lib/enrichment/scrapling.ts` — `fetchStealth()` and `fetchDynamic()` clients confirmed
-- `lib/enrichment/crawl4ai.ts` — Crawl4AI client, current config baseline, sequential extraction pattern
-- `lib/enrichment/serp.ts` — SerpAPI discovery, 3 queries per call, 5-URL caps per engine
-- `lib/enrichment/sitemap.ts` — sitemapper usage confirmed
-- `lib/evidence-scorer.ts` — Gemini Flash scoring formula and batch size
-- `lib/quality-config.ts` — existing gate thresholds, calibration notes
-- `lib/workflow-engine.ts` — `evaluatePainConfirmation` prototype (advisory), `isObservedEvidence` filter
-- `lib/outreach/quality.ts` — design pattern for pure-function gate logic
-- `server/routers/research.ts` — `approveQuality` mutation integration point
-- `server/routers/outreach.ts` — send queue gate check pattern
-- `services/scrapling/app.py` — `/fetch` and `/fetch-dynamic` endpoints confirmed
-- `prisma/schema.prisma` — full schema, `NotificationLog` as audit model reference
-- `.planning/PROJECT.md` — v2.2 target features, key decisions (soft gate rationale, `Campaign.strictGate`)
+- `lib/workflow-engine.ts` — `generateHypothesisDraftsAI()` full function (lines 615-801), `METRIC_DEFAULTS` (619-628), import anomaly (539-544), `scoreWithClaude()` Anthropic pattern (1408-1464)
+- `lib/research-executor.ts` — full orchestration, SERP re-read bug location (lines 316-325), `generateHypothesisDraftsAI()` call site
+- `lib/evidence-scorer.ts` — SOURCE_WEIGHTS, Gemini Flash integration pattern, snippet slice at 300 chars
+- `lib/quality-config.ts` — calibrated thresholds (`MIN_AVERAGE_CONFIDENCE=0.55`)
+- `server/routers/research.ts` — `startRun`, `retryRun`, `listRuns` query shape
+- `prisma/schema.prisma` — `WorkflowHypothesis` nullable metric fields confirmed
+- `package.json` — `@anthropic-ai/sdk: ^0.73.0` and `@google/generative-ai: ^0.24.1` confirmed
+- `env.mjs` — `ANTHROPIC_API_KEY` and `GOOGLE_AI_API_KEY` both declared optional
+- `app/admin/prospects/[id]/page.tsx` — `as any` cast locations (8 instances)
+- `app/admin/outreach/page.tsx` — `as any` cast locations (16 instances, tRPC mutation pattern)
+- `components/public/prospect-dashboard-client.tsx` — `logoUrl` prop location
 
-### Secondary (HIGH confidence — official documentation)
+### Secondary (HIGH confidence — peer-reviewed research, 2025)
 
-- `docs.crawl4ai.com/api/parameters/` — `remove_consent_popups`, `flatten_shadow_dom`, `process_iframes` parameters verified for v0.8.x
-- `docs.crawl4ai.com/core/content-selection/` — `word_count_threshold`, `excluded_tags` verified
-- Prisma 7 documentation — `$transaction`, composite unique index, upsert semantics confirmed
+- arXiv:2201.11903 — Chain-of-Thought Prompting Elicits Reasoning in Large Language Models
+- arXiv:2504.05496 — Survey on Hypothesis Generation for Scientific Discovery in LLMs
+- arXiv:2502.13396v1 — Prompting a Weighting Mechanism into LLM-as-a-Judge
+- ACL Anthology 2025.emnlp-industry.87 — AutoQual: LLM Agent for Automated Discovery (variable output count research)
+- COLING 2025.coling-main.719 — Survey of Chain-of-X Paradigms for LLMs
+- Microsoft TechCommunity 2025 — Best Practices for Mitigating LLM Hallucinations (citation requirements)
+- TypeScript GitHub issue #34933 — TS2589 deep type instantiation root cause and correct fix patterns
 
-### Secondary (MEDIUM confidence — industry patterns and external sources)
+### Tertiary (MEDIUM confidence — external sources)
 
-- AutoBound 2026: Signal-driven personalization achieves 15-25% reply rates vs. 3.43% for unvalidated cold email (5x improvement)
-- G2 2026 State of AI Sales Intelligence: data quality as primary criterion for platform selection
-- Fortra / Chris Dermody audit log best practices: who/when/why requirements for compliance-adjacent SaaS
-- Deloitte 2026 Compliance Technology Study: 72% of organizations experienced compliance violations from inadequate audit trails
-- Bright Data 2026: headless browser scraping now the default for JS-heavy pages
-- SerpAPI 2025 changelog: no breaking changes to `getJson()` interface
-- PostgreSQL audit trail patterns: trigger-based approach confirmed over-engineered for application-level concerns at current scale
+- getmaxim.ai — Golden test set methodology for prompt regression testing; recommendation to compare before/after for all affected records
+- VentureBeat — "Swapping LLMs isn't plug-and-play" (API incompatibility research; Anthropic XML tag preference vs Gemini plain text)
+- artificialanalysis.ai benchmarks 2026 — Claude Sonnet 4.6 accuracy benchmarks
 
 ---
 
