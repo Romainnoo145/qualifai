@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 30 — Pain Confirmation Gate + Override Audit
-Plan: 02 (complete) — GateOverrideAudit schema, migration, approveQuality audit writes, listOverrideAudits query
-Status: In progress (Plans 28-01 + 28-02 + 28-03 + 29-01 + 29-02 + 30-01 + 30-02 complete)
-Last activity: 2026-03-02 — Completed 30-02 GateOverrideAudit table + audit write logic
+Plan: 04 (complete) — Bypassed badge in prospect list + Override History panel on prospect detail
+Status: Phase 30 COMPLETE (All plans: 30-01, 30-02, 30-03, 30-04 done)
+Last activity: 2026-03-02 — Completed 30-04 Bypassed badge + Override History UI
 
-Progress: [========] ~70% (v2.2: 2.5/3 phases, 7 plans done)
+Progress: [==========] ~100% (v2.2: 3/3 phases complete, 9 plans done)
 
 ## Milestones Shipped
 
@@ -64,6 +64,9 @@ Progress: [========] ~70% (v2.2: 2.5/3 phases, 7 plans done)
 - Dual-phase sourceSet: initial (sitemap+default) at run create, full (sitemap+serp+default) after deepCrawl SERP — avoids restructuring existing pipeline
 - researchUrls derived from sourceSet.urls filtered to non-serp provenance — SERP URLs feed Crawl4AI, not website ingestion (matches existing behavior)
 - rediscoverSources mutation: toJson defined inline in router (research-executor does not export it); spreads existing snapshot fields to preserve manualUrls/campaignId/deepCrawl
+- Bypassed badge: amber pill rendered inline with PipelineChip/QualityChip in prospect list; uses gateOverrideAudits \_count from listProspects — no extra query
+- Override History panel: placed in evidence tab on prospect detail, conditional on data.length > 0; gateType color semantics: amber=pain (advisory), rose=quality/quality+pain (hard block)
+- TS2589 workaround pattern for listOverrideAudits: cast result as any[] with inline type annotation — matches existing any-cast pattern for researchRun.summary
 
 ### Pending Todos
 
@@ -85,5 +88,5 @@ Progress: [========] ~70% (v2.2: 2.5/3 phases, 7 plans done)
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 30-02-PLAN.md (GateOverrideAudit schema + audit write logic)
-Resume with: Continue Phase 30 — Plan 30-03 (send queue pain signal UI) then 30-04 (Bypassed badge + override history)
+Stopped at: Completed 30-04-PLAN.md (Bypassed badge + Override History UI)
+Resume with: v2.2 milestone complete — all phases 28-30 done. Ready for milestone archive or new milestone definition.

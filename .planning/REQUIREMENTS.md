@@ -33,8 +33,8 @@ Requirements for Verified Pain Intelligence milestone. Each maps to roadmap phas
 
 - [x] **AUDT-01**: `GateOverrideAudit` model records every gate bypass with actor, timestamp, reason, and gate type
 - [x] **AUDT-02**: Override reason is mandatory in the UI when bypassing any gate
-- [ ] **AUDT-03**: "Bypassed" badge appears in admin prospect list for prospects with overridden gates
-- [ ] **AUDT-04**: Override history is visible on research run detail view
+- [x] **AUDT-03**: "Bypassed" badge appears in admin prospect list for prospects with overridden gates
+- [x] **AUDT-04**: Override history is visible on research run detail view
 
 ## Future Requirements
 
@@ -76,8 +76,8 @@ Requirements for Verified Pain Intelligence milestone. Each maps to roadmap phas
 | GATE-05     | 30    | Pending  |
 | AUDT-01     | 30    | Complete |
 | AUDT-02     | 30    | Complete |
-| AUDT-03     | 30    | Pending  |
-| AUDT-04     | 30    | Pending  |
+| AUDT-03     | 30    | Complete |
+| AUDT-04     | 30    | Complete |
 
 **Coverage:**
 
