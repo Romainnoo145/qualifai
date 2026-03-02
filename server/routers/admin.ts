@@ -442,7 +442,13 @@ export const adminRouter = router({
         take: (input?.limit ?? 50) + 1,
         cursor: input?.cursor ? { id: input.cursor } : undefined,
         include: {
-          _count: { select: { sessions: true, contacts: true } },
+          _count: {
+            select: {
+              sessions: true,
+              contacts: true,
+              gateOverrideAudits: true,
+            },
+          },
           sessions: {
             where: { callBooked: true },
             take: 1,

@@ -322,6 +322,11 @@ function AllCompanies() {
                       />
                     );
                   })()}
+                  {(prospect._count?.gateOverrideAudits ?? 0) > 0 && (
+                    <span className="text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border bg-amber-50 text-amber-600 border-amber-100">
+                      Bypassed
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-400 mt-2">
                   <span className="flex items-center gap-2">
