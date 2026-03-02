@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 30 — Pain Confirmation Gate + Override Audit
-Plan: 01 (complete) — computePainTagConfirmation + QualityGateResult extension
-Status: In progress (Plans 28-01 + 28-02 + 28-03 + 29-01 + 29-02 + 30-01 complete)
-Last activity: 2026-03-02 — Completed 30-01 cross-source pain tag confirmation (TDD)
+Plan: 02 (complete) — GateOverrideAudit schema, migration, approveQuality audit writes, listOverrideAudits query
+Status: In progress (Plans 28-01 + 28-02 + 28-03 + 29-01 + 29-02 + 30-01 + 30-02 complete)
+Last activity: 2026-03-02 — Completed 30-02 GateOverrideAudit table + audit write logic
 
-Progress: [=======] ~65% (v2.2: 2.5/3 phases, 6 plans done)
+Progress: [========] ~70% (v2.2: 2.5/3 phases, 7 plans done)
 
 ## Milestones Shipped
 
@@ -51,9 +51,14 @@ Progress: [=======] ~65% (v2.2: 2.5/3 phases, 6 plans done)
 - Two-tier extraction implemented (Phase 29-01): stealth-first for static pages, Crawl4AI for <500 chars or jsHeavyHint=true; 5-URL budget cap; raw fetch() removed; BROWSER_BUDGET_MAX=5 exported constant; processCrawl4aiResult shared handler; REVIEWS routing uses inferSourceType() not storage-mapped type; 404 detection before 80-char minimum
 - jsHeavyHints wiring complete (Phase 29-02): research-executor builds Map from initialSourceSet.urls and passes to ingestWebsiteEvidenceDrafts — avoids detectJsHeavy() re-computation; deepCrawl ingestCrawl4aiEvidenceDrafts call untouched (separate budget path)
 - SerpAPI cache guarded at prospect level via serpDiscoveredAt timestamp — skip if <24h old, never trigger at import time
-- GateOverrideAudit is a proper relational model (not JSON in inputSnapshot) — enables querying, joining to prospect/user tables
+- GateOverrideAudit is a proper relational model (not JSON in inputSnapshot) — enables querying, joining to prospect/user tables; SHIPPED in Phase 30-02
+- GateOverrideAudit onDelete: Restrict on researchRunId FK — audit trail is permanent; ResearchRun cannot be deleted once it has audits
+- GateOverrideAudit idempotency: qualityApproved === null pre-check ensures only first approval creates audit row (no unique constraint needed)
+- Pain tags extracted from summary.gate.confirmedPainTags/unconfirmedPainTags — no new schema column on ResearchRun (STATE.md deferred decision honored)
+- 12-char reason guard in approveQuality extended to cover unconfirmedPainTags.length > 0 in addition to !gatePassed
 - Pain gate thresholds must be calibrated against 7 real prospects before writing constants — run calibration SQL first
-- Schema migration (painGatePassed, painGateDetails on ResearchRun; GateOverrideAudit model) is deferred to Phase 30 — minimises migration risk on live data
+- Schema migration (GateOverrideAudit model) COMPLETE — applied to qualifai-db in Phase 30-02
+- painGatePassed/painGateDetails NOT added as ResearchRun schema columns — use summary.gate.confirmedPainTags/unconfirmedPainTags (deferred decision honored)
 - Phases 28 and 29 can ship to production before Phase 30 schema migration runs
 - source-discovery.ts is a pure module (zero side effects, no Prisma) — CAPS.serp=15 (5 review + 5 job + 5 search), defaultResearchUrls has 19 paths verbatim from research-executor.ts
 - Dual-phase sourceSet: initial (sitemap+default) at run create, full (sitemap+serp+default) after deepCrawl SERP — avoids restructuring existing pipeline
@@ -80,5 +85,5 @@ Progress: [=======] ~65% (v2.2: 2.5/3 phases, 6 plans done)
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 30-01-PLAN.md (computePainTagConfirmation TDD — cross-source pain tag confirmation)
-Resume with: Continue Phase 30 plans (override audit, schema migration)
+Stopped at: Completed 30-02-PLAN.md (GateOverrideAudit schema + audit write logic)
+Resume with: Continue Phase 30 — Plan 30-03 (send queue pain signal UI) then 30-04 (Bypassed badge + override history)
