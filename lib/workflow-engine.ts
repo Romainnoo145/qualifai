@@ -618,9 +618,6 @@ export async function generateHypothesisDraftsAI(
   prospectContext: AIProspectContext,
   confirmedPainTags: string[] = [], // ANLYS-06 — optional, defaults to [] for backward compat
 ): Promise<HypothesisDraft[]> {
-  // confirmedPainTags will be used in Plan 32-02 for dynamic count; stub read to avoid lint error
-  void confirmedPainTags;
-
   const METRIC_DEFAULTS = {
     hoursSavedWeekLow: 4,
     hoursSavedWeekMid: 8,
@@ -657,6 +654,24 @@ export async function generateHypothesisDraftsAI(
     'supplier-coordination',
   ]);
 
+  // ANLYS-06: Dynamic target count from confirmed pain tags
+  const targetCount =
+    confirmedPainTags.length === 0
+      ? 1 // No confirmed tags → single low-confidence hypothesis
+      : Math.min(3, Math.max(1, confirmedPainTags.length));
+
+  // ANLYS-01, ANLYS-02: Evidence tier label map for source-type classification
+  const TIER_LABEL: Record<string, string> = {
+    REVIEWS: 'diagnostic',
+    CAREERS: 'diagnostic',
+    JOB_BOARD: 'diagnostic',
+    LINKEDIN: 'diagnostic',
+    NEWS: 'diagnostic',
+    REGISTRY: 'registry',
+    WEBSITE: 'marketing-context',
+    MANUAL_URL: 'marketing-context',
+  };
+
   try {
     // Filter to non-empty snippet items, sort by AI relevance then confidence, take top 15
     const filteredEvidence = evidence
@@ -671,14 +686,34 @@ export async function generateHypothesisDraftsAI(
       })
       .slice(0, 15);
 
+    // ANLYS-01, ANLYS-02: Include tier label in evidence line format
     const evidenceLines = filteredEvidence
       .map((item) => {
         const relevance = parseAiRelevance(item);
         const relevanceTag =
           relevance !== null ? ` (relevance: ${relevance.toFixed(2)})` : '';
-        return `[${item.sourceType}]${relevanceTag} ${item.sourceUrl}: ${item.snippet.slice(0, 600)}`;
+        return `[${item.sourceType}/${TIER_LABEL[item.sourceType] ?? 'context'}]${relevanceTag} ${item.sourceUrl}: ${item.snippet.slice(0, 600)}`;
       })
       .join('\n');
+
+    // ANLYS-05: Pre-compute tier counts for signal summary
+    const tierCounts = {
+      diagnostic: filteredEvidence.filter((e) =>
+        ['REVIEWS', 'CAREERS', 'JOB_BOARD', 'LINKEDIN', 'NEWS'].includes(
+          e.sourceType,
+        ),
+      ).length,
+      registry: filteredEvidence.filter((e) => e.sourceType === 'REGISTRY')
+        .length,
+      website: filteredEvidence.filter((e) =>
+        ['WEBSITE', 'MANUAL_URL'].includes(e.sourceType),
+      ).length,
+    };
+
+    const signalSummary = `Signal summary (${filteredEvidence.length} items):
+- Diagnostic tier (REVIEWS, CAREERS, LINKEDIN, NEWS): ${tierCounts.diagnostic} items — USE THESE FIRST
+- Registry (KvK/REGISTRY): ${tierCounts.registry} items — factual reference
+- Marketing context (WEBSITE): ${tierCounts.website} items — background only, DO NOT derive hypotheses from these`;
 
     const specialtiesStr =
       prospectContext.specialties.length > 0
@@ -688,9 +723,19 @@ export async function generateHypothesisDraftsAI(
     const industryLabel = prospectContext.industry ?? 'B2B services';
     const validTagsList = Array.from(VALID_WORKFLOW_TAGS).join(', ');
 
-    const prompt = `You are analyzing evidence from a Dutch company's public web presence and external sources to identify specific workflow automation pain points that Klarifai (an AI/automation implementation consultancy) could solve.
+    const prompt = `You are analyzing external diagnostic signals to identify workflow pain hypotheses for a Dutch company. Klarifai is an AI/automation consultancy that could solve these pains.
 
-Only output JSON. No markdown fences. No explanation.
+SOURCE TYPE GUIDE — how to interpret each label:
+- [REVIEWS/diagnostic]: Customer or employee voices — HIGHEST DIAGNOSTIC VALUE. Direct pain signal.
+- [CAREERS/diagnostic] / [JOB_BOARD/diagnostic]: Hiring signals — operational gaps, bottleneck areas, scaling strain.
+- [LINKEDIN/diagnostic]: Company signals — organizational changes, strategic pressure, public statements.
+- [NEWS/diagnostic]: External press — market pressure, recent events, competitive context.
+- [REGISTRY/registry]: KvK data — factual reference (size, legal form, registered activities).
+- [WEBSITE/marketing-context]: Company's own marketing copy — LOWEST DIAGNOSTIC VALUE. Background context only.
+
+ANTI-PARROTING RULE: Do NOT derive hypotheses from what the company says about itself on its website. Website copy is marketing — it describes aspirations, not operational reality. Pain hypotheses must come from external signals (reviews, hiring, LinkedIn, news).
+
+${signalSummary}
 
 Company context:
 - Name: ${prospectContext.companyName ?? 'Unknown'}
@@ -698,21 +743,23 @@ Company context:
 - Specialties: ${specialtiesStr}
 - Description: ${prospectContext.description ?? 'No description available'}
 
-Evidence gathered (sorted by relevance — higher-relevance items are stronger signals):
+Evidence (sorted by relevance — diagnostic sources weighted higher):
 ${evidenceLines || 'No specific evidence snippets available — reason from company context only.'}
 
-Based on the company context and evidence above, identify 3 distinct workflow pain hypotheses specific to THIS company's actual industry (${industryLabel}) and activities. Each hypothesis must:
-- Be specific to ${industryLabel} workflows — ground them in what this company actually does
-- Be supported by evidence: must include at least one quoted evidence snippet in the problemStatement (use "..." quotes)
-- Have a workflowTag from this list ONLY: ${validTagsList}
-- Have a confidenceScore between 0.60 and 0.95 reflecting how specifically the evidence supports the pain:
-  - 0.60-0.70: Inferred from context, no direct evidence
-  - 0.70-0.80: Indirect evidence (hiring patterns, service descriptions)
-  - 0.80-0.90: Direct evidence (employee reviews, explicit process mentions)
-  - 0.90-0.95: Strong direct evidence with quoted specifics
-- Include 2-3 evidenceRefs (sourceUrls from the evidence list above that support this hypothesis)
+Generate exactly ${targetCount} distinct workflow pain hypothesis/hypotheses for ${prospectContext.companyName ?? 'this company'} (${industryLabel}).
 
-Return ONLY a JSON array with exactly this schema:
+Each hypothesis MUST:
+1. Be grounded in diagnostic signals (REVIEWS, CAREERS, LINKEDIN, NEWS) — not website copy
+2. Include at least one verbatim quoted snippet (using "...") in the problemStatement from a non-WEBSITE source
+3. Have a workflowTag from this list ONLY: ${validTagsList}
+4. Have a confidenceScore calibrated to evidence source quality:
+   - REVIEWS-grounded (customer/employee pain — direct signal): 0.80-0.95
+   - CAREERS/LINKEDIN-grounded (operational gap — indirect signal): 0.70-0.80
+   - WEBSITE-only (marketing context — lowest confidence): 0.60-0.65
+   - Do NOT score website-derived hypotheses above 0.65
+5. Include 2-3 evidenceRefs (sourceUrls of the non-WEBSITE items that support the hypothesis)
+
+Only output JSON. No markdown fences. No explanation.
 [
   {
     "title": "...",
@@ -753,7 +800,19 @@ Return ONLY a JSON array with exactly this schema:
       })),
     );
 
-    return parsed.map((item): HypothesisDraft => {
+    // ANLYS-04: Quote detection helper — warn when problemStatement lacks a quoted snippet
+    const hasQuote = (stmt: string) =>
+      stmt.includes('"') || stmt.includes('\u201c') || stmt.includes('\u201d');
+
+    // ANLYS-06: Defensive slice to enforce targetCount (LLM may over-generate)
+    return parsed.slice(0, targetCount).map((item): HypothesisDraft => {
+      // ANLYS-04: Warn on missing quoted snippet
+      if (!hasQuote(item.problemStatement)) {
+        console.warn(
+          `[generateHypothesisDraftsAI] Hypothesis "${item.title}" missing quoted snippet in problemStatement`,
+        );
+      }
+
       // Map evidenceRefs from URLs to IDs
       const resolvedRefs = (item.evidenceRefs ?? [])
         .map((ref: string) => urlToId.get(ref))
