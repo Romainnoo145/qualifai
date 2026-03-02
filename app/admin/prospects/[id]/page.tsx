@@ -1,5 +1,6 @@
 'use client';
 
+import type { Prisma } from '@prisma/client';
 import { api } from '@/components/providers';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -29,6 +30,28 @@ import { ResultsSection } from '@/components/features/prospects/results-section'
 import { ContactsSection } from '@/components/features/prospects/contacts-section';
 import { QualityChip } from '@/components/features/prospects/quality-chip';
 import { buildDiscoverPath } from '@/lib/prospect-url';
+
+// ---------------------------------------------------------------------------
+// Typed helper for ResearchRun rows returned by api.research.listRuns
+// Mirrors the include shape of the listRuns query exactly to replace TS2589 as any casts
+// ---------------------------------------------------------------------------
+
+type ResearchRunRow = Prisma.ResearchRunGetPayload<{
+  include: {
+    prospect: { select: { id: true; companyName: true; domain: true } };
+    campaign: {
+      select: { id: true; name: true; nicheKey: true; strictGate: true };
+    };
+    _count: {
+      select: {
+        evidenceItems: true;
+        workflowHypotheses: true;
+        automationOpportunities: true;
+        workflowLossMaps: true;
+      };
+    };
+  };
+}>;
 
 // ---------------------------------------------------------------------------
 // Gate type badge helper
@@ -91,13 +114,15 @@ export default function ProspectDetail() {
 
   const copyLink = () => {
     if (!prospect.data) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = prospect.data as any;
+    // TODO: tRPC v11 inference — getProspect return type is too deep for TS to infer field names
+    const data = prospect.data as Record<string, unknown>;
     const url = `${window.location.origin}${buildDiscoverPath({
       slug: prospect.data.slug,
-      readableSlug: data.readableSlug ?? null,
-      companyName: data.companyName ?? null,
-      domain: data.domain ?? null,
+      readableSlug:
+        typeof data.readableSlug === 'string' ? data.readableSlug : null,
+      companyName:
+        typeof data.companyName === 'string' ? data.companyName : null,
+      domain: typeof data.domain === 'string' ? data.domain : null,
     })}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
@@ -124,8 +149,8 @@ export default function ProspectDetail() {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const p = prospect.data as any;
+  // TODO: tRPC v11 inference — getProspect return type is too deep for TS to infer all Prospect fields
+  const p = prospect.data as Record<string, unknown> & { slug: string };
   const enrichmentMeta =
     p.lushaRawData &&
     typeof p.lushaRawData === 'object' &&
@@ -151,8 +176,9 @@ export default function ProspectDetail() {
   const metaPillClass =
     'inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3.5 py-1.5 text-[12px] font-semibold text-slate-700 shadow-[0_1px_0_0_rgba(15,23,42,0.03)]';
   const latestRunId = researchRuns.data?.[0]?.id ?? null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const latestRun = (researchRuns.data?.[0] as any) ?? null;
+  // ResearchRunRow mirrors the listRuns query include shape — replaces TS2589 as any casts
+  const runs = researchRuns.data as ResearchRunRow[] | undefined;
+  const latestRun = runs?.[0] ?? null;
   const overrideAudits = api.research.listOverrideAudits.useQuery(
     { runId: latestRunId! },
     { enabled: !!latestRunId },
@@ -171,12 +197,10 @@ export default function ProspectDetail() {
         <PipelineChip
           stage={computePipelineStage({
             status: p.status,
-            researchRun: researchRuns.data?.[0]
+            researchRun: runs?.[0]
               ? {
-                  status: researchRuns.data[0].status,
-                  qualityApproved:
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (researchRuns.data[0] as any).qualityApproved ?? null,
+                  status: runs[0].status,
+                  qualityApproved: runs[0].qualityApproved ?? null,
                 }
               : null,
             hasSession: (p._count?.sessions ?? 0) > 0,
@@ -184,21 +208,15 @@ export default function ProspectDetail() {
               p.sessions?.some((s: any) => s.callBooked) ?? false,
           })}
         />
-        {researchRuns.data?.[0] && (
+        {runs?.[0] && (
           <QualityChip
-            runId={researchRuns.data[0].id}
-            evidenceCount={researchRuns.data[0]._count.evidenceItems}
-            hypothesisCount={researchRuns.data[0]._count.workflowHypotheses}
-            qualityApproved={
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (researchRuns.data[0] as any).qualityApproved ?? null
-            }
-            qualityReviewedAt={
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (researchRuns.data[0] as any).qualityReviewedAt ?? null
-            }
-            runStatus={researchRuns.data[0].status}
-            summary={(researchRuns.data[0] as any).summary}
+            runId={runs[0].id}
+            evidenceCount={runs[0]._count.evidenceItems}
+            hypothesisCount={runs[0]._count.workflowHypotheses}
+            qualityApproved={runs[0].qualityApproved ?? null}
+            qualityReviewedAt={runs[0].qualityReviewedAt ?? null}
+            runStatus={runs[0].status}
+            summary={runs[0].summary}
           />
         )}
       </div>
