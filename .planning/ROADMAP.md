@@ -172,7 +172,12 @@ Plans:
 1. /discover/ validation session run with at least one real prospect — confirm/decline interaction recorded in DB and visible in admin override history
 2. Crawl4AI v0.8.x consent popup removal and shadow DOM flattening verified working against at least two real pages that previously required manual intervention
 3. Pain gate calibration SQL run against all 7+ real prospects and threshold constants updated in quality-config.ts with documented before/after distribution
-   **Plans**: TBD
+   **Plans**: 2 plans
+
+Plans:
+
+- [ ] 35-01-PLAN.md — Crawl4AI v0.8.x params + pain gate calibration report
+- [ ] 35-02-PLAN.md — /discover/ validation session with DB assertions
 
 ## Progress
 
@@ -209,4 +214,4 @@ Plans:
 | 32. Hypothesis Prompt Rewrite          | 2/2       | Complete       | 2026-03-02  | -          |
 | 33. Configurable Model Selection       | 2/2       | Complete       | 2026-03-02  | -          |
 | 34. AI Metric Derivation + Attribution | 2/2       | Complete       | 2026-03-02  | -          |
-| 35. Validation and Calibration         | v3.0      | 0/TBD          | Not started | -          |
+| 35. Validation and Calibration         | v3.0      | 0/2            | Not started | -          |
