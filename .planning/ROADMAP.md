@@ -155,7 +155,12 @@ Plans:
 2. Metric values are labeled as estimated ranges (e.g., "8-12 hours/week") not false precision integers
 3. The Workflow Loss Map PDF renders without NaN or undefined values for any metric field
 4. Each hypothesis card in the admin detail view shows a source attribution badge (e.g., "REVIEWS", "CAREERS") identifying the primary evidence driver
-   **Plans**: TBD
+   **Plans**: 2 plans
+
+Plans:
+
+- [ ] 34-01-PLAN.md — TDD RED scaffold: extend mock factories with metric fields + primarySourceType, add MODEL-03 and ANLYS-09 failing tests
+- [ ] 34-02-PLAN.md — GREEN implementation: prompt metric instruction, clamp helpers, type extensions, DB migration, executor write, FindingCard source attribution badge
 
 ### Phase 35: Validation and Calibration
 
