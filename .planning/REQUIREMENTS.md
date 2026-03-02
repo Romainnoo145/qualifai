@@ -16,12 +16,12 @@ Requirements for v3.0 release. Each maps to roadmap phases.
 - [x] **ANLYS-05**: Source signal summary (counts by tier) injected above evidence block to prime LLM reasoning
 - [x] **ANLYS-06**: Hypothesis count varies 1-3 based on confirmed pain tag evidence quality (not forced 3)
 - [x] **ANLYS-07**: Confidence score instruction maps score tiers to evidence quality levels (REVIEWS 0.80-0.95, hiring 0.70-0.80, website-only 0.60-0.65)
-- [ ] **ANLYS-08**: Two-pass chain-of-thought reasoning separates evidence analysis from hypothesis synthesis
+- [x] **ANLYS-08**: Two-pass chain-of-thought reasoning separates evidence analysis from hypothesis synthesis
 - [ ] **ANLYS-09**: Primary source attribution badge (sourceType that most drove each hypothesis) displayed per hypothesis in admin detail view
 
 ### Model & Metrics
 
-- [ ] **MODEL-01**: Hypothesis generation supports configurable model selection (Gemini Flash vs Claude) via env var
+- [x] **MODEL-01**: Hypothesis generation supports configurable model selection (Gemini Flash vs Claude) via env var
 - [x] **MODEL-02**: Gemini model string upgraded from `gemini-2.0-flash` to `gemini-2.5-flash` across all files
 - [ ] **MODEL-03**: AI-estimated metric ranges (hours saved, handoff speed, error reduction, revenue leakage) replace hardcoded METRIC_DEFAULTS — contextual to each prospect's industry and evidence
 
@@ -79,9 +79,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ANLYS-05    | 32    | Complete |
 | ANLYS-06    | 32    | Complete |
 | ANLYS-07    | 32    | Complete |
-| ANLYS-08    | 33    | Pending  |
+| ANLYS-08    | 33    | Complete |
 | ANLYS-09    | 34    | Pending  |
-| MODEL-01    | 33    | Pending  |
+| MODEL-01    | 33    | Complete |
 | MODEL-02    | 31    | Complete |
 | MODEL-03    | 34    | Pending  |
 | VALID-01    | 35    | Pending  |
