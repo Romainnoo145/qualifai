@@ -104,9 +104,17 @@ export function QualityChip({
     );
   }
 
-  // Extract real quality metrics from stored gate data
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const gate = (summary as any)?.gate;
+  // Extract real quality metrics from stored gate data via typed Json guard
+  const summaryObj =
+    summary && typeof summary === 'object' && !Array.isArray(summary)
+      ? (summary as Record<string, unknown>)
+      : null;
+  const gate =
+    summaryObj?.gate &&
+    typeof summaryObj.gate === 'object' &&
+    !Array.isArray(summaryObj.gate)
+      ? (summaryObj.gate as Record<string, unknown>)
+      : null;
   const realSourceTypeCount: number =
     typeof gate?.sourceTypeCount === 'number' ? gate.sourceTypeCount : 1;
   const realAvgConf: number =
@@ -119,7 +127,8 @@ export function QualityChip({
   );
 
   // If we have full run data use it for a more accurate display.
-  // Cast as any to avoid TS2589 deep inference from Prisma — established project pattern.
+  // TODO: tRPC v11 inference — getRun return type too deep for TS inference; tracked cast
+  // Use Prisma.ResearchRunGetPayload when getRun include shape is stabilised (see server/routers/research.ts)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fullRun = runQuery.data as any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -293,8 +293,18 @@ export const outreachRouter = router({
       });
 
       if (latestRun) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const gate = (latestRun.summary as any)?.gate;
+        const summary =
+          latestRun.summary &&
+          typeof latestRun.summary === 'object' &&
+          !Array.isArray(latestRun.summary)
+            ? (latestRun.summary as Record<string, unknown>)
+            : null;
+        const gate =
+          summary?.gate &&
+          typeof summary.gate === 'object' &&
+          !Array.isArray(summary.gate)
+            ? (summary.gate as Record<string, unknown>)
+            : null;
         const evidenceCount: number =
           typeof gate?.evidenceCount === 'number' ? gate.evidenceCount : 0;
         const sourceTypeCount: number =
