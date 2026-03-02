@@ -1,0 +1,996 @@
+[
+  {
+    "id": "cmm1fswhn000f4zij87xapk2k",
+    "companyName": "Motion Design Awards",
+    "domain": "motiondesignawards.com",
+    "researchRuns": [
+      {
+        "id": "cmm81x0wg00009rij5v0ftqr6",
+        "createdAt": "2026-03-01T17:56:11.344Z",
+        "summary": {
+          "gate": {
+            "passed": true,
+            "reasons": [],
+            "evidenceCount": 60,
+            "sourceTypeCount": 4,
+            "painConfirmation": {
+              "reasons": [],
+              "jobsCount": 0,
+              "contextCount": 4,
+              "reviewsCount": 4,
+              "distinctPainTags": 1,
+              "observedEvidenceCount": 8
+            },
+            "averageConfidence": 0.66
+          },
+          "offer": "Workflow Optimization Sprint",
+          "campaign": null,
+          "ctaStep1": "I made a 1-page Workflow Loss Map for your team.",
+          "ctaStep2": "Want a 15-min teardown + live mini-demo?",
+          "bookingUrl": "https://cal.com/klarifai/15min",
+          "diagnostics": [
+            {
+              "source": "sitemap",
+              "status": "ok",
+              "message": "Sitemap discovery found 25 URLs."
+            },
+            {
+              "source": "website",
+              "status": "ok",
+              "message": "Website ingestion produced 20 evidence items."
+            },
+            {
+              "source": "reviews",
+              "status": "ok",
+              "message": "Review ingestion produced 3 evidence items."
+            },
+            {
+              "source": "serp",
+              "status": "warning",
+              "message": "SERP discovery returned no review/job URLs."
+            },
+            {
+              "source": "crawl4ai",
+              "status": "skipped",
+              "message": "Crawl4AI skipped because no SERP URLs were discovered."
+            },
+            {
+              "source": "google_mentions",
+              "status": "ok",
+              "message": "Google mentions produced 12 evidence items."
+            },
+            {
+              "source": "google_reviews",
+              "status": "ok",
+              "message": "Google Reviews found 1 review snippets."
+            },
+            {
+              "source": "google_news",
+              "status": "ok",
+              "message": "Google News RSS found 5 news items."
+            },
+            {
+              "source": "employee_reviews",
+              "status": "ok",
+              "message": "Employee reviews found 8 review items."
+            },
+            {
+              "source": "linkedin_jobs",
+              "status": "warning",
+              "message": "LinkedIn jobs returned no results."
+            },
+            {
+              "source": "customer_reviews",
+              "status": "ok",
+              "message": "Customer reviews found 6 review items."
+            },
+            {
+              "source": "dutch_industry_news",
+              "status": "warning",
+              "message": "Dutch industry news returned no results."
+            },
+            {
+              "source": "kvk",
+              "status": "warning",
+              "message": "KVK_API_KEY is not configured; KvK enrichment skipped."
+            },
+            {
+              "source": "linkedin",
+              "status": "ok",
+              "message": "LinkedIn context synthesized from Apollo profile data."
+            },
+            {
+              "source": "linkedin_posts",
+              "status": "ok",
+              "message": "LinkedIn posts scraped 4 post snippets."
+            },
+            {
+              "source": "evidence_scoring",
+              "status": "ok",
+              "message": "AI scoring completed for 60 evidence items."
+            }
+          ]
+        },
+        "workflowHypotheses": [
+          {
+            "id": "cmm81zzhs001p9rij8m2x0y7o",
+            "title": "Inefficient Project Submission and Judging Process",
+            "problemStatement": "Motion Design Awards handles hundreds of entries annually, across 38 categories, which suggests a complex project submission and judging process. The public-facing contact form and request flows on their website indicate a potential for manual intake, qualification, and routing of submissions, leading to delays and increased administrative overhead. This is exacerbated by the need for a \"rigorous judging process involving an elite panel and public voting.\"",
+            "confidenceScore": 0.85,
+            "evidenceRefs": ["cmm81zv2b000p9rij4y9byc1m"]
+          },
+          {
+            "id": "cmm81zzir001r9rijnlmxhkk5",
+            "title": "Manual handling of support requests and troubleshooting",
+            "problemStatement": "The contact page mentions 'Technical support Need help with adding your work, payment process, or troubleshooting? Contact Support' indicating that there are likely manual processes involved in handling support requests. Without automation, addressing technical issues, especially related to submissions and payment, could be time-consuming and resource intensive.",
+            "confidenceScore": 0.8,
+            "evidenceRefs": ["cmm81zv2b000p9rij4y9byc1m"]
+          },
+          {
+            "id": "cmm81zzie001q9rijgdmr5cdk",
+            "title": "Bottlenecks in Coordinating with Judges and Managing Public Voting",
+            "problemStatement": "MDA's award process involves \"a rigorous judging process involving an elite panel and public voting.\" Coordinating with the judges, managing their assignments, collecting scores and feedback, and integrating public votes can be a complex undertaking with potential for delays and errors if not efficiently automated.",
+            "confidenceScore": 0.75,
+            "evidenceRefs": ["cmm81zv2b000p9rij4y9byc1m"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cmm1fswsm000h4zijrc90vt88",
+    "companyName": "De Ondernemer",
+    "domain": "deondernemer.nl",
+    "researchRuns": [
+      {
+        "id": "cmm8201sc001u9rij3mqt69q5",
+        "createdAt": "2026-03-01T17:58:32.460Z",
+        "summary": {
+          "gate": {
+            "passed": true,
+            "reasons": [],
+            "evidenceCount": 60,
+            "sourceTypeCount": 4,
+            "painConfirmation": {
+              "reasons": [],
+              "jobsCount": 0,
+              "contextCount": 3,
+              "reviewsCount": 2,
+              "distinctPainTags": 1,
+              "observedEvidenceCount": 5
+            },
+            "averageConfidence": 0.7
+          },
+          "offer": "Workflow Optimization Sprint",
+          "campaign": null,
+          "ctaStep1": "I made a 1-page Workflow Loss Map for your team.",
+          "ctaStep2": "Want a 15-min teardown + live mini-demo?",
+          "bookingUrl": "https://cal.com/klarifai/15min",
+          "diagnostics": [
+            {
+              "source": "sitemap",
+              "status": "ok",
+              "message": "Sitemap discovery found 25 URLs."
+            },
+            {
+              "source": "website",
+              "status": "ok",
+              "message": "Website ingestion produced 20 evidence items."
+            },
+            {
+              "source": "reviews",
+              "status": "ok",
+              "message": "Review ingestion produced 3 evidence items."
+            },
+            {
+              "source": "serp",
+              "status": "ok",
+              "message": "SERP discovery found 2 URLs."
+            },
+            {
+              "source": "crawl4ai",
+              "status": "ok",
+              "message": "Crawl4AI produced 2 evidence items."
+            },
+            {
+              "source": "google_mentions",
+              "status": "ok",
+              "message": "Google mentions produced 9 evidence items."
+            },
+            {
+              "source": "google_reviews",
+              "status": "ok",
+              "message": "Google Reviews found 1 review snippets."
+            },
+            {
+              "source": "google_news",
+              "status": "ok",
+              "message": "Google News RSS found 5 news items."
+            },
+            {
+              "source": "employee_reviews",
+              "status": "ok",
+              "message": "Employee reviews found 7 review items."
+            },
+            {
+              "source": "linkedin_jobs",
+              "status": "warning",
+              "message": "LinkedIn jobs returned no results."
+            },
+            {
+              "source": "customer_reviews",
+              "status": "ok",
+              "message": "Customer reviews found 6 review items."
+            },
+            {
+              "source": "dutch_industry_news",
+              "status": "ok",
+              "message": "Dutch industry news found 5 articles."
+            },
+            {
+              "source": "kvk",
+              "status": "warning",
+              "message": "KVK_API_KEY is not configured; KvK enrichment skipped."
+            },
+            {
+              "source": "linkedin",
+              "status": "ok",
+              "message": "LinkedIn context synthesized from Apollo profile data."
+            },
+            {
+              "source": "linkedin_posts",
+              "status": "ok",
+              "message": "LinkedIn posts scraped 8 post snippets."
+            },
+            {
+              "source": "evidence_scoring",
+              "status": "ok",
+              "message": "AI scoring completed for 60 evidence items."
+            }
+          ]
+        },
+        "workflowHypotheses": [
+          {
+            "id": "cmm8229o1003j9rijyzvpo1ys",
+            "title": "Inefficient Newsletter Unsubscription Process",
+            "problemStatement": "Users are experiencing difficulties unsubscribing from the newsletter, indicating a broken or inefficient workflow. \"Toen ik mij wilde uitschrijven voor de nieuwsbrief, kwam de klik hier link nergens op uit. Er is geen e-mailadres vermeld en bij bellen op het telefoonnummer is het de hele dag in gesprek.\"",
+            "confidenceScore": 0.85,
+            "evidenceRefs": [
+              "cmm8225kz002w9rij50aj9siu",
+              "cmm8225h7002j9rijzhe4tz1t"
+            ]
+          },
+          {
+            "id": "cmm8229pt003k9rijva0e7ls8",
+            "title": "Potential Bottlenecks in Content Production and Editorial Workflow",
+            "problemStatement": "The company is actively hiring for multiple editorial positions, suggesting potential strain on the existing content production workflow. \"Drie vacatures bij het redactieteam van DPG Zakelijk (BusinessWise en De Ondernemer) én voor een tijdelijk project zoeken we een freelance ...\"",
+            "confidenceScore": 0.75,
+            "evidenceRefs": [
+              "cmm8225jl002r9rijrv9akxmb",
+              "cmm8225hj002k9rijnj7t4d7q"
+            ]
+          },
+          {
+            "id": "cmm8229q6003l9rijjdl6ix1k",
+            "title": "Manual Intake and Routing of Business Inquiries",
+            "problemStatement": "The public-facing contact form and request flows indicate a risk of manual intake, qualification, and routing of business inquiries, leading to delays and potential loss of opportunities. Based on the existence of the contact page, we can infer manual processing.",
+            "confidenceScore": 0.7,
+            "evidenceRefs": [
+              "cmm8225h7002j9rijzhe4tz1t",
+              "cmm8225hj002k9rijnj7t4d7q"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cmm1p7vmy000bszijebro7yl2",
+    "companyName": "Brainport Eindhoven",
+    "domain": "brainporteindhoven.com",
+    "researchRuns": [
+      {
+        "id": "cmm822b29003o9rijkh9zsfxr",
+        "createdAt": "2026-03-01T18:00:17.793Z",
+        "summary": {
+          "gate": {
+            "passed": true,
+            "reasons": [],
+            "evidenceCount": 41,
+            "sourceTypeCount": 5,
+            "painConfirmation": {
+              "reasons": [],
+              "jobsCount": 0,
+              "contextCount": 5,
+              "reviewsCount": 2,
+              "distinctPainTags": 1,
+              "observedEvidenceCount": 7
+            },
+            "averageConfidence": 0.65
+          },
+          "offer": "Workflow Optimization Sprint",
+          "campaign": null,
+          "ctaStep1": "I made a 1-page Workflow Loss Map for your team.",
+          "ctaStep2": "Want a 15-min teardown + live mini-demo?",
+          "bookingUrl": "https://cal.com/klarifai/15min",
+          "diagnostics": [
+            {
+              "source": "sitemap",
+              "status": "warning",
+              "message": "No sitemap URLs discovered for this domain."
+            },
+            {
+              "source": "website",
+              "status": "ok",
+              "message": "Website ingestion produced 4 evidence items."
+            },
+            {
+              "source": "reviews",
+              "status": "ok",
+              "message": "Review ingestion produced 3 evidence items."
+            },
+            {
+              "source": "serp",
+              "status": "warning",
+              "message": "SERP discovery returned no review/job URLs."
+            },
+            {
+              "source": "crawl4ai",
+              "status": "skipped",
+              "message": "Crawl4AI skipped because no SERP URLs were discovered."
+            },
+            {
+              "source": "google_mentions",
+              "status": "ok",
+              "message": "Google mentions produced 5 evidence items."
+            },
+            {
+              "source": "google_reviews",
+              "status": "ok",
+              "message": "Google Reviews found 4 review snippets."
+            },
+            {
+              "source": "google_news",
+              "status": "ok",
+              "message": "Google News RSS found 5 news items."
+            },
+            {
+              "source": "employee_reviews",
+              "status": "ok",
+              "message": "Employee reviews found 4 review items."
+            },
+            {
+              "source": "linkedin_jobs",
+              "status": "warning",
+              "message": "LinkedIn jobs returned no results."
+            },
+            {
+              "source": "customer_reviews",
+              "status": "ok",
+              "message": "Customer reviews found 6 review items."
+            },
+            {
+              "source": "dutch_industry_news",
+              "status": "warning",
+              "message": "Dutch industry news returned no results."
+            },
+            {
+              "source": "kvk",
+              "status": "warning",
+              "message": "KVK_API_KEY is not configured; KvK enrichment skipped."
+            },
+            {
+              "source": "linkedin",
+              "status": "ok",
+              "message": "LinkedIn context synthesized from Apollo profile data."
+            },
+            {
+              "source": "linkedin_posts",
+              "status": "ok",
+              "message": "LinkedIn posts scraped 8 post snippets."
+            },
+            {
+              "source": "evidence_scoring",
+              "status": "ok",
+              "message": "AI scoring completed for 41 evidence items."
+            }
+          ]
+        },
+        "workflowHypotheses": [
+          {
+            "id": "cmm824kg7004u9rijld3j15po",
+            "title": "Inefficient Lead Qualification and Routing",
+            "problemStatement": "Brainport Eindhoven likely faces bottlenecks in qualifying and routing inquiries due to a reliance on manual processes. Their public-facing \"contact and request flows indicate manual intake, qualification, and routing risk.\"",
+            "confidenceScore": 0.85,
+            "evidenceRefs": ["cmm824g95003x9rij3sru12v2"]
+          },
+          {
+            "id": "cmm824kgs004v9rijpbs7wvbf",
+            "title": "Reporting Bottlenecks Due to Expansion and Talent Acquisition Challenges",
+            "problemStatement": "Brainport Eindhoven's growth initiatives and the need to attract talent may create reporting burdens. Open roles, indicated by their \"careers\" page, often \"indicate bottlenecks in planning, operations handoffs, and reporting load.\"",
+            "confidenceScore": 0.75,
+            "evidenceRefs": [
+              "cmm824g9e003y9rijo6tcf94y",
+              "cmm824gag00429rijamj1gf8b"
+            ]
+          },
+          {
+            "id": "cmm824khb004w9rijdbzkb91t",
+            "title": "Challenges in Supplier Coordination for Infrastructure and Development Projects",
+            "problemStatement": "Given Brainport Eindhoven's focus on regional development and infrastructure, supplier coordination likely presents challenges. The LinkedIn post about netcongestie indicates development pressures: \"Gemeente, provincie en partners zoeken samen naar slimme oplossingen om toch ruimte te maken: voor woningen, bedrijven én bereikbaarheid.\"",
+            "confidenceScore": 0.65,
+            "evidenceRefs": ["cmm824ghq004t9rijkwnnwsym"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cmm1p7wu7000mszijksouusfq",
+    "companyName": "DuckDB",
+    "domain": "duckdb.org",
+    "researchRuns": [
+      {
+        "id": "cmm824kmt004z9rijl8lmnwrn",
+        "createdAt": "2026-03-01T18:02:03.509Z",
+        "summary": {
+          "gate": {
+            "passed": true,
+            "reasons": [],
+            "evidenceCount": 60,
+            "sourceTypeCount": 4,
+            "painConfirmation": {
+              "reasons": [],
+              "jobsCount": 0,
+              "contextCount": 10,
+              "reviewsCount": 7,
+              "distinctPainTags": 1,
+              "observedEvidenceCount": 17
+            },
+            "averageConfidence": 0.67
+          },
+          "offer": "Workflow Optimization Sprint",
+          "campaign": null,
+          "ctaStep1": "I made a 1-page Workflow Loss Map for your team.",
+          "ctaStep2": "Want a 15-min teardown + live mini-demo?",
+          "bookingUrl": "https://cal.com/klarifai/15min",
+          "diagnostics": [
+            {
+              "source": "sitemap",
+              "status": "ok",
+              "message": "Sitemap discovery found 25 URLs."
+            },
+            {
+              "source": "website",
+              "status": "ok",
+              "message": "Website ingestion produced 20 evidence items."
+            },
+            {
+              "source": "reviews",
+              "status": "ok",
+              "message": "Review ingestion produced 3 evidence items."
+            },
+            {
+              "source": "serp",
+              "status": "ok",
+              "message": "SERP discovery found 5 URLs."
+            },
+            {
+              "source": "crawl4ai",
+              "status": "ok",
+              "message": "Crawl4AI produced 5 evidence items."
+            },
+            {
+              "source": "google_mentions",
+              "status": "ok",
+              "message": "Google mentions produced 12 evidence items."
+            },
+            {
+              "source": "google_reviews",
+              "status": "ok",
+              "message": "Google Reviews found 1 review snippets."
+            },
+            {
+              "source": "google_news",
+              "status": "ok",
+              "message": "Google News RSS found 1 news items."
+            },
+            {
+              "source": "employee_reviews",
+              "status": "ok",
+              "message": "Employee reviews found 7 review items."
+            },
+            {
+              "source": "linkedin_jobs",
+              "status": "warning",
+              "message": "LinkedIn jobs returned no results."
+            },
+            {
+              "source": "customer_reviews",
+              "status": "ok",
+              "message": "Customer reviews found 1 review items."
+            },
+            {
+              "source": "dutch_industry_news",
+              "status": "ok",
+              "message": "Dutch industry news found 5 articles."
+            },
+            {
+              "source": "kvk",
+              "status": "warning",
+              "message": "KVK_API_KEY is not configured; KvK enrichment skipped."
+            },
+            {
+              "source": "linkedin",
+              "status": "ok",
+              "message": "LinkedIn context synthesized from Apollo profile data."
+            },
+            {
+              "source": "linkedin_posts",
+              "status": "ok",
+              "message": "LinkedIn posts scraped 7 post snippets."
+            },
+            {
+              "source": "evidence_scoring",
+              "status": "ok",
+              "message": "AI scoring completed for 60 evidence items."
+            }
+          ]
+        },
+        "workflowHypotheses": [
+          {
+            "id": "cmm826kt2006o9rijsxb7c7fc",
+            "title": "Operations Scaling Bottleneck due to Rapid Growth",
+            "problemStatement": "DuckDB Labs is experiencing rapid growth that necessitates a more structured and optimized daily operation. The need for a 'Head of Operations' to 'strak organiseert en processen optimaal inricht' indicates a challenge in maintaining operational efficiency as the company scales. This suggests potential bottlenecks in various internal workflows.",
+            "confidenceScore": 0.9,
+            "evidenceRefs": [
+              "cmm826gt900649rijim6nlqtm",
+              "cmm826goy005p9rij4j12g3k7"
+            ]
+          },
+          {
+            "id": "cmm826ktw006q9rijkk1pnt3r",
+            "title": "Office Management Burden and Coordination Overhead",
+            "problemStatement": "The search for an 'Office Manager' in Amsterdam to be the 'operational backbone' suggests the team is spending significant time on administrative and logistical tasks. This indicates a lack of streamlined processes for office management, potentially impacting the team's focus on core development and support activities.",
+            "confidenceScore": 0.85,
+            "evidenceRefs": [
+              "cmm826gsp00629rijqs0lhfpk",
+              "cmm826goy005p9rij4j12g3k7"
+            ]
+          },
+          {
+            "id": "cmm826ktm006p9rij0ogf9cvx",
+            "title": "Manual Contact Handling and Qualification Creates Delays",
+            "problemStatement": "DuckDB's public-facing contact page ('https://duckdb.org/contact') implies manual intake, qualification, and routing of inquiries. This can lead to delays in responding to potential clients and partners, potentially missing opportunities or impacting customer satisfaction. The lack of automated processes for lead intake can create a bottleneck.",
+            "confidenceScore": 0.75,
+            "evidenceRefs": [
+              "cmm826goo005o9rijwqze2cqo",
+              "cmm826goy005p9rij4j12g3k7"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cmm1ul9n0001yszij67f3h3f7",
+    "companyName": "Mujjo",
+    "domain": "mujjo.com",
+    "researchRuns": [
+      {
+        "id": "cmm826p10006t9rij53uoeybq",
+        "createdAt": "2026-03-01T18:03:42.516Z",
+        "summary": {
+          "gate": {
+            "passed": true,
+            "reasons": [],
+            "evidenceCount": 60,
+            "sourceTypeCount": 4,
+            "painConfirmation": {
+              "reasons": [],
+              "jobsCount": 0,
+              "contextCount": 3,
+              "reviewsCount": 4,
+              "distinctPainTags": 3,
+              "observedEvidenceCount": 7
+            },
+            "averageConfidence": 0.67
+          },
+          "offer": "Workflow Optimization Sprint",
+          "campaign": null,
+          "ctaStep1": "I made a 1-page Workflow Loss Map for your team.",
+          "ctaStep2": "Want a 15-min teardown + live mini-demo?",
+          "bookingUrl": "https://cal.com/klarifai/15min",
+          "diagnostics": [
+            {
+              "source": "sitemap",
+              "status": "ok",
+              "message": "Sitemap discovery found 25 URLs."
+            },
+            {
+              "source": "website",
+              "status": "ok",
+              "message": "Website ingestion produced 20 evidence items."
+            },
+            {
+              "source": "reviews",
+              "status": "ok",
+              "message": "Review ingestion produced 8 evidence items."
+            },
+            {
+              "source": "serp",
+              "status": "ok",
+              "message": "SERP discovery found 5 URLs."
+            },
+            {
+              "source": "crawl4ai",
+              "status": "ok",
+              "message": "Crawl4AI produced 5 evidence items."
+            },
+            {
+              "source": "google_mentions",
+              "status": "ok",
+              "message": "Google mentions produced 11 evidence items."
+            },
+            {
+              "source": "google_reviews",
+              "status": "ok",
+              "message": "Google Reviews found 5 review snippets."
+            },
+            {
+              "source": "google_news",
+              "status": "ok",
+              "message": "Google News RSS found 1 news items."
+            },
+            {
+              "source": "employee_reviews",
+              "status": "warning",
+              "message": "Employee reviews returned no results."
+            },
+            {
+              "source": "linkedin_jobs",
+              "status": "warning",
+              "message": "LinkedIn jobs returned no results."
+            },
+            {
+              "source": "customer_reviews",
+              "status": "ok",
+              "message": "Customer reviews found 5 review items."
+            },
+            {
+              "source": "dutch_industry_news",
+              "status": "ok",
+              "message": "Dutch industry news found 2 articles."
+            },
+            {
+              "source": "kvk",
+              "status": "warning",
+              "message": "KVK_API_KEY is not configured; KvK enrichment skipped."
+            },
+            {
+              "source": "linkedin",
+              "status": "ok",
+              "message": "LinkedIn context synthesized from Apollo profile data."
+            },
+            {
+              "source": "linkedin_posts",
+              "status": "ok",
+              "message": "LinkedIn posts scraped 1 post snippets."
+            },
+            {
+              "source": "evidence_scoring",
+              "status": "ok",
+              "message": "AI scoring completed for 60 evidence items."
+            }
+          ]
+        },
+        "workflowHypotheses": [
+          {
+            "id": "cmm82aarp008i9rijqtcs8klq",
+            "title": "Inefficient Customer Support Request Handling",
+            "problemStatement": "Mujjo appears to struggle with consistent customer support response times, potentially leading to lost sales or customer dissatisfaction. While some customers report \"fast email response for a minor issue in receiving order confirmation,\" others report \"No response from company after emailing and calling.\" This suggests an inconsistent or overloaded support workflow.",
+            "confidenceScore": 0.85,
+            "evidenceRefs": [
+              "cmm82a6w000719rij2umjxumk",
+              "cmm82a72c007n9rijq2kdpxaq"
+            ]
+          },
+          {
+            "id": "cmm82aasm008k9rij1gfis5di",
+            "title": "Bottlenecks in Product Development and Launch",
+            "problemStatement": "The \"careers\" page suggests potential workflow challenges in planning, operations, and reporting which are commonly associated with bottlenecks in product development, especially since they are a consumer goods company that needs to constantly adapt to phone model releases. These roles may be needed to resolve existing bottlenecks. ",
+            "confidenceScore": 0.75,
+            "evidenceRefs": [
+              "cmm82a72m007o9rij1409zrzo",
+              "cmm82a6wr00739rijcqkrr6mh"
+            ]
+          },
+          {
+            "id": "cmm82aasb008j9rijlbz5cief",
+            "title": "Delayed Order Fulfillment Due to Inventory Management Challenges",
+            "problemStatement": "The reliance on Shopify for e-commerce suggests potential issues in synchronizing inventory levels with demand, especially considering the focus on handcrafted and limited-edition items. Although not explicitly stated, delays are a common consequence of poor synchronization of inventory levels. ",
+            "confidenceScore": 0.65,
+            "evidenceRefs": [
+              "cmm82a6xb00759rijk055wjo4",
+              "cmm82a6wr00739rijcqkrr6mh"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "847bd07c-d7a4-4982-ab5d-413f64814bd5",
+    "companyName": "Marcore",
+    "domain": "marcore.nl",
+    "researchRuns": [
+      {
+        "id": "cmm82aawf008n9rij0q7pxgu9",
+        "createdAt": "2026-03-01T18:06:30.831Z",
+        "summary": {
+          "gate": {
+            "passed": true,
+            "reasons": [],
+            "evidenceCount": 47,
+            "sourceTypeCount": 4,
+            "painConfirmation": {
+              "reasons": [],
+              "jobsCount": 0,
+              "contextCount": 7,
+              "reviewsCount": 1,
+              "distinctPainTags": 1,
+              "observedEvidenceCount": 8
+            },
+            "averageConfidence": 0.59
+          },
+          "offer": "Workflow Optimization Sprint",
+          "campaign": null,
+          "ctaStep1": "I made a 1-page Workflow Loss Map for your team.",
+          "ctaStep2": "Want a 15-min teardown + live mini-demo?",
+          "bookingUrl": "https://cal.com/klarifai/15min",
+          "diagnostics": [
+            {
+              "source": "sitemap",
+              "status": "ok",
+              "message": "Sitemap discovery found 19 URLs."
+            },
+            {
+              "source": "website",
+              "status": "ok",
+              "message": "Website ingestion produced 20 evidence items."
+            },
+            {
+              "source": "reviews",
+              "status": "ok",
+              "message": "Review ingestion produced 3 evidence items."
+            },
+            {
+              "source": "serp",
+              "status": "warning",
+              "message": "SERP discovery returned no review/job URLs."
+            },
+            {
+              "source": "crawl4ai",
+              "status": "skipped",
+              "message": "Crawl4AI skipped because no SERP URLs were discovered."
+            },
+            {
+              "source": "google_mentions",
+              "status": "ok",
+              "message": "Google mentions produced 12 evidence items."
+            },
+            {
+              "source": "google_reviews",
+              "status": "ok",
+              "message": "Google Reviews found 4 review snippets."
+            },
+            {
+              "source": "google_news",
+              "status": "warning",
+              "message": "Google News RSS returned no results; placeholder recorded."
+            },
+            {
+              "source": "employee_reviews",
+              "status": "warning",
+              "message": "Employee reviews returned no results."
+            },
+            {
+              "source": "linkedin_jobs",
+              "status": "warning",
+              "message": "LinkedIn jobs returned no results."
+            },
+            {
+              "source": "customer_reviews",
+              "status": "ok",
+              "message": "Customer reviews found 4 review items."
+            },
+            {
+              "source": "kvk",
+              "status": "warning",
+              "message": "KVK_API_KEY is not configured; KvK enrichment skipped."
+            },
+            {
+              "source": "linkedin_posts",
+              "status": "skipped",
+              "message": "LinkedIn posts skipped: no linkedinUrl on prospect."
+            },
+            {
+              "source": "evidence_scoring",
+              "status": "ok",
+              "message": "AI scoring completed for 47 evidence items."
+            }
+          ]
+        },
+        "workflowHypotheses": [
+          {
+            "id": "cmm82c55b009z9rijq6xq35ki",
+            "title": "Inefficient Lead Intake and Qualification",
+            "problemStatement": "Marcore's reliance on manual processes for initial contact and request handling, as indicated by their public-facing contact flows (\"https://marcore.nl/contact\"), likely leads to delays in lead qualification and routing, resulting in missed opportunities and reduced sales efficiency. This is exacerbated by the inherent complexity in B2B services.",
+            "confidenceScore": 0.85,
+            "evidenceRefs": [
+              "cmm82c1ge009c9rijtje0lyhm",
+              "cmm82c1g5009b9rijxbq6ii7h"
+            ]
+          },
+          {
+            "id": "cmm82c55v00a09rij78jg1b4q",
+            "title": "Handoff Bottlenecks Impeding Project Progress",
+            "problemStatement": "Given Marcore's focus on B2B services involving workflow complexity, the 'careers' page signals bottlenecks in planning and operations handoffs. Open roles suggest potential strain and inefficiencies in transferring information and responsibilities between teams or individuals. (\"https://marcore.nl/careers\")",
+            "confidenceScore": 0.75,
+            "evidenceRefs": [
+              "cmm82c1g5009b9rijxbq6ii7h",
+              "cmm82c1go009d9rijs37sfff5"
+            ]
+          },
+          {
+            "id": "cmm82c56600a19rij2100xmcn",
+            "title": "Suboptimal Client Reporting Processes",
+            "problemStatement": "The 'careers' page highlights potential reporting load indicating challenges in delivering timely and insightful reports to clients. (\"https://marcore.nl/careers\") With various projects running concurrently, consolidating data and generating customized reports likely involves manual effort, impacting client satisfaction and account management efficiency.",
+            "confidenceScore": 0.7,
+            "evidenceRefs": [
+              "cmm82c1g5009b9rijxbq6ii7h",
+              "cmm82c1go009d9rijs37sfff5"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "5093e6da-1795-40d6-b834-799acc202611",
+    "companyName": "STB-kozijnen",
+    "domain": "stb-kozijnen.nl",
+    "researchRuns": [
+      {
+        "id": "cmm82c5eb00a49rijbgshujkf",
+        "createdAt": "2026-03-01T18:07:57.011Z",
+        "summary": {
+          "gate": {
+            "passed": true,
+            "reasons": [],
+            "evidenceCount": 49,
+            "sourceTypeCount": 4,
+            "painConfirmation": {
+              "reasons": [],
+              "jobsCount": 0,
+              "contextCount": 9,
+              "reviewsCount": 6,
+              "distinctPainTags": 3,
+              "observedEvidenceCount": 15
+            },
+            "averageConfidence": 0.64
+          },
+          "offer": "Workflow Optimization Sprint",
+          "campaign": null,
+          "ctaStep1": "I made a 1-page Workflow Loss Map for your team.",
+          "ctaStep2": "Want a 15-min teardown + live mini-demo?",
+          "bookingUrl": "https://cal.com/klarifai/15min",
+          "diagnostics": [
+            {
+              "source": "sitemap",
+              "status": "ok",
+              "message": "Sitemap discovery found 25 URLs."
+            },
+            {
+              "source": "website",
+              "status": "ok",
+              "message": "Website ingestion produced 20 evidence items."
+            },
+            {
+              "source": "reviews",
+              "status": "ok",
+              "message": "Review ingestion produced 3 evidence items."
+            },
+            {
+              "source": "serp",
+              "status": "warning",
+              "message": "SERP discovery returned no review/job URLs."
+            },
+            {
+              "source": "crawl4ai",
+              "status": "skipped",
+              "message": "Crawl4AI skipped because no SERP URLs were discovered."
+            },
+            {
+              "source": "google_mentions",
+              "status": "ok",
+              "message": "Google mentions produced 11 evidence items."
+            },
+            {
+              "source": "google_reviews",
+              "status": "ok",
+              "message": "Google Reviews found 5 review snippets."
+            },
+            {
+              "source": "google_news",
+              "status": "warning",
+              "message": "Google News RSS returned no results; placeholder recorded."
+            },
+            {
+              "source": "employee_reviews",
+              "status": "ok",
+              "message": "Employee reviews found 4 review items."
+            },
+            {
+              "source": "linkedin_jobs",
+              "status": "warning",
+              "message": "LinkedIn jobs returned no results."
+            },
+            {
+              "source": "customer_reviews",
+              "status": "ok",
+              "message": "Customer reviews found 4 review items."
+            },
+            {
+              "source": "kvk",
+              "status": "warning",
+              "message": "KVK_API_KEY is not configured; KvK enrichment skipped."
+            },
+            {
+              "source": "linkedin_posts",
+              "status": "skipped",
+              "message": "LinkedIn posts skipped: no linkedinUrl on prospect."
+            },
+            {
+              "source": "evidence_scoring",
+              "status": "ok",
+              "message": "AI scoring completed for 49 evidence items."
+            }
+          ]
+        },
+        "workflowHypotheses": [
+          {
+            "id": "cmm82eu6h00bi9rijag5mm51h",
+            "title": "Project Delays Due to Manual Scheduling and Coordination",
+            "problemStatement": "STB-kozijnen likely experiences project delays due to inefficient scheduling and coordination of montagewerkzaamheden. Reviews indicate the need for \"Snellere doorlooptijd\", and the company is actively hiring a \"Planner kozijnenmontage\", whose responsibilities include \"Het plannen en coördineren van montagewerkzaamheden Afstemmen van planningen met monteurs, project\". This suggests a potential bottleneck in the scheduling process, leading to slower project completion times.",
+            "confidenceScore": 0.85,
+            "evidenceRefs": [
+              "cmm82eq2800b69rijtxx4qitl",
+              "cmm82epvy00an9rijf9o7ag1m"
+            ]
+          },
+          {
+            "id": "cmm82eu7300bj9rijuu24rpqp",
+            "title": "Quality Control Issues Due to Handoff Problems",
+            "problemStatement": "STB-kozijnen struggles with maintaining consistent quality due to problems in handoff or communication during the installation process. One review states \"Slecht afgewerkte installatie waar we zelf de randen nog bij mochten kitten\" suggesting a lack of quality control before project completion. They are also looking for a \"werkvoorbereider\" which suggests they need help organizing a project from start to finish.",
+            "confidenceScore": 0.8,
+            "evidenceRefs": [
+              "cmm82eq2r00b89rijqjop2767",
+              "cmm82epvc00al9rijfd3iu8s2"
+            ]
+          },
+          {
+            "id": "cmm82eu7d00bk9rij73op6n8l",
+            "title": "Inefficient Lead Intake and Qualification",
+            "problemStatement": "STB-kozijnen potentially suffers from inefficient lead intake, qualification, and routing processes. The public-facing contact and request flows \"indicate manual intake, qualification, and routing risk.\", requiring manual processing and potentially leading to delays and lost opportunities. Vacancies exist for multiple roles, indicating more manual processes.",
+            "confidenceScore": 0.75,
+            "evidenceRefs": [
+              "cmm82epye00at9rije9kc291y",
+              "cmm82epyu00au9rijzvp8pm65"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
