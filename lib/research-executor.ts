@@ -261,7 +261,15 @@ export async function executeResearchRun(
     .filter((u) => u.provenance !== 'serp')
     .map((u) => u.url);
 
-  const websiteEvidenceDrafts = await ingestWebsiteEvidenceDrafts(researchUrls);
+  const jsHeavyHints = new Map<string, boolean>(
+    initialSourceSet.urls.map((u) => [u.url, u.jsHeavyHint]),
+  );
+  const websiteEvidenceDrafts = await ingestWebsiteEvidenceDrafts(
+    researchUrls,
+    {
+      jsHeavyHints,
+    },
+  );
   if (websiteEvidenceDrafts.length > 0) {
     diagnostics.push({
       source: 'website',
