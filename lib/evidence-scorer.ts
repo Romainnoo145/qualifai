@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { EvidenceSourceType } from '@prisma/client';
+import { GEMINI_MODEL_FLASH } from '@/lib/ai/constants';
 
 let genaiClient: GoogleGenerativeAI | null = null;
 function getGenAI(): GoogleGenerativeAI {
@@ -138,7 +139,7 @@ Return a JSON array:
 [{"i":0,"r":0.5,"d":0.4,"reason":"Brief explanation"}]`;
 
   try {
-    const model = getGenAI().getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = getGenAI().getGenerativeModel({ model: GEMINI_MODEL_FLASH });
     const response = await model.generateContent(prompt);
     const text = response.response.text();
 

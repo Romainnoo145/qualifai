@@ -9,6 +9,12 @@ import {
 import type { PrismaClient } from '@prisma/client';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { readFile } from 'node:fs/promises';
+import {
+  MIN_AVERAGE_CONFIDENCE,
+  PAIN_CONFIRMATION_MIN_SOURCES,
+} from '@/lib/quality-config';
+import type { TrafficLight } from '@/lib/quality-config';
+import { GEMINI_MODEL_FLASH } from '@/lib/ai/constants';
 
 // Lazily initialized to avoid accessing env at module load time (breaks test isolation)
 let genaiClient: GoogleGenerativeAI | null = null;
@@ -537,11 +543,6 @@ export function evaluateQualityGate(items: EvidenceInput[]): QualityGateResult {
 
 // Re-export from quality-config (client-safe module) to avoid breaking existing imports
 export { computeTrafficLight, type TrafficLight } from '@/lib/quality-config';
-import {
-  MIN_AVERAGE_CONFIDENCE,
-  PAIN_CONFIRMATION_MIN_SOURCES,
-} from '@/lib/quality-config';
-import type { TrafficLight } from '@/lib/quality-config';
 
 export interface QualityBreakdown {
   trafficLight: TrafficLight;
@@ -720,7 +721,7 @@ Return ONLY a JSON array with exactly this schema:
   }
 ]`;
 
-    const model = getGenAI().getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = getGenAI().getGenerativeModel({ model: GEMINI_MODEL_FLASH });
     const response = await model.generateContent(prompt);
     const text = response.response.text();
 
@@ -1419,7 +1420,7 @@ async function scoreWithClaude(
       .join('\n');
 
     const model = getGenAI().getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: GEMINI_MODEL_FLASH,
     });
     const response = await model.generateContent(
       `Score each use case for relevance to the prospect's pain point. Return ONLY a JSON array, no other text.
