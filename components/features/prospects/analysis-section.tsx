@@ -10,6 +10,7 @@ type Finding = {
   summary: string;
   status: 'DRAFT' | 'ACCEPTED' | 'REJECTED' | 'PENDING' | 'DECLINED';
   confidenceScore: number;
+  primarySourceType: string | null; // ANLYS-09
   evidenceItems: Array<{
     id: string;
     sourceUrl: string;
@@ -89,6 +90,11 @@ function FindingCard({ finding }: { finding: Finding }) {
             <span className="inline-flex items-center rounded-full border border-slate-200 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-slate-500 bg-slate-50/70">
               {finding.kind === 'hypothesis' ? 'Challenge' : 'Improvement'}
             </span>
+            {finding.primarySourceType && (
+              <span className="inline-flex items-center rounded-full border border-blue-200 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-blue-700 bg-blue-50/70 shrink-0">
+                {finding.primarySourceType.replace(/_/g, ' ')}
+              </span>
+            )}
           </div>
           <h3 className="text-[15px] font-black text-[#040026] leading-tight line-clamp-2">
             {finding.title}
@@ -237,6 +243,8 @@ function toFinding(raw: any, kind: 'hypothesis' | 'opportunity'): Finding {
     summary: kind === 'hypothesis' ? raw.problemStatement : raw.description,
     status: raw.status,
     confidenceScore: raw.confidenceScore,
+    primarySourceType:
+      kind === 'hypothesis' ? (raw.primarySourceType ?? null) : null,
     evidenceItems: raw.evidenceItems ?? [],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     proofMatches: (raw.proofMatches ?? []).map((pm: any) => ({
