@@ -404,6 +404,7 @@ model WorkflowHypothesis {
   revenueLeakageRecoveredLow   Float?
   revenueLeakageRecoveredMid   Float?
   revenueLeakageRecoveredHigh  Float?
+  primarySourceType            String?   // ANLYS-09 — source type that most drove this hypothesis
   status                       HypothesisStatus @default(DRAFT)
 
   researchRunId String

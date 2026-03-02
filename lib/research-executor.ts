@@ -945,6 +945,7 @@ export async function executeResearchRun(
         revenueLeakageRecoveredLow: hypothesis.revenueLeakageRecoveredLow,
         revenueLeakageRecoveredMid: hypothesis.revenueLeakageRecoveredMid,
         revenueLeakageRecoveredHigh: hypothesis.revenueLeakageRecoveredHigh,
+        primarySourceType: hypothesis.primarySourceType, // ANLYS-09
       },
     });
   }
