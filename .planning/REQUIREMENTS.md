@@ -18,7 +18,7 @@ Requirements for Verified Pain Intelligence milestone. Each maps to roadmap phas
 ### Browser Extraction
 
 - [x] **EXTR-01**: Static pages route through Scrapling stealth fetcher first; pages returning <500 chars escalate to Crawl4AI
-- [x] **EXTR-02**: REVIEWS, CAREERS, and JOB_BOARD source types route directly through Crawl4AI browser extraction
+- [x] **EXTR-02**: REVIEWS URLs and `jsHeavyHint=true` URLs route directly through Crawl4AI; CAREERS and JOB_BOARD own-website pages go stealth-first (per Research Pitfall 3)
 - [x] **EXTR-03**: Maximum 5 URLs per prospect use browser-rendered extraction to control pipeline duration
 
 ### Pain Gate

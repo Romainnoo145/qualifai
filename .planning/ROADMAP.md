@@ -112,15 +112,15 @@ Plans:
 **Success Criteria** (what must be TRUE):
 
 1. Static pages attempt Scrapling stealth fetch first; only pages returning fewer than 500 characters escalate to Crawl4AI browser extraction
-2. Pages with source types REVIEWS, CAREERS, or JOB_BOARD route directly through Crawl4AI without attempting stealth first
+2. REVIEWS URLs and URLs with `jsHeavyHint=true` route directly through Crawl4AI without attempting stealth first; CAREERS and JOB_BOARD own-website pages go stealth-first to avoid wasting browser budget on static HTML
 3. A single research run never uses browser extraction on more than 5 URLs — the pipeline enforces this cap regardless of how many JS-heavy pages are discovered
 
 **Plans:** 2/2 plans complete
 
 Plans:
 
-- [ ] 29-01-PLAN.md — Two-tier extraction routing with TDD (browser-direct, 500-char escalation, 5-URL budget cap)
-- [ ] 29-02-PLAN.md — Wire jsHeavyHints from research executor sourceSet
+- [x] 29-01-PLAN.md — Two-tier extraction routing with TDD (browser-direct, 500-char escalation, 5-URL budget cap)
+- [x] 29-02-PLAN.md — Wire jsHeavyHints from research executor sourceSet
 
 ---
 
