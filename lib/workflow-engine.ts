@@ -101,6 +101,8 @@ export interface HypothesisDraft {
   revenueLeakageRecoveredLow: number;
   revenueLeakageRecoveredMid: number;
   revenueLeakageRecoveredHigh: number;
+  /** ANLYS-09: primary evidence source type that drove this hypothesis (null if not resolved) */
+  primarySourceType: string | null;
 }
 
 export interface OpportunityDraft {
@@ -875,10 +877,14 @@ After the closing </reasoning> tag, output ONLY the JSON array. No other text.
         );
       }
 
-      // Map evidenceRefs from URLs to IDs
-      const resolvedRefs = (item.evidenceRefs ?? [])
-        .map((ref: string) => urlToId.get(ref))
-        .filter((id): id is string => id !== undefined);
+      // Map evidenceRefs from URLs to IDs (deduplicate — LLM may repeat URLs)
+      const resolvedRefs = [
+        ...new Set(
+          (item.evidenceRefs ?? [])
+            .map((ref: string) => urlToId.get(ref))
+            .filter((id): id is string => id !== undefined),
+        ),
+      ];
       const evidenceRefIds = resolvedRefs.length > 0 ? resolvedRefs : fallback;
 
       const workflowTag = VALID_WORKFLOW_TAGS.has(item.workflowTag)
@@ -907,6 +913,8 @@ After the closing </reasoning> tag, output ONLY the JSON array. No other text.
           ? item.validationQuestions.map(String)
           : [],
         ...METRIC_DEFAULTS,
+        // ANLYS-09: stub — will be replaced in Phase 34 Plan 02 implementation
+        primarySourceType: null,
       };
     });
   } catch (err) {
@@ -964,6 +972,7 @@ function generateFallbackHypothesisDrafts(
         revenueLeakageRecoveredLow: 450,
         revenueLeakageRecoveredMid: 900,
         revenueLeakageRecoveredHigh: 1800,
+        primarySourceType: null,
       },
       {
         title: 'Field-to-office reporting creates rework',
@@ -987,6 +996,7 @@ function generateFallbackHypothesisDrafts(
         revenueLeakageRecoveredLow: 350,
         revenueLeakageRecoveredMid: 700,
         revenueLeakageRecoveredHigh: 1450,
+        primarySourceType: null,
       },
       {
         title: 'Quote-to-invoice workflow leaks margin on change orders',
@@ -1010,6 +1020,7 @@ function generateFallbackHypothesisDrafts(
         revenueLeakageRecoveredLow: 600,
         revenueLeakageRecoveredMid: 1400,
         revenueLeakageRecoveredHigh: 3000,
+        primarySourceType: null,
       },
     ];
   }
@@ -1038,6 +1049,7 @@ function generateFallbackHypothesisDrafts(
       revenueLeakageRecoveredLow: 450,
       revenueLeakageRecoveredMid: 900,
       revenueLeakageRecoveredHigh: 1800,
+      primarySourceType: null,
     },
     {
       title: 'Internal handoffs lose context and create rework',
@@ -1061,6 +1073,7 @@ function generateFallbackHypothesisDrafts(
       revenueLeakageRecoveredLow: 350,
       revenueLeakageRecoveredMid: 700,
       revenueLeakageRecoveredHigh: 1450,
+      primarySourceType: null,
     },
     {
       title: 'Quote-to-invoice workflow leaks margin',
@@ -1084,6 +1097,7 @@ function generateFallbackHypothesisDrafts(
       revenueLeakageRecoveredLow: 600,
       revenueLeakageRecoveredMid: 1400,
       revenueLeakageRecoveredHigh: 3000,
+      primarySourceType: null,
     },
   ];
 }

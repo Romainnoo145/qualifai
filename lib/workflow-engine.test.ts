@@ -1049,5 +1049,110 @@ describe('workflow-engine', () => {
       expect(result[0]?.title).toBeTruthy();
       expect(result[0]?.title).not.toBe('');
     });
+
+    it('MODEL-03: Gemini path returns AI-derived hoursSavedWeekMid (not METRIC_DEFAULTS)', async () => {
+      mockGenerateContent.mockResolvedValueOnce(
+        makeHypothesisResponse([
+          {
+            title: 'Planning bottleneck',
+            problemStatement:
+              '"We always have to wait" indicates approval delays.',
+            hoursSavedWeekLow: 5,
+            hoursSavedWeekMid: 12,
+            hoursSavedWeekHigh: 18,
+          },
+        ]),
+      );
+      const result = await generateHypothesisDraftsAI(
+        standardEvidence,
+        standardContext,
+        ['planning'],
+      );
+      expect(result[0]?.hoursSavedWeekMid).toBe(12); // NOT 8 (METRIC_DEFAULTS)
+    });
+
+    it('MODEL-03: Claude path returns AI-derived revenueLeakageRecoveredMid (not METRIC_DEFAULTS)', async () => {
+      mockAnthropicCreate.mockResolvedValueOnce(
+        makeClaudeHypothesisResponse([
+          {
+            title: 'Planning bottleneck',
+            problemStatement:
+              '"We always have to wait" indicates approval delays.',
+            revenueLeakageRecoveredLow: 350,
+            revenueLeakageRecoveredMid: 1200,
+            revenueLeakageRecoveredHigh: 3500,
+          },
+        ]),
+      );
+      const result = await generateHypothesisDraftsAI(
+        standardEvidence,
+        standardContext,
+        ['planning'],
+        'claude-sonnet',
+      );
+      expect(result[0]?.revenueLeakageRecoveredMid).toBe(1200); // NOT 900 (METRIC_DEFAULTS)
+    });
+
+    it('MODEL-03: clamps out-of-range hoursSavedWeekMid to valid bounds', async () => {
+      mockGenerateContent.mockResolvedValueOnce(
+        makeHypothesisResponse([
+          {
+            title: 'Planning bottleneck',
+            problemStatement:
+              '"We always have to wait" indicates approval delays.',
+            hoursSavedWeekLow: 200, // way out of range
+            hoursSavedWeekMid: 200,
+            hoursSavedWeekHigh: 200,
+          },
+        ]),
+      );
+      const result = await generateHypothesisDraftsAI(
+        standardEvidence,
+        standardContext,
+        ['planning'],
+      );
+      // Clamped value should be exactly 80 (max bound), not 200 (raw LLM) and not 8 (METRIC_DEFAULTS)
+      expect(result[0]?.hoursSavedWeekMid).toBe(80);
+    });
+
+    it('ANLYS-09: Gemini path resolves primarySourceType from AI output', async () => {
+      mockGenerateContent.mockResolvedValueOnce(
+        makeHypothesisResponse([
+          {
+            title: 'Planning bottleneck',
+            problemStatement:
+              '"We always have to wait" indicates approval delays.',
+            primarySourceType: 'REVIEWS',
+          },
+        ]),
+      );
+      const result = await generateHypothesisDraftsAI(
+        standardEvidence,
+        standardContext,
+        ['planning'],
+      );
+      expect(result[0]).toHaveProperty('primarySourceType');
+      expect(result[0]?.primarySourceType).toBe('REVIEWS');
+    });
+
+    it('ANLYS-09: invalid primarySourceType from AI falls back to null', async () => {
+      mockGenerateContent.mockResolvedValueOnce(
+        makeHypothesisResponse([
+          {
+            title: 'Planning bottleneck',
+            problemStatement:
+              '"We always have to wait" indicates approval delays.',
+            primarySourceType: 'EMPLOYEE_REVIEW', // invalid enum value
+          },
+        ]),
+      );
+      const result = await generateHypothesisDraftsAI(
+        standardEvidence,
+        standardContext,
+        ['planning'],
+      );
+      expect(result[0]).toHaveProperty('primarySourceType');
+      expect(result[0]?.primarySourceType).toBeNull();
+    });
   });
 });
