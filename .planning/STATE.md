@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 31 of 35 (Tech Debt Foundation)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-02 — v3.0 roadmap created, phases 31-35 defined
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-03-02 — Plan 31-01 complete (SERP cache fix, logoUrl cleanup, import ordering, Gemini constant)
 
 Progress: [████████████████████░░░░░░░░░░] 66% (30 phases complete across 7 milestones)
 
@@ -51,6 +51,8 @@ Recent decisions affecting v3.0:
 - v3.0 research: METRIC_DEFAULTS retained as last-resort fallback (not deleted) pending consumer audit
 - v3.0 research: No new npm dependencies — existing @anthropic-ai/sdk ^0.73.0 covers Claude integration
 - v3.0 research: generateWorkflowLossMapContent() must be audited before Phase 34 planning begins
+- Phase 31-01: SERP cache guard uses only useSerpFromSourceSet (no backward-compat serpCache fallback needed)
+- Phase 31-01: GEMINI_MODEL_FLASH = 'gemini-2.5-flash' — model upgraded as part of constant extraction; name not version-specific to allow Phase 33 changes
 
 ### Pending Todos
 
@@ -67,5 +69,5 @@ Recent decisions affecting v3.0:
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: v3.0 roadmap created (phases 31-35) — ready to plan Phase 31
+Stopped at: Completed 31-01-PLAN.md — SERP cache fix, logoUrl cleanup, import ordering, Gemini constant (2 tasks, 2 commits)
 Resume file: None

@@ -22,7 +22,7 @@ Requirements for v3.0 release. Each maps to roadmap phases.
 ### Model & Metrics
 
 - [ ] **MODEL-01**: Hypothesis generation supports configurable model selection (Gemini Flash vs Claude) via env var
-- [ ] **MODEL-02**: Gemini model string upgraded from `gemini-2.0-flash` to `gemini-2.5-flash` across all files
+- [x] **MODEL-02**: Gemini model string upgraded from `gemini-2.0-flash` to `gemini-2.5-flash` across all files
 - [ ] **MODEL-03**: AI-estimated metric ranges (hours saved, handoff speed, error reduction, revenue leakage) replace hardcoded METRIC_DEFAULTS — contextual to each prospect's industry and evidence
 
 ### Validation & Calibration
@@ -33,11 +33,11 @@ Requirements for v3.0 release. Each maps to roadmap phases.
 
 ### Tech Debt
 
-- [ ] **DEBT-01**: SERP cache re-read after overwrite bug fixed in research-executor.ts (pre-read snapshot before overwrite in deepCrawl block)
-- [ ] **DEBT-02**: Unused logoUrl prop removed from DashboardClient interface and all call sites
+- [x] **DEBT-01**: SERP cache re-read after overwrite bug fixed in research-executor.ts (pre-read snapshot before overwrite in deepCrawl block)
+- [x] **DEBT-02**: Unused logoUrl prop removed from DashboardClient interface and all call sites
 - [ ] **DEBT-03**: E2E send test refactored to use tRPC quality gate instead of calling Resend directly
 - [ ] **DEBT-04**: Detail-view Prisma `as any` cast replaced with narrow typed cast
-- [ ] **DEBT-05**: Import ordering anomaly fixed in workflow-engine.ts (move import block to top)
+- [x] **DEBT-05**: Import ordering anomaly fixed in workflow-engine.ts (move import block to top)
 - [ ] **DEBT-06**: TS2589 deep Prisma `as any` casts cleaned up — categorized into 3 types (deep inference, tRPC mutation, Json field access), each fixed with appropriate pattern
 
 ## Future Requirements
@@ -70,29 +70,29 @@ Deferred to future release. Tracked but not in current roadmap.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| ANLYS-01    | 32    | Pending |
-| ANLYS-02    | 32    | Pending |
-| ANLYS-03    | 32    | Pending |
-| ANLYS-04    | 32    | Pending |
-| ANLYS-05    | 32    | Pending |
-| ANLYS-06    | 32    | Pending |
-| ANLYS-07    | 32    | Pending |
-| ANLYS-08    | 33    | Pending |
-| ANLYS-09    | 34    | Pending |
-| MODEL-01    | 33    | Pending |
-| MODEL-02    | 31    | Pending |
-| MODEL-03    | 34    | Pending |
-| VALID-01    | 35    | Pending |
-| VALID-02    | 35    | Pending |
-| VALID-03    | 35    | Pending |
-| DEBT-01     | 31    | Pending |
-| DEBT-02     | 31    | Pending |
-| DEBT-03     | 31    | Pending |
-| DEBT-04     | 31    | Pending |
-| DEBT-05     | 31    | Pending |
-| DEBT-06     | 31    | Pending |
+| Requirement | Phase | Status   |
+| ----------- | ----- | -------- |
+| ANLYS-01    | 32    | Pending  |
+| ANLYS-02    | 32    | Pending  |
+| ANLYS-03    | 32    | Pending  |
+| ANLYS-04    | 32    | Pending  |
+| ANLYS-05    | 32    | Pending  |
+| ANLYS-06    | 32    | Pending  |
+| ANLYS-07    | 32    | Pending  |
+| ANLYS-08    | 33    | Pending  |
+| ANLYS-09    | 34    | Pending  |
+| MODEL-01    | 33    | Pending  |
+| MODEL-02    | 31    | Complete |
+| MODEL-03    | 34    | Pending  |
+| VALID-01    | 35    | Pending  |
+| VALID-02    | 35    | Pending  |
+| VALID-03    | 35    | Pending  |
+| DEBT-01     | 31    | Complete |
+| DEBT-02     | 31    | Complete |
+| DEBT-03     | 31    | Pending  |
+| DEBT-04     | 31    | Pending  |
+| DEBT-05     | 31    | Complete |
+| DEBT-06     | 31    | Pending  |
 
 **Coverage:**
 
