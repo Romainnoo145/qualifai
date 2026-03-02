@@ -137,7 +137,12 @@ Plans:
 2. Passing hypothesisModel: 'gemini-flash' (or omitting the field) produces hypotheses via Gemini, unchanged from Phase 32 output — backward-compatible default
 3. Both models parse to the same hypothesis JSON shape with no runtime errors
 4. Chain-of-thought pass is observable: reasoning section present in raw model output before synthesis step
-   **Plans**: TBD
+   **Plans**: 2 plans
+
+Plans:
+
+- [ ] 33-01-PLAN.md — TDD RED scaffold: upgrade Anthropic mock + MODEL-01 and ANLYS-08 failing test cases
+- [ ] 33-02-PLAN.md — Implementation: CLAUDE_MODEL_SONNET constant, CoT prompt, extractHypothesisJson helper, Claude path, parameter threading through tRPC/executor
 
 ### Phase 34: AI Metric Derivation + Source Attribution
 
@@ -197,6 +202,6 @@ Plans:
 | 30. Pain Confirmation Gate + Audit     | v2.2      | 4/4            | Complete    | 2026-03-02 |
 | 31. Tech Debt Foundation               | 3/3       | Complete       | 2026-03-02  | -          |
 | 32. Hypothesis Prompt Rewrite          | 2/2       | Complete       | 2026-03-02  | -          |
-| 33. Configurable Model Selection       | v3.0      | 0/TBD          | Not started | -          |
+| 33. Configurable Model Selection       | v3.0      | 0/2            | Planned     | -          |
 | 34. AI Metric Derivation + Attribution | v3.0      | 0/TBD          | Not started | -          |
 | 35. Validation and Calibration         | v3.0      | 0/TBD          | Not started | -          |
