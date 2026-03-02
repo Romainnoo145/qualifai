@@ -9,13 +9,13 @@ Requirements for v3.0 release. Each maps to roadmap phases.
 
 ### Analysis Quality
 
-- [ ] **ANLYS-01**: Hypothesis prompt prioritizes REVIEWS, CAREERS, and LINKEDIN evidence over WEBSITE content via explicit source-tier instruction
-- [ ] **ANLYS-02**: Hypothesis prompt labels each source type diagnostically (what the signal means: reviews = customer pain, careers = operational gaps, website = marketing context only)
-- [ ] **ANLYS-03**: Hypothesis prompt includes anti-parroting constraint preventing derivation from company's own marketing copy
-- [ ] **ANLYS-04**: Each hypothesis problemStatement includes at least one mandatory quoted snippet from a non-WEBSITE evidence source
-- [ ] **ANLYS-05**: Source signal summary (counts by tier) injected above evidence block to prime LLM reasoning
-- [ ] **ANLYS-06**: Hypothesis count varies 1-3 based on confirmed pain tag evidence quality (not forced 3)
-- [ ] **ANLYS-07**: Confidence score instruction maps score tiers to evidence quality levels (REVIEWS 0.80-0.95, hiring 0.70-0.80, website-only 0.60-0.65)
+- [x] **ANLYS-01**: Hypothesis prompt prioritizes REVIEWS, CAREERS, and LINKEDIN evidence over WEBSITE content via explicit source-tier instruction
+- [x] **ANLYS-02**: Hypothesis prompt labels each source type diagnostically (what the signal means: reviews = customer pain, careers = operational gaps, website = marketing context only)
+- [x] **ANLYS-03**: Hypothesis prompt includes anti-parroting constraint preventing derivation from company's own marketing copy
+- [x] **ANLYS-04**: Each hypothesis problemStatement includes at least one mandatory quoted snippet from a non-WEBSITE evidence source
+- [x] **ANLYS-05**: Source signal summary (counts by tier) injected above evidence block to prime LLM reasoning
+- [x] **ANLYS-06**: Hypothesis count varies 1-3 based on confirmed pain tag evidence quality (not forced 3)
+- [x] **ANLYS-07**: Confidence score instruction maps score tiers to evidence quality levels (REVIEWS 0.80-0.95, hiring 0.70-0.80, website-only 0.60-0.65)
 - [ ] **ANLYS-08**: Two-pass chain-of-thought reasoning separates evidence analysis from hypothesis synthesis
 - [ ] **ANLYS-09**: Primary source attribution badge (sourceType that most drove each hypothesis) displayed per hypothesis in admin detail view
 
@@ -72,13 +72,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status   |
 | ----------- | ----- | -------- |
-| ANLYS-01    | 32    | Pending  |
-| ANLYS-02    | 32    | Pending  |
-| ANLYS-03    | 32    | Pending  |
-| ANLYS-04    | 32    | Pending  |
-| ANLYS-05    | 32    | Pending  |
-| ANLYS-06    | 32    | Pending  |
-| ANLYS-07    | 32    | Pending  |
+| ANLYS-01    | 32    | Complete |
+| ANLYS-02    | 32    | Complete |
+| ANLYS-03    | 32    | Complete |
+| ANLYS-04    | 32    | Complete |
+| ANLYS-05    | 32    | Complete |
+| ANLYS-06    | 32    | Complete |
+| ANLYS-07    | 32    | Complete |
 | ANLYS-08    | 33    | Pending  |
 | ANLYS-09    | 34    | Pending  |
 | MODEL-01    | 33    | Pending  |
