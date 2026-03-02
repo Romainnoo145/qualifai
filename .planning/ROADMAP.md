@@ -196,7 +196,7 @@ Plans:
 | 29. Browser-Rendered Extraction        | v2.2      | 2/2            | Complete    | 2026-03-02 |
 | 30. Pain Confirmation Gate + Audit     | v2.2      | 4/4            | Complete    | 2026-03-02 |
 | 31. Tech Debt Foundation               | 3/3       | Complete       | 2026-03-02  | -          |
-| 32. Hypothesis Prompt Rewrite          | v3.0      | 0/2            | Not started | -          |
+| 32. Hypothesis Prompt Rewrite          | 1/2       | In Progress    |             | -          |
 | 33. Configurable Model Selection       | v3.0      | 0/TBD          | Not started | -          |
 | 34. AI Metric Derivation + Attribution | v3.0      | 0/TBD          | Not started | -          |
 | 35. Validation and Calibration         | v3.0      | 0/TBD          | Not started | -          |

@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service Klarifai actually delivers.
-**Current focus:** Phase 31 — Tech Debt Foundation
+**Current focus:** Phase 32 — Hypothesis Prompt Rewrite
 
 ## Current Position
 
-Phase: 31 of 35 (Tech Debt Foundation)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-03-02 — Plan 31-03 complete (tRPC quality gate E2E test + golden baseline JSON for all 7 prospects)
+Phase: 32 of 35 (Hypothesis Prompt Rewrite)
+Plan: 1 of 3 in current phase
+Status: Plan 01 complete (TDD RED scaffold)
+Last activity: 2026-03-02 — Plan 32-01 complete (TDD RED scaffold: Gemini mock + 9 failing ANLYS tests, 20 existing tests pass)
 
 Progress: [████████████████████░░░░░░░░░░] 66% (30 phases complete across 7 milestones)
 
@@ -57,6 +57,7 @@ Recent decisions affecting v3.0:
 - Phase 31-01: GEMINI_MODEL_FLASH = 'gemini-2.5-flash' — model upgraded as part of constant extraction; name not version-specific to allow Phase 33 changes
 - [Phase 31]: Prisma.ResearchRunGetPayload replaces TS2589 as any casts in detail view; tRPC v11 inference gaps kept as any with TODO comment
 - Phase 31-03: tRPC quality gate E2E test uses appRouter.createCaller with module-level vi.mock; sendOutreachEmail mocked after gate so full gate logic runs
+- Phase 32-01: TDD RED scaffold — Gemini mock (vi.mock @google/generative-ai) with module-level lastCapturedPrompt capture; confirmedPainTags: string[] = [] added to generateHypothesisDraftsAI signature; 9 tests fail RED for correct ANLYS reasons
 
 ### Pending Todos
 
@@ -73,5 +74,5 @@ Recent decisions affecting v3.0:
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 31-03-PLAN.md — tRPC quality gate E2E test + golden baseline capture (2 tasks, 2 commits). Phase 31 complete.
+Stopped at: Completed 32-01-PLAN.md — TDD RED scaffold for ANLYS-01 through ANLYS-07 (1 task, 1 commit). Plan 32-01 complete.
 Resume file: None
