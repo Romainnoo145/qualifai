@@ -623,6 +623,16 @@ interface AIHypothesisItem {
   workflowTag: string;
   confidenceScore: number;
   evidenceRefs: string[];
+  // MODEL-03: AI-derived metric ranges
+  primarySourceType?: string;
+  hoursSavedWeekLow?: number;
+  hoursSavedWeekMid?: number;
+  hoursSavedWeekHigh?: number;
+  handoffSpeedGainPct?: number;
+  errorReductionPct?: number;
+  revenueLeakageRecoveredLow?: number;
+  revenueLeakageRecoveredMid?: number;
+  revenueLeakageRecoveredHigh?: number;
 }
 
 /**
@@ -660,6 +670,39 @@ export async function generateHypothesisDraftsAI(
     revenueLeakageRecoveredMid: 900,
     revenueLeakageRecoveredHigh: 2000,
   };
+
+  // MODEL-03: Clamp helpers — validate AI-derived metric values and sort low/mid/high ascending
+  const clampInt = (
+    val: unknown,
+    lo: number,
+    hi: number,
+    def: number,
+  ): number => {
+    if (typeof val !== 'number' || isNaN(val)) return def;
+    return Math.round(Math.min(hi, Math.max(lo, val)));
+  };
+  const clampFloat = (
+    val: unknown,
+    lo: number,
+    hi: number,
+    def: number,
+  ): number => {
+    if (typeof val !== 'number' || isNaN(val)) return def;
+    return Math.min(hi, Math.max(lo, val));
+  };
+  // ANLYS-09: Allowed source type values for primarySourceType validation
+  const VALID_SOURCE_TYPES = new Set([
+    'WEBSITE',
+    'DOCS',
+    'CAREERS',
+    'HELP_CENTER',
+    'JOB_BOARD',
+    'REVIEWS',
+    'MANUAL_URL',
+    'REGISTRY',
+    'LINKEDIN',
+    'NEWS',
+  ]);
 
   const VALID_WORKFLOW_TAGS = new Set([
     // Universal
@@ -790,6 +833,12 @@ Each hypothesis MUST:
    - WEBSITE-only (marketing context — lowest confidence): 0.60-0.65
    - Do NOT score website-derived hypotheses above 0.65
 5. Include 2-3 evidenceRefs (sourceUrls of the non-WEBSITE items that support the hypothesis)
+6. Estimate operational impact metrics based on the evidence and company context:
+   - hoursSavedWeekLow / hoursSavedWeekMid / hoursSavedWeekHigh (integer, per week): conservative / expected / optimistic estimate. Dutch SMBs (10-50 employees): typical low=2-8, mid=4-14, high=6-20. Larger firms (50-200): adjust upward. Calibrate to problem scope.
+   - handoffSpeedGainPct (float, 1-90): percent reduction in inter-team handoff time. Typical: 15-45.
+   - errorReductionPct (float, 1-90): percent reduction in data errors or rework. Typical: 10-35.
+   - revenueLeakageRecoveredLow / Mid / High (integer EUR/month): conservative / expected / optimistic monthly revenue leakage recovery. Dutch SMB baseline: 200-5000/month depending on industry.
+   - primarySourceType: the source type label (e.g. "REVIEWS", "CAREERS", "LINKEDIN") of the single evidence item that most strongly supports this hypothesis.
 
 Before generating the hypothesis JSON, produce a brief evidence analysis in this exact format:
 
@@ -808,7 +857,16 @@ After the closing </reasoning> tag, output ONLY the JSON array. No other text.
     "validationQuestions": ["...", "..."],
     "workflowTag": "...",
     "confidenceScore": 0.0,
-    "evidenceRefs": ["<sourceUrl>", "..."]
+    "evidenceRefs": ["<sourceUrl>", "..."],
+    "primarySourceType": "REVIEWS",
+    "hoursSavedWeekLow": 4,
+    "hoursSavedWeekMid": 10,
+    "hoursSavedWeekHigh": 16,
+    "handoffSpeedGainPct": 25,
+    "errorReductionPct": 18,
+    "revenueLeakageRecoveredLow": 300,
+    "revenueLeakageRecoveredMid": 800,
+    "revenueLeakageRecoveredHigh": 2000
   }
 ]`;
 
@@ -912,9 +970,75 @@ After the closing </reasoning> tag, output ONLY the JSON array. No other text.
         validationQuestions: Array.isArray(item.validationQuestions)
           ? item.validationQuestions.map(String)
           : [],
-        ...METRIC_DEFAULTS,
-        // ANLYS-09: stub — will be replaced in Phase 34 Plan 02 implementation
-        primarySourceType: null,
+        // ANLYS-09: Validate primarySourceType against known enum
+        primarySourceType: VALID_SOURCE_TYPES.has(
+          String(item.primarySourceType ?? ''),
+        )
+          ? String(item.primarySourceType)
+          : null,
+        // MODEL-03: Per-field clamp with METRIC_DEFAULTS fallback — sort low/mid/high ascending
+        ...(() => {
+          const hSorted = [
+            clampInt(
+              item.hoursSavedWeekLow,
+              1,
+              80,
+              METRIC_DEFAULTS.hoursSavedWeekLow,
+            ),
+            clampInt(
+              item.hoursSavedWeekMid,
+              1,
+              80,
+              METRIC_DEFAULTS.hoursSavedWeekMid,
+            ),
+            clampInt(
+              item.hoursSavedWeekHigh,
+              1,
+              80,
+              METRIC_DEFAULTS.hoursSavedWeekHigh,
+            ),
+          ].sort((a, b) => a - b) as [number, number, number];
+          const rSorted = [
+            clampInt(
+              item.revenueLeakageRecoveredLow,
+              0,
+              50000,
+              METRIC_DEFAULTS.revenueLeakageRecoveredLow,
+            ),
+            clampInt(
+              item.revenueLeakageRecoveredMid,
+              0,
+              50000,
+              METRIC_DEFAULTS.revenueLeakageRecoveredMid,
+            ),
+            clampInt(
+              item.revenueLeakageRecoveredHigh,
+              0,
+              50000,
+              METRIC_DEFAULTS.revenueLeakageRecoveredHigh,
+            ),
+          ].sort((a, b) => a - b) as [number, number, number];
+          return {
+            hoursSavedWeekLow: hSorted[0],
+            hoursSavedWeekMid: hSorted[1],
+            hoursSavedWeekHigh: hSorted[2],
+            handoffSpeedGainPct: clampFloat(
+              item.handoffSpeedGainPct,
+              1,
+              90,
+              METRIC_DEFAULTS.handoffSpeedGainPct,
+            ),
+            errorReductionPct: clampFloat(
+              item.errorReductionPct,
+              1,
+              90,
+              METRIC_DEFAULTS.errorReductionPct,
+            ),
+            revenueLeakageRecoveredLow: rSorted[0],
+            revenueLeakageRecoveredMid: rSorted[1],
+            revenueLeakageRecoveredHigh: rSorted[2],
+          };
+        })(),
       };
     });
   } catch (err) {
