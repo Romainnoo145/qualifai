@@ -208,5 +208,5 @@ Plans:
 | 31. Tech Debt Foundation               | 3/3       | Complete       | 2026-03-02  | -          |
 | 32. Hypothesis Prompt Rewrite          | 2/2       | Complete       | 2026-03-02  | -          |
 | 33. Configurable Model Selection       | 2/2       | Complete       | 2026-03-02  | -          |
-| 34. AI Metric Derivation + Attribution | v3.0      | 0/TBD          | Not started | -          |
+| 34. AI Metric Derivation + Attribution | 1/2       | In Progress    |             | -          |
 | 35. Validation and Calibration         | v3.0      | 0/TBD          | Not started | -          |
