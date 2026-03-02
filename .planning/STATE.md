@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 33 of 35 (Configurable Model Selection)
-Plan: 1 of 3 in current phase
-Status: Plan 01 complete (TDD RED scaffold — MODEL-01 + ANLYS-08 failing tests)
-Last activity: 2026-03-02 — Plan 33-01 complete (configurable Anthropic mock + 5 new test cases + hypothesisModel parameter stub; 7 ANLYS tests GREEN, MODEL-01 Claude path + ANLYS-08 CoT prompt test RED for correct reasons)
+Plan: 2 of 3 in current phase
+Status: Plan 02 complete (Implementation — MODEL-01 Claude path + ANLYS-08 CoT prompt GREEN)
+Last activity: 2026-03-02 — Plan 33-02 complete (Claude Sonnet path via Anthropic SDK + extractHypothesisJson + CoT prompt + hypothesisModel threading tRPC→executor→function + inputSnapshot persistence; all MODEL-01 + ANLYS-08 tests GREEN)
 
 Progress: [████████████████████░░░░░░░░░░] 66% (30 phases complete across 7 milestones)
 
@@ -60,6 +60,7 @@ Recent decisions affecting v3.0:
 - Phase 32-01: TDD RED scaffold — Gemini mock (vi.mock @google/generative-ai) with module-level lastCapturedPrompt capture; confirmedPainTags: string[] = [] added to generateHypothesisDraftsAI signature; 9 tests fail RED for correct ANLYS reasons
 - Phase 32-02: Prompt rewrite — SOURCE TYPE GUIDE + ANTI-PARROTING RULE + signal summary + dynamic count (targetCount from confirmedPainTags.length) + source-calibrated confidence table (REVIEWS 0.80-0.95, CAREERS/LINKEDIN 0.70-0.80, WEBSITE 0.60-0.65) + hasQuote() post-parse validation; all 7 ANLYS tests GREEN; research-executor.ts call site passes gate.confirmedPainTags
 - Phase 33-01: TDD RED scaffold — mockAnthropicCreate vi.fn() replacing hardcoded rejection stub; makeClaudeHypothesisResponse factory with <reasoning>+JSON shape; hypothesisModel: 'gemini-flash' | 'claude-sonnet' = 'gemini-flash' parameter added to generateHypothesisDraftsAI (void stub); 5 new tests (MODEL-01 x3, ANLYS-08 x2); 2 RED for correct reasons (Claude path not routed, CoT prompt not added)
+- Phase 33-02: Implementation — CLAUDE_MODEL_SONNET = 'claude-sonnet-4-5'; getAnthropicClient() lazy init; extractHypothesisJson() shared helper strips <reasoning> before JSON parse; CoT prompt block added; model branching (claude-sonnet → Anthropic SDK, else → Gemini); hypothesisModel threaded tRPC startRun → executeResearchRun → generateHypothesisDraftsAI; persisted in all 4 inputSnapshot writes; retryRun reads from snapshot; all MODEL-01 + ANLYS-08 GREEN
 
 ### Pending Todos
 
@@ -76,5 +77,5 @@ Recent decisions affecting v3.0:
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 33-01-PLAN.md — TDD RED scaffold (1 task, 1 commit: 8fe400c). Plan 33-01 complete.
+Stopped at: Completed 33-02-PLAN.md — Implementation (2 tasks, 2 commits: c5f7555, 886122a). Plan 33-02 complete.
 Resume file: None
