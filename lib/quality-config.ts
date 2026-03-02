@@ -32,6 +32,15 @@ export const GREEN_MIN_SOURCE_TYPES = 3;
 /** Minimum average confidence score (secondary signal — computed over items with aiRelevance >= 0.50 only) */
 export const MIN_AVERAGE_CONFIDENCE = 0.55;
 
+/**
+ * Minimum number of distinct sourceType values required for a workflowTag
+ * to be considered "confirmed" (cross-source pain signal).
+ *
+ * GATE-01: A pain tag backed by 2+ distinct sourceTypes is confirmed.
+ * Advisory-only (GATE-03): unconfirmed tags do NOT block outreach.
+ */
+export const PAIN_CONFIRMATION_MIN_SOURCES = 2;
+
 /** Traffic light tier for prospect quality gating */
 export type TrafficLight = 'red' | 'amber' | 'green';
 

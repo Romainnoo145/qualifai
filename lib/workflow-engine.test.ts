@@ -25,6 +25,7 @@ const mockDb = {
 
 import {
   buildCalBookingUrl,
+  computePainTagConfirmation,
   CTA_STEP_1,
   CTA_STEP_2,
   createWorkflowLossMapDraft,
@@ -262,5 +263,208 @@ describe('workflow-engine', () => {
     expect(url).toContain('name=Jane+Doe');
     expect(url).toContain('email=jane%40example.com');
     expect(url).toContain('company=Example+BV');
+  });
+
+  describe('computePainTagConfirmation', () => {
+    it('confirms a tag backed by 2+ distinct sourceTypes', () => {
+      const result = computePainTagConfirmation([
+        {
+          id: 'e1',
+          sourceType: 'WEBSITE',
+          workflowTag: 'planning',
+          confidenceScore: 0.7,
+          metadata: { adapter: 'web-ingestion' },
+        },
+        {
+          id: 'e2',
+          sourceType: 'REVIEWS',
+          workflowTag: 'planning',
+          confidenceScore: 0.8,
+          metadata: { adapter: 'live-review-ingestion' },
+        },
+        {
+          id: 'e3',
+          sourceType: 'CAREERS',
+          workflowTag: 'planning',
+          confidenceScore: 0.75,
+          metadata: { adapter: 'web-ingestion' },
+        },
+      ]);
+
+      expect(result.confirmedPainTags).toContain('planning');
+      expect(result.unconfirmedPainTags).not.toContain('planning');
+    });
+
+    it('marks a tag with only 1 distinct sourceType as unconfirmed', () => {
+      const result = computePainTagConfirmation([
+        {
+          id: 'e1',
+          sourceType: 'WEBSITE',
+          workflowTag: 'handoff',
+          confidenceScore: 0.7,
+          metadata: { adapter: 'web-ingestion' },
+        },
+        {
+          id: 'e2',
+          sourceType: 'WEBSITE',
+          workflowTag: 'handoff',
+          confidenceScore: 0.65,
+          metadata: { adapter: 'web-ingestion' },
+        },
+      ]);
+
+      expect(result.unconfirmedPainTags).toContain('handoff');
+      expect(result.confirmedPainTags).not.toContain('handoff');
+    });
+
+    it('marks a tag with a single item as unconfirmed', () => {
+      const result = computePainTagConfirmation([
+        {
+          id: 'e1',
+          sourceType: 'REVIEWS',
+          workflowTag: 'billing',
+          confidenceScore: 0.72,
+          metadata: { adapter: 'live-review-ingestion' },
+        },
+      ]);
+
+      expect(result.unconfirmedPainTags).toContain('billing');
+      expect(result.confirmedPainTags).not.toContain('billing');
+    });
+
+    it('excludes placeholder items (notFound=true) from confirmation counting', () => {
+      const result = computePainTagConfirmation([
+        {
+          id: 'e1',
+          sourceType: 'WEBSITE',
+          workflowTag: 'planning',
+          confidenceScore: 0.7,
+          metadata: { adapter: 'web-ingestion' },
+        },
+        {
+          id: 'e2',
+          sourceType: 'REVIEWS',
+          workflowTag: 'planning',
+          confidenceScore: 0.0,
+          // notFound=true marks this as a placeholder — excluded
+          metadata: { notFound: true },
+        },
+      ]);
+
+      // Only 1 real sourceType (WEBSITE); REVIEWS item is placeholder
+      expect(result.unconfirmedPainTags).toContain('planning');
+      expect(result.confirmedPainTags).not.toContain('planning');
+    });
+
+    it('counts low-aiRelevance items for pain tag confirmation (not excluded like confidence average)', () => {
+      const result = computePainTagConfirmation([
+        {
+          id: 'e1',
+          sourceType: 'WEBSITE',
+          workflowTag: 'planning',
+          confidenceScore: 0.7,
+          metadata: { adapter: 'web-ingestion', aiRelevance: 0.3 },
+        },
+        {
+          id: 'e2',
+          sourceType: 'CAREERS',
+          workflowTag: 'planning',
+          confidenceScore: 0.6,
+          metadata: { adapter: 'web-ingestion', aiRelevance: 0.2 },
+        },
+      ]);
+
+      // Both items count (aiRelevance < 0.5 only excluded from confidence average, not pain tag counting)
+      expect(result.confirmedPainTags).toContain('planning');
+      expect(result.unconfirmedPainTags).not.toContain('planning');
+    });
+
+    it('tags with zero evidence do not appear in either list', () => {
+      const result = computePainTagConfirmation([
+        {
+          id: 'e1',
+          sourceType: 'WEBSITE',
+          workflowTag: 'planning',
+          confidenceScore: 0.7,
+          metadata: { adapter: 'web-ingestion' },
+        },
+      ]);
+
+      // 'handoff' has no evidence — should not appear in either list
+      expect(result.confirmedPainTags).not.toContain('handoff');
+      expect(result.unconfirmedPainTags).not.toContain('handoff');
+    });
+  });
+
+  describe('evaluateQualityGate pain tag arrays', () => {
+    it('includes confirmedPainTags and unconfirmedPainTags in quality gate output', () => {
+      const gate = evaluateQualityGate([
+        {
+          id: 'e1',
+          sourceType: 'WEBSITE',
+          workflowTag: 'planning',
+          confidenceScore: 0.72,
+          metadata: { adapter: 'web-ingestion' },
+        },
+        {
+          id: 'e2',
+          sourceType: 'CAREERS',
+          workflowTag: 'planning',
+          confidenceScore: 0.7,
+          metadata: { adapter: 'web-ingestion' },
+        },
+        {
+          id: 'e3',
+          sourceType: 'REVIEWS',
+          workflowTag: 'handoff',
+          confidenceScore: 0.75,
+          metadata: { adapter: 'live-review-ingestion' },
+        },
+      ]);
+
+      expect(gate).toHaveProperty('confirmedPainTags');
+      expect(gate).toHaveProperty('unconfirmedPainTags');
+      expect(Array.isArray(gate.confirmedPainTags)).toBe(true);
+      expect(Array.isArray(gate.unconfirmedPainTags)).toBe(true);
+      // 'planning' is confirmed (WEBSITE + CAREERS = 2 distinct sourceTypes)
+      expect(gate.confirmedPainTags).toContain('planning');
+      // 'handoff' has only REVIEWS (1 sourceType) → unconfirmed
+      expect(gate.unconfirmedPainTags).toContain('handoff');
+    });
+
+    it('unconfirmed pain tags do NOT cause gate.passed to become false', () => {
+      const gate = evaluateQualityGate([
+        {
+          id: 'e1',
+          sourceType: 'WEBSITE',
+          workflowTag: 'planning',
+          confidenceScore: 0.72,
+          metadata: { adapter: 'web-ingestion' },
+        },
+        {
+          id: 'e2',
+          sourceType: 'CAREERS',
+          workflowTag: 'handoff',
+          confidenceScore: 0.7,
+          metadata: { adapter: 'web-ingestion' },
+        },
+        {
+          id: 'e3',
+          sourceType: 'REVIEWS',
+          workflowTag: 'billing',
+          confidenceScore: 0.75,
+          metadata: { adapter: 'live-review-ingestion' },
+        },
+      ]);
+
+      // Each tag has only 1 sourceType → all unconfirmed
+      expect(gate.unconfirmedPainTags.length).toBeGreaterThan(0);
+      // But gate.passed must NOT be false due to unconfirmed tags (advisory-only, GATE-03)
+      expect(gate.passed).toBe(true);
+      // Reasons must not contain any pain tag confirmation failure message
+      expect(
+        gate.reasons.some((r) => r.toLowerCase().includes('pain tag')),
+      ).toBe(false);
+    });
   });
 });
