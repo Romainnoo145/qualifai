@@ -140,7 +140,14 @@ Plans:
 4. Every gate bypass is recorded in the `GateOverrideAudit` table with actor, timestamp, reason, gate type, and point-in-time gate snapshot — the record cannot be deleted
 5. Prospects where any gate was overridden display a "Bypassed" badge in the admin prospect list, and the full override history is visible on the research run detail view
 
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+
+- [ ] 30-01-PLAN.md — Cross-source pain tag confirmation with TDD (computePainTagConfirmation, QualityGateResult extension)
+- [ ] 30-02-PLAN.md — GateOverrideAudit schema migration + approveQuality audit write + listOverrideAudits query
+- [ ] 30-03-PLAN.md — Send queue pain confirmation signal + override reason textarea
+- [ ] 30-04-PLAN.md — Bypassed badge in prospect list + override history in detail view
 
 ---
 
@@ -174,4 +181,4 @@ Plans:
 | 27.1. Cal.com Booking Validation     | v2.1      | 1/1            | Complete    | 2026-03-01 |
 | 28. Source Discovery with Provenance | v2.2      | Complete       | 2026-03-01  | 2026-03-02 |
 | 29. Browser-Rendered Extraction      | 2/2       | Complete       | 2026-03-02  | -          |
-| 30. Pain Confirmation Gate + Audit   | v2.2      | 0/TBD          | Not started | -          |
+| 30. Pain Confirmation Gate + Audit   | v2.2      | 0/4            | Not started | -          |
