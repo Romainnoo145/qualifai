@@ -80,7 +80,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 **Milestone Goal:** Hypothesis generation that produces evidence-grounded, prospect-specific analysis — eliminating fabricated metrics, parroted marketing copy, and shallow website-only reasoning.
 
 - [x] **Phase 31: Tech Debt Foundation** — Fix known code defects and upgrade Gemini model string to establish a clean, passing build baseline before hypothesis changes (completed 2026-03-02)
-- [ ] **Phase 32: Hypothesis Prompt Rewrite** — Rewrite generateHypothesisDraftsAI() with evidence tiering, source-tier priority, anti-parroting constraint, mandatory quote requirement, and variable output count
+- [x] **Phase 32: Hypothesis Prompt Rewrite** — Rewrite generateHypothesisDraftsAI() with evidence tiering, source-tier priority, anti-parroting constraint, mandatory quote requirement, and variable output count (completed 2026-03-02)
 - [ ] **Phase 33: Configurable Model Selection** — Add Claude as a selectable hypothesis model with a provider abstraction, plus chain-of-thought reasoning pass
 - [ ] **Phase 34: AI Metric Derivation + Source Attribution** — Replace hardcoded METRIC_DEFAULTS with AI-estimated contextual ranges and surface source attribution in admin UI
 - [ ] **Phase 35: Validation and Calibration** — Verify /discover/ hypothesis flow, Crawl4AI v0.8.x feature set, and pain gate thresholds against real prospect data
@@ -196,7 +196,7 @@ Plans:
 | 29. Browser-Rendered Extraction        | v2.2      | 2/2            | Complete    | 2026-03-02 |
 | 30. Pain Confirmation Gate + Audit     | v2.2      | 4/4            | Complete    | 2026-03-02 |
 | 31. Tech Debt Foundation               | 3/3       | Complete       | 2026-03-02  | -          |
-| 32. Hypothesis Prompt Rewrite          | 1/2       | In Progress    |             | -          |
+| 32. Hypothesis Prompt Rewrite          | 2/2       | Complete       | 2026-03-02  | -          |
 | 33. Configurable Model Selection       | v3.0      | 0/TBD          | Not started | -          |
 | 34. AI Metric Derivation + Attribution | v3.0      | 0/TBD          | Not started | -          |
 | 35. Validation and Calibration         | v3.0      | 0/TBD          | Not started | -          |
