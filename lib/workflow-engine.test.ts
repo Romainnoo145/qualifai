@@ -531,6 +531,15 @@ describe('workflow-engine', () => {
       items: Array<{
         title: string;
         problemStatement: string;
+        primarySourceType?: string;
+        hoursSavedWeekLow?: number;
+        hoursSavedWeekMid?: number;
+        hoursSavedWeekHigh?: number;
+        handoffSpeedGainPct?: number;
+        errorReductionPct?: number;
+        revenueLeakageRecoveredLow?: number;
+        revenueLeakageRecoveredMid?: number;
+        revenueLeakageRecoveredHigh?: number;
       }>,
     ) => ({
       response: {
@@ -544,13 +553,38 @@ describe('workflow-engine', () => {
               workflowTag: 'planning',
               confidenceScore: 0.8,
               evidenceRefs: ['https://reviews.example.com/company-a'],
+              // MODEL-03: AI-derived metric fields
+              primarySourceType: item.primarySourceType ?? 'REVIEWS',
+              hoursSavedWeekLow: item.hoursSavedWeekLow ?? 5,
+              hoursSavedWeekMid: item.hoursSavedWeekMid ?? 12,
+              hoursSavedWeekHigh: item.hoursSavedWeekHigh ?? 18,
+              handoffSpeedGainPct: item.handoffSpeedGainPct ?? 32,
+              errorReductionPct: item.errorReductionPct ?? 25,
+              revenueLeakageRecoveredLow:
+                item.revenueLeakageRecoveredLow ?? 350,
+              revenueLeakageRecoveredMid:
+                item.revenueLeakageRecoveredMid ?? 1200,
+              revenueLeakageRecoveredHigh:
+                item.revenueLeakageRecoveredHigh ?? 3500,
             })),
           ),
       },
     });
 
     const makeClaudeHypothesisResponse = (
-      items: Array<{ title: string; problemStatement: string }>,
+      items: Array<{
+        title: string;
+        problemStatement: string;
+        primarySourceType?: string;
+        hoursSavedWeekLow?: number;
+        hoursSavedWeekMid?: number;
+        hoursSavedWeekHigh?: number;
+        handoffSpeedGainPct?: number;
+        errorReductionPct?: number;
+        revenueLeakageRecoveredLow?: number;
+        revenueLeakageRecoveredMid?: number;
+        revenueLeakageRecoveredHigh?: number;
+      }>,
     ) => ({
       id: 'msg_test',
       type: 'message',
@@ -567,6 +601,19 @@ describe('workflow-engine', () => {
               workflowTag: 'planning',
               confidenceScore: 0.85,
               evidenceRefs: ['https://reviews.example.com/company-a'],
+              // MODEL-03: AI-derived metric fields
+              primarySourceType: item.primarySourceType ?? 'REVIEWS',
+              hoursSavedWeekLow: item.hoursSavedWeekLow ?? 5,
+              hoursSavedWeekMid: item.hoursSavedWeekMid ?? 12,
+              hoursSavedWeekHigh: item.hoursSavedWeekHigh ?? 18,
+              handoffSpeedGainPct: item.handoffSpeedGainPct ?? 32,
+              errorReductionPct: item.errorReductionPct ?? 25,
+              revenueLeakageRecoveredLow:
+                item.revenueLeakageRecoveredLow ?? 350,
+              revenueLeakageRecoveredMid:
+                item.revenueLeakageRecoveredMid ?? 1200,
+              revenueLeakageRecoveredHigh:
+                item.revenueLeakageRecoveredHigh ?? 3500,
             })),
           )}`,
         },
