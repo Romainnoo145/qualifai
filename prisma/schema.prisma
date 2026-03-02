@@ -161,6 +161,7 @@ model Prospect {
   workflowLossMaps        WorkflowLossMap[]
   outreachSequences       OutreachSequence[]
   callPrepPlans           CallPrepPlan[]
+  gateOverrideAudits      GateOverrideAudit[]
 
   @@index([domain])
   @@index([status])
@@ -353,6 +354,7 @@ model ResearchRun {
   workflowLossMaps        WorkflowLossMap[]
   outreachSequences       OutreachSequence[]
   callPrepPlans           CallPrepPlan[]
+  gateOverrideAudits      GateOverrideAudit[]
 
   @@index([prospectId])
   @@index([campaignId])
@@ -681,4 +683,31 @@ model NotificationLog {
 
   @@index([prospectId])
   @@index([type])
+}
+
+// =============================================================================
+// AUDIT MODELS (Phase 30)
+// =============================================================================
+
+model GateOverrideAudit {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // What was bypassed
+  gateType String // 'quality' | 'pain' | 'quality+pain'
+  reason   String // admin-entered text, min 12 chars enforced at mutation level
+  actor    String @default("admin") // single-actor system; field exists for future multi-user compat
+
+  // Point-in-time snapshot of the gate state at bypass time
+  gateSnapshot Json
+
+  // Relations — prospectId enables direct _count on Prospect (matches EvidenceItem pattern)
+  researchRunId String
+  researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Restrict)
+  prospectId    String
+  prospect      Prospect    @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@index([researchRunId])
+  @@index([prospectId])
+  @@index([createdAt])
 }
