@@ -115,7 +115,12 @@ Plans:
 2. Pages with source types REVIEWS, CAREERS, or JOB_BOARD route directly through Crawl4AI without attempting stealth first
 3. A single research run never uses browser extraction on more than 5 URLs — the pipeline enforces this cap regardless of how many JS-heavy pages are discovered
 
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+
+- [ ] 29-01-PLAN.md — Two-tier extraction routing with TDD (browser-direct, 500-char escalation, 5-URL budget cap)
+- [ ] 29-02-PLAN.md — Wire jsHeavyHints from research executor sourceSet
 
 ---
 
@@ -168,5 +173,5 @@ Plans:
 | 27. End-to-End Cycle                 | v2.1      | 2/2            | Complete    | 2026-02-28 |
 | 27.1. Cal.com Booking Validation     | v2.1      | 1/1            | Complete    | 2026-03-01 |
 | 28. Source Discovery with Provenance | v2.2      | Complete       | 2026-03-01  | 2026-03-02 |
-| 29. Browser-Rendered Extraction      | v2.2      | 0/TBD          | Not started | -          |
+| 29. Browser-Rendered Extraction      | v2.2      | 0/2            | Not started | -          |
 | 30. Pain Confirmation Gate + Audit   | v2.2      | 0/TBD          | Not started | -          |
