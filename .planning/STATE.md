@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 34 of 35 (AI Metric Derivation)
-Plan: 1 of 3 in current phase (Plan 01 complete)
-Status: Plan 01 complete (TDD RED scaffold — MODEL-03 AI-derived metrics + ANLYS-09 primarySourceType failing tests)
-Last activity: 2026-03-02 — Plan 34-01 complete (5 new failing RED tests: MODEL-03 x3 hoursSavedWeekMid/revenueLeakageRecoveredMid/clamping, ANLYS-09 x2 primarySourceType; HypothesisDraft interface extended with primarySourceType: string | null; null stubs in all fallback return sites; TypeScript clean)
+Plan: 2 of 3 in current phase (Plan 02 complete)
+Status: Plan 02 complete (AI metric derivation implementation — all 5 MODEL-03/ANLYS-09 tests GREEN; primarySourceType in DB + UI badge)
+Last activity: 2026-03-02 — Plan 34-02 complete (3 tasks: clamp helpers + prompt + mapping; DB column + migration; UI badge; 3 commits: e930342, b1c5fd7, f434844; TypeScript clean; 36/37 tests passing)
 
 Progress: [████████████████████░░░░░░░░░░] 66% (30 phases complete across 7 milestones)
 
@@ -29,17 +29,18 @@ Progress: [████████████████████░░░
 
 **Velocity (all milestones):**
 
-| Milestone    | Phases | Plans   | Timeline     |
-| ------------ | ------ | ------- | ------------ |
-| v1.0         | 5      | —       | Feb 20       |
-| v1.1         | 6      | 16      | Feb 20-21    |
-| v1.2         | 4      | 11      | Feb 21-22    |
-| v2.0         | 6      | 14      | Feb 22-23    |
-| v2.1         | 7      | 16      | Feb 23-Mar 2 |
-| v2.2         | 3      | 9       | Mar 2        |
-| **Total**    | **31** | **66+** | **11 days**  |
-| Phase 31 P02 | 7      | 2 tasks | 3 files      |
-| Phase 31 P03 | 7      | 2 tasks | 3 files      |
+| Milestone                         | Phases | Plans   | Timeline     |
+| --------------------------------- | ------ | ------- | ------------ |
+| v1.0                              | 5      | —       | Feb 20       |
+| v1.1                              | 6      | 16      | Feb 20-21    |
+| v1.2                              | 4      | 11      | Feb 21-22    |
+| v2.0                              | 6      | 14      | Feb 22-23    |
+| v2.1                              | 7      | 16      | Feb 23-Mar 2 |
+| v2.2                              | 3      | 9       | Mar 2        |
+| **Total**                         | **31** | **66+** | **11 days**  |
+| Phase 31 P02                      | 7      | 2 tasks | 3 files      |
+| Phase 31 P03                      | 7      | 2 tasks | 3 files      |
+| Phase 34-ai-metric-derivation P02 | 25     | 3 tasks | 5 files      |
 
 ## Accumulated Context
 
@@ -62,6 +63,8 @@ Recent decisions affecting v3.0:
 - Phase 33-01: TDD RED scaffold — mockAnthropicCreate vi.fn() replacing hardcoded rejection stub; makeClaudeHypothesisResponse factory with <reasoning>+JSON shape; hypothesisModel: 'gemini-flash' | 'claude-sonnet' = 'gemini-flash' parameter added to generateHypothesisDraftsAI (void stub); 5 new tests (MODEL-01 x3, ANLYS-08 x2); 2 RED for correct reasons (Claude path not routed, CoT prompt not added)
 - Phase 33-02: Implementation — CLAUDE_MODEL_SONNET = 'claude-sonnet-4-5'; getAnthropicClient() lazy init; extractHypothesisJson() shared helper strips <reasoning> before JSON parse; CoT prompt block added; model branching (claude-sonnet → Anthropic SDK, else → Gemini); hypothesisModel threaded tRPC startRun → executeResearchRun → generateHypothesisDraftsAI; persisted in all 4 inputSnapshot writes; retryRun reads from snapshot; all MODEL-01 + ANLYS-08 GREEN
 - Phase 34-01: TDD RED scaffold — mock factories extended with optional metric fields and primarySourceType (default mock hoursSavedWeekMid: 12 vs METRIC_DEFAULTS: 8); MODEL-03 clamping test uses toBe(80) not toBeLessThanOrEqual(80) to avoid coincidental pass with METRIC_DEFAULTS; HypothesisDraft interface extended with primarySourceType: string | null; null stubs in all 7 return sites; 4 of 5 new tests fail RED for correct reasons
+- [Phase 34-02]: Tuple cast .sort() as [number, number, number] to avoid number|undefined TypeScript inference from array destructure
+- [Phase 34-02]: primarySourceType column placed before status in WorkflowHypothesis schema to avoid merge conflict with AutomationOpportunity identical trailing fields
 
 ### Pending Todos
 
@@ -72,11 +75,11 @@ Recent decisions affecting v3.0:
 
 ### Blockers/Concerns
 
-- Phase 34-02 (Metric Derivation Implementation): must replace `...METRIC_DEFAULTS` spread with AI-derived metric extraction + bounds clamping; must extract primarySourceType from AIHypothesisItem and validate against allowed enum values; must ensure 4 RED tests turn GREEN without breaking existing 32 passing tests.
+- Phase 34-03 (final integration / baseline validation): validate AI-derived metrics against real prospect baseline; confirm primarySourceType appears in UI for freshly researched prospects.
 - Phase 32 (Prompt Rewrite): Variable hypothesis count requires downstream audit of UI and outreach templates before changing count — this is a breaking interface change.
 
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 34-01-PLAN.md — TDD RED scaffold (2 tasks, 2 commits: 5b7f5bd, e1aba62). Plan 34-01 complete.
+Stopped at: Completed 34-02-PLAN.md — AI metric derivation implementation (3 tasks, 3 commits: e930342, b1c5fd7, f434844). Plan 34-02 complete.
 Resume file: None
