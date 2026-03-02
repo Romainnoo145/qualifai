@@ -244,7 +244,6 @@ export default async function DiscoverPage({ params }: Props) {
     <DashboardClient
       prospectSlug={prospect.slug}
       companyName={prospect.companyName ?? prospect.domain}
-      logoUrl={prospect.logoUrl}
       industry={prospect.industry}
       hypotheses={prospect.workflowHypotheses}
       prospectStatus={prospect.status}

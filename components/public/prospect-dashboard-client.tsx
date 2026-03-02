@@ -69,7 +69,6 @@ interface TrustSnapshot {
 interface DashboardClientProps {
   prospectSlug: string;
   companyName: string;
-  logoUrl: string | null;
   industry: string | null;
   hypotheses: HypothesisData[];
   prospectStatus: string;

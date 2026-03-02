@@ -54,12 +54,6 @@ function uniqueUrls(urls: string[]): string[] {
   return Array.from(new Set(urls.map((url) => url.trim()).filter(Boolean)));
 }
 
-function extractSerpCache(snapshot: unknown): SerpDiscoveryResult | null {
-  const payload = snapshot as { serpCache?: SerpDiscoveryResult } | null;
-  if (!payload?.serpCache?.discoveredAt) return null;
-  return payload.serpCache;
-}
-
 function extractSitemapCache(snapshot: unknown): SitemapCache | null {
   const payload = snapshot as { sitemapCache?: SitemapCache } | null;
   if (!payload?.sitemapCache?.discoveredAt) return null;
@@ -309,25 +303,9 @@ export async function executeResearchRun(
   ];
 
   if (input.deepCrawl) {
-    // SERP cache guard: use sourceSet.serpDiscoveredAt (set at pre-read stage via useSerpFromSourceSet)
-    // The deepCrawl branch reads from the already-computed useSerpFromSourceSet flag.
-    // Secondary safety: also check serpCache for backward compatibility with runs that
-    // predate the sourceSet field.
-    const existingSnapshot = input.existingRunId
-      ? (
-          await db.researchRun.findUnique({
-            where: { id: input.existingRunId },
-            select: { inputSnapshot: true },
-          })
-        )?.inputSnapshot
-      : null;
-    const serpCache = extractSerpCache(existingSnapshot);
-    // Primary guard: sourceSet serpDiscoveredAt; fallback: legacy serpCache
-    const isCacheValid =
-      useSerpFromSourceSet ||
-      (serpCache !== null &&
-        Date.now() - new Date(serpCache.discoveredAt).getTime() <
-          24 * 60 * 60 * 1000);
+    // SERP cache guard: use sourceSet.serpDiscoveredAt (pre-read BEFORE run create/update overwrites snapshot)
+    // useSerpFromSourceSet is computed at the top of executeResearchRun from priorSourceSet.
+    const isCacheValid = useSerpFromSourceSet;
 
     const serpApiConfigured = Boolean(process.env.SERP_API_KEY);
     if (!serpApiConfigured) {
@@ -340,7 +318,7 @@ export async function executeResearchRun(
     }
 
     const serpResult: SerpDiscoveryResult = isCacheValid
-      ? (serpCache ?? {
+      ? {
           reviewUrls:
             priorSourceSet?.urls
               .filter((u) => u.provenance === 'serp')
@@ -348,7 +326,7 @@ export async function executeResearchRun(
           jobUrls: [],
           discoveredAt:
             priorSourceSet?.serpDiscoveredAt ?? new Date().toISOString(),
-        })
+        }
       : await discoverSerpUrls({
           companyName: prospect.companyName,
           domain: prospect.domain,
@@ -372,9 +350,7 @@ export async function executeResearchRun(
     // Rebuild sourceSet with SERP URLs now that we have them
     const serpDiscoveredAt = !isCacheValid
       ? new Date().toISOString()
-      : (priorSourceSet?.serpDiscoveredAt ??
-        serpCache?.discoveredAt ??
-        new Date().toISOString());
+      : (priorSourceSet?.serpDiscoveredAt ?? new Date().toISOString());
     const fullSourceSet: SourceSet = buildSourceSet({
       sitemapUrls,
       serpUrls: [...serpResult.reviewUrls, ...serpResult.jobUrls],
@@ -409,7 +385,6 @@ export async function executeResearchRun(
             manualUrls: input.manualUrls,
             campaignId: input.campaignId,
             deepCrawl: true,
-            ...(serpCache ? { serpCache } : {}),
             ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
             sourceSet: fullSourceSet,
           }),
