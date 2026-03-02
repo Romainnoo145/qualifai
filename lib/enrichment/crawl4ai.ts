@@ -37,6 +37,8 @@ export async function extractMarkdown(
             cache_mode: 'bypass',
             magic: true,
             simulate_user: true,
+            remove_overlay_elements: true, // v0.8.x: remove consent popups/overlays
+            flatten_shadow_dom: true, // v0.8.x: flatten shadow DOM for Web Components
             wait_for_timeout: 15000,
             delay_before_return_html: 2,
           },
