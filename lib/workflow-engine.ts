@@ -617,7 +617,9 @@ export async function generateHypothesisDraftsAI(
   evidence: AIEvidenceInput[],
   prospectContext: AIProspectContext,
   confirmedPainTags: string[] = [], // ANLYS-06 — optional, defaults to [] for backward compat
+  hypothesisModel: 'gemini-flash' | 'claude-sonnet' = 'gemini-flash', // MODEL-01 — configurable model selection
 ): Promise<HypothesisDraft[]> {
+  void hypothesisModel; // MODEL-01 stub — implementation in Plan 33-02
   const METRIC_DEFAULTS = {
     hoursSavedWeekLow: 4,
     hoursSavedWeekMid: 8,

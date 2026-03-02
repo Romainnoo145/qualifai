@@ -10,11 +10,10 @@ vi.mock('@/env.mjs', () => ({
   },
 }));
 
+const mockAnthropicCreate = vi.fn();
 vi.mock('@anthropic-ai/sdk', () => ({
   default: class {
-    messages = {
-      create: vi.fn().mockRejectedValue(new Error('test mock')),
-    };
+    messages = { create: mockAnthropicCreate };
   },
 }));
 
@@ -550,9 +549,37 @@ describe('workflow-engine', () => {
       },
     });
 
+    const makeClaudeHypothesisResponse = (
+      items: Array<{ title: string; problemStatement: string }>,
+    ) => ({
+      id: 'msg_test',
+      type: 'message',
+      role: 'assistant',
+      content: [
+        {
+          type: 'text',
+          text: `<reasoning>\nAnalysis: REVIEWS source shows direct pain.\n</reasoning>\n${JSON.stringify(
+            items.map((item) => ({
+              title: item.title,
+              problemStatement: item.problemStatement,
+              assumptions: ['Assumption 1'],
+              validationQuestions: ['Question 1?'],
+              workflowTag: 'planning',
+              confidenceScore: 0.85,
+              evidenceRefs: ['https://reviews.example.com/company-a'],
+            })),
+          )}`,
+        },
+      ],
+      model: 'claude-sonnet-4-5',
+      stop_reason: 'end_turn',
+      usage: { input_tokens: 100, output_tokens: 200 },
+    });
+
     beforeEach(() => {
       lastCapturedPrompt = '';
       mockGenerateContent.mockReset();
+      mockAnthropicCreate.mockReset();
     });
 
     it('ANLYS-01: prompt contains source-tier prioritization instruction (REVIEWS, CAREERS, LINKEDIN higher than WEBSITE)', async () => {
@@ -859,6 +886,121 @@ describe('workflow-engine', () => {
       expect(lastCapturedPrompt).toMatch(
         /Do NOT score.*website.{0,50}0\.65|website.*above.*0\.65|website.*hypotheses.*0\.65/i,
       );
+    });
+
+    it("MODEL-01: generates hypotheses via Claude when hypothesisModel='claude-sonnet'", async () => {
+      mockAnthropicCreate.mockResolvedValueOnce(
+        makeClaudeHypothesisResponse([
+          {
+            title: 'Planning bottleneck',
+            problemStatement:
+              '"We always have to wait" indicates approval delays.',
+          },
+        ]),
+      );
+
+      const result = await generateHypothesisDraftsAI(
+        standardEvidence,
+        standardContext,
+        ['planning'],
+        'claude-sonnet',
+      );
+
+      // Anthropic SDK must be invoked exactly once
+      expect(mockAnthropicCreate).toHaveBeenCalledTimes(1);
+      // Gemini path must NOT be invoked
+      expect(mockGenerateContent).not.toHaveBeenCalled();
+      // Result must contain the mocked Claude hypothesis
+      expect(result).toHaveLength(1);
+      expect(result[0]?.title).toBe('Planning bottleneck');
+    });
+
+    it('MODEL-01: defaults to Gemini when hypothesisModel is omitted', async () => {
+      mockGenerateContent.mockResolvedValueOnce(
+        makeHypothesisResponse([
+          {
+            title: 'Default',
+            problemStatement: '"We always have to wait" shows pain.',
+          },
+        ]),
+      );
+
+      // No 4th argument — must default to Gemini
+      await generateHypothesisDraftsAI(standardEvidence, standardContext, [
+        'planning',
+      ]);
+
+      expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+      expect(mockAnthropicCreate).not.toHaveBeenCalled();
+    });
+
+    it("MODEL-01: defaults to Gemini when hypothesisModel='gemini-flash'", async () => {
+      mockGenerateContent.mockResolvedValueOnce(
+        makeHypothesisResponse([
+          {
+            title: 'Default',
+            problemStatement: '"We always have to wait" shows pain.',
+          },
+        ]),
+      );
+
+      // Explicit gemini-flash — must still use Gemini
+      await generateHypothesisDraftsAI(
+        standardEvidence,
+        standardContext,
+        ['planning'],
+        'gemini-flash',
+      );
+
+      expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+      expect(mockAnthropicCreate).not.toHaveBeenCalled();
+    });
+
+    it('ANLYS-08: prompt includes chain-of-thought reasoning instruction', async () => {
+      mockGenerateContent.mockResolvedValueOnce(
+        makeHypothesisResponse([
+          {
+            title: 'Planning bottleneck',
+            problemStatement: '"We always have to wait" shows planning pain.',
+          },
+        ]),
+      );
+
+      await generateHypothesisDraftsAI(standardEvidence, standardContext, [
+        'planning',
+      ]);
+
+      // Prompt must instruct model to produce a <reasoning> block
+      expect(lastCapturedPrompt).toMatch(/<reasoning>/);
+      // Reasoning instruction must reference evidence analysis
+      expect(lastCapturedPrompt).toMatch(
+        /evidence analysis|diagnostic signal|pain.*confirmed/i,
+      );
+    });
+
+    it('ANLYS-08: CoT reasoning block in Claude response is stripped before JSON parse', async () => {
+      mockAnthropicCreate.mockResolvedValueOnce(
+        makeClaudeHypothesisResponse([
+          {
+            title: 'Planning bottleneck',
+            problemStatement:
+              '"We always have to wait" indicates approval delays.',
+          },
+        ]),
+      );
+
+      const result = await generateHypothesisDraftsAI(
+        standardEvidence,
+        standardContext,
+        ['planning'],
+        'claude-sonnet',
+      );
+
+      // Result must be a valid array of HypothesisDraft objects
+      expect(Array.isArray(result)).toBe(true);
+      // JSON must have been parsed correctly despite the <reasoning> block prefix
+      expect(result[0]?.title).toBeTruthy();
+      expect(result[0]?.title).not.toBe('');
     });
   });
 });
