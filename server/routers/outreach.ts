@@ -461,6 +461,25 @@ Klarifai`;
         }),
       ]);
 
+      // Collect unique prospectIds from drafts
+      const prospectIds = [...new Set(drafts.map((d) => d.contact.prospectId))];
+
+      // Fetch latest COMPLETED ResearchRun per prospect
+      const runsByProspectList = await ctx.db.researchRun.findMany({
+        where: { prospectId: { in: prospectIds }, status: 'COMPLETED' },
+        orderBy: { createdAt: 'desc' },
+        distinct: ['prospectId'],
+        select: {
+          prospectId: true,
+          summary: true,
+          id: true,
+          qualityApproved: true,
+        },
+      });
+
+      // Build Map from prospectId to run data
+      const runMap = new Map(runsByProspectList.map((r) => [r.prospectId, r]));
+
       const items = drafts.map((draft) => {
         const {
           riskLevel,
@@ -470,6 +489,37 @@ Klarifai`;
           dataCompleteness,
           manualReviewReasons,
         } = classifyDraftRisk(draft);
+
+        // Extract pain confirmation data from latest research run
+        const run = runMap.get(draft.contact.prospectId);
+        const runSummary =
+          run?.summary &&
+          typeof run.summary === 'object' &&
+          !Array.isArray(run.summary)
+            ? (run.summary as Record<string, unknown>)
+            : null;
+        const gate =
+          runSummary?.gate &&
+          typeof runSummary.gate === 'object' &&
+          !Array.isArray(runSummary.gate)
+            ? (runSummary.gate as Record<string, unknown>)
+            : null;
+
+        const confirmedPainTags: string[] = Array.isArray(
+          gate?.confirmedPainTags,
+        )
+          ? (gate.confirmedPainTags as string[])
+          : [];
+        const unconfirmedPainTags: string[] = Array.isArray(
+          gate?.unconfirmedPainTags,
+        )
+          ? (gate.unconfirmedPainTags as string[])
+          : [];
+        const qualityGatePassed: boolean =
+          typeof gate?.passed === 'boolean' ? gate.passed : true;
+        const qualityApproved: boolean | null = run?.qualityApproved ?? null;
+        const latestRunId: string | null = run?.id ?? null;
+
         return {
           ...draft,
           riskLevel,
@@ -478,6 +528,11 @@ Klarifai`;
           priorityTier,
           dataCompleteness,
           manualReviewReasons,
+          confirmedPainTags,
+          unconfirmedPainTags,
+          qualityGatePassed,
+          qualityApproved,
+          latestRunId,
         };
       });
 
