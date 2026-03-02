@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 
 ## Current Position
 
-Phase: 29 — Browser-Rendered Evidence Extraction
-Plan: 02 (complete) — Phase 29 fully complete (both plans done)
-Status: In progress (Plans 28-01 + 28-02 + 28-03 + 29-01 + 29-02 complete)
-Last activity: 2026-03-02 — Completed 29-02 jsHeavyHints wiring into ingestWebsiteEvidenceDrafts
+Phase: 30 — Pain Confirmation Gate + Override Audit
+Plan: 01 (complete) — computePainTagConfirmation + QualityGateResult extension
+Status: In progress (Plans 28-01 + 28-02 + 28-03 + 29-01 + 29-02 + 30-01 complete)
+Last activity: 2026-03-02 — Completed 30-01 cross-source pain tag confirmation (TDD)
 
-Progress: [======] ~55% (v2.2: 2/3 phases, 5 plans done)
+Progress: [=======] ~65% (v2.2: 2.5/3 phases, 6 plans done)
 
 ## Milestones Shipped
 
@@ -46,6 +46,8 @@ Progress: [======] ~55% (v2.2: 2/3 phases, 5 plans done)
 - Debug-only UI pattern: guard render with `{debugMode && ...}` where `useDebugMode` uses `useSyncExternalStore` on localStorage key `qualifai-debug`
 
 - Pain gate is advisory-only — AMBER quality gate remains the single hard block; pain confirmation is a second signal, not a second block
+- computePainTagConfirmation uses isPlaceholder() exclusion (notFound/fallback), NOT aiRelevance — low-relevance items count for cross-source coverage; aiRelevance filtering is confidence-average-only
+- PAIN_CONFIRMATION_MIN_SOURCES = 2 in quality-config.ts (client-safe module); pain tag arrays in QualityGateResult but never added to reasons (advisory-only contract)
 - Two-tier extraction implemented (Phase 29-01): stealth-first for static pages, Crawl4AI for <500 chars or jsHeavyHint=true; 5-URL budget cap; raw fetch() removed; BROWSER_BUDGET_MAX=5 exported constant; processCrawl4aiResult shared handler; REVIEWS routing uses inferSourceType() not storage-mapped type; 404 detection before 80-char minimum
 - jsHeavyHints wiring complete (Phase 29-02): research-executor builds Map from initialSourceSet.urls and passes to ingestWebsiteEvidenceDrafts — avoids detectJsHeavy() re-computation; deepCrawl ingestCrawl4aiEvidenceDrafts call untouched (separate budget path)
 - SerpAPI cache guarded at prospect level via serpDiscoveredAt timestamp — skip if <24h old, never trigger at import time
@@ -78,5 +80,5 @@ Progress: [======] ~55% (v2.2: 2/3 phases, 5 plans done)
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 29-02-PLAN.md (jsHeavyHints wiring — Phase 29 fully complete)
-Resume with: `/gsd:execute-phase 30` (pain confirmation gate + audit, schema migration)
+Stopped at: Completed 30-01-PLAN.md (computePainTagConfirmation TDD — cross-source pain tag confirmation)
+Resume with: Continue Phase 30 plans (override audit, schema migration)

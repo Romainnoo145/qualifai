@@ -144,7 +144,7 @@ Plans:
 
 Plans:
 
-- [ ] 30-01-PLAN.md — Cross-source pain tag confirmation with TDD (computePainTagConfirmation, QualityGateResult extension)
+- [x] 30-01-PLAN.md — Cross-source pain tag confirmation with TDD (computePainTagConfirmation, QualityGateResult extension)
 - [ ] 30-02-PLAN.md — GateOverrideAudit schema migration + approveQuality audit write + listOverrideAudits query
 - [ ] 30-03-PLAN.md — Send queue pain confirmation signal + override reason textarea
 - [ ] 30-04-PLAN.md — Bypassed badge in prospect list + override history in detail view
@@ -181,4 +181,4 @@ Plans:
 | 27.1. Cal.com Booking Validation     | v2.1      | 1/1            | Complete    | 2026-03-01 |
 | 28. Source Discovery with Provenance | v2.2      | Complete       | 2026-03-01  | 2026-03-02 |
 | 29. Browser-Rendered Extraction      | 2/2       | Complete       | 2026-03-02  | -          |
-| 30. Pain Confirmation Gate + Audit   | v2.2      | 0/4            | Not started | -          |
+| 30. Pain Confirmation Gate + Audit   | v2.2      | 1/4            | In progress | -          |
