@@ -295,7 +295,7 @@ export const researchRouter = router({
     .mutation(async ({ ctx, input }) => {
       const currentRun = await ctx.db.researchRun.findUniqueOrThrow({
         where: { id: input.runId },
-        select: { summary: true },
+        select: { summary: true, prospectId: true, qualityApproved: true },
       });
       const summary =
         currentRun.summary &&
@@ -313,11 +313,26 @@ export const researchRouter = router({
         typeof gate?.passed === 'boolean' ? (gate.passed as boolean) : true;
       const overrideReason = input.notes?.trim() ?? '';
 
-      if (input.approved && !gatePassed && overrideReason.length < 12) {
+      // Extract pain tag arrays from gate snapshot (populated by computePainTagConfirmation in Phase 30-01)
+      const confirmedPainTags: string[] = Array.isArray(gate?.confirmedPainTags)
+        ? (gate.confirmedPainTags as string[])
+        : [];
+      const unconfirmedPainTags: string[] = Array.isArray(
+        gate?.unconfirmedPainTags,
+      )
+        ? (gate.unconfirmedPainTags as string[])
+        : [];
+
+      // 12-char reason required when bypassing quality gate OR when pain tags are unconfirmed
+      if (
+        input.approved &&
+        (!gatePassed || unconfirmedPainTags.length > 0) &&
+        overrideReason.length < 12
+      ) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message:
-            'Override requires a clear reason (min. 12 chars) when gate is not passed.',
+            'Override requires a clear reason (min. 12 chars) when gate is not passed or pain tags are unconfirmed.',
         });
       }
 
@@ -335,6 +350,47 @@ export const researchRouter = router({
           data: { status: 'DRAFT' },
         });
       }
+
+      // Write immutable audit record when a gate bypass occurs on first approval only
+      // Idempotency: currentRun.qualityApproved === null means this is the first approval
+      if (input.approved && currentRun.qualityApproved === null) {
+        const qualityGateBypassed = !gatePassed;
+        const painGateBypassed = unconfirmedPainTags.length > 0;
+
+        if (qualityGateBypassed || painGateBypassed) {
+          const gateType =
+            qualityGateBypassed && painGateBypassed
+              ? 'quality+pain'
+              : qualityGateBypassed
+                ? 'quality'
+                : 'pain';
+
+          await ctx.db.gateOverrideAudit.create({
+            data: {
+              researchRunId: input.runId,
+              prospectId: currentRun.prospectId,
+              gateType,
+              reason: overrideReason,
+              actor: 'admin',
+              gateSnapshot: toJson({
+                gate,
+                confirmedPainTags,
+                unconfirmedPainTags,
+              }),
+            },
+          });
+        }
+      }
+
       return run;
+    }),
+
+  listOverrideAudits: adminProcedure
+    .input(z.object({ runId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.gateOverrideAudit.findMany({
+        where: { researchRunId: input.runId },
+        orderBy: { createdAt: 'asc' },
+      });
     }),
 });
