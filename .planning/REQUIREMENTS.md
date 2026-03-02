@@ -23,9 +23,9 @@ Requirements for Verified Pain Intelligence milestone. Each maps to roadmap phas
 
 ### Pain Gate
 
-- [ ] **GATE-01**: System computes cross-source pain confirmation per workflowTag (count of distinct sourceTypes per tag)
-- [ ] **GATE-02**: Quality gate output includes `confirmedPainTags` and `unconfirmedPainTags` arrays
-- [ ] **GATE-03**: Pain confirmation gate is advisory-only (warning, not blocking) to accommodate thin-presence Dutch SMBs
+- [x] **GATE-01**: System computes cross-source pain confirmation per workflowTag (count of distinct sourceTypes per tag)
+- [x] **GATE-02**: Quality gate output includes `confirmedPainTags` and `unconfirmedPainTags` arrays
+- [x] **GATE-03**: Pain confirmation gate is advisory-only (warning, not blocking) to accommodate thin-presence Dutch SMBs
 - [x] **GATE-04**: Send queue shows pain confirmation status alongside existing quality gate indicator
 - [x] **GATE-05**: Admin must provide a reason when proceeding with outreach that has unconfirmed pain tags
 
@@ -69,9 +69,9 @@ Requirements for Verified Pain Intelligence milestone. Each maps to roadmap phas
 | EXTR-01     | 29    | Complete |
 | EXTR-02     | 29    | Complete |
 | EXTR-03     | 29    | Complete |
-| GATE-01     | 30    | Pending  |
-| GATE-02     | 30    | Pending  |
-| GATE-03     | 30    | Pending  |
+| GATE-01     | 30    | Complete |
+| GATE-02     | 30    | Complete |
+| GATE-03     | 30    | Complete |
 | GATE-04     | 30    | Complete |
 | GATE-05     | 30    | Complete |
 | AUDT-01     | 30    | Complete |
@@ -88,4 +88,4 @@ Requirements for Verified Pain Intelligence milestone. Each maps to roadmap phas
 ---
 
 _Requirements defined: 2026-03-02_
-_Last updated: 2026-03-02 after roadmap creation_
+_Last updated: 2026-03-02 after Phase 30 completion_
