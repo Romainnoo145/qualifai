@@ -54,15 +54,16 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - ✓ **Multi-source evidence pipeline** (8+ sources with AI scoring via Gemini Flash) — v2.1
 - ✓ **Quality threshold calibration** (traffic-light gate calibrated from real data, AMBER hard gate) — v2.1
 - ✓ **Full E2E outreach cycle** (send → reply triage → Cal.com booking → call prep generation) — v2.1
+- ✓ **Automatic source discovery per prospect** (Google + sitemap + manual merge with provenance labels, dedup, caps) — v2.2
+- ✓ **Browser-rendered evidence extraction** (two-tier stealth-first routing, Crawl4AI escalation, 5-URL budget cap) — v2.2
+- ✓ **Pain confirmation gate** (cross-source pain tag confirmation, advisory-only, send queue signals) — v2.2
+- ✓ **Override audit trail** (GateOverrideAudit model, mandatory reason, Bypassed badge, Override History panel) — v2.2
 
 ### Active
 
-<!-- v2.2 Verified Pain Intelligence — planned -->
+<!-- Next milestone — to be defined -->
 
-- [ ] Automatic source discovery per prospect (Google + sitemap + manual merge with provenance)
-- [ ] Browser-rendered evidence extraction for JS-heavy pages
-- [ ] Pain confirmation gate blocking outreach without minimum cross-source evidence
-- [ ] Override audit trail for manual gate bypasses
+(None yet — define next milestone with `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -91,8 +92,8 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - **Proof matching:** In-app Use Cases management (77 use cases from 6 codebases) with Claude semantic scoring
 - **Email delivery:** Resend API with idempotency guards, DKIM/SPF/DMARC verified for klarifai.nl
 - **Scheduling:** Cal.com with HMAC-signed webhook → automatic call prep generation
-- **Current codebase:** ~32,500 LOC TypeScript
-- **Shipped:** v1.0 (Feb 20) → v1.1 (Feb 21) → v1.2 (Feb 22) → v2.0 (Feb 23) → v2.1 (Mar 2)
+- **Current codebase:** ~34,658 LOC TypeScript
+- **Shipped:** v1.0 (Feb 20) → v1.1 (Feb 21) → v1.2 (Feb 22) → v2.0 (Feb 23) → v2.1 (Mar 2) → v2.2 (Mar 2)
 - **Prospects in DB:** 7+ real companies, all passing quality gate after AI scoring overhaul
 
 ## Constraints
@@ -107,39 +108,38 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ## Key Decisions
 
-| Decision                                 | Rationale                                                                    | Outcome   |
-| ---------------------------------------- | ---------------------------------------------------------------------------- | --------- |
-| SerpAPI for Google discovery             | Google aggressive with bot detection, not worth self-maintaining             | ✓ Good    |
-| Crawl4AI for content extraction          | Handles JS-rendered pages, cookie consent, managed browser                   | ✓ Good    |
-| Manual evidence approval (not auto)      | Quality over speed, wrong outreach damages brand                             | ✓ Good    |
-| Engagement-driven cadence (not fixed)    | Smarter resource allocation, respond to prospect behavior                    | ✓ Good    |
-| WhatsApp/LinkedIn as manual tasks        | API integration too complex/expensive for now                                | ✓ Good    |
-| Admin reviews quality, not hypothesis    | Prospect is subject matter expert on their own pain points                   | ✓ Good    |
-| Soft gate (amber = warn + proceed)       | Dutch SMBs have thin web presence, hard block unusable                       | ✓ Good    |
-| Prospect validates hypotheses on /voor/  | Shifts validation from admin guesswork to prospect confirmation              | ✓ Good    |
-| Idempotency via atomic updateMany        | Database-level claim prevents double-sends, no external locks                | ✓ Good    |
-| List view with stage chips (not kanban)  | Sufficient at current volumes (20-50 prospects)                              | — Pending |
-| Pipeline stage as computed value         | No schema change, derived from existing data                                 | ✓ Good    |
-| Scrapling stealth fetcher over raw fetch | Bypasses bot detection on previously blocked domains                         | ✓ Good    |
-| AI evidence scoring (Gemini Flash)       | More accurate than hardcoded weights; formula: src*0.30+rel*0.45+depth\*0.25 | ✓ Good    |
-| Industry-dynamic hypothesis generation   | Hardcoded "marketing bureau" prompt fails for diverse sectors                | ✓ Good    |
-| AMBER as hard gate on send queue         | Prevents low-quality outreach; qualityApproved required                      | ✓ Good    |
-| 8+ evidence sources per prospect         | More cross-source validation, higher confidence scores                       | ✓ Good    |
-| E2E test scripts as regression harness   | Send/reply/booking scripts catch regressions automatically                   | ✓ Good    |
+| Decision                                 | Rationale                                                                     | Outcome   |
+| ---------------------------------------- | ----------------------------------------------------------------------------- | --------- |
+| SerpAPI for Google discovery             | Google aggressive with bot detection, not worth self-maintaining              | ✓ Good    |
+| Crawl4AI for content extraction          | Handles JS-rendered pages, cookie consent, managed browser                    | ✓ Good    |
+| Manual evidence approval (not auto)      | Quality over speed, wrong outreach damages brand                              | ✓ Good    |
+| Engagement-driven cadence (not fixed)    | Smarter resource allocation, respond to prospect behavior                     | ✓ Good    |
+| WhatsApp/LinkedIn as manual tasks        | API integration too complex/expensive for now                                 | ✓ Good    |
+| Admin reviews quality, not hypothesis    | Prospect is subject matter expert on their own pain points                    | ✓ Good    |
+| Soft gate (amber = warn + proceed)       | Dutch SMBs have thin web presence, hard block unusable                        | ✓ Good    |
+| Prospect validates hypotheses on /voor/  | Shifts validation from admin guesswork to prospect confirmation               | ✓ Good    |
+| Idempotency via atomic updateMany        | Database-level claim prevents double-sends, no external locks                 | ✓ Good    |
+| List view with stage chips (not kanban)  | Sufficient at current volumes (20-50 prospects)                               | — Pending |
+| Pipeline stage as computed value         | No schema change, derived from existing data                                  | ✓ Good    |
+| Scrapling stealth fetcher over raw fetch | Bypasses bot detection on previously blocked domains                          | ✓ Good    |
+| AI evidence scoring (Gemini Flash)       | More accurate than hardcoded weights; formula: src*0.30+rel*0.45+depth\*0.25  | ✓ Good    |
+| Industry-dynamic hypothesis generation   | Hardcoded "marketing bureau" prompt fails for diverse sectors                 | ✓ Good    |
+| AMBER as hard gate on send queue         | Prevents low-quality outreach; qualityApproved required                       | ✓ Good    |
+| 8+ evidence sources per prospect         | More cross-source validation, higher confidence scores                        | ✓ Good    |
+| E2E test scripts as regression harness   | Send/reply/booking scripts catch regressions automatically                    | ✓ Good    |
+| Advisory-only pain gate                  | Dutch SMBs structurally fail cross-source; gate provides visibility not block | ✓ Good    |
+| Two-tier extraction (stealth + browser)  | Most pages don't need browser rendering; 5-URL budget bounds worst-case time  | ✓ Good    |
+| GateOverrideAudit as relational model    | Enables \_count queries, FK joins, future filtering — not a JSON blob         | ✓ Good    |
+| Debug-only UI toggle via localStorage    | Features not ready for general visibility can still be tested                 | ✓ Good    |
 
 ---
 
-## Current Milestone: v2.2 Verified Pain Intelligence
+## Current State
 
-**Goal:** Confirm pain points from real external evidence using browser-rendered extraction before outreach is allowed. Better source discovery, better extraction, stricter gating.
+**Latest shipped:** v2.2 Verified Pain Intelligence (2026-03-02) — source discovery with provenance, two-tier browser extraction, advisory pain gate, immutable override audit trail.
 
-**Target features:**
-
-- Automatic source URL discovery per prospect (Google + sitemap + manual seeds)
-- Browser-rendered evidence extraction for JS-heavy pages
-- Pain confirmation gate with minimum cross-source evidence thresholds
-- Override audit trail for manual gate bypasses
+**Next milestone:** To be defined — run `/gsd:new-milestone`
 
 ---
 
-_Last updated: 2026-03-02 after v2.1 milestone completion_
+_Last updated: 2026-03-02 after v2.2 milestone completion_

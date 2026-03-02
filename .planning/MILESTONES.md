@@ -153,3 +153,32 @@
 - Milestone audit → gap closure workflow (Phase 27.1 inserted for E2E-03) proves the audit-then-fix cycle works
 
 ---
+
+## v2.2 — Verified Pain Intelligence (Completed)
+
+**Started:** 2026-03-02
+**Shipped:** 2026-03-02
+**Phases:** 28–30 (3 phases, 9 plans)
+**Files:** 45 changed, +7,449 / -314
+**Commits:** 39
+**Codebase:** 34,658 LOC TypeScript
+
+### What shipped:
+
+- Automatic source URL discovery per prospect with provenance labels (sitemap/serp/manual/default), deduplication, per-source caps, and jsHeavyHint detection — pure module with 55 unit tests (Phase 28)
+- Two-tier web extraction routing: stealth-first with Crawl4AI browser escalation at 500-char threshold, 5-URL browser budget cap, REVIEWS direct-to-browser routing (Phase 29)
+- Cross-source pain tag confirmation per workflowTag — counts distinct sourceTypes, classifies as confirmed (2+) or unconfirmed (1), advisory-only signal (Phase 30)
+- Immutable GateOverrideAudit trail with actor, timestamp, 12-char minimum reason, gate type, and point-in-time gate snapshot — dual-FK pattern for efficient counting (Phase 30)
+- Send queue pain confirmation signals with green/amber chips, override reason textarea, and sequential mutation pattern ensuring audit before send (Phase 30)
+- Bypassed badge in prospect list + Override History panel on detail view with color-coded gate type semantics (Phase 30)
+
+### Key learnings:
+
+- Advisory-only pain gate works better than hard blocking — Dutch SMBs with thin web presence still need outreach, gate provides visibility not obstruction
+- Debug-only UI toggle (localStorage + useSyncExternalStore) is useful for features not ready for general visibility
+- Two-tier extraction saves significant time — most pages don't need browser rendering, only escalate when content is insufficient
+- GateOverrideAudit as relational model (not JSON blob) enables efficient \_count queries and future filtering
+- Sequential mutation pattern (approveQuality.mutateAsync → approveDraft.mutate) ensures audit trail before email dispatch
+- Dual-phase sourceSet (initial at run create, full after SERP) avoids restructuring existing pipeline
+
+---
