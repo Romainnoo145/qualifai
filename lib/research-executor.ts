@@ -918,6 +918,7 @@ export async function executeResearchRun(
       specialties: prospect.specialties,
       description: prospect.description,
     },
+    gate.confirmedPainTags,
   );
   for (const hypothesis of hypotheses) {
     await db.workflowHypothesis.create({
