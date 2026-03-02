@@ -117,6 +117,10 @@ export interface QualityGateResult {
     distinctPainTags: number;
     reasons: string[];
   };
+  /** Tags backed by 2+ distinct sourceTypes — GATE-01 cross-source confirmation (advisory-only, GATE-03) */
+  confirmedPainTags: string[];
+  /** Tags backed by only 1 distinct sourceType — advisory signal, does not block outreach */
+  unconfirmedPainTags: string[];
 }
 
 interface EvidenceInput {
@@ -447,6 +451,49 @@ function parseAiRelevanceFromEvidence(item: EvidenceInput): number | null {
   return typeof meta.aiRelevance === 'number' ? meta.aiRelevance : null;
 }
 
+/**
+ * computePainTagConfirmation — pure function that classifies workflowTags by
+ * cross-source coverage.
+ *
+ * GATE-01: A tag is "confirmed" when 2+ distinct sourceType values each have
+ * at least one non-placeholder evidence item for that tag.
+ * GATE-03: Unconfirmed tags are advisory-only — they do NOT affect gate.passed.
+ *
+ * Placeholder items (notFound=true or fallback=true) are excluded.
+ * Low-aiRelevance items are NOT excluded — aiRelevance filtering only applies
+ * to the confidence average, not to pain tag confirmation counting.
+ */
+export function computePainTagConfirmation(items: EvidenceInput[]): {
+  confirmedPainTags: string[];
+  unconfirmedPainTags: string[];
+} {
+  // Exclude placeholders; low-aiRelevance items still count
+  const nonPlaceholder = items.filter((item) => !isPlaceholder(item));
+
+  // Group by workflowTag (only pain-relevant tags)
+  const sourceTypesByTag = new Map<string, Set<EvidenceSourceType>>();
+  for (const item of nonPlaceholder) {
+    if (!PAIN_WORKFLOW_TAGS.has(item.workflowTag)) continue;
+    if (!sourceTypesByTag.has(item.workflowTag)) {
+      sourceTypesByTag.set(item.workflowTag, new Set());
+    }
+    sourceTypesByTag.get(item.workflowTag)!.add(item.sourceType);
+  }
+
+  const confirmedPainTags: string[] = [];
+  const unconfirmedPainTags: string[] = [];
+
+  for (const [tag, sourceTypes] of sourceTypesByTag) {
+    if (sourceTypes.size >= PAIN_CONFIRMATION_MIN_SOURCES) {
+      confirmedPainTags.push(tag);
+    } else {
+      unconfirmedPainTags.push(tag);
+    }
+  }
+
+  return { confirmedPainTags, unconfirmedPainTags };
+}
+
 export function evaluateQualityGate(items: EvidenceInput[]): QualityGateResult {
   const reasons: string[] = [];
   const evidenceCount = items.length;
@@ -465,6 +512,8 @@ export function evaluateQualityGate(items: EvidenceInput[]): QualityGateResult {
     average(scorableItems.map((item) => item.confidenceScore)),
   );
   const painConfirmation = evaluatePainConfirmation(items);
+  const { confirmedPainTags, unconfirmedPainTags } =
+    computePainTagConfirmation(items);
 
   if (evidenceCount < 3) reasons.push('Minimum 3 evidence items required');
   if (sourceTypeCount < 2)
@@ -472,6 +521,7 @@ export function evaluateQualityGate(items: EvidenceInput[]): QualityGateResult {
   if (averageConfidence < MIN_AVERAGE_CONFIDENCE)
     reasons.push(`Average confidence must be >= ${MIN_AVERAGE_CONFIDENCE}`);
   reasons.push(...painConfirmation.reasons);
+  // NOTE: confirmedPainTags/unconfirmedPainTags do NOT affect reasons or passed (GATE-03: advisory-only)
 
   return {
     passed: reasons.length === 0,
@@ -480,12 +530,17 @@ export function evaluateQualityGate(items: EvidenceInput[]): QualityGateResult {
     evidenceCount,
     reasons,
     painConfirmation,
+    confirmedPainTags,
+    unconfirmedPainTags,
   };
 }
 
 // Re-export from quality-config (client-safe module) to avoid breaking existing imports
 export { computeTrafficLight, type TrafficLight } from '@/lib/quality-config';
-import { MIN_AVERAGE_CONFIDENCE } from '@/lib/quality-config';
+import {
+  MIN_AVERAGE_CONFIDENCE,
+  PAIN_CONFIRMATION_MIN_SOURCES,
+} from '@/lib/quality-config';
 import type { TrafficLight } from '@/lib/quality-config';
 
 export interface QualityBreakdown {
