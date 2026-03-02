@@ -29,7 +29,8 @@ export const AMBER_MIN_SOURCE_TYPES = 2;
 /** Source type count threshold for GREEN (must meet or exceed this to be GREEN) */
 export const GREEN_MIN_SOURCE_TYPES = 3;
 
-/** Minimum average confidence score (secondary signal — computed over items with aiRelevance >= 0.50 only) */
+/** Minimum average confidence score (secondary signal — computed over items with aiRelevance >= 0.50 only)
+ * Calibrated 2026-03-02: 7 prospects, scorable avg range 0.59-0.70, margin +0.04 above threshold */
 export const MIN_AVERAGE_CONFIDENCE = 0.55;
 
 /**
