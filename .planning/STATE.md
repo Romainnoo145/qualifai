@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service Klarifai actually delivers.
-**Current focus:** Phase 32 — Hypothesis Prompt Rewrite
+**Current focus:** Phase 33 — Configurable Model Selection
 
 ## Current Position
 
-Phase: 32 of 35 (Hypothesis Prompt Rewrite)
-Plan: 2 of 3 in current phase
-Status: Plan 02 complete (implementation — prompt rewrite + call site update)
-Last activity: 2026-03-02 — Plan 32-02 complete (rewritten generateHypothesisDraftsAI with source tiers, ANTI-PARROTING RULE, signal summary, dynamic count, calibrated confidence; all 7 ANLYS tests GREEN)
+Phase: 33 of 35 (Configurable Model Selection)
+Plan: 1 of 3 in current phase
+Status: Plan 01 complete (TDD RED scaffold — MODEL-01 + ANLYS-08 failing tests)
+Last activity: 2026-03-02 — Plan 33-01 complete (configurable Anthropic mock + 5 new test cases + hypothesisModel parameter stub; 7 ANLYS tests GREEN, MODEL-01 Claude path + ANLYS-08 CoT prompt test RED for correct reasons)
 
 Progress: [████████████████████░░░░░░░░░░] 66% (30 phases complete across 7 milestones)
 
@@ -59,6 +59,7 @@ Recent decisions affecting v3.0:
 - Phase 31-03: tRPC quality gate E2E test uses appRouter.createCaller with module-level vi.mock; sendOutreachEmail mocked after gate so full gate logic runs
 - Phase 32-01: TDD RED scaffold — Gemini mock (vi.mock @google/generative-ai) with module-level lastCapturedPrompt capture; confirmedPainTags: string[] = [] added to generateHypothesisDraftsAI signature; 9 tests fail RED for correct ANLYS reasons
 - Phase 32-02: Prompt rewrite — SOURCE TYPE GUIDE + ANTI-PARROTING RULE + signal summary + dynamic count (targetCount from confirmedPainTags.length) + source-calibrated confidence table (REVIEWS 0.80-0.95, CAREERS/LINKEDIN 0.70-0.80, WEBSITE 0.60-0.65) + hasQuote() post-parse validation; all 7 ANLYS tests GREEN; research-executor.ts call site passes gate.confirmedPainTags
+- Phase 33-01: TDD RED scaffold — mockAnthropicCreate vi.fn() replacing hardcoded rejection stub; makeClaudeHypothesisResponse factory with <reasoning>+JSON shape; hypothesisModel: 'gemini-flash' | 'claude-sonnet' = 'gemini-flash' parameter added to generateHypothesisDraftsAI (void stub); 5 new tests (MODEL-01 x3, ANLYS-08 x2); 2 RED for correct reasons (Claude path not routed, CoT prompt not added)
 
 ### Pending Todos
 
@@ -75,5 +76,5 @@ Recent decisions affecting v3.0:
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 32-02-PLAN.md — prompt rewrite implementation (2 tasks, 2 commits: 57f2f96, c6a79cc). Plan 32-02 complete.
+Stopped at: Completed 33-01-PLAN.md — TDD RED scaffold (1 task, 1 commit: 8fe400c). Plan 33-01 complete.
 Resume file: None

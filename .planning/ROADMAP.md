@@ -202,6 +202,6 @@ Plans:
 | 30. Pain Confirmation Gate + Audit     | v2.2      | 4/4            | Complete    | 2026-03-02 |
 | 31. Tech Debt Foundation               | 3/3       | Complete       | 2026-03-02  | -          |
 | 32. Hypothesis Prompt Rewrite          | 2/2       | Complete       | 2026-03-02  | -          |
-| 33. Configurable Model Selection       | v3.0      | 0/2            | Planned     | -          |
+| 33. Configurable Model Selection       | 1/2       | In Progress    |             | -          |
 | 34. AI Metric Derivation + Attribution | v3.0      | 0/TBD          | Not started | -          |
 | 35. Validation and Calibration         | v3.0      | 0/TBD          | Not started | -          |
