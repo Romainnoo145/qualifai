@@ -1,6 +1,25 @@
 import { inferSourceType, type EvidenceDraft } from '@/lib/workflow-engine';
 import type { EvidenceSourceType } from '@prisma/client';
 import { fetchStealth } from '@/lib/enrichment/scrapling';
+import { extractMarkdown } from '@/lib/enrichment/crawl4ai';
+import { detectJsHeavy } from '@/lib/enrichment/source-discovery';
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/**
+ * Maximum number of URLs that may use browser-rendered extraction (Crawl4AI)
+ * per call to `ingestWebsiteEvidenceDrafts`. This bounds pipeline duration:
+ * worst-case is BROWSER_BUDGET_MAX × 60s (extractMarkdown timeout) = 5 minutes.
+ * Both direct-route (REVIEWS / jsHeavyHint) and stealth-escalation paths share
+ * this budget. The SERP deep-crawl path in research-executor.ts is separate.
+ */
+export const BROWSER_BUDGET_MAX = 5;
+
+// ---------------------------------------------------------------------------
+// Internal types
+// ---------------------------------------------------------------------------
 
 type WorkflowTag =
   | 'planning'
@@ -8,6 +27,10 @@ type WorkflowTag =
   | 'billing'
   | 'lead-intake'
   | 'workflow-context';
+
+// ---------------------------------------------------------------------------
+// Workflow pattern detection
+// ---------------------------------------------------------------------------
 
 const WORKFLOW_PATTERNS: Array<{
   workflowTag: WorkflowTag;
@@ -77,6 +100,10 @@ const TECH_CLUES: Array<{ label: string; pattern: RegExp }> = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Text utilities
+// ---------------------------------------------------------------------------
+
 function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
@@ -102,6 +129,10 @@ function extractMetaDescription(html: string): string | null {
   const value = normalizeWhitespace(match[1]);
   return value.length >= 30 ? value.slice(0, 700) : null;
 }
+
+// ---------------------------------------------------------------------------
+// Workflow tag + confidence
+// ---------------------------------------------------------------------------
 
 function detectWorkflowTag(
   sourceType: EvidenceSourceType,
@@ -131,6 +162,33 @@ function detectTechClues(html: string): string[] {
     (clue) => clue.label,
   );
 }
+
+function baseConfidence(sourceType: EvidenceSourceType): number {
+  switch (sourceType) {
+    case 'WEBSITE':
+      return 0.7;
+    case 'DOCS':
+      return 0.76;
+    case 'CAREERS':
+      return 0.74;
+    case 'HELP_CENTER':
+      return 0.75;
+    case 'JOB_BOARD':
+      return 0.72;
+    case 'MANUAL_URL':
+      return 0.68;
+    case 'REVIEWS':
+      return 0.78;
+    case 'REGISTRY':
+      return 0.82;
+    default:
+      return 0.68;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Text relevance
+// ---------------------------------------------------------------------------
 
 const WORKFLOW_KEYWORDS = [
   // Dutch
@@ -203,33 +261,144 @@ function firstReadableSnippet(text: string): string {
   );
 }
 
-function baseConfidence(sourceType: EvidenceSourceType): number {
-  switch (sourceType) {
-    case 'WEBSITE':
-      return 0.7;
-    case 'DOCS':
-      return 0.76;
-    case 'CAREERS':
-      return 0.74;
-    case 'HELP_CENTER':
-      return 0.75;
-    case 'JOB_BOARD':
-      return 0.72;
-    case 'MANUAL_URL':
-      return 0.68;
-    case 'REVIEWS':
-      return 0.78;
-    case 'REGISTRY':
-      return 0.82;
-    default:
-      return 0.68;
-  }
+// ---------------------------------------------------------------------------
+// 404 detection
+// ---------------------------------------------------------------------------
+
+const SOFT_404_INDICATORS = [
+  'page not found',
+  'pagina niet gevonden',
+  'niet gevonden',
+  'does not exist',
+  'bestaat niet',
+  '404 error',
+  '404 not found',
+];
+
+function looksLikeSoft404(html: string): boolean {
+  const text = stripHtml(html).toLowerCase();
+  // Only flag short pages — real content pages are long even if they mention "404"
+  if (text.length > 3000) return false;
+  return SOFT_404_INDICATORS.some((i) => text.includes(i));
+}
+
+/**
+ * Detect whether Crawl4AI extracted a 404 page (same indicators as soft-404
+ * but applied to markdown content instead of HTML).
+ */
+function looksLikeCrawled404(markdown: string): boolean {
+  if (markdown.length > 3000) return false;
+  const lower = markdown.toLowerCase();
+  return SOFT_404_INDICATORS.some((i) => lower.includes(i));
+}
+
+// ---------------------------------------------------------------------------
+// URL utilities
+// ---------------------------------------------------------------------------
+
+function uniqueUrls(urls: string[]): string[] {
+  return Array.from(new Set(urls.map((url) => url.trim()).filter(Boolean)));
 }
 
 function sourceTypeForUrl(url: string): EvidenceSourceType {
   const inferred = inferSourceType(url);
   return inferred === 'REVIEWS' ? 'MANUAL_URL' : inferred;
 }
+
+// ---------------------------------------------------------------------------
+// Routing helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Determine whether a URL should bypass stealth entirely and go directly to
+ * Crawl4AI browser extraction.
+ *
+ * Rules (per Phase 29 research, Pitfall 3):
+ * - inferSourceType returns REVIEWS → always browser-direct (Trustpilot, Google Maps)
+ * - jsHeavyHint=true → browser-direct (known JS-heavy platforms from Phase 28)
+ *
+ * Note: We check the raw inferred source type (before the REVIEWS→MANUAL_URL
+ * storage remapping) because routing must distinguish review platforms from
+ * MANUAL_URL stored type. Own-website CAREERS pages are NOT auto-routed to
+ * browser — they are typically static HTML.
+ */
+function shouldUseBrowserDirect(url: string, jsHeavyHint: boolean): boolean {
+  return inferSourceType(url) === 'REVIEWS' || jsHeavyHint;
+}
+
+// ---------------------------------------------------------------------------
+// Draft builders
+// ---------------------------------------------------------------------------
+
+/**
+ * Build an EvidenceDraft from Crawl4AI markdown extraction.
+ * Uses detectWorkflowTag for correct tag (not hardcoded 'workflow-context').
+ */
+function buildCrawl4aiDraft(input: {
+  sourceUrl: string;
+  sourceType: EvidenceSourceType;
+  markdown: string;
+  title: string;
+}): EvidenceDraft {
+  return {
+    sourceType: input.sourceType,
+    sourceUrl: input.sourceUrl,
+    title: input.title || 'Browser-extracted page',
+    snippet: input.markdown.slice(0, 240).replace(/\n+/g, ' ').trim(),
+    workflowTag: detectWorkflowTag(input.sourceType, input.markdown),
+    confidenceScore: baseConfidence(input.sourceType),
+    metadata: { adapter: 'crawl4ai-escalation', source: 'browser-rendered' },
+  };
+}
+
+/**
+ * Fallback draft when extraction failed (stealth + crawl4ai both failed/skipped).
+ */
+function fallbackDraft(
+  sourceUrl: string,
+  sourceType: EvidenceSourceType,
+): EvidenceDraft {
+  return {
+    sourceType,
+    sourceUrl,
+    title: 'Manual source seed',
+    snippet: 'Source queued for manual validation (fetch failed or blocked).',
+    workflowTag: 'workflow-context',
+    confidenceScore: baseConfidence(sourceType) - 0.1,
+    metadata: {
+      adapter: 'web-ingestion',
+      fallback: true,
+    },
+  };
+}
+
+/**
+ * Fallback draft pushed when the browser budget is exhausted.
+ * Distinct from fallbackDraft so callers can identify budget-exhausted URLs.
+ */
+function budgetExhaustedDraft(
+  sourceUrl: string,
+  sourceType: EvidenceSourceType,
+): EvidenceDraft {
+  return {
+    sourceType,
+    sourceUrl,
+    title: 'Manual source seed',
+    snippet:
+      'Source queued for manual validation (browser extraction budget exhausted).',
+    workflowTag: 'workflow-context',
+    confidenceScore: baseConfidence(sourceType) - 0.1,
+    metadata: {
+      adapter: 'web-ingestion',
+      fallback: true,
+      budgetExhausted: true,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Public API: HTML extraction
+// ---------------------------------------------------------------------------
 
 export function extractWebsiteEvidenceFromHtml(input: {
   sourceUrl: string;
@@ -284,95 +453,130 @@ export function extractWebsiteEvidenceFromHtml(input: {
   return drafts;
 }
 
-function fallbackDraft(
-  sourceUrl: string,
-  sourceType: EvidenceSourceType,
-): EvidenceDraft {
-  return {
-    sourceType,
-    sourceUrl,
-    title: 'Manual source seed',
-    snippet: 'Source queued for manual validation (fetch failed or blocked).',
-    workflowTag: 'workflow-context',
-    confidenceScore: baseConfidence(sourceType) - 0.1,
-    metadata: {
-      adapter: 'web-ingestion',
-      fallback: true,
-    },
-  };
-}
+// ---------------------------------------------------------------------------
+// Public API: Two-tier website ingestion
+// ---------------------------------------------------------------------------
 
-const SOFT_404_INDICATORS = [
-  'page not found',
-  'pagina niet gevonden',
-  'niet gevonden',
-  'does not exist',
-  'bestaat niet',
-  '404 error',
-  '404 not found',
-];
-
-function looksLikeSoft404(html: string): boolean {
-  const text = stripHtml(html).toLowerCase();
-  // Only flag short pages — real content pages are long even if they mention "404"
-  if (text.length > 3000) return false;
-  return SOFT_404_INDICATORS.some((i) => text.includes(i));
-}
-
-function uniqueUrls(urls: string[]): string[] {
-  return Array.from(new Set(urls.map((url) => url.trim()).filter(Boolean)));
-}
-
+/**
+ * Ingest evidence drafts from a list of URLs using a two-tier extraction pipeline:
+ *
+ * Tier 1 (browser-direct): URLs with sourceType=REVIEWS or jsHeavyHint=true
+ *   → Crawl4AI browser extraction (skip stealth entirely)
+ *
+ * Tier 2 (stealth-first):  All other URLs
+ *   → Scrapling StealthyFetcher
+ *   → If stealth returns <500 chars or fails → escalate to Crawl4AI
+ *   → If Crawl4AI also fails → fallback draft
+ *
+ * A browser budget (BROWSER_BUDGET_MAX = 5) is shared across both tiers per
+ * call. URLs that would need browser extraction after budget is exhausted
+ * receive a budgetExhaustedDraft fallback instead.
+ *
+ * The raw fetch() fallback from the previous implementation has been removed.
+ * The escalation chain is: StealthyFetcher → Crawl4AI → fallback draft.
+ *
+ * Signature is backwards-compatible: the `options` parameter is optional.
+ * Existing callers that omit it continue to work; detectJsHeavy() is used
+ * as the fallback when no jsHeavyHints map is provided.
+ *
+ * @param urls - URLs to ingest (duplicates are deduplicated)
+ * @param options.jsHeavyHints - Optional map of url → jsHeavyHint from Phase 28
+ *   sourceSet. When provided, avoids re-running detectJsHeavy() pattern matching.
+ */
 export async function ingestWebsiteEvidenceDrafts(
   urls: string[],
+  options?: { jsHeavyHints?: Map<string, boolean> },
 ): Promise<EvidenceDraft[]> {
   const drafts: EvidenceDraft[] = [];
+  let browserBudget = BROWSER_BUDGET_MAX; // shared across all URLs in this call
+
   for (const sourceUrl of uniqueUrls(urls)) {
     const sourceType = sourceTypeForUrl(sourceUrl);
-    try {
-      // Try Scrapling StealthyFetcher first (bypasses bot detection)
-      let html: string | null = null;
 
-      const scrapling = await fetchStealth(sourceUrl);
-      if (scrapling.ok && scrapling.html.length > 200) {
-        html = scrapling.html;
-      } else {
-        // Fallback: raw fetch (for local/intranet pages or when Scrapling service is down)
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 9000);
-          const response = await fetch(sourceUrl, {
-            method: 'GET',
-            headers: {
-              'user-agent':
-                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Qualifai/1.0',
-              accept:
-                'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            },
-            signal: controller.signal,
-          });
-          clearTimeout(timeout);
-          if (response.ok) {
-            html = await response.text();
-          } else if (response.status === 404 || response.status === 410) {
-            continue;
-          } else {
-            drafts.push(fallbackDraft(sourceUrl, sourceType));
-            continue;
-          }
-        } catch {
+    // Resolve jsHeavyHint: prefer caller-provided map, fall back to detection
+    const jsHeavyHint =
+      options?.jsHeavyHints?.get(sourceUrl) ?? detectJsHeavy(sourceUrl);
+
+    try {
+      // ------------------------------------------------------------------
+      // Tier 1: Browser-direct path (REVIEWS URL or jsHeavyHint=true)
+      // ------------------------------------------------------------------
+      if (shouldUseBrowserDirect(sourceUrl, jsHeavyHint)) {
+        if (browserBudget <= 0) {
+          drafts.push(budgetExhaustedDraft(sourceUrl, sourceType));
+          continue;
+        }
+        browserBudget--;
+        const { markdown, title } = await extractMarkdown(sourceUrl);
+
+        if (!markdown) {
+          // Crawl4AI returned empty — push fallback stub
           drafts.push(fallbackDraft(sourceUrl, sourceType));
           continue;
         }
-      }
 
-      if (!html) {
-        drafts.push(fallbackDraft(sourceUrl, sourceType));
+        // Check 404 before minimum-length so short "not found" pages are skipped
+        if (looksLikeCrawled404(markdown)) {
+          // 404 content detected in browser-extracted markdown — skip
+          continue;
+        }
+
+        if (markdown.length < 80) {
+          // Crawl4AI returned minimal content — push fallback stub
+          drafts.push(fallbackDraft(sourceUrl, sourceType));
+          continue;
+        }
+
+        drafts.push(
+          buildCrawl4aiDraft({ sourceUrl, sourceType, markdown, title }),
+        );
         continue;
       }
 
-      // Detect soft 404s (200 OK but "not found" content)
-      if (looksLikeSoft404(html)) {
+      // ------------------------------------------------------------------
+      // Tier 2: Stealth-first path
+      // ------------------------------------------------------------------
+      const stealth = await fetchStealth(sourceUrl);
+      const stealthHtml = stealth.ok ? stealth.html : '';
+      const isStealthSufficient = stealthHtml.length >= 500;
+
+      if (!isStealthSufficient) {
+        // Stealth returned insufficient content — try Crawl4AI escalation
+        if (browserBudget <= 0) {
+          // Budget exhausted — fall back without browser extraction
+          drafts.push(fallbackDraft(sourceUrl, sourceType));
+          continue;
+        }
+        browserBudget--;
+        const { markdown, title } = await extractMarkdown(sourceUrl);
+
+        if (!markdown) {
+          // Crawl4AI also returned empty — fallback
+          drafts.push(fallbackDraft(sourceUrl, sourceType));
+          continue;
+        }
+
+        // Check 404 before minimum-length so short "not found" pages are skipped
+        if (looksLikeCrawled404(markdown)) {
+          // 404 content from Crawl4AI — skip
+          continue;
+        }
+
+        if (markdown.length < 80) {
+          // Crawl4AI also returned minimal content — fallback
+          drafts.push(fallbackDraft(sourceUrl, sourceType));
+          continue;
+        }
+
+        drafts.push(
+          buildCrawl4aiDraft({ sourceUrl, sourceType, markdown, title }),
+        );
+        continue;
+      }
+
+      // Stealth succeeded with sufficient content
+      if (looksLikeSoft404(stealthHtml)) {
+        // Soft 404 — skip
         continue;
       }
 
@@ -380,7 +584,7 @@ export async function ingestWebsiteEvidenceDrafts(
         ...extractWebsiteEvidenceFromHtml({
           sourceUrl,
           sourceType,
-          html,
+          html: stealthHtml,
         }),
       );
     } catch (error) {
@@ -388,5 +592,6 @@ export async function ingestWebsiteEvidenceDrafts(
       drafts.push(fallbackDraft(sourceUrl, sourceType));
     }
   }
+
   return drafts.slice(0, 20);
 }

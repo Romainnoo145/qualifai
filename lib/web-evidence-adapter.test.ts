@@ -268,7 +268,7 @@ describe('ingestWebsiteEvidenceDrafts', () => {
     const url = 'https://www.google.com/maps/place/TestBedrijf';
     mockExtractMarkdown.mockResolvedValue(
       markdownResult(
-        'Klant review: de planning was slecht geregeld. Wachttijd was te lang.',
+        'Klant review over de dienstverlening: de planning was slecht geregeld en de wachttijd was te lang. Het bedrijf communiceert niet goed over de doorlooptijd van projecten. De afstemming tussen afdelingen laat te wensen over.',
       ),
     );
 
@@ -316,7 +316,7 @@ describe('ingestWebsiteEvidenceDrafts', () => {
     const url = 'https://www.google.com/maps/place/TestPlace';
     mockExtractMarkdown.mockResolvedValue(
       markdownResult(
-        'Review page with rich content about service quality and planning.',
+        'Review page with rich content about service quality and planning. Customers report excellent communication and fast response times. The workflow is clearly documented and well managed by the team.',
       ),
     );
 
