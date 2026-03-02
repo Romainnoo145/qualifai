@@ -454,6 +454,34 @@ export function extractWebsiteEvidenceFromHtml(input: {
 }
 
 // ---------------------------------------------------------------------------
+// Crawl4AI result handler (shared between Tier 1 and Tier 2 escalation)
+// ---------------------------------------------------------------------------
+
+/**
+ * Process a Crawl4AI extraction result into an EvidenceDraft or null.
+ *
+ * Returns the draft to push, or 'skip' if the URL should be skipped (404 content).
+ * Returns a fallback draft when content is empty or below the 80-char minimum.
+ *
+ * Order of checks (deliberate):
+ * 1. Empty markdown → fallback (service may be down)
+ * 2. 404 detection → skip (correct: a 404 should never produce a fallback)
+ * 3. Minimum 80-char content → fallback (browser extraction returned shell)
+ * 4. Build full crawl4ai draft with workflowTag detection
+ */
+function processCrawl4aiResult(
+  sourceUrl: string,
+  sourceType: EvidenceSourceType,
+  markdown: string,
+  title: string,
+): EvidenceDraft | 'skip' {
+  if (!markdown) return fallbackDraft(sourceUrl, sourceType);
+  if (looksLikeCrawled404(markdown)) return 'skip';
+  if (markdown.length < 80) return fallbackDraft(sourceUrl, sourceType);
+  return buildCrawl4aiDraft({ sourceUrl, sourceType, markdown, title });
+}
+
+// ---------------------------------------------------------------------------
 // Public API: Two-tier website ingestion
 // ---------------------------------------------------------------------------
 
@@ -508,28 +536,13 @@ export async function ingestWebsiteEvidenceDrafts(
         }
         browserBudget--;
         const { markdown, title } = await extractMarkdown(sourceUrl);
-
-        if (!markdown) {
-          // Crawl4AI returned empty — push fallback stub
-          drafts.push(fallbackDraft(sourceUrl, sourceType));
-          continue;
-        }
-
-        // Check 404 before minimum-length so short "not found" pages are skipped
-        if (looksLikeCrawled404(markdown)) {
-          // 404 content detected in browser-extracted markdown — skip
-          continue;
-        }
-
-        if (markdown.length < 80) {
-          // Crawl4AI returned minimal content — push fallback stub
-          drafts.push(fallbackDraft(sourceUrl, sourceType));
-          continue;
-        }
-
-        drafts.push(
-          buildCrawl4aiDraft({ sourceUrl, sourceType, markdown, title }),
+        const result = processCrawl4aiResult(
+          sourceUrl,
+          sourceType,
+          markdown,
+          title,
         );
+        if (result !== 'skip') drafts.push(result);
         continue;
       }
 
@@ -541,7 +554,7 @@ export async function ingestWebsiteEvidenceDrafts(
       const isStealthSufficient = stealthHtml.length >= 500;
 
       if (!isStealthSufficient) {
-        // Stealth returned insufficient content — try Crawl4AI escalation
+        // Stealth returned insufficient content — escalate to Crawl4AI
         if (browserBudget <= 0) {
           // Budget exhausted — fall back without browser extraction
           drafts.push(fallbackDraft(sourceUrl, sourceType));
@@ -549,28 +562,13 @@ export async function ingestWebsiteEvidenceDrafts(
         }
         browserBudget--;
         const { markdown, title } = await extractMarkdown(sourceUrl);
-
-        if (!markdown) {
-          // Crawl4AI also returned empty — fallback
-          drafts.push(fallbackDraft(sourceUrl, sourceType));
-          continue;
-        }
-
-        // Check 404 before minimum-length so short "not found" pages are skipped
-        if (looksLikeCrawled404(markdown)) {
-          // 404 content from Crawl4AI — skip
-          continue;
-        }
-
-        if (markdown.length < 80) {
-          // Crawl4AI also returned minimal content — fallback
-          drafts.push(fallbackDraft(sourceUrl, sourceType));
-          continue;
-        }
-
-        drafts.push(
-          buildCrawl4aiDraft({ sourceUrl, sourceType, markdown, title }),
+        const result = processCrawl4aiResult(
+          sourceUrl,
+          sourceType,
+          markdown,
+          title,
         );
+        if (result !== 'skip') drafts.push(result);
         continue;
       }
 
