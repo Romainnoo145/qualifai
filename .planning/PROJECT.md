@@ -61,9 +61,21 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ### Active
 
-<!-- Next milestone — to be defined -->
+<!-- v3.0 Sharp Analysis — in progress -->
 
-(None yet — define next milestone with `/gsd:new-milestone`)
+- [ ] Rewrite hypothesis generation prompt to prioritize non-website evidence (reviews, hiring, LinkedIn)
+- [ ] Add Claude as configurable model option for hypothesis generation
+- [ ] Remove hardcoded metric defaults (hours saved, error reduction) or derive from evidence
+- [ ] Allow variable hypothesis count (1-3) based on evidence quality
+- [ ] /discover/ prospect validation session with real prospects
+- [ ] Crawl4AI v0.8.x feature verification (consent popup, shadow DOM)
+- [ ] Pain gate calibration SQL against real prospect data
+- [ ] Fix SERP cache re-read after overwrite bug
+- [ ] Remove unused logoUrl prop from DashboardClient
+- [ ] Fix E2E send test to use tRPC quality gate
+- [ ] Fix detail-view `as any` Prisma cast
+- [ ] Fix import ordering anomaly in workflow-engine.ts
+- [ ] Clean up TS2589 deep Prisma `as any` casts
 
 ### Out of Scope
 
@@ -138,8 +150,8 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 **Latest shipped:** v2.2 Verified Pain Intelligence (2026-03-02) — source discovery with provenance, two-tier browser extraction, advisory pain gate, immutable override audit trail.
 
-**Next milestone:** To be defined — run `/gsd:new-milestone`
+**Active milestone:** v3.0 Sharp Analysis — hypothesis generation rewrite, pending todo resolution, tech debt cleanup
 
 ---
 
-_Last updated: 2026-03-02 after v2.2 milestone completion_
+_Last updated: 2026-03-02 after v3.0 milestone start_
