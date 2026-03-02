@@ -8,6 +8,7 @@
 - ✅ **v2.0 Streamlined Flow** — Phases 17-22 (shipped 2026-02-23)
 - ✅ **v2.1 Production Bootstrap** — Phases 23-27.1 (shipped 2026-03-02)
 - ✅ **v2.2 Verified Pain Intelligence** — Phases 28-30 (shipped 2026-03-02)
+- 🚧 **v3.0 Sharp Analysis** — Phases 31-35 (in progress)
 
 ## Phases
 
@@ -74,34 +75,117 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 </details>
 
+### 🚧 v3.0 Sharp Analysis (In Progress)
+
+**Milestone Goal:** Hypothesis generation that produces evidence-grounded, prospect-specific analysis — eliminating fabricated metrics, parroted marketing copy, and shallow website-only reasoning.
+
+- [ ] **Phase 31: Tech Debt Foundation** — Fix known code defects and upgrade Gemini model string to establish a clean, passing build baseline before hypothesis changes
+- [ ] **Phase 32: Hypothesis Prompt Rewrite** — Rewrite generateHypothesisDraftsAI() with evidence tiering, source-tier priority, anti-parroting constraint, mandatory quote requirement, and variable output count
+- [ ] **Phase 33: Configurable Model Selection** — Add Claude as a selectable hypothesis model with a provider abstraction, plus chain-of-thought reasoning pass
+- [ ] **Phase 34: AI Metric Derivation + Source Attribution** — Replace hardcoded METRIC_DEFAULTS with AI-estimated contextual ranges and surface source attribution in admin UI
+- [ ] **Phase 35: Validation and Calibration** — Verify /discover/ hypothesis flow, Crawl4AI v0.8.x feature set, and pain gate thresholds against real prospect data
+
+## Phase Details
+
+### Phase 31: Tech Debt Foundation
+
+**Goal**: The codebase has a clean npm run check pass, the SERP cache bug is gone, the import anomaly in workflow-engine.ts is resolved, and all known TypeScript debt is addressed — establishing a stable baseline before hypothesis generation is touched
+**Depends on**: Phase 30 (v2.2 complete)
+**Requirements**: DEBT-01, DEBT-02, DEBT-03, DEBT-04, DEBT-05, DEBT-06, MODEL-02
+**Success Criteria** (what must be TRUE):
+
+1. npm run check passes with zero errors after all fixes applied
+2. SERP cache re-read bug is absent from research-executor.ts (pre-read snapshot taken before deepCrawl overwrites)
+3. Gemini model string is gemini-2.5-flash across all four files (workflow-engine.ts, evidence-scorer.ts, serp.ts, review-adapters.ts)
+4. The unused logoUrl prop is gone from DashboardClient interface and all call sites compile cleanly
+5. TS2589 as any casts are categorized and fixed by pattern (deep inference → Prisma.XGetPayload, tRPC mutations → correct v11 pattern, Json fields → typed helper)
+   **Plans**: TBD
+
+### Phase 32: Hypothesis Prompt Rewrite
+
+**Goal**: The hypothesis generation prompt prioritizes diagnostic evidence (reviews, hiring, LinkedIn) over marketing copy, prevents parroting of the company's own website, requires at least one verbatim quoted snippet per hypothesis, and varies output count from 1-3 based on confirmed pain signal quality
+**Depends on**: Phase 31
+**Requirements**: ANLYS-01, ANLYS-02, ANLYS-03, ANLYS-04, ANLYS-05, ANLYS-06, ANLYS-07
+**Success Criteria** (what must be TRUE):
+
+1. Generated hypotheses for STB-kozijnen cite reviews or hiring signals in problemStatement, not service page copy
+2. Generated hypotheses for Mujjo cite customer support reviews (expected confidence 0.85+) and no two prospects share identical metric values
+3. Each hypothesis problemStatement contains at least one verbatim quoted snippet from a non-WEBSITE evidence source (detectable by presence of quotation marks)
+4. A prospect with only one confirmed pain tag produces one hypothesis, not three
+5. A prompt run on a WEBSITE-only evidence set produces a confidence score in the 0.60-0.65 range, not 0.80+
+   **Plans**: TBD
+
+### Phase 33: Configurable Model Selection
+
+**Goal**: Admin can select Claude Sonnet as the hypothesis generation model for any research run via an optional parameter, and a two-pass chain-of-thought reasoning step separates evidence analysis from hypothesis synthesis
+**Depends on**: Phase 32
+**Requirements**: MODEL-01, ANLYS-08
+**Success Criteria** (what must be TRUE):
+
+1. Passing hypothesisModel: 'claude-sonnet' to research.startRun or research.retryRun produces hypotheses via the Anthropic API (verifiable by distinct reasoning style and xml-structured prompt trace)
+2. Passing hypothesisModel: 'gemini-flash' (or omitting the field) produces hypotheses via Gemini, unchanged from Phase 32 output — backward-compatible default
+3. Both models parse to the same hypothesis JSON shape with no runtime errors
+4. Chain-of-thought pass is observable: reasoning section present in raw model output before synthesis step
+   **Plans**: TBD
+
+### Phase 34: AI Metric Derivation + Source Attribution
+
+**Goal**: The Workflow Loss Map and outreach templates show AI-estimated metric ranges that are specific to each prospect's industry and evidence, and the admin detail view shows which source type most drove each hypothesis
+**Depends on**: Phase 33
+**Requirements**: MODEL-03, ANLYS-09
+**Success Criteria** (what must be TRUE):
+
+1. Two different prospects in different industries produce different hoursSaved and errorReduction metric values (not the same hardcoded defaults)
+2. Metric values are labeled as estimated ranges (e.g., "8-12 hours/week") not false precision integers
+3. The Workflow Loss Map PDF renders without NaN or undefined values for any metric field
+4. Each hypothesis card in the admin detail view shows a source attribution badge (e.g., "REVIEWS", "CAREERS") identifying the primary evidence driver
+   **Plans**: TBD
+
+### Phase 35: Validation and Calibration
+
+**Goal**: Real prospect data confirms the /discover/ hypothesis validation flow works end-to-end, Crawl4AI v0.8.x features are verified against real pages, and PAIN_GATE threshold constants are tuned to actual evidence distribution
+**Depends on**: Phase 34
+**Requirements**: VALID-01, VALID-02, VALID-03
+**Success Criteria** (what must be TRUE):
+
+1. /discover/ validation session run with at least one real prospect — confirm/decline interaction recorded in DB and visible in admin override history
+2. Crawl4AI v0.8.x consent popup removal and shadow DOM flattening verified working against at least two real pages that previously required manual intervention
+3. Pain gate calibration SQL run against all 7+ real prospects and threshold constants updated in quality-config.ts with documented before/after distribution
+   **Plans**: TBD
+
 ## Progress
 
-| Phase                                | Milestone | Plans Complete | Status   | Completed  |
-| ------------------------------------ | --------- | -------------- | -------- | ---------- |
-| 1-5. MVP                             | v1.0      | —              | Complete | 2026-02-20 |
-| 6. Use Cases Foundation              | v1.1      | 3/3            | Complete | 2026-02-20 |
-| 7. Evidence Approval Gate            | v1.1      | 2/2            | Complete | 2026-02-20 |
-| 8. Deep Evidence Pipeline            | v1.1      | 3/3            | Complete | 2026-02-21 |
-| 9. Engagement Triggers               | v1.1      | 2/2            | Complete | 2026-02-21 |
-| 10. Cadence Engine                   | v1.1      | 4/4            | Complete | 2026-02-21 |
-| 11. Prospect Dashboard               | v1.1      | 2/2            | Complete | 2026-02-21 |
-| 12. Navigation and Language          | v1.2      | 2/2            | Complete | 2026-02-21 |
-| 13. Prospect Story Flow              | v1.2      | 5/5            | Complete | 2026-02-22 |
-| 14. Campaign Reporting               | v1.2      | 2/2            | Complete | 2026-02-22 |
-| 15. Action Queue Dashboard           | v1.2      | 2/2            | Complete | 2026-02-22 |
-| 17. Evidence Pipeline Enrichment     | v2.0      | 3/3            | Complete | 2026-02-22 |
-| 18. Research Quality Gate            | v2.0      | 3/3            | Complete | 2026-02-22 |
-| 19. Client Hypothesis Validation     | v2.0      | 2/2            | Complete | 2026-02-23 |
-| 20. One-Click Send Queue + Pipeline  | v2.0      | 3/3            | Complete | 2026-02-23 |
-| 21. Prospect Discovery + Cleanup     | v2.0      | 2/2            | Complete | 2026-02-23 |
-| 22. Hypothesis Flow Fix              | v2.0      | 1/1            | Complete | 2026-02-23 |
-| 23. Use Case Extractors              | v2.1      | 2/2            | Complete | 2026-02-24 |
-| 24. Data Population and Discovery    | v2.1      | 2/2            | Complete | 2026-02-25 |
-| 25. Pipeline Hardening               | v2.1      | 4/4            | Complete | 2026-02-27 |
-| 26. Quality Calibration              | v2.1      | 2/2            | Complete | 2026-02-28 |
-| 26.1. Evidence Pipeline Expansion    | v2.1      | 3/3            | Complete | 2026-02-28 |
-| 27. End-to-End Cycle                 | v2.1      | 2/2            | Complete | 2026-02-28 |
-| 27.1. Cal.com Booking Validation     | v2.1      | 1/1            | Complete | 2026-03-01 |
-| 28. Source Discovery with Provenance | v2.2      | 3/3            | Complete | 2026-03-02 |
-| 29. Browser-Rendered Extraction      | v2.2      | 2/2            | Complete | 2026-03-02 |
-| 30. Pain Confirmation Gate + Audit   | v2.2      | 4/4            | Complete | 2026-03-02 |
+| Phase                                  | Milestone | Plans Complete | Status      | Completed  |
+| -------------------------------------- | --------- | -------------- | ----------- | ---------- |
+| 1-5. MVP                               | v1.0      | —              | Complete    | 2026-02-20 |
+| 6. Use Cases Foundation                | v1.1      | 3/3            | Complete    | 2026-02-20 |
+| 7. Evidence Approval Gate              | v1.1      | 2/2            | Complete    | 2026-02-20 |
+| 8. Deep Evidence Pipeline              | v1.1      | 3/3            | Complete    | 2026-02-21 |
+| 9. Engagement Triggers                 | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 10. Cadence Engine                     | v1.1      | 4/4            | Complete    | 2026-02-21 |
+| 11. Prospect Dashboard                 | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 12. Navigation and Language            | v1.2      | 2/2            | Complete    | 2026-02-21 |
+| 13. Prospect Story Flow                | v1.2      | 5/5            | Complete    | 2026-02-22 |
+| 14. Campaign Reporting                 | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 15. Action Queue Dashboard             | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 17. Evidence Pipeline Enrichment       | v2.0      | 3/3            | Complete    | 2026-02-22 |
+| 18. Research Quality Gate              | v2.0      | 3/3            | Complete    | 2026-02-22 |
+| 19. Client Hypothesis Validation       | v2.0      | 2/2            | Complete    | 2026-02-23 |
+| 20. One-Click Send Queue + Pipeline    | v2.0      | 3/3            | Complete    | 2026-02-23 |
+| 21. Prospect Discovery + Cleanup       | v2.0      | 2/2            | Complete    | 2026-02-23 |
+| 22. Hypothesis Flow Fix                | v2.0      | 1/1            | Complete    | 2026-02-23 |
+| 23. Use Case Extractors                | v2.1      | 2/2            | Complete    | 2026-02-24 |
+| 24. Data Population and Discovery      | v2.1      | 2/2            | Complete    | 2026-02-25 |
+| 25. Pipeline Hardening                 | v2.1      | 4/4            | Complete    | 2026-02-27 |
+| 26. Quality Calibration                | v2.1      | 2/2            | Complete    | 2026-02-28 |
+| 26.1. Evidence Pipeline Expansion      | v2.1      | 3/3            | Complete    | 2026-02-28 |
+| 27. End-to-End Cycle                   | v2.1      | 2/2            | Complete    | 2026-02-28 |
+| 27.1. Cal.com Booking Validation       | v2.1      | 1/1            | Complete    | 2026-03-01 |
+| 28. Source Discovery with Provenance   | v2.2      | 3/3            | Complete    | 2026-03-02 |
+| 29. Browser-Rendered Extraction        | v2.2      | 2/2            | Complete    | 2026-03-02 |
+| 30. Pain Confirmation Gate + Audit     | v2.2      | 4/4            | Complete    | 2026-03-02 |
+| 31. Tech Debt Foundation               | v3.0      | 0/TBD          | Not started | -          |
+| 32. Hypothesis Prompt Rewrite          | v3.0      | 0/TBD          | Not started | -          |
+| 33. Configurable Model Selection       | v3.0      | 0/TBD          | Not started | -          |
+| 34. AI Metric Derivation + Attribution | v3.0      | 0/TBD          | Not started | -          |
+| 35. Validation and Calibration         | v3.0      | 0/TBD          | Not started | -          |

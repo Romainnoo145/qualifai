@@ -72,35 +72,35 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status  |
 | ----------- | ----- | ------- |
-| ANLYS-01    | —     | Pending |
-| ANLYS-02    | —     | Pending |
-| ANLYS-03    | —     | Pending |
-| ANLYS-04    | —     | Pending |
-| ANLYS-05    | —     | Pending |
-| ANLYS-06    | —     | Pending |
-| ANLYS-07    | —     | Pending |
-| ANLYS-08    | —     | Pending |
-| ANLYS-09    | —     | Pending |
-| MODEL-01    | —     | Pending |
-| MODEL-02    | —     | Pending |
-| MODEL-03    | —     | Pending |
-| VALID-01    | —     | Pending |
-| VALID-02    | —     | Pending |
-| VALID-03    | —     | Pending |
-| DEBT-01     | —     | Pending |
-| DEBT-02     | —     | Pending |
-| DEBT-03     | —     | Pending |
-| DEBT-04     | —     | Pending |
-| DEBT-05     | —     | Pending |
-| DEBT-06     | —     | Pending |
+| ANLYS-01    | 32    | Pending |
+| ANLYS-02    | 32    | Pending |
+| ANLYS-03    | 32    | Pending |
+| ANLYS-04    | 32    | Pending |
+| ANLYS-05    | 32    | Pending |
+| ANLYS-06    | 32    | Pending |
+| ANLYS-07    | 32    | Pending |
+| ANLYS-08    | 33    | Pending |
+| ANLYS-09    | 34    | Pending |
+| MODEL-01    | 33    | Pending |
+| MODEL-02    | 31    | Pending |
+| MODEL-03    | 34    | Pending |
+| VALID-01    | 35    | Pending |
+| VALID-02    | 35    | Pending |
+| VALID-03    | 35    | Pending |
+| DEBT-01     | 31    | Pending |
+| DEBT-02     | 31    | Pending |
+| DEBT-03     | 31    | Pending |
+| DEBT-04     | 31    | Pending |
+| DEBT-05     | 31    | Pending |
+| DEBT-06     | 31    | Pending |
 
 **Coverage:**
 
 - v3.0 requirements: 21 total
-- Mapped to phases: 0
-- Unmapped: 21 (awaiting roadmap)
+- Mapped to phases: 21
+- Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-03-02_
-_Last updated: 2026-03-02 after initial definition_
+_Last updated: 2026-03-02 after roadmap creation — all 21 requirements mapped_

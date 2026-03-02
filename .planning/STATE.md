@@ -1,18 +1,20 @@
-# State: Qualifai
+# Project State
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service Klarifai actually delivers.
-**Current focus:** v3.0 Sharp Analysis
+**Current focus:** Phase 31 — Tech Debt Foundation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-02 — Milestone v3.0 started
+Phase: 31 of 35 (Tech Debt Foundation)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-03-02 — v3.0 roadmap created, phases 31-35 defined
+
+Progress: [████████████████████░░░░░░░░░░] 66% (30 phases complete across 7 milestones)
 
 ## Milestones Shipped
 
@@ -39,27 +41,31 @@ Last activity: 2026-03-02 — Milestone v3.0 started
 
 ## Accumulated Context
 
+### Decisions
+
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting v3.0:
+
+- v2.2: Advisory-only pain gate (Dutch SMBs fail cross-source; gate provides visibility not block)
+- v3.0 research: Gemini Flash remains default; Claude Sonnet as opt-in per-run (not global env var)
+- v3.0 research: METRIC_DEFAULTS retained as last-resort fallback (not deleted) pending consumer audit
+- v3.0 research: No new npm dependencies — existing @anthropic-ai/sdk ^0.73.0 covers Claude integration
+- v3.0 research: generateWorkflowLossMapContent() must be audited before Phase 34 planning begins
+
 ### Pending Todos
 
-- Run real prospect validation session on /discover/ before building features that depend on hypothesis confirmation signal
-- Verify Crawl4AI service is on v0.8.x (remove_consent_popups and flatten_shadow_dom are v0.8.x features)
-- Run pain gate calibration SQL against 7 real prospects before writing PAIN*GATE*\* constants in quality-config.ts
-
-### Tech Debt (Carried Forward)
-
-- SERP cache re-read after overwrite (Phase 8 bug) — mitigated by sourceSet.serpDiscoveredAt as primary guard
-- Unused logoUrl prop in DashboardClient interface
-- E2E send test bypasses tRPC quality gate (calls Resend directly)
-- Detail-view uses `(researchRuns.data[0] as any).summary` cast
-- Import ordering anomaly in lib/workflow-engine.ts (PAIN_CONFIRMATION_MIN_SOURCES import after export — works via ESM hoisting)
-- TS2589 deep Prisma inference `as any` casts (established project pattern)
+- Capture golden baseline JSON from all 7 real prospects BEFORE Phase 32 touches any prompt text
+- Run /discover/ validation session with real prospect (Phase 35)
+- Crawl4AI v0.8.x feature verification — consent popup, shadow DOM (Phase 35)
+- Pain gate calibration SQL against real prospect data (Phase 35)
 
 ### Blockers/Concerns
 
-- (none)
+- Phase 34 (Metric Derivation): generateWorkflowLossMapContent() not read in research pass — must audit all metric field consumers before planning. Flag for plan-phase research step.
+- Phase 32 (Prompt Rewrite): Variable hypothesis count requires downstream audit of UI and outreach templates before changing count — this is a breaking interface change.
 
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Defining v3.0 requirements
-Resume with: Continue requirements definition and roadmap creation
+Stopped at: v3.0 roadmap created (phases 31-35) — ready to plan Phase 31
+Resume file: None
