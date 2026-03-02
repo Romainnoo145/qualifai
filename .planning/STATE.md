@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service Klarifai actually delivers.
-**Current focus:** Phase 34 — AI Metric Derivation
+**Current focus:** Phase 35 — Validation and Calibration
 
 ## Current Position
 
-Phase: 34 of 35 (AI Metric Derivation)
-Plan: 2 of 3 in current phase (Plan 02 complete)
-Status: Plan 02 complete (AI metric derivation implementation — all 5 MODEL-03/ANLYS-09 tests GREEN; primarySourceType in DB + UI badge)
-Last activity: 2026-03-02 — Plan 34-02 complete (3 tasks: clamp helpers + prompt + mapping; DB column + migration; UI badge; 3 commits: e930342, b1c5fd7, f434844; TypeScript clean; 36/37 tests passing)
+Phase: 35 of 35 (Validation and Calibration)
+Plan: 1 of 1 in current phase (Plan 01 complete)
+Status: Plan 01 complete (Crawl4AI v0.8.x params + pain gate calibration — all 7 prospects GREEN; thresholds confirmed; 2 commits: e7c964a, 36c175c)
+Last activity: 2026-03-02 — Plan 35-01 complete (2 tasks: crawl4ai params + calibration script; calibration report; TypeScript clean)
 
 Progress: [████████████████████░░░░░░░░░░] 66% (30 phases complete across 7 milestones)
 
@@ -29,18 +29,19 @@ Progress: [████████████████████░░░
 
 **Velocity (all milestones):**
 
-| Milestone                         | Phases | Plans   | Timeline     |
-| --------------------------------- | ------ | ------- | ------------ |
-| v1.0                              | 5      | —       | Feb 20       |
-| v1.1                              | 6      | 16      | Feb 20-21    |
-| v1.2                              | 4      | 11      | Feb 21-22    |
-| v2.0                              | 6      | 14      | Feb 22-23    |
-| v2.1                              | 7      | 16      | Feb 23-Mar 2 |
-| v2.2                              | 3      | 9       | Mar 2        |
-| **Total**                         | **31** | **66+** | **11 days**  |
-| Phase 31 P02                      | 7      | 2 tasks | 3 files      |
-| Phase 31 P03                      | 7      | 2 tasks | 3 files      |
-| Phase 34-ai-metric-derivation P02 | 25     | 3 tasks | 5 files      |
+| Milestone                               | Phases | Plans   | Timeline     |
+| --------------------------------------- | ------ | ------- | ------------ |
+| v1.0                                    | 5      | —       | Feb 20       |
+| v1.1                                    | 6      | 16      | Feb 20-21    |
+| v1.2                                    | 4      | 11      | Feb 21-22    |
+| v2.0                                    | 6      | 14      | Feb 22-23    |
+| v2.1                                    | 7      | 16      | Feb 23-Mar 2 |
+| v2.2                                    | 3      | 9       | Mar 2        |
+| **Total**                               | **31** | **66+** | **11 days**  |
+| Phase 31 P02                            | 7      | 2 tasks | 3 files      |
+| Phase 31 P03                            | 7      | 2 tasks | 3 files      |
+| Phase 34-ai-metric-derivation P02       | 25     | 3 tasks | 5 files      |
+| Phase 35-validation-and-calibration P01 | 3      | 2 tasks | 4 files      |
 
 ## Accumulated Context
 
@@ -65,6 +66,9 @@ Recent decisions affecting v3.0:
 - Phase 34-01: TDD RED scaffold — mock factories extended with optional metric fields and primarySourceType (default mock hoursSavedWeekMid: 12 vs METRIC_DEFAULTS: 8); MODEL-03 clamping test uses toBe(80) not toBeLessThanOrEqual(80) to avoid coincidental pass with METRIC_DEFAULTS; HypothesisDraft interface extended with primarySourceType: string | null; null stubs in all 7 return sites; 4 of 5 new tests fail RED for correct reasons
 - [Phase 34-02]: Tuple cast .sort() as [number, number, number] to avoid number|undefined TypeScript inference from array destructure
 - [Phase 34-02]: primarySourceType column placed before status in WorkflowHypothesis schema to avoid merge conflict with AutomationOpportunity identical trailing fields
+- [Phase 35-01]: Crawl4AI v0.8.x params backward-compatible — added to crawl4ai.ts unconditionally; live test deferred pending service startup
+- [Phase 35-01]: MIN_AVERAGE_CONFIDENCE = 0.55 confirmed correct — margin +0.040 above lowest scorable avg (Marcore 0.590)
+- [Phase 35-01]: calibration-table.mjs preserved as-is (historical artifact); new calibration-report.mjs is canonical with correct 0.55 threshold and aiRelevance filter
 
 ### Pending Todos
 
@@ -81,5 +85,5 @@ Recent decisions affecting v3.0:
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 34-02-PLAN.md — AI metric derivation implementation (3 tasks, 3 commits: e930342, b1c5fd7, f434844). Plan 34-02 complete.
+Stopped at: Completed 35-01-PLAN.md — Crawl4AI v0.8.x params and pain gate calibration (2 tasks, 2 commits: e7c964a, 36c175c). Plan 35-01 complete.
 Resume file: None

@@ -28,8 +28,8 @@ Requirements for v3.0 release. Each maps to roadmap phases.
 ### Validation & Calibration
 
 - [ ] **VALID-01**: /discover/ validation session run with real prospects to verify hypothesis confirmation flow works end-to-end
-- [ ] **VALID-02**: Crawl4AI v0.8.x features verified (consent popup removal, shadow DOM flattening) against real pages
-- [ ] **VALID-03**: Pain gate calibration SQL run against real prospect data to tune PAIN_GATE threshold constants
+- [x] **VALID-02**: Crawl4AI v0.8.x features verified (consent popup removal, shadow DOM flattening) against real pages
+- [x] **VALID-03**: Pain gate calibration SQL run against real prospect data to tune PAIN_GATE threshold constants
 
 ### Tech Debt
 
@@ -85,8 +85,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MODEL-02    | 31    | Complete |
 | MODEL-03    | 34    | Complete |
 | VALID-01    | 35    | Pending  |
-| VALID-02    | 35    | Pending  |
-| VALID-03    | 35    | Pending  |
+| VALID-02    | 35    | Complete |
+| VALID-03    | 35    | Complete |
 | DEBT-01     | 31    | Complete |
 | DEBT-02     | 31    | Complete |
 | DEBT-03     | 31    | Complete |
