@@ -130,6 +130,9 @@ function ProcessSignalsButton() {
 function DraftQueue() {
   const queue = api.outreach.getDecisionInbox.useQuery({ limit: 150 });
   const utils = api.useUtils();
+  const [overrideReasons, setOverrideReasons] = useState<
+    Record<string, string>
+  >({});
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const approve = (api.outreach.approveDraft as any).useMutation({
@@ -138,6 +141,9 @@ function DraftQueue() {
       utils.outreach.getHistory.invalidate();
     },
   });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const approveQuality = (api.research.approveQuality as any).useMutation();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const reject = (api.outreach.rejectDraft as any).useMutation({
@@ -151,6 +157,23 @@ function DraftQueue() {
       utils.outreach.getHistory.invalidate();
     },
   });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleApproveDraft = async (draft: any) => {
+    const unconfirmedPainTags: string[] = draft.unconfirmedPainTags ?? [];
+    const overrideReason = overrideReasons[draft.id] ?? '';
+    const needsApproveQuality =
+      unconfirmedPainTags.length > 0 && draft.qualityApproved !== true;
+
+    if (needsApproveQuality && draft.latestRunId) {
+      await approveQuality.mutateAsync({
+        runId: draft.latestRunId,
+        approved: true,
+        notes: overrideReason,
+      });
+    }
+    approve.mutate({ id: draft.id });
+  };
 
   if (queue.isLoading) {
     return (
@@ -264,88 +287,148 @@ function DraftQueue() {
       )}
 
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      {(queueData.drafts as any[]).map((draft: any) => (
-        <div key={draft.id} className="glass-card card-interactive p-8">
-          <div className="mb-4 flex items-center gap-3">
-            <span
-              className={cn(
-                'text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border',
-                draft.riskLevel === 'low'
-                  ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                  : draft.riskLevel === 'blocked'
-                    ? 'bg-red-50 text-red-600 border-red-100'
-                    : 'bg-amber-50 text-amber-600 border-amber-100',
-              )}
-            >
-              Risk: {draft.riskLevel}
-            </span>
-            <span className="text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border bg-slate-50 text-slate-600 border-slate-100">
-              {draft.priorityTier} • Score {draft.priorityScore}
-            </span>
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
-              {draft.riskReason}
-            </span>
-          </div>
+      {(queueData.drafts as any[]).map((draft: any) => {
+        const confirmedPainTags: string[] = draft.confirmedPainTags ?? [];
+        const unconfirmedPainTags: string[] = draft.unconfirmedPainTags ?? [];
+        const hasPainTags =
+          confirmedPainTags.length + unconfirmedPainTags.length > 0;
+        const needsOverrideReason =
+          unconfirmedPainTags.length > 0 && draft.qualityApproved !== true;
+        const overrideReason = overrideReasons[draft.id] ?? '';
+        const approveDisabled =
+          approve.isPending ||
+          approveQuality.isPending ||
+          draft.riskLevel === 'blocked' ||
+          (needsOverrideReason && overrideReason.trim().length < 12);
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-            <div>
-              <div className="flex flex-wrap items-center gap-4 mb-2">
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-lg bg-slate-50 text-[#040026] uppercase tracking-wider">
-                  {draft.type.replace(/_/g, ' ')}
-                </span>
-                <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5" />
-                  {new Date(draft.createdAt).toLocaleString()}
+        return (
+          <div key={draft.id} className="glass-card card-interactive p-8">
+            <div className="mb-4 flex items-center gap-3">
+              <span
+                className={cn(
+                  'text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border',
+                  draft.riskLevel === 'low'
+                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                    : draft.riskLevel === 'blocked'
+                      ? 'bg-red-50 text-red-600 border-red-100'
+                      : 'bg-amber-50 text-amber-600 border-amber-100',
+                )}
+              >
+                Risk: {draft.riskLevel}
+              </span>
+              <span className="text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border bg-slate-50 text-slate-600 border-slate-100">
+                {draft.priorityTier} • Score {draft.priorityScore}
+              </span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                {draft.riskReason}
+              </span>
+            </div>
+
+            {/* Pain tag chips */}
+            {hasPainTags && (
+              <div className="flex flex-wrap gap-1.5 mt-2 mb-4">
+                {confirmedPainTags.map((tag: string) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100"
+                  >
+                    <ShieldCheck className="w-3 h-3" />
+                    {tag}
+                  </span>
+                ))}
+                {unconfirmedPainTags.map((tag: string) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100"
+                  >
+                    <AlertTriangle className="w-3 h-3" />
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Override reason textarea — shown when unconfirmed tags exist and not yet approved */}
+            {needsOverrideReason && (
+              <div className="mb-4">
+                <textarea
+                  className="input-minimal w-full mt-3 text-xs resize-none"
+                  placeholder="Reden voor doorgaan ondanks onbevestigde pijn..."
+                  rows={2}
+                  value={overrideReason}
+                  onChange={(e) =>
+                    setOverrideReasons((prev) => ({
+                      ...prev,
+                      [draft.id]: e.target.value,
+                    }))
+                  }
+                />
+                <span className="text-[9px] text-slate-400">
+                  {overrideReason.length}/12 min
                 </span>
               </div>
-              <Link
-                href={`/admin/contacts/${draft.contact.id}`}
-                className="text-lg font-black text-[#040026] hover:text-[#007AFF] transition-all tracking-tight"
-              >
-                {draft.contact.firstName} {draft.contact.lastName}
-              </Link>
-              {draft.contact.prospect && (
-                <span className="text-xs text-slate-400 font-bold ml-3 inline-flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5" />
-                  {draft.contact.prospect.companyName ??
-                    draft.contact.prospect.domain}
-                </span>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => approve.mutate({ id: draft.id })}
-                disabled={approve.isPending || draft.riskLevel === 'blocked'}
-                className="ui-focus ui-tap flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#1E1E4A] transition-all disabled:opacity-50 shadow-lg shadow-[#040026]/10"
-              >
-                <Check className="w-3.5 h-3.5" /> Approve & Send
-              </button>
-              <button
-                onClick={() => reject.mutate({ id: draft.id })}
-                disabled={reject.isPending}
-                className="ui-focus ui-tap flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all disabled:opacity-50"
-              >
-                <X className="w-3.5 h-3.5" /> Reject
-              </button>
-            </div>
-          </div>
+            )}
 
-          {/* Email preview */}
-          <div className="bg-[#FCFCFD] rounded-2xl p-6 border border-slate-100">
-            <p className="text-sm font-black text-[#040026] mb-4 flex items-center gap-2">
-              <Mail className="w-4 h-4 text-slate-300" />
-              <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mr-2">
-                Subject
-              </span>
-              {draft.subject}
-            </p>
-            <div
-              className="text-sm text-slate-600 prose prose-sm max-w-none font-medium leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: draft.bodyHtml ?? '' }}
-            />
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+              <div>
+                <div className="flex flex-wrap items-center gap-4 mb-2">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-lg bg-slate-50 text-[#040026] uppercase tracking-wider">
+                    {draft.type.replace(/_/g, ' ')}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    {new Date(draft.createdAt).toLocaleString()}
+                  </span>
+                </div>
+                <Link
+                  href={`/admin/contacts/${draft.contact.id}`}
+                  className="text-lg font-black text-[#040026] hover:text-[#007AFF] transition-all tracking-tight"
+                >
+                  {draft.contact.firstName} {draft.contact.lastName}
+                </Link>
+                {draft.contact.prospect && (
+                  <span className="text-xs text-slate-400 font-bold ml-3 inline-flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5" />
+                    {draft.contact.prospect.companyName ??
+                      draft.contact.prospect.domain}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => handleApproveDraft(draft)}
+                  disabled={approveDisabled}
+                  className="ui-focus ui-tap flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#1E1E4A] transition-all disabled:opacity-50 shadow-lg shadow-[#040026]/10"
+                >
+                  <Check className="w-3.5 h-3.5" /> Approve & Send
+                </button>
+                <button
+                  onClick={() => reject.mutate({ id: draft.id })}
+                  disabled={reject.isPending}
+                  className="ui-focus ui-tap flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all disabled:opacity-50"
+                >
+                  <X className="w-3.5 h-3.5" /> Reject
+                </button>
+              </div>
+            </div>
+
+            {/* Email preview */}
+            <div className="bg-[#FCFCFD] rounded-2xl p-6 border border-slate-100">
+              <p className="text-sm font-black text-[#040026] mb-4 flex items-center gap-2">
+                <Mail className="w-4 h-4 text-slate-300" />
+                <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mr-2">
+                  Subject
+                </span>
+                {draft.subject}
+              </p>
+              <div
+                className="text-sm text-slate-600 prose prose-sm max-w-none font-medium leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: draft.bodyHtml ?? '' }}
+              />
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
