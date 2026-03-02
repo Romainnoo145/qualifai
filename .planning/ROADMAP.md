@@ -119,7 +119,12 @@ Plans:
 3. Each hypothesis problemStatement contains at least one verbatim quoted snippet from a non-WEBSITE evidence source (detectable by presence of quotation marks)
 4. A prospect with only one confirmed pain tag produces one hypothesis, not three
 5. A prompt run on a WEBSITE-only evidence set produces a confidence score in the 0.60-0.65 range, not 0.80+
-   **Plans**: TBD
+   **Plans**: 2 plans
+
+Plans:
+
+- [ ] 32-01-PLAN.md — TDD test scaffold: Gemini mock + ANLYS-01 through ANLYS-07 failing test assertions
+- [ ] 32-02-PLAN.md — Prompt rewrite: source tiers, signal summary, anti-parroting, quote mandate, dynamic count, calibrated confidence + call site update
 
 ### Phase 33: Configurable Model Selection
 
@@ -191,7 +196,7 @@ Plans:
 | 29. Browser-Rendered Extraction        | v2.2      | 2/2            | Complete    | 2026-03-02 |
 | 30. Pain Confirmation Gate + Audit     | v2.2      | 4/4            | Complete    | 2026-03-02 |
 | 31. Tech Debt Foundation               | 3/3       | Complete       | 2026-03-02  | -          |
-| 32. Hypothesis Prompt Rewrite          | v3.0      | 0/TBD          | Not started | -          |
+| 32. Hypothesis Prompt Rewrite          | v3.0      | 0/2            | Not started | -          |
 | 33. Configurable Model Selection       | v3.0      | 0/TBD          | Not started | -          |
 | 34. AI Metric Derivation + Attribution | v3.0      | 0/TBD          | Not started | -          |
 | 35. Validation and Calibration         | v3.0      | 0/TBD          | Not started | -          |
