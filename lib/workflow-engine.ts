@@ -8,13 +8,15 @@ import {
 } from '@prisma/client';
 import type { PrismaClient } from '@prisma/client';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
+import type { TextBlock } from '@anthropic-ai/sdk/resources/messages/messages';
 import { readFile } from 'node:fs/promises';
 import {
   MIN_AVERAGE_CONFIDENCE,
   PAIN_CONFIRMATION_MIN_SOURCES,
 } from '@/lib/quality-config';
 import type { TrafficLight } from '@/lib/quality-config';
-import { GEMINI_MODEL_FLASH } from '@/lib/ai/constants';
+import { GEMINI_MODEL_FLASH, CLAUDE_MODEL_SONNET } from '@/lib/ai/constants';
 
 // Lazily initialized to avoid accessing env at module load time (breaks test isolation)
 let genaiClient: GoogleGenerativeAI | null = null;
@@ -23,6 +25,14 @@ function getGenAI(): GoogleGenerativeAI {
     genaiClient = new GoogleGenerativeAI(env.GOOGLE_AI_API_KEY!);
   }
   return genaiClient;
+}
+
+let anthropicClient: Anthropic | null = null;
+function getAnthropicClient(): Anthropic {
+  if (!anthropicClient) {
+    anthropicClient = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY! });
+  }
+  return anthropicClient;
 }
 
 export const WORKFLOW_OFFER_NAME = 'Workflow Optimization Sprint';
@@ -613,13 +623,31 @@ interface AIHypothesisItem {
   evidenceRefs: string[];
 }
 
+/**
+ * Extract reasoning (CoT) and JSON array from raw model response.
+ * Works for both Gemini and Claude paths — both produce <reasoning>...</reasoning> before JSON.
+ */
+function extractHypothesisJson(rawText: string): {
+  reasoning: string;
+  jsonText: string;
+} {
+  const reasoningMatch = rawText.match(/<reasoning>([\s\S]*?)<\/reasoning>/);
+  const reasoning = reasoningMatch?.[1]?.trim() ?? '';
+  const textWithoutReasoning = rawText.replace(
+    /<reasoning>[\s\S]*?<\/reasoning>/g,
+    '',
+  );
+  const jsonMatch = textWithoutReasoning.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) throw new Error('No JSON array in AI response');
+  return { reasoning, jsonText: jsonMatch[0] };
+}
+
 export async function generateHypothesisDraftsAI(
   evidence: AIEvidenceInput[],
   prospectContext: AIProspectContext,
   confirmedPainTags: string[] = [], // ANLYS-06 — optional, defaults to [] for backward compat
   hypothesisModel: 'gemini-flash' | 'claude-sonnet' = 'gemini-flash', // MODEL-01 — configurable model selection
 ): Promise<HypothesisDraft[]> {
-  void hypothesisModel; // MODEL-01 stub — implementation in Plan 33-02
   const METRIC_DEFAULTS = {
     hoursSavedWeekLow: 4,
     hoursSavedWeekMid: 8,
@@ -761,7 +789,15 @@ Each hypothesis MUST:
    - Do NOT score website-derived hypotheses above 0.65
 5. Include 2-3 evidenceRefs (sourceUrls of the non-WEBSITE items that support the hypothesis)
 
-Only output JSON. No markdown fences. No explanation.
+Before generating the hypothesis JSON, produce a brief evidence analysis in this exact format:
+
+<reasoning>
+1. Top diagnostic signals (REVIEWS/CAREERS/LINKEDIN): [list the 2-3 most relevant items]
+2. Confirmed pain areas: [list tags confirmed by multiple source types]
+3. Website items to exclude: [list any WEBSITE-sourced items that could trigger parroting]
+</reasoning>
+
+After the closing </reasoning> tag, output ONLY the JSON array. No other text.
 [
   {
     "title": "...",
@@ -774,16 +810,40 @@ Only output JSON. No markdown fences. No explanation.
   }
 ]`;
 
-    const model = getGenAI().getGenerativeModel({ model: GEMINI_MODEL_FLASH });
-    const response = await model.generateContent(prompt);
-    const text = response.response.text();
+    let text: string;
 
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error('No JSON array in AI response');
+    if (hypothesisModel === 'claude-sonnet') {
+      // Claude path — use Anthropic SDK
+      const response = await getAnthropicClient().messages.create({
+        model: CLAUDE_MODEL_SONNET,
+        max_tokens: 4096,
+        system:
+          'You are analyzing external diagnostic signals to identify workflow pain hypotheses for a Dutch company. Klarifai is an AI/automation consultancy that could solve these pains.',
+        messages: [{ role: 'user', content: prompt }],
+      });
+      const textBlock = response.content.find(
+        (b): b is TextBlock => b.type === 'text',
+      );
+      text = textBlock?.text ?? '';
+      if (!text) throw new Error('No text content in Claude response');
+    } else {
+      // Gemini path (default) — unchanged from Phase 32
+      const model = getGenAI().getGenerativeModel({
+        model: GEMINI_MODEL_FLASH,
+      });
+      const response = await model.generateContent(prompt);
+      text = response.response.text();
     }
 
-    const parsed = JSON.parse(jsonMatch[0]) as AIHypothesisItem[];
+    const { reasoning, jsonText } = extractHypothesisJson(text);
+    if (reasoning) {
+      console.log(
+        '[generateHypothesisDraftsAI] CoT reasoning:',
+        reasoning.slice(0, 300),
+      );
+    }
+
+    const parsed = JSON.parse(jsonText) as AIHypothesisItem[];
     if (!Array.isArray(parsed) || parsed.length === 0) {
       throw new Error('AI response parsed to empty or non-array');
     }
