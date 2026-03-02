@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 
 ## Current Position
 
-Phase: 28 — Source Discovery with Provenance
-Plan: 03 (complete) — Phase 28 complete
-Status: In progress (Plans 01 + 02 + 03 complete — Phase 28 done)
-Last activity: 2026-03-02 — Completed 28-03 SourceSetSection component + debug toggle
+Phase: 29 — Browser-Rendered Evidence Extraction
+Plan: 01 (complete) — Phase 29 Plan 01 done
+Status: In progress (Plans 28-01 + 28-02 + 28-03 + 29-01 complete)
+Last activity: 2026-03-02 — Completed 29-01 two-tier extraction routing with browser budget
 
-Progress: [====] ~33% (v2.2: 1/3 phases complete, 3 plans done)
+Progress: [=====] ~44% (v2.2: 1.5/3 phases, 4 plans done)
 
 ## Milestones Shipped
 
@@ -46,7 +46,7 @@ Progress: [====] ~33% (v2.2: 1/3 phases complete, 3 plans done)
 - Debug-only UI pattern: guard render with `{debugMode && ...}` where `useDebugMode` uses `useSyncExternalStore` on localStorage key `qualifai-debug`
 
 - Pain gate is advisory-only — AMBER quality gate remains the single hard block; pain confirmation is a second signal, not a second block
-- Two-tier extraction enforced: stealth-first for static pages, browser only for <500 chars or jsHeavyHint=true; 5-URL cap per run
+- Two-tier extraction implemented (Phase 29-01): stealth-first for static pages, Crawl4AI for <500 chars or jsHeavyHint=true; 5-URL budget cap; raw fetch() removed; BROWSER_BUDGET_MAX=5 exported constant; processCrawl4aiResult shared handler; REVIEWS routing uses inferSourceType() not storage-mapped type; 404 detection before 80-char minimum
 - SerpAPI cache guarded at prospect level via serpDiscoveredAt timestamp — skip if <24h old, never trigger at import time
 - GateOverrideAudit is a proper relational model (not JSON in inputSnapshot) — enables querying, joining to prospect/user tables
 - Pain gate thresholds must be calibrated against 7 real prospects before writing constants — run calibration SQL first
@@ -77,5 +77,5 @@ Progress: [====] ~33% (v2.2: 1/3 phases complete, 3 plans done)
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 28-03-PLAN.md (SourceSetSection component + debug toggle via localStorage 'qualifai-debug')
-Resume with: `/gsd:execute-phase 29 01`
+Stopped at: Completed 29-01-PLAN.md (two-tier extraction routing with 5-URL browser budget cap)
+Resume with: `/gsd:execute-phase 29 02` (or next phase if 29 is single-plan)

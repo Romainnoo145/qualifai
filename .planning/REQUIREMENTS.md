@@ -17,9 +17,9 @@ Requirements for Verified Pain Intelligence milestone. Each maps to roadmap phas
 
 ### Browser Extraction
 
-- [ ] **EXTR-01**: Static pages route through Scrapling stealth fetcher first; pages returning <500 chars escalate to Crawl4AI
-- [ ] **EXTR-02**: REVIEWS, CAREERS, and JOB_BOARD source types route directly through Crawl4AI browser extraction
-- [ ] **EXTR-03**: Maximum 5 URLs per prospect use browser-rendered extraction to control pipeline duration
+- [x] **EXTR-01**: Static pages route through Scrapling stealth fetcher first; pages returning <500 chars escalate to Crawl4AI
+- [x] **EXTR-02**: REVIEWS, CAREERS, and JOB_BOARD source types route directly through Crawl4AI browser extraction
+- [x] **EXTR-03**: Maximum 5 URLs per prospect use browser-rendered extraction to control pipeline duration
 
 ### Pain Gate
 
@@ -66,9 +66,9 @@ Requirements for Verified Pain Intelligence milestone. Each maps to roadmap phas
 | DISC-03     | 28    | Complete |
 | DISC-04     | 28    | Complete |
 | DISC-05     | 28    | Complete |
-| EXTR-01     | 29    | Pending  |
-| EXTR-02     | 29    | Pending  |
-| EXTR-03     | 29    | Pending  |
+| EXTR-01     | 29    | Complete |
+| EXTR-02     | 29    | Complete |
+| EXTR-03     | 29    | Complete |
 | GATE-01     | 30    | Pending  |
 | GATE-02     | 30    | Pending  |
 | GATE-03     | 30    | Pending  |
