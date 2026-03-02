@@ -616,7 +616,11 @@ interface AIHypothesisItem {
 export async function generateHypothesisDraftsAI(
   evidence: AIEvidenceInput[],
   prospectContext: AIProspectContext,
+  confirmedPainTags: string[] = [], // ANLYS-06 — optional, defaults to [] for backward compat
 ): Promise<HypothesisDraft[]> {
+  // confirmedPainTags will be used in Plan 32-02 for dynamic count; stub read to avoid lint error
+  void confirmedPainTags;
+
   const METRIC_DEFAULTS = {
     hoursSavedWeekLow: 4,
     hoursSavedWeekMid: 8,
