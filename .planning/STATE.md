@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 29 — Browser-Rendered Evidence Extraction
-Plan: 01 (complete) — Phase 29 Plan 01 done
-Status: In progress (Plans 28-01 + 28-02 + 28-03 + 29-01 complete)
-Last activity: 2026-03-02 — Completed 29-01 two-tier extraction routing with browser budget
+Plan: 02 (complete) — Phase 29 fully complete (both plans done)
+Status: In progress (Plans 28-01 + 28-02 + 28-03 + 29-01 + 29-02 complete)
+Last activity: 2026-03-02 — Completed 29-02 jsHeavyHints wiring into ingestWebsiteEvidenceDrafts
 
-Progress: [=====] ~44% (v2.2: 1.5/3 phases, 4 plans done)
+Progress: [======] ~55% (v2.2: 2/3 phases, 5 plans done)
 
 ## Milestones Shipped
 
@@ -47,6 +47,7 @@ Progress: [=====] ~44% (v2.2: 1.5/3 phases, 4 plans done)
 
 - Pain gate is advisory-only — AMBER quality gate remains the single hard block; pain confirmation is a second signal, not a second block
 - Two-tier extraction implemented (Phase 29-01): stealth-first for static pages, Crawl4AI for <500 chars or jsHeavyHint=true; 5-URL budget cap; raw fetch() removed; BROWSER_BUDGET_MAX=5 exported constant; processCrawl4aiResult shared handler; REVIEWS routing uses inferSourceType() not storage-mapped type; 404 detection before 80-char minimum
+- jsHeavyHints wiring complete (Phase 29-02): research-executor builds Map from initialSourceSet.urls and passes to ingestWebsiteEvidenceDrafts — avoids detectJsHeavy() re-computation; deepCrawl ingestCrawl4aiEvidenceDrafts call untouched (separate budget path)
 - SerpAPI cache guarded at prospect level via serpDiscoveredAt timestamp — skip if <24h old, never trigger at import time
 - GateOverrideAudit is a proper relational model (not JSON in inputSnapshot) — enables querying, joining to prospect/user tables
 - Pain gate thresholds must be calibrated against 7 real prospects before writing constants — run calibration SQL first
@@ -77,5 +78,5 @@ Progress: [=====] ~44% (v2.2: 1.5/3 phases, 4 plans done)
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 29-01-PLAN.md (two-tier extraction routing with 5-URL browser budget cap)
-Resume with: `/gsd:execute-phase 29 02` (or next phase if 29 is single-plan)
+Stopped at: Completed 29-02-PLAN.md (jsHeavyHints wiring — Phase 29 fully complete)
+Resume with: `/gsd:execute-phase 30` (pain confirmation gate + audit, schema migration)

@@ -70,7 +70,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 **Milestone Goal:** Confirm pain points from real external evidence using browser-rendered extraction before outreach is allowed. Better source discovery, better extraction, stricter gating with a full audit trail.
 
 - [x] **Phase 28: Source Discovery with Provenance** — Automatic per-prospect source URL discovery with deduplication, per-source caps, and provenance labels
-- [ ] **Phase 29: Browser-Rendered Evidence Extraction** — Two-tier extraction routing (stealth-first, browser escalation) with browser cap and per-type routing
+- [x] **Phase 29: Browser-Rendered Evidence Extraction** — Two-tier extraction routing (stealth-first, browser escalation) with browser cap and per-type routing (completed 2026-03-02)
 - [ ] **Phase 30: Pain Confirmation Gate + Override Audit** — Cross-source pain gate (advisory), admin UI integration, and immutable override audit trail
 
 ## Phase Details
@@ -115,7 +115,7 @@ Plans:
 2. Pages with source types REVIEWS, CAREERS, or JOB_BOARD route directly through Crawl4AI without attempting stealth first
 3. A single research run never uses browser extraction on more than 5 URLs — the pipeline enforces this cap regardless of how many JS-heavy pages are discovered
 
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 
@@ -173,5 +173,5 @@ Plans:
 | 27. End-to-End Cycle                 | v2.1      | 2/2            | Complete    | 2026-02-28 |
 | 27.1. Cal.com Booking Validation     | v2.1      | 1/1            | Complete    | 2026-03-01 |
 | 28. Source Discovery with Provenance | v2.2      | Complete       | 2026-03-01  | 2026-03-02 |
-| 29. Browser-Rendered Extraction      | 1/2       | In Progress    |             | -          |
+| 29. Browser-Rendered Extraction      | 2/2       | Complete       | 2026-03-02  | -          |
 | 30. Pain Confirmation Gate + Audit   | v2.2      | 0/TBD          | Not started | -          |
