@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 31 of 35 (Tech Debt Foundation)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-03-02 — Plan 31-02 complete (TS2589 as any casts replaced with ResearchRunRow type, typed Json guards in outreach and quality-chip)
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-03-02 — Plan 31-03 complete (tRPC quality gate E2E test + golden baseline JSON for all 7 prospects)
 
 Progress: [████████████████████░░░░░░░░░░] 66% (30 phases complete across 7 milestones)
 
@@ -39,6 +39,7 @@ Progress: [████████████████████░░░
 | v2.2         | 3      | 9       | Mar 2        |
 | **Total**    | **31** | **66+** | **11 days**  |
 | Phase 31 P02 | 7      | 2 tasks | 3 files      |
+| Phase 31 P03 | 7      | 2 tasks | 3 files      |
 
 ## Accumulated Context
 
@@ -55,10 +56,11 @@ Recent decisions affecting v3.0:
 - Phase 31-01: SERP cache guard uses only useSerpFromSourceSet (no backward-compat serpCache fallback needed)
 - Phase 31-01: GEMINI_MODEL_FLASH = 'gemini-2.5-flash' — model upgraded as part of constant extraction; name not version-specific to allow Phase 33 changes
 - [Phase 31]: Prisma.ResearchRunGetPayload replaces TS2589 as any casts in detail view; tRPC v11 inference gaps kept as any with TODO comment
+- Phase 31-03: tRPC quality gate E2E test uses appRouter.createCaller with module-level vi.mock; sendOutreachEmail mocked after gate so full gate logic runs
 
 ### Pending Todos
 
-- Capture golden baseline JSON from all 7 real prospects BEFORE Phase 32 touches any prompt text
+- [x] Capture golden baseline JSON from all 7 real prospects — DONE (31-03, .planning/baselines/baselines.json)
 - Run /discover/ validation session with real prospect (Phase 35)
 - Crawl4AI v0.8.x feature verification — consent popup, shadow DOM (Phase 35)
 - Pain gate calibration SQL against real prospect data (Phase 35)
@@ -71,5 +73,5 @@ Recent decisions affecting v3.0:
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 31-02-PLAN.md — TS2589 as any replaced with ResearchRunRow type, typed Json guards in outreach and quality-chip (2 tasks, 2 commits)
+Stopped at: Completed 31-03-PLAN.md — tRPC quality gate E2E test + golden baseline capture (2 tasks, 2 commits). Phase 31 complete.
 Resume file: None

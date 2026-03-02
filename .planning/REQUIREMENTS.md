@@ -35,7 +35,7 @@ Requirements for v3.0 release. Each maps to roadmap phases.
 
 - [x] **DEBT-01**: SERP cache re-read after overwrite bug fixed in research-executor.ts (pre-read snapshot before overwrite in deepCrawl block)
 - [x] **DEBT-02**: Unused logoUrl prop removed from DashboardClient interface and all call sites
-- [ ] **DEBT-03**: E2E send test refactored to use tRPC quality gate instead of calling Resend directly
+- [x] **DEBT-03**: E2E send test refactored to use tRPC quality gate instead of calling Resend directly
 - [x] **DEBT-04**: Detail-view Prisma `as any` cast replaced with narrow typed cast
 - [x] **DEBT-05**: Import ordering anomaly fixed in workflow-engine.ts (move import block to top)
 - [x] **DEBT-06**: TS2589 deep Prisma `as any` casts cleaned up — categorized into 3 types (deep inference, tRPC mutation, Json field access), each fixed with appropriate pattern
@@ -89,7 +89,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VALID-03    | 35    | Pending  |
 | DEBT-01     | 31    | Complete |
 | DEBT-02     | 31    | Complete |
-| DEBT-03     | 31    | Pending  |
+| DEBT-03     | 31    | Complete |
 | DEBT-04     | 31    | Complete |
 | DEBT-05     | 31    | Complete |
 | DEBT-06     | 31    | Complete |

@@ -79,7 +79,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 **Milestone Goal:** Hypothesis generation that produces evidence-grounded, prospect-specific analysis — eliminating fabricated metrics, parroted marketing copy, and shallow website-only reasoning.
 
-- [ ] **Phase 31: Tech Debt Foundation** — Fix known code defects and upgrade Gemini model string to establish a clean, passing build baseline before hypothesis changes
+- [x] **Phase 31: Tech Debt Foundation** — Fix known code defects and upgrade Gemini model string to establish a clean, passing build baseline before hypothesis changes (completed 2026-03-02)
 - [ ] **Phase 32: Hypothesis Prompt Rewrite** — Rewrite generateHypothesisDraftsAI() with evidence tiering, source-tier priority, anti-parroting constraint, mandatory quote requirement, and variable output count
 - [ ] **Phase 33: Configurable Model Selection** — Add Claude as a selectable hypothesis model with a provider abstraction, plus chain-of-thought reasoning pass
 - [ ] **Phase 34: AI Metric Derivation + Source Attribution** — Replace hardcoded METRIC_DEFAULTS with AI-estimated contextual ranges and surface source attribution in admin UI
@@ -190,7 +190,7 @@ Plans:
 | 28. Source Discovery with Provenance   | v2.2      | 3/3            | Complete    | 2026-03-02 |
 | 29. Browser-Rendered Extraction        | v2.2      | 2/2            | Complete    | 2026-03-02 |
 | 30. Pain Confirmation Gate + Audit     | v2.2      | 4/4            | Complete    | 2026-03-02 |
-| 31. Tech Debt Foundation               | 2/3       | In Progress    |             | -          |
+| 31. Tech Debt Foundation               | 3/3       | Complete       | 2026-03-02  | -          |
 | 32. Hypothesis Prompt Rewrite          | v3.0      | 0/TBD          | Not started | -          |
 | 33. Configurable Model Selection       | v3.0      | 0/TBD          | Not started | -          |
 | 34. AI Metric Derivation + Attribution | v3.0      | 0/TBD          | Not started | -          |
