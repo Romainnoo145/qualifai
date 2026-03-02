@@ -15,6 +15,7 @@ import {
   Phone,
   Calendar,
   Linkedin,
+  ShieldAlert,
 } from 'lucide-react';
 import { useState, useSyncExternalStore } from 'react';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,17 @@ import { ResultsSection } from '@/components/features/prospects/results-section'
 import { ContactsSection } from '@/components/features/prospects/contacts-section';
 import { QualityChip } from '@/components/features/prospects/quality-chip';
 import { buildDiscoverPath } from '@/lib/prospect-url';
+
+// ---------------------------------------------------------------------------
+// Gate type badge helper
+// ---------------------------------------------------------------------------
+
+function gateTypeBadgeClass(gateType: string): string {
+  if (gateType === 'pain') {
+    return 'inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-100';
+  }
+  return 'inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100';
+}
 
 // ---------------------------------------------------------------------------
 // Debug mode — toggle via browser console:
@@ -141,6 +153,10 @@ export default function ProspectDetail() {
   const latestRunId = researchRuns.data?.[0]?.id ?? null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const latestRun = (researchRuns.data?.[0] as any) ?? null;
+  const overrideAudits = api.research.listOverrideAudits.useQuery(
+    { runId: latestRunId! },
+    { enabled: !!latestRunId },
+  );
 
   return (
     <div className="space-y-8">
@@ -373,6 +389,41 @@ export default function ProspectDetail() {
           latestRunSummary={latestRun?.summary}
           latestRunError={latestRun?.error ?? null}
         />
+        {(overrideAudits.data?.length ?? 0) > 0 && (
+          <div className="glass-card p-6 space-y-3">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4" /> Override History
+            </h3>
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            {(overrideAudits.data as any[]).map(
+              (audit: {
+                id: string;
+                createdAt: Date;
+                gateType: string;
+                reason: string;
+              }) => (
+                <div
+                  key={audit.id}
+                  className="p-3 bg-amber-50/50 border border-amber-100 rounded-xl text-xs space-y-1"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-slate-400">
+                      {new Date(audit.createdAt).toLocaleDateString('nl-NL')}{' '}
+                      {new Date(audit.createdAt).toLocaleTimeString('nl-NL', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                    <span className={gateTypeBadgeClass(audit.gateType)}>
+                      {audit.gateType}
+                    </span>
+                  </div>
+                  <p className="text-slate-600">{audit.reason}</p>
+                </div>
+              ),
+            )}
+          </div>
+        )}
       </div>
       <div className={cn('pt-1', activeTab === 'analysis' ? '' : 'hidden')}>
         <AnalysisSection prospectId={id} />
