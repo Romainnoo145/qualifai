@@ -190,7 +190,7 @@ Plans:
 | 28. Source Discovery with Provenance   | v2.2      | 3/3            | Complete    | 2026-03-02 |
 | 29. Browser-Rendered Extraction        | v2.2      | 2/2            | Complete    | 2026-03-02 |
 | 30. Pain Confirmation Gate + Audit     | v2.2      | 4/4            | Complete    | 2026-03-02 |
-| 31. Tech Debt Foundation               | 1/3       | In Progress    |             | -          |
+| 31. Tech Debt Foundation               | 2/3       | In Progress    |             | -          |
 | 32. Hypothesis Prompt Rewrite          | v3.0      | 0/TBD          | Not started | -          |
 | 33. Configurable Model Selection       | v3.0      | 0/TBD          | Not started | -          |
 | 34. AI Metric Derivation + Attribution | v3.0      | 0/TBD          | Not started | -          |

@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 ## Current Position
 
 Phase: 31 of 35 (Tech Debt Foundation)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-03-02 — Plan 31-01 complete (SERP cache fix, logoUrl cleanup, import ordering, Gemini constant)
+Last activity: 2026-03-02 — Plan 31-02 complete (TS2589 as any casts replaced with ResearchRunRow type, typed Json guards in outreach and quality-chip)
 
 Progress: [████████████████████░░░░░░░░░░] 66% (30 phases complete across 7 milestones)
 
@@ -29,15 +29,16 @@ Progress: [████████████████████░░░
 
 **Velocity (all milestones):**
 
-| Milestone | Phases | Plans   | Timeline     |
-| --------- | ------ | ------- | ------------ |
-| v1.0      | 5      | —       | Feb 20       |
-| v1.1      | 6      | 16      | Feb 20-21    |
-| v1.2      | 4      | 11      | Feb 21-22    |
-| v2.0      | 6      | 14      | Feb 22-23    |
-| v2.1      | 7      | 16      | Feb 23-Mar 2 |
-| v2.2      | 3      | 9       | Mar 2        |
-| **Total** | **31** | **66+** | **11 days**  |
+| Milestone    | Phases | Plans   | Timeline     |
+| ------------ | ------ | ------- | ------------ |
+| v1.0         | 5      | —       | Feb 20       |
+| v1.1         | 6      | 16      | Feb 20-21    |
+| v1.2         | 4      | 11      | Feb 21-22    |
+| v2.0         | 6      | 14      | Feb 22-23    |
+| v2.1         | 7      | 16      | Feb 23-Mar 2 |
+| v2.2         | 3      | 9       | Mar 2        |
+| **Total**    | **31** | **66+** | **11 days**  |
+| Phase 31 P02 | 7      | 2 tasks | 3 files      |
 
 ## Accumulated Context
 
@@ -53,6 +54,7 @@ Recent decisions affecting v3.0:
 - v3.0 research: generateWorkflowLossMapContent() must be audited before Phase 34 planning begins
 - Phase 31-01: SERP cache guard uses only useSerpFromSourceSet (no backward-compat serpCache fallback needed)
 - Phase 31-01: GEMINI_MODEL_FLASH = 'gemini-2.5-flash' — model upgraded as part of constant extraction; name not version-specific to allow Phase 33 changes
+- [Phase 31]: Prisma.ResearchRunGetPayload replaces TS2589 as any casts in detail view; tRPC v11 inference gaps kept as any with TODO comment
 
 ### Pending Todos
 
@@ -69,5 +71,5 @@ Recent decisions affecting v3.0:
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 31-01-PLAN.md — SERP cache fix, logoUrl cleanup, import ordering, Gemini constant (2 tasks, 2 commits)
+Stopped at: Completed 31-02-PLAN.md — TS2589 as any replaced with ResearchRunRow type, typed Json guards in outreach and quality-chip (2 tasks, 2 commits)
 Resume file: None
