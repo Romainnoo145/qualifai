@@ -27,6 +27,7 @@ export const researchRouter = router({
         campaignId: z.string().optional(),
         manualUrls: z.array(z.string().url()).default([]),
         deepCrawl: z.boolean().default(false),
+        hypothesisModel: z.enum(['gemini-flash', 'claude-sonnet']).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -35,6 +36,7 @@ export const researchRouter = router({
         campaignId: input.campaignId,
         manualUrls: input.manualUrls,
         deepCrawl: input.deepCrawl,
+        hypothesisModel: input.hypothesisModel,
       });
     }),
 
@@ -47,6 +49,10 @@ export const researchRouter = router({
       const manualUrls = manualUrlsFromSnapshot(existing.inputSnapshot);
       const snapshot = existing.inputSnapshot as Record<string, unknown> | null;
       const deepCrawl = snapshot?.deepCrawl === true;
+      const hypothesisModel =
+        snapshot?.hypothesisModel === 'claude-sonnet'
+          ? ('claude-sonnet' as const)
+          : ('gemini-flash' as const);
       await ctx.db.workflowHypothesis.deleteMany({
         where: { researchRunId: existing.id },
       });
@@ -63,6 +69,7 @@ export const researchRouter = router({
         manualUrls,
         existingRunId: existing.id,
         deepCrawl,
+        hypothesisModel,
       });
     }),
 

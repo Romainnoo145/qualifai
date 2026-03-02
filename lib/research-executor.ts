@@ -106,6 +106,7 @@ export async function executeResearchRun(
     manualUrls: string[];
     existingRunId?: string;
     deepCrawl?: boolean;
+    hypothesisModel?: 'gemini-flash' | 'claude-sonnet';
   },
 ) {
   const prospect = await db.prospect.findUniqueOrThrow({
@@ -216,6 +217,7 @@ export async function executeResearchRun(
             manualUrls: input.manualUrls,
             campaignId: input.campaignId,
             deepCrawl: input.deepCrawl ?? false,
+            hypothesisModel: input.hypothesisModel ?? 'gemini-flash',
             ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
             sourceSet: initialSourceSet,
           }),
@@ -231,6 +233,7 @@ export async function executeResearchRun(
             manualUrls: input.manualUrls,
             campaignId: input.campaignId,
             deepCrawl: input.deepCrawl ?? false,
+            hypothesisModel: input.hypothesisModel ?? 'gemini-flash',
             ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
             sourceSet: initialSourceSet,
           }),
@@ -370,6 +373,7 @@ export async function executeResearchRun(
             manualUrls: input.manualUrls,
             campaignId: input.campaignId,
             deepCrawl: true,
+            hypothesisModel: input.hypothesisModel ?? 'gemini-flash',
             serpCache: serpResult,
             ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
             sourceSet: fullSourceSet,
@@ -385,6 +389,7 @@ export async function executeResearchRun(
             manualUrls: input.manualUrls,
             campaignId: input.campaignId,
             deepCrawl: true,
+            hypothesisModel: input.hypothesisModel ?? 'gemini-flash',
             ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
             sourceSet: fullSourceSet,
           }),
@@ -919,6 +924,7 @@ export async function executeResearchRun(
       description: prospect.description,
     },
     gate.confirmedPainTags,
+    input.hypothesisModel,
   );
   for (const hypothesis of hypotheses) {
     await db.workflowHypothesis.create({
