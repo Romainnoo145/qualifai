@@ -37,6 +37,7 @@ Progress: [==========] ~100% (v2.2: 3/3 phases complete, 9 plans done)
 | v2.1         | 7      | 16      | Feb 23-Mar 2 |
 | **Total**    | **28** | **57+** | **11 days**  |
 | Phase 28 P02 | 5      | 2 tasks | 2 files      |
+| Phase 30 P03 | 5      | 2 tasks | 2 files      |
 
 ## Accumulated Context
 
@@ -64,6 +65,9 @@ Progress: [==========] ~100% (v2.2: 3/3 phases complete, 9 plans done)
 - Dual-phase sourceSet: initial (sitemap+default) at run create, full (sitemap+serp+default) after deepCrawl SERP — avoids restructuring existing pipeline
 - researchUrls derived from sourceSet.urls filtered to non-serp provenance — SERP URLs feed Crawl4AI, not website ingestion (matches existing behavior)
 - rediscoverSources mutation: toJson defined inline in router (research-executor does not export it); spreads existing snapshot fields to preserve manualUrls/campaignId/deepCrawl
+- getDecisionInbox enriched with confirmedPainTags/unconfirmedPainTags/qualityGatePassed/qualityApproved/latestRunId per draft — single ResearchRun.findMany with distinct+prospectId, O(1) Map lookup per draft
+- Send queue UI pain signal: green ShieldCheck chips for confirmed tags, amber AlertTriangle chips for unconfirmed; override reason textarea (12-char min) blocks send when unconfirmed tags exist and run not yet quality-approved
+- Sequential mutation pattern in handleApproveDraft: approveQuality.mutateAsync writes audit row before approveDraft.mutate dispatches email — audit guaranteed before send
 - Bypassed badge: amber pill rendered inline with PipelineChip/QualityChip in prospect list; uses gateOverrideAudits \_count from listProspects — no extra query
 - Override History panel: placed in evidence tab on prospect detail, conditional on data.length > 0; gateType color semantics: amber=pain (advisory), rose=quality/quality+pain (hard block)
 - TS2589 workaround pattern for listOverrideAudits: cast result as any[] with inline type annotation — matches existing any-cast pattern for researchRun.summary
