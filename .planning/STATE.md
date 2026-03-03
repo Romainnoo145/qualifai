@@ -56,5 +56,6 @@ Recent decisions affecting v4.0:
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Initializing v4.0 milestone — PROJECT.md and STATE.md updated, moving to research/requirements.
+Stopped at: v4.0 research complete (STACK, FEATURES, ARCHITECTURE, PITFALLS, SUMMARY all written + committed). Next step: define requirements (Step 9 of new-milestone workflow), then spawn roadmapper.
 Resume file: None
+Resume command: `/gsd:new-milestone` — skip to Step 9 (requirements), research already committed.
