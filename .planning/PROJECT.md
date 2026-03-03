@@ -146,12 +146,30 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ---
 
+## Current Milestone: v4.0 Atlantis Partnership Outreach
+
+**Goal:** Transform Qualifai into a multi-project outreach platform — starting with Europe's Gate, a mega-infrastructure project (Amsterdam-London corridor) with 8 SPVs targeting hyperscalers, steel producers, infrastructure funds, and energy companies. Each prospect sees dual evidence: external research reveals their needs, RAG-matched documents show how Europe's Gate addresses those needs.
+
+**Target features:**
+
+- Multi-project data model (Project, SPV, ProjectDocument entities)
+- RAG document ingestion pipeline for 34 Atlantis technical volumes (8 volumes, 1.8M words)
+- Dual evidence pipeline: external research (existing) + RAG document passage matching (new)
+- Partnership-focused /discover/ template with opportunity cards bridging prospect needs ↔ project capabilities
+- SPV-specific metrics (CO2 reduction, capacity, investment size, payback years)
+- Target group → SPV → Document routing (4 groups: Hyperscalers→DataCo, Steel→SteelCo, Infra/Pension→InfraCo, Energy→EnergyCo)
+- Admin project switcher for managing Klarifai vs Atlantis campaigns
+
+**Architecture principle:** Project type determines which pipeline additions run and which /discover/ template renders. Shared infrastructure (admin, auth, email, DB, tRPC) stays project-agnostic. No coupling between project-specific code paths.
+
 ## Current State
 
 **Latest shipped:** v2.2 Verified Pain Intelligence (2026-03-02) — source discovery with provenance, two-tier browser extraction, advisory pain gate, immutable override audit trail.
 
-**Active milestone:** v3.0 Sharp Analysis — hypothesis generation rewrite, pending todo resolution, tech debt cleanup
+**Parked milestone:** v3.0 Sharp Analysis — hypothesis generation rewrite, pending todo resolution, tech debt cleanup. Phase 35 in progress (35-01 complete, 35-02 checkpoint pending).
+
+**Active milestone:** v4.0 Atlantis Partnership Outreach — multi-project outreach platform for Europe's Gate
 
 ---
 
-_Last updated: 2026-03-02 after v3.0 milestone start_
+_Last updated: 2026-03-03 after v4.0 milestone start_
