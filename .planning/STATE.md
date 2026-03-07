@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** v5.0 Phase 42 — Extraction Matrix
+**Current focus:** v5.0 Phase 43 — AI Master Analysis
 
 ## Current Position
 
-Phase: 42 of 45 (Extraction Matrix)
-Plan: 2 of 2 complete
-Status: Phase Complete
-Last activity: 2026-03-07 — Completed 42-02 (Intent-driven RAG queries + admin Intent Signals UI)
+Phase: 43 of 45 (AI Master Analysis)
+Plan: 1 of 2 complete
+Status: In Progress
+Last activity: 2026-03-07 — Completed 43-01 (AI master analysis engine: types, prompt builder, generation function)
 
-Progress: [███████████████████████████░░░] 84% (40 phases complete, 3 remaining in v5.0)
+Progress: [████████████████████████████░░] 87% (41 phases complete, 2 remaining in v5.0)
 
 ## Milestones Shipped
 
@@ -44,6 +44,9 @@ Recent decisions affecting v5.0:
 - 42-01: intentVars stored in scope for Plan 02 RAG query construction
 - 42-02: Intent-driven queries use top 2-3 signals per category (max 200 chars), fallback at < 2 categories
 - 42-02: Intent Signals tab only for ATLANTIS projectType, positioned between Evidence and Analysis
+- 43-01: Adaptive tone prompting: visionary when sparse, data-first when rich passages
+- 43-01: Retry-once with corrective prompt on validation failure, hard fail after 2 attempts
+- 43-01: Numbered RAG passage references in prompt for generated content traceability
 
 ### Pending Todos
 
@@ -56,5 +59,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 42-02-PLAN.md — intent-driven RAG queries and admin Intent Signals UI
-Resume command: `/gsd:plan-phase 43` (AI Master Analysis)
+Stopped at: Completed 43-01-PLAN.md — AI master analysis engine (types, prompt builder, generation function)
+Resume command: `/gsd:execute-phase 43` (continue with Plan 02)

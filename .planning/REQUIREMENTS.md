@@ -15,11 +15,11 @@ Requirements for the Atlantis intelligence overhaul. Replaces template-based opp
 
 ### Analysis
 
-- [ ] **ANLS-01**: AI master prompt combines intent variables + RAG passages to generate full discover page content (context, triggers, tracks)
-- [ ] **ANLS-02**: Context section output includes prospect-specific hook, 3 scale KPIs from RAG docs, and executive hook tying their pain to Atlantis solution
-- [ ] **ANLS-03**: Trigger section output generates 3 cards (market / compliance-ESG / capital de-risking) with specific numbers from RAG
-- [ ] **ANLS-04**: Partnership section output generates commercial tracks with scope and strategic tags per SPV
-- [ ] **ANLS-05**: All generated content uses boardroom tone — visionary, data-backed, no AI/RAG/scraping terminology visible
+- [x] **ANLS-01**: AI master prompt combines intent variables + RAG passages to generate full discover page content (context, triggers, tracks)
+- [x] **ANLS-02**: Context section output includes prospect-specific hook, 3 scale KPIs from RAG docs, and executive hook tying their pain to Atlantis solution
+- [x] **ANLS-03**: Trigger section output generates 3 cards (market / compliance-ESG / capital de-risking) with specific numbers from RAG
+- [x] **ANLS-04**: Partnership section output generates commercial tracks with scope and strategic tags per SPV
+- [x] **ANLS-05**: All generated content uses boardroom tone — visionary, data-backed, no AI/RAG/scraping terminology visible
 - [ ] **ANLS-06**: Analysis output persists to DB and is renderable by discover page without further AI calls
 
 ### Discover
@@ -61,11 +61,11 @@ Requirements for the Atlantis intelligence overhaul. Replaces template-based opp
 | EXTR-01     | Phase 42 | Complete |
 | EXTR-02     | Phase 42 | Complete |
 | EXTR-03     | Phase 42 | Complete |
-| ANLS-01     | Phase 43 | Pending  |
-| ANLS-02     | Phase 43 | Pending  |
-| ANLS-03     | Phase 43 | Pending  |
-| ANLS-04     | Phase 43 | Pending  |
-| ANLS-05     | Phase 43 | Pending  |
+| ANLS-01     | Phase 43 | Complete |
+| ANLS-02     | Phase 43 | Complete |
+| ANLS-03     | Phase 43 | Complete |
+| ANLS-04     | Phase 43 | Complete |
+| ANLS-05     | Phase 43 | Complete |
 | ANLS-06     | Phase 43 | Pending  |
 | DISC-01     | Phase 44 | Pending  |
 | DISC-02     | Phase 44 | Pending  |
