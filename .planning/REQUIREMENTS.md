@@ -9,9 +9,9 @@ Requirements for the Atlantis intelligence overhaul. Replaces template-based opp
 
 ### Extraction
 
-- [ ] **EXTR-01**: Scraper output is analyzed into structured intent variables (sector fit, operational pains, ESG/CSRD signals, investment/growth patterns, workforce signals) with source attribution
+- [x] **EXTR-01**: Scraper output is analyzed into structured intent variables (sector fit, operational pains, ESG/CSRD signals, investment/growth patterns, workforce signals) with source attribution
 - [ ] **EXTR-02**: Intent variables drive RAG query construction, replacing keyword-stuffed profile fragments with targeted evidence-seeking queries
-- [ ] **EXTR-03**: Extraction runs as part of the research pipeline and persists intent variables to DB for downstream analysis
+- [x] **EXTR-03**: Extraction runs as part of the research pipeline and persists intent variables to DB for downstream analysis
 
 ### Analysis
 
@@ -56,24 +56,24 @@ Requirements for the Atlantis intelligence overhaul. Replaces template-based opp
 
 ## Traceability
 
-| Requirement | Phase    | Status  |
-| ----------- | -------- | ------- |
-| EXTR-01     | Phase 42 | Pending |
-| EXTR-02     | Phase 42 | Pending |
-| EXTR-03     | Phase 42 | Pending |
-| ANLS-01     | Phase 43 | Pending |
-| ANLS-02     | Phase 43 | Pending |
-| ANLS-03     | Phase 43 | Pending |
-| ANLS-04     | Phase 43 | Pending |
-| ANLS-05     | Phase 43 | Pending |
-| ANLS-06     | Phase 43 | Pending |
-| DISC-01     | Phase 44 | Pending |
-| DISC-02     | Phase 44 | Pending |
-| DISC-03     | Phase 44 | Pending |
-| DISC-04     | Phase 44 | Pending |
-| DISC-05     | Phase 44 | Pending |
-| VALD-01     | Phase 45 | Pending |
-| VALD-02     | Phase 45 | Pending |
+| Requirement | Phase    | Status   |
+| ----------- | -------- | -------- |
+| EXTR-01     | Phase 42 | Complete |
+| EXTR-02     | Phase 42 | Pending  |
+| EXTR-03     | Phase 42 | Complete |
+| ANLS-01     | Phase 43 | Pending  |
+| ANLS-02     | Phase 43 | Pending  |
+| ANLS-03     | Phase 43 | Pending  |
+| ANLS-04     | Phase 43 | Pending  |
+| ANLS-05     | Phase 43 | Pending  |
+| ANLS-06     | Phase 43 | Pending  |
+| DISC-01     | Phase 44 | Pending  |
+| DISC-02     | Phase 44 | Pending  |
+| DISC-03     | Phase 44 | Pending  |
+| DISC-04     | Phase 44 | Pending  |
+| DISC-05     | Phase 44 | Pending  |
+| VALD-01     | Phase 45 | Pending  |
+| VALD-02     | Phase 45 | Pending  |
 
 **Coverage:**
 

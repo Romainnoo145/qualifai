@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 42 of 45 (Extraction Matrix)
-Plan: — (not yet planned)
-Status: Ready to plan
-Last activity: 2026-03-07 — Roadmap created for v5.0
+Plan: 1 of 2 complete
+Status: Executing
+Last activity: 2026-03-07 — Completed 42-01 (Intent Extraction types, module, and pipeline integration)
 
 Progress: [██████████████████████████░░░░] 82% (39 phases complete, 4 remaining in v5.0)
 
@@ -39,6 +39,9 @@ Recent decisions affecting v5.0:
 - v5.0: Three-section discover: Context (hook/KPIs) → Triggers (why you/now) → Partnership (tracks + CTA)
 - v5.0: Boardroom tone — visionary, data-backed, never mention AI/RAG/scraping
 - v5.0: NDA e-sign deferred to v6.0 — analysis quality is the priority
+- 42-01: Gemini Flash for intent extraction, pre-filter evidence >= 0.50, exclude RAG_DOCUMENT
+- 42-01: Graceful degradation — extraction failure logs warning, does not block pipeline
+- 42-01: intentVars stored in scope for Plan 02 RAG query construction
 
 ### Pending Todos
 
@@ -51,5 +54,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: v5.0 roadmap created — ready to plan Phase 42
-Resume command: `/gsd:plan-phase 42`
+Stopped at: Completed 42-01-PLAN.md — intent extraction types, module, and pipeline integration
+Resume command: `/gsd:execute-phase 42` (Plan 02 remaining)
