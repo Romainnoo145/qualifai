@@ -1,129 +1,87 @@
-# Requirements: Qualifai v4.0 Atlantis Partnership Outreach
+# Requirements: Qualifai v5.0 Atlantis Intelligence & NDA Pipeline
 
-**Defined:** 2026-03-05
-**Core Value:** Every outreach narrative must bridge real prospect evidence with cited project capabilities, so claims are verifiable and not generic pitch language.
+**Defined:** 2026-03-07
+**Core Value:** The Atlantis discover page must intrigue prospects into seeing Europe's Gate as the project that could transform their industry — through AI-generated, prospect-specific narrative backed by real evidence and hard numbers from the Atlantis dossier.
 
-## v4.0 Requirements
+## v5.0 Requirements
 
-Requirements for the Atlantis multi-project milestone. Each maps to phases 36-41.
+Requirements for the Atlantis intelligence overhaul. Replaces template-based opportunity cards and rule-based triggers with AI-powered content generation.
 
-### Multi-Project Foundation
+### Extraction
 
-- [x] **MPROJ-01**: System has a `Project` entity with `projectType`, slug, branding, and booking configuration.
-- [x] **MPROJ-02**: System has an `SPV` entity linked to `Project`, with metric template metadata.
-- [x] **MPROJ-03**: `Prospect` records are linked to `projectId` and optional `spvId`.
-- [x] **MPROJ-04**: Existing legacy prospects are backfilled to the seeded Klarifai project before `projectId` becomes required.
-- [x] **MPROJ-05**: Project seed includes at least two projects (`klarifai`, `europes-gate`) and eight Atlantis SPVs.
+- [ ] **EXTR-01**: Scraper output is analyzed into structured intent variables (sector fit, operational pains, ESG/CSRD signals, investment/growth patterns, workforce signals) with source attribution
+- [ ] **EXTR-02**: Intent variables drive RAG query construction, replacing keyword-stuffed profile fragments with targeted evidence-seeking queries
+- [ ] **EXTR-03**: Extraction runs as part of the research pipeline and persists intent variables to DB for downstream analysis
 
-### RAG Ingestion
+### Analysis
 
-- [x] **RAG-01**: pgvector is enabled in PostgreSQL and schema supports 1536-dim chunk embeddings.
-- [x] **RAG-02**: Markdown chunker is header-aware and preserves tables as atomic chunks.
-- [x] **RAG-03**: Chunk metadata captures document id, section header, volume, and SPV linkage.
-- [x] **RAG-04**: Ingestion CLI script is rerunnable/idempotent for document updates.
-- [x] **RAG-05**: Embeddings are generated with OpenAI `text-embedding-3-small`.
-- [x] **RAG-06**: Ingestion run logs chunk count and estimated embedding token cost.
+- [ ] **ANLS-01**: AI master prompt combines intent variables + RAG passages to generate full discover page content (context, triggers, tracks)
+- [ ] **ANLS-02**: Context section output includes prospect-specific hook, 3 scale KPIs from RAG docs, and executive hook tying their pain to Atlantis solution
+- [ ] **ANLS-03**: Trigger section output generates 3 cards (market / compliance-ESG / capital de-risking) with specific numbers from RAG
+- [ ] **ANLS-04**: Partnership section output generates commercial tracks with scope and strategic tags per SPV
+- [ ] **ANLS-05**: All generated content uses boardroom tone — visionary, data-backed, no AI/RAG/scraping terminology visible
+- [ ] **ANLS-06**: Analysis output persists to DB and is renderable by discover page without further AI calls
 
-### Dual Evidence Pipeline
+### Discover
 
-- [x] **PIPE-01**: RAG retrieval runs only when `projectType=atlantis`; Klarifai pipeline path remains unchanged.
-- [x] **PIPE-02**: Retrieved passages are persisted as `EvidenceItem` with `sourceType=RAG_DOCUMENT`.
-- [x] **PIPE-03**: Retrieval filters by project/SPV scope before similarity ranking.
-- [x] **PIPE-04**: Retrieval enforces a minimum similarity threshold to reduce topically-wrong passages.
-- [x] **PIPE-05**: Opportunity generation combines external evidence and RAG passages into 2-4 cards.
-- [x] **PIPE-06**: Each opportunity card carries document citation metadata (document id + section).
-- [x] **PIPE-07**: RAG step failure degrades gracefully (warning + continue), not full run failure.
+- [ ] **DISC-01**: Atlantis discover renders three sections: Context (hook) → Triggers (why you, why now) → Partnership (tracks + CTA)
+- [ ] **DISC-02**: Context section shows hook subtitle, 3 KPI blocks, and executive hook from persisted analysis
+- [ ] **DISC-03**: Trigger cards render with specific numbers, urgency indicators, and evidence attribution
+- [ ] **DISC-04**: Partnership section renders commercial tracks with scope, strategic tags, and interest CTA
+- [ ] **DISC-05**: Visual design matches boardroom tone — clean, confident, data-rich, no generic "bridge" language
 
-### Partnership Discover Experience
+### Validation
 
-- [x] **DISC-01**: `/discover/[slug]` branches by project type (existing Klarifai template vs Atlantis partnership template).
-- [x] **DISC-02**: Atlantis cards show dual-evidence bridge format with external + RAG citation context.
-- [ ] **DISC-03**: SPV-specific metric template controls which metrics are shown on each card.
-- [x] **DISC-04**: Partnership template reuses shared shell/session tracking components to avoid route divergence.
-- [x] **DISC-05**: CTA flow supports partnership brief download and strategy call booking with tracking.
+- [ ] **VALD-01**: End-to-end Atlantis flow succeeds with a real prospect (scrape → extract → analyze → discover renders correctly)
+- [ ] **VALD-02**: Existing Klarifai prospects remain unaffected (regression)
 
-### Admin Project Operations
+## v6.0 Requirements (Deferred)
 
-- [x] **ADMIN-01**: Admin scope is derived from login token (account-scoped auth), not client-side project switching.
-- [ ] **ADMIN-02**: Prospect list and prospect create/edit flows support SPV assignment and filtering in scoped project. (deferred)
-- [x] **ADMIN-03**: Use cases can be filtered/scoped per project in admin.
-- [x] **ADMIN-04**: v4 ships with seeded project/SPV data only (no project CRUD UI).
+### NDA Pipeline
 
-### Validation and Safety
-
-- [ ] **VALID-01**: End-to-end run passes for Atlantis path: prospect create -> research -> dual evidence -> `/discover/`.
-- [ ] **VALID-02**: Regression checks confirm existing Klarifai outputs are not changed by Atlantis additions.
-- [ ] **VALID-03**: First real Atlantis target prospect is validated with manually reviewed citations.
-- [ ] **VALID-04**: Quality calibration report is produced for Atlantis opportunity confidence thresholds.
-- [ ] **VALID-05**: Sensitive Atlantis docs are app-scoped by project so non-Atlantis prospects do not access Atlantis citations.
-
-## Future Requirements
-
-### Governance
-
-- **GOV-01**: Per-project RBAC (different admin roles per project).
-- **GOV-02**: Audit policy for document-level access and citation exposure.
-
-### RAG Productization
-
-- **RAG-UX-01**: Document management UI (upload/version/retire) instead of CLI-only ingestion.
-- **RAG-UX-02**: Automated SPV classifier feedback loop from won/lost outcomes.
+- **NDA-01**: Digital NDA e-sign flow built into discover dashboard (legal text, signature, PDF generation)
+- **NDA-02**: Signed NDA stored in DB with timestamp and prospect linkage
+- **NDA-03**: Post-NDA content unlock — additional dossier sections become visible after signing
+- **NDA-04**: Admin notification on NDA signing with prospect details
 
 ## Out of Scope
 
-| Feature                       | Reason                                                                                         |
-| ----------------------------- | ---------------------------------------------------------------------------------------------- |
-| Separate Atlantis app         | Same-app multi-project architecture reuses existing infrastructure and keeps operations simple |
-| Project CRUD admin panel      | Two known projects are enough for v4; seed scripts are faster and safer                        |
-| Document upload UI            | Corpus is curated and maintained outside app; CLI ingestion is sufficient                      |
-| RAG chatbot                   | Objective is evidence-backed outreach cards, not conversational search                         |
-| Per-project billing/analytics | Not needed at current scale and would delay core delivery                                      |
-| Per-user permissions          | Single-admin model remains acceptable for v4                                                   |
+| Feature                            | Reason                                              |
+| ---------------------------------- | --------------------------------------------------- |
+| NDA e-sign flow                    | Deferred to v6.0 — analysis quality is the priority |
+| Admin SPV assignment UI            | Deferred from v4.0 — no operational need proven     |
+| Partnership-to-campaign conversion | Deferred from v4.0 — needs NDA flow first           |
+| Precision financial projections    | Goal is intrigue/scale, not verified business cases |
+| Multi-language discover            | Dutch only for now                                  |
 
 ## Traceability
 
-| Requirement | Phase | Status    |
-| ----------- | ----- | --------- |
-| MPROJ-01    | 36    | Completed |
-| MPROJ-02    | 36    | Completed |
-| MPROJ-03    | 36    | Completed |
-| MPROJ-04    | 36    | Completed |
-| MPROJ-05    | 36    | Completed |
-| RAG-01      | 37    | Completed |
-| RAG-02      | 37    | Completed |
-| RAG-03      | 37    | Completed |
-| RAG-04      | 37    | Completed |
-| RAG-05      | 37    | Completed |
-| RAG-06      | 37    | Completed |
-| PIPE-01     | 38    | Completed |
-| PIPE-02     | 38    | Completed |
-| PIPE-03     | 38    | Completed |
-| PIPE-04     | 38    | Completed |
-| PIPE-05     | 38    | Completed |
-| PIPE-06     | 38    | Completed |
-| PIPE-07     | 38    | Completed |
-| DISC-01     | 39    | Completed |
-| DISC-02     | 39    | Completed |
-| DISC-03     | 39    | Pending   |
-| DISC-04     | 39    | Completed |
-| DISC-05     | 39    | Completed |
-| ADMIN-01    | 40    | Completed |
-| ADMIN-02    | 40    | Deferred  |
-| ADMIN-03    | 40    | Completed |
-| ADMIN-04    | 40    | Completed |
-| VALID-01    | 41    | Pending   |
-| VALID-02    | 41    | Pending   |
-| VALID-03    | 41    | Pending   |
-| VALID-04    | 41    | Pending   |
-| VALID-05    | 41    | Pending   |
+| Requirement | Phase | Status  |
+| ----------- | ----- | ------- |
+| EXTR-01     | —     | Pending |
+| EXTR-02     | —     | Pending |
+| EXTR-03     | —     | Pending |
+| ANLS-01     | —     | Pending |
+| ANLS-02     | —     | Pending |
+| ANLS-03     | —     | Pending |
+| ANLS-04     | —     | Pending |
+| ANLS-05     | —     | Pending |
+| ANLS-06     | —     | Pending |
+| DISC-01     | —     | Pending |
+| DISC-02     | —     | Pending |
+| DISC-03     | —     | Pending |
+| DISC-04     | —     | Pending |
+| DISC-05     | —     | Pending |
+| VALD-01     | —     | Pending |
+| VALD-02     | —     | Pending |
 
 **Coverage:**
 
-- v4.0 requirements: 32 total
-- Mapped to phases: 32
-- Unmapped: 0
+- v5.0 requirements: 16 total
+- Mapped to phases: 0
+- Unmapped: 16
 
 ---
 
-_Requirements defined: 2026-03-05_
-_Last updated: 2026-03-07 after Phase 40-01 rollback/defer decision_
+_Requirements defined: 2026-03-07_
+_Last updated: 2026-03-07 after initial definition_
