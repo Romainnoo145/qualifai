@@ -100,7 +100,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 </details>
 
-### 🚧 v5.0 Atlantis Intelligence & NDA Pipeline (In Progress)
+### v5.0 Atlantis Intelligence & NDA Pipeline (In Progress)
 
 **Milestone Goal:** Replace template-based Atlantis discover pipeline with AI-powered content generation. Scraper data gets structured into intent variables, AI combines those with RAG passages into boardroom-ready narrative, and the discover page renders the result as a three-section teaser that drives NDA interest.
 
@@ -140,12 +140,12 @@ Plans:
 3. Running analysis produces a partnership section with commercial tracks per SPV including scope and strategic tags
 4. All generated content reads as boardroom-ready — visionary and data-backed with zero AI/RAG/scraping terminology visible in output
 5. Analysis output is persisted to DB and can be loaded without making any AI calls
-   **Plans**: TBD
+   **Plans**: 2 plans
 
 Plans:
 
-- [ ] 43-01: TBD
-- [ ] 43-02: TBD
+- [ ] 43-01-PLAN.md — Analysis types, DB schema, prompt builder, and AI generation function
+- [ ] 43-02-PLAN.md — Research pipeline integration, DB persistence, and tRPC retrieval endpoint
 
 ### Phase 44: Discover Rendering
 
@@ -226,7 +226,7 @@ Phases execute in numeric order: 42 → 43 → 44 → 45
 | 39. Partnership Discover Template      | v4.0      | 2/2            | Complete    | 2026-03-07 |
 | 40. Admin Project Operations           | v4.0      | 0/2            | Deferred    | -          |
 | 41. Validation + First Atlantis        | v4.0      | 0/2            | Deferred    | -          |
-| 42. Extraction Matrix                  | 2/2       | Complete       | 2026-03-07  | -          |
-| 43. AI Master Analysis                 | v5.0      | 0/?            | Not started | -          |
+| 42. Extraction Matrix                  | v5.0      | 2/2            | Complete    | 2026-03-07 |
+| 43. AI Master Analysis                 | v5.0      | 0/2            | Not started | -          |
 | 44. Discover Rendering                 | v5.0      | 0/?            | Not started | -          |
 | 45. End-to-End Validation              | v5.0      | 0/?            | Not started | -          |
