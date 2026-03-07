@@ -9,7 +9,8 @@
 - ✅ **v2.1 Production Bootstrap** — Phases 23-27.1 (shipped 2026-03-02)
 - ✅ **v2.2 Verified Pain Intelligence** — Phases 28-30 (shipped 2026-03-02)
 - ✅ **v3.0 Sharp Analysis** — Phases 31-35 (shipped 2026-03-05)
-- 🚧 **v4.0 Atlantis Partnership Outreach** — Phases 36-41 (in progress)
+- ✅ **v4.0 Atlantis Partnership Outreach** — Phases 36-39 (shipped 2026-03-07)
+- 🚧 **v5.0 Atlantis Intelligence & NDA Pipeline** — Phases 42-45 (in progress)
 
 ## Phases
 
@@ -76,269 +77,156 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 </details>
 
-### ✅ v3.0 Sharp Analysis (Shipped 2026-03-05)
+<details>
+<summary>✅ v3.0 Sharp Analysis (Phases 31-35) — SHIPPED 2026-03-05</summary>
 
-**Milestone Goal:** Hypothesis generation that produces evidence-grounded, prospect-specific analysis — eliminating fabricated metrics, parroted marketing copy, and shallow website-only reasoning.
+- Phase 31: Tech Debt Foundation (3/3 plans) — SERP cache fix, Gemini 2.5 upgrade, TS2589 cleanup
+- Phase 32: Hypothesis Prompt Rewrite (2/2 plans) — Source tiers, anti-parroting, quote mandate, dynamic count
+- Phase 33: Configurable Model Selection (2/2 plans) — Claude path, CoT reasoning, provider abstraction
+- Phase 34: AI Metric Derivation + Attribution (2/2 plans) — AI-estimated ranges, source attribution badges
+- Phase 35: Validation and Calibration (2/2 plans) — Crawl4AI v0.8.x, /discover/ validation, pain gate tuning
 
-- [x] **Phase 31: Tech Debt Foundation** — Fix known code defects and upgrade Gemini model string to establish a clean, passing build baseline before hypothesis changes (completed 2026-03-02)
-- [x] **Phase 32: Hypothesis Prompt Rewrite** — Rewrite generateHypothesisDraftsAI() with evidence tiering, source-tier priority, anti-parroting constraint, mandatory quote requirement, and variable output count (completed 2026-03-02)
-- [x] **Phase 33: Configurable Model Selection** — Add Claude as a selectable hypothesis model with a provider abstraction, plus chain-of-thought reasoning pass (completed 2026-03-02)
-- [x] **Phase 34: AI Metric Derivation + Source Attribution** — Replace hardcoded METRIC_DEFAULTS with AI-estimated contextual ranges and surface source attribution in admin UI (completed 2026-03-02)
-- [x] **Phase 35: Validation and Calibration** — Verify /discover/ hypothesis flow, Crawl4AI v0.8.x feature set, and pain gate thresholds against real prospect data (completed 2026-03-05)
+</details>
 
-### 🚧 v4.0 Atlantis Partnership Outreach (In Progress)
+<details>
+<summary>✅ v4.0 Atlantis Partnership Outreach (Phases 36-39) — SHIPPED 2026-03-07</summary>
 
-**Milestone Goal:** Extend Qualifai to support Atlantis partnership outreach with dual evidence (external prospect signals + cited RAG document passages), while preserving current Klarifai pipeline behavior.
+- Phase 36: Multi-Project Schema + Seed Foundation (2/2 plans) — Project/SPV models, backfill, seed
+- Phase 37: RAG Ingestion Pipeline (2/2 plans) — Markdown chunker, embeddings, idempotent ingestion
+- Phase 38: Retrieval + Dual Evidence Integration (2/2 plans) — SPV-scoped retrieval, dual-evidence cards
+- Phase 39: Partnership /discover/ Template (2/2 plans) — Readiness/trigger narrative, CTA routing
+- Phase 40: Admin Project Operations — Deferred (no operational need proven)
+- Phase 41: Validation + First Atlantis Prospect — Deferred (folded into v5.0)
 
-- [x] **Phase 36: Multi-Project Schema + Seed Foundation** — Add Project/SPV models, backfill prospect project ownership, and seed Atlantis structure (completed 2026-03-05)
-- [x] **Phase 37: RAG Ingestion Pipeline** — Chunk Atlantis markdown docs, embed, and persist searchable document chunks with metadata (completed 2026-03-05)
-- [x] **Phase 38: Retrieval + Dual Evidence Integration** — Retrieve SPV-scoped passages and generate dual-evidence opportunity cards (completed 2026-03-05)
-- [x] **Phase 39: Partnership /discover/ Template** — Atlantis discover now renders readiness/trigger narrative + CTA routing (completed 2026-03-07)
-- [ ] **Phase 40: Admin Project Operations** — deferred (SPV assignment/filtering removed from active scope)
-- [ ] **Phase 41: Validation + First Real Atlantis Prospect** — Run end-to-end Atlantis flow and regression-check existing Klarifai behavior
+</details>
+
+### 🚧 v5.0 Atlantis Intelligence & NDA Pipeline (In Progress)
+
+**Milestone Goal:** Replace template-based Atlantis discover pipeline with AI-powered content generation. Scraper data gets structured into intent variables, AI combines those with RAG passages into boardroom-ready narrative, and the discover page renders the result as a three-section teaser that drives NDA interest.
+
+- [ ] **Phase 42: Extraction Matrix** - Scraper data structured into intent variables with source attribution
+- [ ] **Phase 43: AI Master Analysis** - Intent variables + RAG passages combined into prospect-specific narrative content
+- [ ] **Phase 44: Discover Rendering** - Three-section discover page renders persisted analysis without further AI calls
+- [ ] **Phase 45: End-to-End Validation** - Real prospect flow verified, existing prospects unaffected
 
 ## Phase Details
 
-### Phase 31: Tech Debt Foundation
+### Phase 42: Extraction Matrix
 
-**Goal**: The codebase has a clean npm run check pass, the SERP cache bug is gone, the import anomaly in workflow-engine.ts is resolved, and all known TypeScript debt is addressed — establishing a stable baseline before hypothesis generation is touched
-**Depends on**: Phase 30 (v2.2 complete)
-**Requirements**: DEBT-01, DEBT-02, DEBT-03, DEBT-04, DEBT-05, DEBT-06, MODEL-02
+**Goal**: Scraper output is reliably structured into intent variables that downstream analysis can consume, and those variables drive targeted RAG retrieval instead of keyword-stuffed queries
+**Depends on**: Phase 39 (v4.0 Atlantis pipeline in place)
+**Requirements**: EXTR-01, EXTR-02, EXTR-03
 **Success Criteria** (what must be TRUE):
 
-1. npm run check passes with zero errors after all fixes applied
-2. SERP cache re-read bug is absent from research-executor.ts (pre-read snapshot taken before deepCrawl overwrites)
-3. Gemini model string is gemini-2.5-flash across all four files (workflow-engine.ts, evidence-scorer.ts, serp.ts, review-adapters.ts)
-4. The unused logoUrl prop is gone from DashboardClient interface and all call sites compile cleanly
-5. TS2589 as any casts are categorized and fixed by pattern (deep inference → Prisma.XGetPayload, tRPC mutations → correct v11 pattern, Json fields → typed helper)
-   **Plans**: 3 plans
+1. Running research on an Atlantis prospect produces structured intent variables (sector fit, operational pains, ESG/CSRD signals, investment/growth patterns, workforce signals) with source attribution per variable
+2. RAG retrieval queries are constructed from intent variables instead of keyword-stuffed profile fragments, returning more relevant passages
+3. Intent variables are persisted to the database and available for inspection in admin prospect detail
+   **Plans**: TBD
 
 Plans:
 
-- [x] 31-01-PLAN.md — Quick fixes: SERP cache double-read, unused logoUrl prop, import ordering, Gemini model constant extraction + 2.5-flash upgrade
-- [x] 31-02-PLAN.md — TS2589 type safety: detail-view as any replacement with Prisma.ResearchRunGetPayload, quality-chip and outreach typed Json guards
-- [x] 31-03-PLAN.md — E2E test refactor to tRPC quality gate + golden baseline capture for all 7 prospects
+- [ ] 42-01: TBD
+- [ ] 42-02: TBD
 
-### Phase 32: Hypothesis Prompt Rewrite
+### Phase 43: AI Master Analysis
 
-**Goal**: The hypothesis generation prompt prioritizes diagnostic evidence (reviews, hiring, LinkedIn) over marketing copy, prevents parroting of the company's own website, requires at least one verbatim quoted snippet per hypothesis, and varies output count from 1-3 based on confirmed pain signal quality
-**Depends on**: Phase 31
-**Requirements**: ANLYS-01, ANLYS-02, ANLYS-03, ANLYS-04, ANLYS-05, ANLYS-06, ANLYS-07
+**Goal**: AI generates complete discover page content (context, triggers, tracks) from intent variables and RAG passages in boardroom tone
+**Depends on**: Phase 42
+**Requirements**: ANLS-01, ANLS-02, ANLS-03, ANLS-04, ANLS-05, ANLS-06
 **Success Criteria** (what must be TRUE):
 
-1. Generated hypotheses for STB-kozijnen cite reviews or hiring signals in problemStatement, not service page copy
-2. Generated hypotheses for Mujjo cite customer support reviews (expected confidence 0.85+) and no two prospects share identical metric values
-3. Each hypothesis problemStatement contains at least one verbatim quoted snippet from a non-WEBSITE evidence source (detectable by presence of quotation marks)
-4. A prospect with only one confirmed pain tag produces one hypothesis, not three
-5. A prompt run on a WEBSITE-only evidence set produces a confidence score in the 0.60-0.65 range, not 0.80+
-   **Plans**: 2 plans
+1. Running analysis on a prospect with intent variables produces a context section with prospect-specific hook, 3 scale KPIs sourced from RAG documents, and an executive hook connecting their pain to Atlantis
+2. Running analysis produces a trigger section with 3 cards (market / compliance-ESG / capital de-risking) containing specific numbers from RAG documents, not generic filler
+3. Running analysis produces a partnership section with commercial tracks per SPV including scope and strategic tags
+4. All generated content reads as boardroom-ready — visionary and data-backed with zero AI/RAG/scraping terminology visible in output
+5. Analysis output is persisted to DB and can be loaded without making any AI calls
+   **Plans**: TBD
 
 Plans:
 
-- [x] 32-01-PLAN.md — TDD test scaffold: Gemini mock + ANLYS-01 through ANLYS-07 failing test assertions
-- [x] 32-02-PLAN.md — Prompt rewrite: source tiers, signal summary, anti-parroting, quote mandate, dynamic count, calibrated confidence + call site update
+- [ ] 43-01: TBD
+- [ ] 43-02: TBD
 
-### Phase 33: Configurable Model Selection
+### Phase 44: Discover Rendering
 
-**Goal**: Admin can select Claude Sonnet as the hypothesis generation model for any research run via an optional parameter, and a two-pass chain-of-thought reasoning step separates evidence analysis from hypothesis synthesis
-**Depends on**: Phase 32
-**Requirements**: MODEL-01, ANLYS-08
-**Success Criteria** (what must be TRUE):
-
-1. Passing hypothesisModel: 'claude-sonnet' to research.startRun or research.retryRun produces hypotheses via the Anthropic API (verifiable by distinct reasoning style and xml-structured prompt trace)
-2. Passing hypothesisModel: 'gemini-flash' (or omitting the field) produces hypotheses via Gemini, unchanged from Phase 32 output — backward-compatible default
-3. Both models parse to the same hypothesis JSON shape with no runtime errors
-4. Chain-of-thought pass is observable: reasoning section present in raw model output before synthesis step
-   **Plans**: 2 plans
-
-Plans:
-
-- [x] 33-01-PLAN.md — TDD RED scaffold: upgrade Anthropic mock + MODEL-01 and ANLYS-08 failing test cases
-- [x] 33-02-PLAN.md — Implementation: CLAUDE_MODEL_SONNET constant, CoT prompt, extractHypothesisJson helper, Claude path, parameter threading through tRPC/executor
-
-### Phase 34: AI Metric Derivation + Source Attribution
-
-**Goal**: The Workflow Loss Map and outreach templates show AI-estimated metric ranges that are specific to each prospect's industry and evidence, and the admin detail view shows which source type most drove each hypothesis
-**Depends on**: Phase 33
-**Requirements**: MODEL-03, ANLYS-09
-**Success Criteria** (what must be TRUE):
-
-1. Two different prospects in different industries produce different hoursSaved and errorReduction metric values (not the same hardcoded defaults)
-2. Metric values are labeled as estimated ranges (e.g., "8-12 hours/week") not false precision integers
-3. The Workflow Loss Map PDF renders without NaN or undefined values for any metric field
-4. Each hypothesis card in the admin detail view shows a source attribution badge (e.g., "REVIEWS", "CAREERS") identifying the primary evidence driver
-   **Plans**: 2 plans
-
-Plans:
-
-- [x] 34-01-PLAN.md — TDD RED scaffold: extend mock factories with metric fields + primarySourceType, add MODEL-03 and ANLYS-09 failing tests
-- [x] 34-02-PLAN.md — GREEN implementation: prompt metric instruction, clamp helpers, type extensions, DB migration, executor write, FindingCard source attribution badge
-
-### Phase 35: Validation and Calibration
-
-**Goal**: Real prospect data confirms the /discover/ hypothesis validation flow works end-to-end, Crawl4AI v0.8.x features are verified against real pages, and PAIN_GATE threshold constants are tuned to actual evidence distribution
-**Depends on**: Phase 34
-**Requirements**: VALID-01, VALID-02, VALID-03
-**Success Criteria** (what must be TRUE):
-
-1. /discover/ validation session run with at least one real prospect — confirm/decline interaction recorded in DB and visible in admin override history
-2. Crawl4AI v0.8.x consent popup removal and shadow DOM flattening verified working against at least two real pages that previously required manual intervention
-3. Pain gate calibration SQL run against all 7+ real prospects and threshold constants updated in quality-config.ts with documented before/after distribution
-   **Plans**: 2 plans
-
-Plans:
-
-- [x] 35-01-PLAN.md — Crawl4AI v0.8.x params + pain gate calibration report
-- [x] 35-02-PLAN.md — /discover/ validation session with DB assertions
-
-### Phase 36: Multi-Project Schema + Seed Foundation
-
-**Goal**: Introduce project-aware data boundaries so Atlantis and Klarifai can run in one app without data leakage or query ambiguity.
-**Depends on**: Phase 35 (v3.0 complete)
-**Requirements**: MPROJ-01, MPROJ-02, MPROJ-03, MPROJ-04, MPROJ-05
-**Success Criteria** (what must be TRUE):
-
-1. Prisma schema includes `Project`, `SPV`, and `Prospect.projectId/spvId` relations with indexes and migration runs cleanly
-2. Seed creates `klarifai` and `europes-gate` projects plus eight Atlantis SPVs
-3. Existing prospects are backfilled to Klarifai project and app runs without null-project query errors
-4. Project-scoped querying is possible in routers without breaking existing endpoints
-   **Plans**: 2 plans
-
-Plans:
-
-- [x] 36-01-PLAN.md — Prisma schema + migration + backfill for project/SPV ownership
-- [x] 36-02-PLAN.md — Seed scripts for projects/SPVs + baseline project-scoped router helpers
-
-### Phase 37: RAG Ingestion Pipeline
-
-**Goal**: Ingest Atlantis corpus into structured, searchable chunks with embeddings and metadata suitable for deterministic citation.
-**Depends on**: Phase 36
-**Requirements**: RAG-01, RAG-02, RAG-03, RAG-04, RAG-05, RAG-06
-**Success Criteria** (what must be TRUE):
-
-1. pgvector extension is active and chunk embeddings are stored for Atlantis documents
-2. Markdown chunker preserves section semantics and keeps tables atomic
-3. Ingestion CLI can be rerun safely without duplicate chunk explosions
-4. Ingestion output logs chunk count and embedding cost estimate
-   **Plans**: 2 plans
-
-Plans:
-
-- [x] 37-01-PLAN.md — Markdown-aware chunker + document metadata extraction + table-preservation tests
-- [x] 37-02-PLAN.md — Embedding integration + chunk persistence + idempotent ingestion CLI
-
-### Phase 38: Retrieval + Dual Evidence Integration
-
-**Goal**: Connect external research and Atlantis RAG evidence into one opportunity-generation path with strong source controls.
-**Depends on**: Phase 37
-**Requirements**: PIPE-01, PIPE-02, PIPE-03, PIPE-04, PIPE-05, PIPE-06, PIPE-07
-**Success Criteria** (what must be TRUE):
-
-1. RAG retrieval only runs for Atlantis prospects and does not alter Klarifai path outputs
-2. Retrieved passages are SPV-filtered, similarity-thresholded, and stored as `RAG_DOCUMENT` evidence items
-3. Opportunity generator emits 2-4 dual-evidence cards with explicit citation metadata
-4. RAG errors downgrade gracefully to warning path without failing full research run
-   **Plans**: 2 plans
-
-Plans:
-
-- [x] 38-01-PLAN.md — Retriever implementation (SPV filters, similarity threshold, citation payload)
-- [x] 38-02-PLAN.md — Research executor branching + dual-evidence opportunity generation + graceful degradation
-
-### Phase 39: Partnership /discover/ Template
-
-**Goal**: Deliver Atlantis-specific discover UX while reusing shared shell/session primitives to avoid route divergence.
-**Depends on**: Phase 38
+**Goal**: Atlantis discover page renders three-section narrative from persisted analysis data with clean, confident visual design
+**Depends on**: Phase 43
 **Requirements**: DISC-01, DISC-02, DISC-03, DISC-04, DISC-05
 **Success Criteria** (what must be TRUE):
 
-1. `/discover/[slug]` branches by project type and renders correct template
-2. Atlantis template shows readiness + partnership trigger cards with evidence citations
-3. CTA profile routing switches by readiness tier (high/medium/low)
-4. Shared dashboard/session shell is reused to avoid route divergence
-   **Plans**: 2 plans
+1. Atlantis discover page at /discover/[slug] shows three distinct sections in order: Context (hook + KPIs) then Triggers (why you, why now) then Partnership (tracks + CTA)
+2. Context section displays hook subtitle, 3 KPI blocks with numbers from RAG, and executive hook — all from persisted data
+3. Trigger cards show specific numbers, urgency indicators, and evidence attribution — not placeholder text
+4. Partnership section shows commercial tracks with scope, strategic tags, and interest CTA per SPV
+5. Visual design is clean, confident, and data-rich — no generic "bridge" imagery or language, matches boardroom tone of the analysis
+   **Plans**: TBD
 
 Plans:
 
-- [x] 39-01-PLAN.md — Discover route branching + partnership trigger assessment surfaced in analysis
-- [x] 39-02-PLAN.md — Partnership narrative cards + readiness CTA routing in discover
+- [ ] 44-01: TBD
+- [ ] 44-02: TBD
 
-### Phase 40: Admin Project Operations
+### Phase 45: End-to-End Validation
 
-**Goal**: Harden account-scoped admin operations with SPV-aware prospect management and conversion visibility.
-**Depends on**: Phase 36
-**Requirements**: ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04
+**Goal**: Full Atlantis intelligence pipeline verified with real prospect data, existing Klarifai prospects confirmed unaffected
+**Depends on**: Phase 44
+**Requirements**: VALD-01, VALD-02
 **Success Criteria** (what must be TRUE):
 
-1. Account token determines project scope server-side for all admin workflows (no client-side switching)
-2. Prospect create/edit/list flows support SPV assignment and filtering inside the scoped project
-3. Use-case operations remain project-scoped and Atlantis catalog guardrails stay intact
-4. Partnership-to-campaign conversion events are visible per SPV/readiness tier
-   **Plans**: 2 plans
+1. A real Atlantis prospect completes the full flow (scrape → extract intent variables → AI analysis → discover page renders correctly) with no manual intervention
+2. An existing Klarifai prospect's research pipeline, discover page, and outreach flow still work correctly (regression)
+   **Plans**: TBD
 
 Plans:
 
-- [ ] 40-01-PLAN.md — SPV assignment plumbing (deferred/reverted)
-- [ ] 40-02-PLAN.md — Partnership conversion instrumentation + SPV funnel visibility (deferred)
-
-### Phase 41: Validation + First Real Atlantis Prospect
-
-**Goal**: Validate Atlantis flow end-to-end with real data while proving non-regression for the existing Klarifai path.
-**Depends on**: Phases 36-40
-**Requirements**: VALID-01, VALID-02, VALID-03, VALID-04, VALID-05
-**Success Criteria** (what must be TRUE):
-
-1. E2E Atlantis run succeeds from prospect creation through discover experience
-2. Existing Klarifai regression set remains green after Atlantis integration
-3. First real Atlantis target prospect output is manually reviewed and citation quality passes
-4. Atlantis calibration report captures confidence distribution and gate recommendations
-5. Project scoping prevents Atlantis citations from appearing on non-Atlantis prospects
-   **Plans**: 2 plans
-
-Plans:
-
-- [ ] 41-01-PLAN.md — Atlantis E2E validation harness + regression matrix for existing prospects
-- [ ] 41-02-PLAN.md — First real prospect walkthrough + calibration/report artifact
+- [ ] 45-01: TBD
 
 ## Progress
 
-| Phase                                  | Milestone | Plans Complete | Status     | Completed  |
-| -------------------------------------- | --------- | -------------- | ---------- | ---------- |
-| 1-5. MVP                               | v1.0      | —              | Complete   | 2026-02-20 |
-| 6. Use Cases Foundation                | v1.1      | 3/3            | Complete   | 2026-02-20 |
-| 7. Evidence Approval Gate              | v1.1      | 2/2            | Complete   | 2026-02-20 |
-| 8. Deep Evidence Pipeline              | v1.1      | 3/3            | Complete   | 2026-02-21 |
-| 9. Engagement Triggers                 | v1.1      | 2/2            | Complete   | 2026-02-21 |
-| 10. Cadence Engine                     | v1.1      | 4/4            | Complete   | 2026-02-21 |
-| 11. Prospect Dashboard                 | v1.1      | 2/2            | Complete   | 2026-02-21 |
-| 12. Navigation and Language            | v1.2      | 2/2            | Complete   | 2026-02-21 |
-| 13. Prospect Story Flow                | v1.2      | 5/5            | Complete   | 2026-02-22 |
-| 14. Campaign Reporting                 | v1.2      | 2/2            | Complete   | 2026-02-22 |
-| 15. Action Queue Dashboard             | v1.2      | 2/2            | Complete   | 2026-02-22 |
-| 17. Evidence Pipeline Enrichment       | v2.0      | 3/3            | Complete   | 2026-02-22 |
-| 18. Research Quality Gate              | v2.0      | 3/3            | Complete   | 2026-02-22 |
-| 19. Client Hypothesis Validation       | v2.0      | 2/2            | Complete   | 2026-02-23 |
-| 20. One-Click Send Queue + Pipeline    | v2.0      | 3/3            | Complete   | 2026-02-23 |
-| 21. Prospect Discovery + Cleanup       | v2.0      | 2/2            | Complete   | 2026-02-23 |
-| 22. Hypothesis Flow Fix                | v2.0      | 1/1            | Complete   | 2026-02-23 |
-| 23. Use Case Extractors                | v2.1      | 2/2            | Complete   | 2026-02-24 |
-| 24. Data Population and Discovery      | v2.1      | 2/2            | Complete   | 2026-02-25 |
-| 25. Pipeline Hardening                 | v2.1      | 4/4            | Complete   | 2026-02-27 |
-| 26. Quality Calibration                | v2.1      | 2/2            | Complete   | 2026-02-28 |
-| 26.1. Evidence Pipeline Expansion      | v2.1      | 3/3            | Complete   | 2026-02-28 |
-| 27. End-to-End Cycle                   | v2.1      | 2/2            | Complete   | 2026-02-28 |
-| 27.1. Cal.com Booking Validation       | v2.1      | 1/1            | Complete   | 2026-03-01 |
-| 28. Source Discovery with Provenance   | v2.2      | 3/3            | Complete   | 2026-03-02 |
-| 29. Browser-Rendered Extraction        | v2.2      | 2/2            | Complete   | 2026-03-02 |
-| 30. Pain Confirmation Gate + Audit     | v2.2      | 4/4            | Complete   | 2026-03-02 |
-| 31. Tech Debt Foundation               | 3/3       | Complete       | 2026-03-02 | -          |
-| 32. Hypothesis Prompt Rewrite          | 2/2       | Complete       | 2026-03-02 | -          |
-| 33. Configurable Model Selection       | 2/2       | Complete       | 2026-03-02 | -          |
-| 34. AI Metric Derivation + Attribution | 2/2       | Complete       | 2026-03-02 | -          |
-| 35. Validation and Calibration         | 2/2       | Complete       | 2026-03-05 | -          |
-| 36. Multi-Project Schema + Seed        | v4.0      | 2/2            | Complete   | 2026-03-05 |
-| 37. RAG Ingestion Pipeline             | v4.0      | 2/2            | Complete   | 2026-03-05 |
-| 38. Retrieval + Dual Evidence          | v4.0      | 2/2            | Complete   | 2026-03-05 |
-| 39. Partnership Discover Template      | v4.0      | 2/2            | Complete   | 2026-03-07 |
-| 40. Admin Project Operations           | v4.0      | 0/2            | Deferred   | -          |
-| 41. Validation + First Atlantis Target | v4.0      | 0/2            | Planned    | -          |
+**Execution Order:**
+Phases execute in numeric order: 42 → 43 → 44 → 45
+
+| Phase                                  | Milestone | Plans Complete | Status      | Completed  |
+| -------------------------------------- | --------- | -------------- | ----------- | ---------- |
+| 1-5. MVP                               | v1.0      | —              | Complete    | 2026-02-20 |
+| 6. Use Cases Foundation                | v1.1      | 3/3            | Complete    | 2026-02-20 |
+| 7. Evidence Approval Gate              | v1.1      | 2/2            | Complete    | 2026-02-20 |
+| 8. Deep Evidence Pipeline              | v1.1      | 3/3            | Complete    | 2026-02-21 |
+| 9. Engagement Triggers                 | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 10. Cadence Engine                     | v1.1      | 4/4            | Complete    | 2026-02-21 |
+| 11. Prospect Dashboard                 | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 12. Navigation and Language            | v1.2      | 2/2            | Complete    | 2026-02-21 |
+| 13. Prospect Story Flow                | v1.2      | 5/5            | Complete    | 2026-02-22 |
+| 14. Campaign Reporting                 | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 15. Action Queue Dashboard             | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 17. Evidence Pipeline Enrichment       | v2.0      | 3/3            | Complete    | 2026-02-22 |
+| 18. Research Quality Gate              | v2.0      | 3/3            | Complete    | 2026-02-22 |
+| 19. Client Hypothesis Validation       | v2.0      | 2/2            | Complete    | 2026-02-23 |
+| 20. One-Click Send Queue + Pipeline    | v2.0      | 3/3            | Complete    | 2026-02-23 |
+| 21. Prospect Discovery + Cleanup       | v2.0      | 2/2            | Complete    | 2026-02-23 |
+| 22. Hypothesis Flow Fix                | v2.0      | 1/1            | Complete    | 2026-02-23 |
+| 23. Use Case Extractors                | v2.1      | 2/2            | Complete    | 2026-02-24 |
+| 24. Data Population and Discovery      | v2.1      | 2/2            | Complete    | 2026-02-25 |
+| 25. Pipeline Hardening                 | v2.1      | 4/4            | Complete    | 2026-02-27 |
+| 26. Quality Calibration                | v2.1      | 2/2            | Complete    | 2026-02-28 |
+| 26.1. Evidence Pipeline Expansion      | v2.1      | 3/3            | Complete    | 2026-02-28 |
+| 27. End-to-End Cycle                   | v2.1      | 2/2            | Complete    | 2026-02-28 |
+| 27.1. Cal.com Booking Validation       | v2.1      | 1/1            | Complete    | 2026-03-01 |
+| 28. Source Discovery with Provenance   | v2.2      | 3/3            | Complete    | 2026-03-02 |
+| 29. Browser-Rendered Extraction        | v2.2      | 2/2            | Complete    | 2026-03-02 |
+| 30. Pain Confirmation Gate + Audit     | v2.2      | 4/4            | Complete    | 2026-03-02 |
+| 31. Tech Debt Foundation               | v3.0      | 3/3            | Complete    | 2026-03-02 |
+| 32. Hypothesis Prompt Rewrite          | v3.0      | 2/2            | Complete    | 2026-03-02 |
+| 33. Configurable Model Selection       | v3.0      | 2/2            | Complete    | 2026-03-02 |
+| 34. AI Metric Derivation + Attribution | v3.0      | 2/2            | Complete    | 2026-03-02 |
+| 35. Validation and Calibration         | v3.0      | 2/2            | Complete    | 2026-03-05 |
+| 36. Multi-Project Schema + Seed        | v4.0      | 2/2            | Complete    | 2026-03-05 |
+| 37. RAG Ingestion Pipeline             | v4.0      | 2/2            | Complete    | 2026-03-05 |
+| 38. Retrieval + Dual Evidence          | v4.0      | 2/2            | Complete    | 2026-03-05 |
+| 39. Partnership Discover Template      | v4.0      | 2/2            | Complete    | 2026-03-07 |
+| 40. Admin Project Operations           | v4.0      | 0/2            | Deferred    | -          |
+| 41. Validation + First Atlantis        | v4.0      | 0/2            | Deferred    | -          |
+| 42. Extraction Matrix                  | v5.0      | 0/?            | Not started | -          |
+| 43. AI Master Analysis                 | v5.0      | 0/?            | Not started | -          |
+| 44. Discover Rendering                 | v5.0      | 0/?            | Not started | -          |
+| 45. End-to-End Validation              | v5.0      | 0/?            | Not started | -          |

@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** v5.0 Atlantis Intelligence & NDA Pipeline — AI-powered discover content generation
+**Current focus:** v5.0 Phase 42 — Extraction Matrix
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-07 — Milestone v5.0 started
+Phase: 42 of 45 (Extraction Matrix)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-03-07 — Roadmap created for v5.0
 
-Progress: [██████████████████████████░░░░] 80% (39 phases complete across 8 shipped milestones)
+Progress: [██████████████████████████░░░░] 82% (39 phases complete, 4 remaining in v5.0)
 
 ## Milestones Shipped
 
@@ -27,11 +27,6 @@ Progress: [███████████████████████
 - v3.0 Sharp Analysis — 2026-03-05 (Phases 31-35)
 - v4.0 Atlantis Partnership Outreach — 2026-03-07 (Phases 36-39, 40-41 deferred)
 
-## Parked
-
-- v4.0 Phase 40 (Admin Project Operations) — deferred, no operational need proven
-- v4.0 Phase 41 (Validation + First Real Atlantis Prospect) — folded into v5.0 scope
-
 ## Accumulated Context
 
 ### Decisions
@@ -41,22 +36,20 @@ Recent decisions affecting v5.0:
 
 - v5.0: AI-generated discover content replaces template-based opportunity cards and rule-based triggers
 - v5.0: Extraction matrix approach — scraper data analyzed into intent variables before RAG query
-- v5.0: Three-section discover: Context (hook/KPIs) → Triggers (why you/now) → Partnership (NDA gate)
+- v5.0: Three-section discover: Context (hook/KPIs) → Triggers (why you/now) → Partnership (tracks + CTA)
 - v5.0: Boardroom tone — visionary, data-backed, never mention AI/RAG/scraping
-- v5.0: NDA e-sign is lower priority than extraction + analysis quality
-- v5.0: Goal is intrigue, not precision — scale numbers create awe, prospect should feel "I need to be part of this"
+- v5.0: NDA e-sign deferred to v6.0 — analysis quality is the priority
 
 ### Pending Todos
 
-- Define v5.0 requirements and roadmap
+None.
 
 ### Blockers/Concerns
 
 - Europe's Gate documents contain sensitive financial data — keep strict project-scoped auth boundaries
-- NDA e-sign has legal implications — may need lawyer review of NDA template text
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Defining v5.0 requirements
-Resume command: `/gsd:new-milestone`
+Stopped at: v5.0 roadmap created — ready to plan Phase 42
+Resume command: `/gsd:plan-phase 42`

@@ -56,32 +56,32 @@ Requirements for the Atlantis intelligence overhaul. Replaces template-based opp
 
 ## Traceability
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| EXTR-01     | —     | Pending |
-| EXTR-02     | —     | Pending |
-| EXTR-03     | —     | Pending |
-| ANLS-01     | —     | Pending |
-| ANLS-02     | —     | Pending |
-| ANLS-03     | —     | Pending |
-| ANLS-04     | —     | Pending |
-| ANLS-05     | —     | Pending |
-| ANLS-06     | —     | Pending |
-| DISC-01     | —     | Pending |
-| DISC-02     | —     | Pending |
-| DISC-03     | —     | Pending |
-| DISC-04     | —     | Pending |
-| DISC-05     | —     | Pending |
-| VALD-01     | —     | Pending |
-| VALD-02     | —     | Pending |
+| Requirement | Phase    | Status  |
+| ----------- | -------- | ------- |
+| EXTR-01     | Phase 42 | Pending |
+| EXTR-02     | Phase 42 | Pending |
+| EXTR-03     | Phase 42 | Pending |
+| ANLS-01     | Phase 43 | Pending |
+| ANLS-02     | Phase 43 | Pending |
+| ANLS-03     | Phase 43 | Pending |
+| ANLS-04     | Phase 43 | Pending |
+| ANLS-05     | Phase 43 | Pending |
+| ANLS-06     | Phase 43 | Pending |
+| DISC-01     | Phase 44 | Pending |
+| DISC-02     | Phase 44 | Pending |
+| DISC-03     | Phase 44 | Pending |
+| DISC-04     | Phase 44 | Pending |
+| DISC-05     | Phase 44 | Pending |
+| VALD-01     | Phase 45 | Pending |
+| VALD-02     | Phase 45 | Pending |
 
 **Coverage:**
 
 - v5.0 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16
+- Mapped to phases: 16
+- Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-03-07_
-_Last updated: 2026-03-07 after initial definition_
+_Last updated: 2026-03-07 after roadmap creation_
