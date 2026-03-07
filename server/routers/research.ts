@@ -196,10 +196,12 @@ export const researchRouter = router({
             maxResults: 200,
           })
         : { status: 'ok' as const, urls: [] };
-      const katanaSiteUrls = katanaResult.status === 'ok' ? katanaResult.urls : [];
+      const katanaSiteUrls =
+        katanaResult.status === 'ok' ? katanaResult.urls : [];
       const serpSiteUrls: string[] = [];
 
-      let sourceUsed: 'sitemap' | 'katana_site' | 'serp_site' | 'fallback' = 'fallback';
+      let sourceUsed: 'sitemap' | 'katana_site' | 'serp_site' | 'fallback' =
+        'fallback';
       if (sitemapResult.status === 'ok' && sitemapResult.discoveredTotal > 0) {
         sourceUsed = 'sitemap';
       } else if (katanaSiteUrls.length > 0) {
@@ -209,7 +211,11 @@ export const researchRouter = router({
       const discoveredCandidates: WebsiteCandidate[] = [];
       if (sourceUsed === 'sitemap') {
         for (const candidate of sitemapResult.candidates) {
-          const mapped = candidateFromUrl(candidate.url, 'sitemap', candidate.lastmod);
+          const mapped = candidateFromUrl(
+            candidate.url,
+            'sitemap',
+            candidate.lastmod,
+          );
           if (!mapped) continue;
           discoveredCandidates.push(mapped);
         }
@@ -227,7 +233,9 @@ export const researchRouter = router({
         discoveredCandidates.push(mapped);
       }
 
-      const fallbackReason = fallbackReasonFromSitemapStatus(sitemapResult.status);
+      const fallbackReason = fallbackReasonFromSitemapStatus(
+        sitemapResult.status,
+      );
       if (discoveredCandidates.length === 0) {
         sourceUsed = 'fallback';
         for (const url of defaultResearchUrls(prospect.domain).slice(0, 6)) {
@@ -550,6 +558,14 @@ export const researchRouter = router({
       return ctx.db.gateOverrideAudit.findMany({
         where: { researchRunId: input.runId },
         orderBy: { createdAt: 'asc' },
+      });
+    }),
+
+  getIntentExtraction: adminProcedure
+    .input(z.object({ runId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.intentExtraction.findUnique({
+        where: { researchRunId: input.runId },
       });
     }),
 });

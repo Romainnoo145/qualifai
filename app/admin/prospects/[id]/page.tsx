@@ -29,6 +29,7 @@ import { OutreachPreviewSection } from '@/components/features/prospects/outreach
 import { ResultsSection } from '@/components/features/prospects/results-section';
 import { ContactsSection } from '@/components/features/prospects/contacts-section';
 import { QualityChip } from '@/components/features/prospects/quality-chip';
+import { IntentSignalsSection } from '@/components/features/prospects/intent-signals-section';
 import { buildDiscoverPath } from '@/lib/prospect-url';
 import { deepAnalysisStatus } from '@/lib/deep-analysis';
 
@@ -93,14 +94,15 @@ function useDebugMode(): boolean {
   );
 }
 
-const TABS = [
+const BASE_TABS = [
   { id: 'evidence', label: 'Evidence' },
+  { id: 'intent-signals', label: 'Intent Signals' },
   { id: 'analysis', label: 'Analysis' },
   { id: 'outreach-preview', label: 'Outreach Preview' },
   { id: 'results', label: 'Results' },
 ] as const;
 
-type TabId = (typeof TABS)[number]['id'];
+type TabId = (typeof BASE_TABS)[number]['id'];
 
 export default function ProspectDetail() {
   const params = useParams();
@@ -425,7 +427,11 @@ export default function ProspectDetail() {
       {/* Tab nav */}
       <nav className="mt-8 mb-6 overflow-x-auto">
         <div className="admin-toggle-group w-max">
-          {TABS.map((tab) => (
+          {BASE_TABS.filter(
+            (tab) =>
+              tab.id !== 'intent-signals' ||
+              p.project?.projectType === 'ATLANTIS',
+          ).map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -499,6 +505,13 @@ export default function ProspectDetail() {
           </div>
         )}
       </div>
+      {p.project?.projectType === 'ATLANTIS' && (
+        <div
+          className={cn('pt-1', activeTab === 'intent-signals' ? '' : 'hidden')}
+        >
+          <IntentSignalsSection runId={latestRunId} />
+        </div>
+      )}
       <div className={cn('pt-1', activeTab === 'analysis' ? '' : 'hidden')}>
         <AnalysisSection
           prospectId={id}
