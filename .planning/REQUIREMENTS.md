@@ -10,7 +10,7 @@ Requirements for the Atlantis intelligence overhaul. Replaces template-based opp
 ### Extraction
 
 - [x] **EXTR-01**: Scraper output is analyzed into structured intent variables (sector fit, operational pains, ESG/CSRD signals, investment/growth patterns, workforce signals) with source attribution
-- [ ] **EXTR-02**: Intent variables drive RAG query construction, replacing keyword-stuffed profile fragments with targeted evidence-seeking queries
+- [x] **EXTR-02**: Intent variables drive RAG query construction, replacing keyword-stuffed profile fragments with targeted evidence-seeking queries
 - [x] **EXTR-03**: Extraction runs as part of the research pipeline and persists intent variables to DB for downstream analysis
 
 ### Analysis
@@ -59,7 +59,7 @@ Requirements for the Atlantis intelligence overhaul. Replaces template-based opp
 | Requirement | Phase    | Status   |
 | ----------- | -------- | -------- |
 | EXTR-01     | Phase 42 | Complete |
-| EXTR-02     | Phase 42 | Pending  |
+| EXTR-02     | Phase 42 | Complete |
 | EXTR-03     | Phase 42 | Complete |
 | ANLS-01     | Phase 43 | Pending  |
 | ANLS-02     | Phase 43 | Pending  |

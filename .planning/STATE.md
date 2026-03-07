@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 42 of 45 (Extraction Matrix)
-Plan: 1 of 2 complete
-Status: Executing
-Last activity: 2026-03-07 — Completed 42-01 (Intent Extraction types, module, and pipeline integration)
+Plan: 2 of 2 complete
+Status: Phase Complete
+Last activity: 2026-03-07 — Completed 42-02 (Intent-driven RAG queries + admin Intent Signals UI)
 
-Progress: [██████████████████████████░░░░] 82% (39 phases complete, 4 remaining in v5.0)
+Progress: [███████████████████████████░░░] 84% (40 phases complete, 3 remaining in v5.0)
 
 ## Milestones Shipped
 
@@ -42,6 +42,8 @@ Recent decisions affecting v5.0:
 - 42-01: Gemini Flash for intent extraction, pre-filter evidence >= 0.50, exclude RAG_DOCUMENT
 - 42-01: Graceful degradation — extraction failure logs warning, does not block pipeline
 - 42-01: intentVars stored in scope for Plan 02 RAG query construction
+- 42-02: Intent-driven queries use top 2-3 signals per category (max 200 chars), fallback at < 2 categories
+- 42-02: Intent Signals tab only for ATLANTIS projectType, positioned between Evidence and Analysis
 
 ### Pending Todos
 
@@ -54,5 +56,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 42-01-PLAN.md — intent extraction types, module, and pipeline integration
-Resume command: `/gsd:execute-phase 42` (Plan 02 remaining)
+Stopped at: Completed 42-02-PLAN.md — intent-driven RAG queries and admin Intent Signals UI
+Resume command: `/gsd:plan-phase 43` (AI Master Analysis)
