@@ -344,8 +344,10 @@ export default function AdminDashboard() {
       {counts.total === 0 && (
         <div className="glass-card p-12 text-center rounded-[2.5rem]">
           <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-[#040026]">All caught up!</h2>
-          <p className="text-sm text-slate-400 mt-1">
+          <h2 className="text-xl font-black text-[#040026] tracking-tight">
+            All caught up
+          </h2>
+          <p className="admin-meta-text mt-2">
             No pending decisions right now.
           </p>
         </div>

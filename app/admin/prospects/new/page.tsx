@@ -10,7 +10,7 @@ import {
   Copy,
   ExternalLink,
   ArrowRight,
-  Sparkles,
+  Building2,
 } from 'lucide-react';
 import { buildDiscoverPath } from '@/lib/prospect-url';
 
@@ -27,6 +27,7 @@ export default function NewProspect() {
     slug: string;
     readableSlug: string | null;
     companyName: string | null;
+    logoUrl: string | null;
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -46,6 +47,7 @@ export default function NewProspect() {
         slug: data.slug,
         readableSlug: data.readableSlug ?? null,
         companyName: data.companyName,
+        logoUrl: data.logoUrl ?? null,
       });
     },
     onError: (err: any) => {
@@ -75,7 +77,7 @@ export default function NewProspect() {
     idle: '',
     creating: 'Creating prospect...',
     enriching: 'Enriching company data via Apollo...',
-    generating: 'Generating personalized AI content with Claude...',
+    generating: 'Generating personalized AI content...',
     done: 'Wizard ready!',
   };
 
@@ -95,7 +97,15 @@ export default function NewProspect() {
         /* Success state */
         <div className="glass-card p-12 text-center space-y-10 rounded-[2.5rem]">
           <div className="w-20 h-20 rounded-3xl bg-emerald-50 flex items-center justify-center mx-auto shadow-inner">
-            <Sparkles className="w-10 h-10 text-emerald-500" />
+            {result.logoUrl ? (
+              <img
+                src={result.logoUrl}
+                alt={`${result.companyName ?? domain} logo`}
+                className="w-11 h-11 object-contain"
+              />
+            ) : (
+              <Building2 className="w-9 h-9 text-emerald-500" />
+            )}
           </div>
           <div>
             <h2 className="text-3xl font-black text-[#040026] tracking-tighter">
@@ -131,7 +141,7 @@ export default function NewProspect() {
             <a
               href={buildDiscoverPath(result)}
               target="_blank"
-              className="ui-tap flex items-center justify-center gap-3 px-10 py-4 btn-pill-primary text-xs w-full sm:w-auto shadow-xl"
+              className="ui-tap flex items-center justify-center gap-3 px-10 py-4 btn-pill-yellow text-xs w-full sm:w-auto shadow-xl"
             >
               <ExternalLink className="w-4 h-4" />
               Preview Dashboard

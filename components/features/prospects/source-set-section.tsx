@@ -14,6 +14,7 @@ import { Link as LinkIcon, ChevronDown, RefreshCw } from 'lucide-react';
 interface SourceSetSectionProps {
   runId: string;
   inputSnapshot: unknown;
+  prospectId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -31,8 +32,12 @@ function relativeTime(isoString: string): string {
 
 const PROVENANCE_LABELS: Record<UrlProvenance, string> = {
   sitemap: 'Sitemap',
+  katana_site: 'Katana site',
   serp: 'SERP',
+  serp_site: 'SERP site',
   default: 'Default',
+  manual: 'Manual',
+  seed: 'Fallback seed',
 };
 
 // ---------------------------------------------------------------------------
@@ -42,6 +47,7 @@ const PROVENANCE_LABELS: Record<UrlProvenance, string> = {
 export function SourceSetSection({
   runId,
   inputSnapshot,
+  prospectId,
 }: SourceSetSectionProps) {
   const utils = api.useUtils();
   const rediscover = api.research.rediscoverSources.useMutation({
@@ -53,28 +59,52 @@ export function SourceSetSection({
   // No sourceSet means no research has run yet — render nothing
   if (!sourceSet) return null;
 
-  const { urls, discoveredAt, dedupRemovedCount, rawCounts } = sourceSet;
+  const { urls, discoveredAt, dedupRemovedCount, rawCounts, discovery, selection } =
+    sourceSet;
 
-  // Build per-provenance breakdown for summary line
-  const provenanceOrder: UrlProvenance[] = ['sitemap', 'serp', 'default'];
+  const discoveredTotal = selection?.discoveredTotal ?? urls.length;
+  const selectedTotal = selection?.selectedTotal ?? urls.length;
+
+  // Build per-provenance breakdown for summary line.
+  // Keep legacy order first, append any unknown provenance keys from runtime.
+  const defaultOrder: UrlProvenance[] = [
+    'sitemap',
+    'katana_site',
+    'serp_site',
+    'manual',
+    'seed',
+    'serp',
+    'default',
+  ];
+  const dynamicProvenance = Array.from(
+    new Set(
+      urls.map((u) => u.provenance).filter(
+        (prov): prov is UrlProvenance => typeof prov === 'string',
+      ),
+    ),
+  );
+  const provenanceOrder: UrlProvenance[] = [
+    ...defaultOrder,
+    ...dynamicProvenance.filter((prov) => !defaultOrder.includes(prov)),
+  ];
   const breakdownParts: string[] = [];
 
   for (const prov of provenanceOrder) {
-    const rc = rawCounts[prov];
-    const count = urls.filter((u) => u.provenance === prov).length;
-    if (count === 0) continue;
+    const rc = rawCounts[prov] ?? { discovered: 0, capped: 0 };
+    const selectedCount = urls.filter((u) => u.provenance === prov).length;
+    if (selectedCount === 0 && rc.discovered === 0) continue;
+    const label = (PROVENANCE_LABELS[prov] ?? prov).toLowerCase();
 
-    // Show "X of Y" format when original list was larger than capped count
-    const wasCapped = rc.discovered > rc.capped;
-    if (wasCapped) {
-      breakdownParts.push(`${count} of ${rc.discovered} ${prov}`);
+    if (rc.discovered > 0) {
+      breakdownParts.push(`${selectedCount}/${rc.discovered} ${label}`);
     } else {
-      breakdownParts.push(`${count} ${prov}`);
+      breakdownParts.push(`${selectedCount} ${label}`);
     }
   }
 
   const summaryLine = [
-    `${urls.length} source URLs (${breakdownParts.join(', ')})`,
+    `${selectedTotal}/${discoveredTotal} source URLs geselecteerd`,
+    breakdownParts.length > 0 ? breakdownParts.join(', ') : null,
     dedupRemovedCount > 0 ? `${dedupRemovedCount} duplicates removed` : null,
     `Discovered ${relativeTime(discoveredAt)}`,
   ]
@@ -85,10 +115,14 @@ export function SourceSetSection({
   const grouped = provenanceOrder
     .map((prov) => ({
       prov,
-      label: PROVENANCE_LABELS[prov],
+      label: PROVENANCE_LABELS[prov] ?? prov,
       items: urls.filter((u) => u.provenance === prov),
     }))
     .filter((g) => g.items.length > 0);
+
+  const coverageAuditPath = prospectId
+    ? `/home/klarifai/Documents/klarifai/projects/qualifai/.planning/coverage-audits/${prospectId}.json`
+    : `/home/klarifai/Documents/klarifai/projects/qualifai/.planning/coverage-audits/${runId}.json`;
 
   return (
     <details className="glass-card rounded-[2rem] border border-slate-100 overflow-hidden mb-4">
@@ -103,6 +137,51 @@ export function SourceSetSection({
       </summary>
 
       <div className="px-5 pb-5 border-t border-slate-100/80 space-y-4">
+        <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/50 p-3 space-y-2">
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+            Discovery & Selection
+          </p>
+          <p className="text-xs text-slate-600">
+            Source used:{' '}
+            <span className="font-semibold text-[#040026]">
+              {discovery?.sourceUsed
+                ? PROVENANCE_LABELS[discovery.sourceUsed as UrlProvenance] ??
+                  discovery.sourceUsed
+                : 'unknown'}
+            </span>
+            {' · '}
+            Strategy:{' '}
+            <span className="font-semibold text-[#040026]">
+              {selection?.strategyVersion ?? 'legacy'}
+            </span>
+            {' · '}
+            Top-N:{' '}
+            <span className="font-semibold text-[#040026]">
+              {selection?.topN ?? urls.length}
+            </span>
+          </p>
+          {discovery?.sitemapStatus === 'blocked' && (
+            <p className="text-xs font-semibold text-amber-700">
+              Blocked by WAF tijdens sitemap fetch
+              {discovery?.sitemapErrorCode
+                ? ` (${discovery.sitemapErrorCode})`
+                : ''}
+              .
+            </p>
+          )}
+          {discovery?.fallbackReason && (
+            <p className="text-xs text-slate-500">
+              Fallback reason: <span className="font-semibold">{discovery.fallbackReason}</span>
+            </p>
+          )}
+          <p className="text-xs text-slate-500">
+            Coverage audit artifact:{' '}
+            <span className="font-mono text-[11px] text-slate-700">
+              {coverageAuditPath}
+            </span>
+          </p>
+        </div>
+
         {/* URL groups */}
         {grouped.map(({ prov, label, items }) => (
           <div key={prov}>

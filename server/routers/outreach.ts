@@ -416,7 +416,14 @@ Klarifai`;
     )
     .query(async ({ ctx, input }) => {
       const drafts = await ctx.db.outreachLog.findMany({
-        where: { status: input?.status ?? 'draft' },
+        where: {
+          status: input?.status ?? 'draft',
+          contact: {
+            prospect: {
+              project: { slug: ctx.allowedProjectSlug },
+            },
+          },
+        },
         orderBy: { createdAt: 'desc' },
         take: input?.limit ?? 50,
         include: {
@@ -444,7 +451,14 @@ Klarifai`;
     .query(async ({ ctx, input }) => {
       const [drafts, reviewContacts] = await Promise.all([
         ctx.db.outreachLog.findMany({
-          where: { status: 'draft' },
+          where: {
+            status: 'draft',
+            contact: {
+              prospect: {
+                project: { slug: ctx.allowedProjectSlug },
+              },
+            },
+          },
           orderBy: { createdAt: 'desc' },
           take: input?.limit ?? 100,
           include: {
@@ -460,6 +474,9 @@ Klarifai`;
         ctx.db.contact.findMany({
           where: {
             outreachStatus: { not: 'OPTED_OUT' },
+            prospect: {
+              project: { slug: ctx.allowedProjectSlug },
+            },
           },
           orderBy: { createdAt: 'desc' },
           take: 320,
@@ -868,6 +885,11 @@ Klarifai`;
       const logs = await ctx.db.outreachLog.findMany({
         where: {
           type: 'FOLLOW_UP',
+          contact: {
+            prospect: {
+              project: { slug: ctx.allowedProjectSlug },
+            },
+          },
           ...(whereStatus
             ? { status: whereStatus }
             : { status: { in: ['received', 'triaged'] } }),
@@ -1013,13 +1035,16 @@ Klarifai`;
       }),
     )
     .query(async ({ ctx, input }) => {
-      const where = input.contactId
-        ? {
-            contactId: input.contactId,
-            channel: 'email',
-            status: { not: 'draft' },
-          }
-        : { channel: 'email', status: { not: 'draft' } };
+      const where = {
+        channel: 'email',
+        status: { not: 'draft' },
+        contact: {
+          prospect: {
+            project: { slug: ctx.allowedProjectSlug },
+          },
+        },
+        ...(input.contactId ? { contactId: input.contactId } : {}),
+      };
 
       return ctx.db.outreachLog.findMany({
         where,
@@ -1133,6 +1158,11 @@ Klarifai`;
         where: {
           channel: input?.channel ?? { in: [...TOUCH_TASK_CHANNELS] },
           status: { in: statusFilter },
+          contact: {
+            prospect: {
+              project: { slug: ctx.allowedProjectSlug },
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
         take: input?.limit ?? 120,

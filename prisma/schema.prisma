@@ -60,6 +60,13 @@ enum ResearchStatus {
   COMPLETED
 }
 
+enum SiteCatalogStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
 enum EvidenceSourceType {
   WEBSITE
   DOCS
@@ -68,17 +75,18 @@ enum EvidenceSourceType {
   JOB_BOARD
   REVIEWS
   MANUAL_URL
-  REGISTRY  // KvK Handelsregister data
-  LINKEDIN  // Company posts and profile from LinkedIn public pages
-  NEWS      // Google News RSS mentions and press coverage
+  REGISTRY // KvK Handelsregister data
+  LINKEDIN // Company posts and profile from LinkedIn public pages
+  NEWS // Google News RSS mentions and press coverage
+  RAG_DOCUMENT // Retrieved Atlantis partnership document chunk
 }
 
 enum HypothesisStatus {
   DRAFT
   ACCEPTED
   REJECTED
-  PENDING   // quality-approved, awaiting client validation on /voor/
-  DECLINED  // client declined the hypothesis on /voor/ (Phase 19)
+  PENDING // quality-approved, awaiting client validation on /voor/
+  DECLINED // client declined the hypothesis on /voor/ (Phase 19)
 }
 
 enum SequenceStatus {
@@ -99,16 +107,21 @@ enum AssetType {
   CALL_PREP_PLAN
 }
 
+enum ProjectType {
+  KLARIFAI
+  ATLANTIS
+}
+
 // =============================================================================
 // CORE MODELS
 // =============================================================================
 
 model Prospect {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  slug         String  @unique @db.VarChar(12)
-  readableSlug String? @unique @db.VarChar(80)
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  slug         String   @unique @db.VarChar(12)
+  readableSlug String?  @unique @db.VarChar(80)
 
   // Provider enrichment fields (Apollo-backed)
   companyName     String?
@@ -147,11 +160,17 @@ model Prospect {
   status        ProspectStatus @default(DRAFT)
   internalNotes String?
 
+  // Project scoping
+  projectId String  @default("project_klarifai")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  spvId     String?
+  spv       SPV?    @relation(fields: [spvId], references: [id], onDelete: SetNull)
+
   // Relations
-  sessions         WizardSession[]
-  notificationLogs NotificationLog[]
-  contacts         Contact[]
-  signals          Signal[]
+  sessions                WizardSession[]
+  notificationLogs        NotificationLog[]
+  contacts                Contact[]
+  signals                 Signal[]
   campaignProspects       CampaignProspect[]
   researchRuns            ResearchRun[]
   evidenceItems           EvidenceItem[]
@@ -162,10 +181,14 @@ model Prospect {
   outreachSequences       OutreachSequence[]
   callPrepPlans           CallPrepPlan[]
   gateOverrideAudits      GateOverrideAudit[]
+  siteCatalogRuns         ProspectSiteCatalogRun[]
+  siteCatalogUrls         ProspectSiteUrl[]
 
   @@index([domain])
   @@index([status])
   @@index([readableSlug])
+  @@index([projectId, createdAt])
+  @@index([spvId])
 }
 
 model Contact {
@@ -203,10 +226,10 @@ model Contact {
   outreachNotes   String?
 
   // Relations
-  prospectId  String
-  prospect    Prospect      @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  signals     Signal[]
-  outreachLogs OutreachLog[]
+  prospectId        String
+  prospect          Prospect           @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  signals           Signal[]
+  outreachLogs      OutreachLog[]
   outreachSequences OutreachSequence[]
 
   @@index([prospectId])
@@ -222,8 +245,8 @@ model Signal {
   title       String
   description String?
   metadata    Json?
-  detectedAt  DateTime  @default(now())
-  isProcessed Boolean   @default(false)
+  detectedAt  DateTime   @default(now())
+  isProcessed Boolean    @default(false)
 
   // Can link to company, contact, or both
   prospectId String?
@@ -253,8 +276,8 @@ model OutreachLog {
   bodyText String?
   metadata Json?
 
-  sentAt   DateTime?
-  openedAt DateTime?
+  sentAt        DateTime?
+  openedAt      DateTime?
   outreachSteps OutreachStep[]
 
   @@index([contactId])
@@ -268,7 +291,7 @@ model CreditUsage {
 
   endpoint   String
   operation  String
-  credits    Int      @default(1)
+  credits    Int     @default(1)
   prospectId String?
   contactId  String?
   metadata   Json?
@@ -285,7 +308,7 @@ model SavedSearch {
   name        String
   type        String // "company" or "contact"
   filters     Json
-  resultCount Int    @default(0)
+  resultCount Int       @default(0)
   lastRunAt   DateTime?
 
   @@index([type])
@@ -303,6 +326,9 @@ model Campaign {
   strictGate Boolean  @default(true)
   isActive   Boolean  @default(true)
 
+  projectId String  @default("project_klarifai")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
+
   campaignProspects CampaignProspect[]
   researchRuns      ResearchRun[]
   workflowLossMaps  WorkflowLossMap[]
@@ -310,6 +336,7 @@ model Campaign {
   callPrepPlans     CallPrepPlan[]
 
   @@index([isActive])
+  @@index([projectId, updatedAt])
 }
 
 model CampaignProspect {
@@ -339,12 +366,12 @@ model ResearchRun {
   summary       Json?
 
   // Quality gate fields (Phase 18)
-  qualityApproved    Boolean?   // null = not reviewed, true = approved, false = needs more research
-  qualityReviewedAt  DateTime?  // when the admin reviewed
-  qualityNotes       String?    // free-text override reason (e.g., "proceeding, thin market")
+  qualityApproved   Boolean? // null = not reviewed, true = approved, false = needs more research
+  qualityReviewedAt DateTime? // when the admin reviewed
+  qualityNotes      String? // free-text override reason (e.g., "proceeding, thin market")
 
   prospectId String
-  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  prospect   Prospect  @relation(fields: [prospectId], references: [id], onDelete: Cascade)
   campaignId String?
   campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
 
@@ -359,6 +386,51 @@ model ResearchRun {
   @@index([prospectId])
   @@index([campaignId])
   @@index([status, createdAt])
+}
+
+model ProspectSiteCatalogRun {
+  id              String            @id @default(cuid())
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  startedAt       DateTime?
+  completedAt     DateTime?
+  status          SiteCatalogStatus @default(PENDING)
+  error           String?
+  discoveredTotal Int               @default(0)
+  selectedTotal   Int               @default(0)
+  metadata        Json?
+
+  prospectId String
+  prospect   Prospect          @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  urls       ProspectSiteUrl[]
+
+  @@index([prospectId, createdAt])
+  @@index([status, createdAt])
+}
+
+model ProspectSiteUrl {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  url          String
+  normalizedUrl String
+  lastmod      DateTime?
+  topSegment   String
+  pathDepth    Int
+  score        Float?
+  selectedRank Int?
+  isSelected   Boolean @default(false)
+  source       String
+  metadata     Json?
+
+  catalogRunId String
+  catalogRun   ProspectSiteCatalogRun @relation(fields: [catalogRunId], references: [id], onDelete: Cascade)
+  prospectId   String
+  prospect     Prospect               @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@unique([prospectId, normalizedUrl])
+  @@index([catalogRunId, selectedRank])
+  @@index([prospectId, isSelected])
 }
 
 model EvidenceItem {
@@ -377,7 +449,7 @@ model EvidenceItem {
   researchRunId String
   researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
   prospectId    String
-  prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  prospect      Prospect    @relation(fields: [prospectId], references: [id], onDelete: Cascade)
 
   proofMatches ProofMatch[]
 
@@ -387,30 +459,30 @@ model EvidenceItem {
 }
 
 model WorkflowHypothesis {
-  id                           String           @id @default(cuid())
-  createdAt                    DateTime         @default(now())
-  updatedAt                    DateTime         @updatedAt
-  title                        String
-  problemStatement             String
-  assumptions                  Json?
-  confidenceScore              Float
-  evidenceRefs                 Json?
-  validationQuestions          Json?
-  hoursSavedWeekLow            Int?
-  hoursSavedWeekMid            Int?
-  hoursSavedWeekHigh           Int?
-  handoffSpeedGainPct          Float?
-  errorReductionPct            Float?
-  revenueLeakageRecoveredLow   Float?
-  revenueLeakageRecoveredMid   Float?
-  revenueLeakageRecoveredHigh  Float?
-  primarySourceType            String?   // ANLYS-09 — source type that most drove this hypothesis
-  status                       HypothesisStatus @default(DRAFT)
+  id                          String           @id @default(cuid())
+  createdAt                   DateTime         @default(now())
+  updatedAt                   DateTime         @updatedAt
+  title                       String
+  problemStatement            String
+  assumptions                 Json?
+  confidenceScore             Float
+  evidenceRefs                Json?
+  validationQuestions         Json?
+  hoursSavedWeekLow           Int?
+  hoursSavedWeekMid           Int?
+  hoursSavedWeekHigh          Int?
+  handoffSpeedGainPct         Float?
+  errorReductionPct           Float?
+  revenueLeakageRecoveredLow  Float?
+  revenueLeakageRecoveredMid  Float?
+  revenueLeakageRecoveredHigh Float?
+  primarySourceType           String? // ANLYS-09 — source type that most drove this hypothesis
+  status                      HypothesisStatus @default(DRAFT)
 
   researchRunId String
   researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
   prospectId    String
-  prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  prospect      Prospect    @relation(fields: [prospectId], references: [id], onDelete: Cascade)
 
   proofMatches ProofMatch[]
 
@@ -419,28 +491,28 @@ model WorkflowHypothesis {
 }
 
 model AutomationOpportunity {
-  id                           String           @id @default(cuid())
-  createdAt                    DateTime         @default(now())
-  updatedAt                    DateTime         @updatedAt
-  title                        String
-  description                  String
-  assumptions                  Json?
-  confidenceScore              Float
-  evidenceRefs                 Json?
-  hoursSavedWeekLow            Int?
-  hoursSavedWeekMid            Int?
-  hoursSavedWeekHigh           Int?
-  handoffSpeedGainPct          Float?
-  errorReductionPct            Float?
-  revenueLeakageRecoveredLow   Float?
-  revenueLeakageRecoveredMid   Float?
-  revenueLeakageRecoveredHigh  Float?
-  status                       HypothesisStatus @default(DRAFT)
+  id                          String           @id @default(cuid())
+  createdAt                   DateTime         @default(now())
+  updatedAt                   DateTime         @updatedAt
+  title                       String
+  description                 String
+  assumptions                 Json?
+  confidenceScore             Float
+  evidenceRefs                Json?
+  hoursSavedWeekLow           Int?
+  hoursSavedWeekMid           Int?
+  hoursSavedWeekHigh          Int?
+  handoffSpeedGainPct         Float?
+  errorReductionPct           Float?
+  revenueLeakageRecoveredLow  Float?
+  revenueLeakageRecoveredMid  Float?
+  revenueLeakageRecoveredHigh Float?
+  status                      HypothesisStatus @default(DRAFT)
 
   researchRunId String
   researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
   prospectId    String
-  prospect      Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  prospect      Prospect    @relation(fields: [prospectId], references: [id], onDelete: Cascade)
 
   proofMatches ProofMatch[]
 
@@ -449,28 +521,28 @@ model AutomationOpportunity {
 }
 
 model ProofMatch {
-  id             String   @id @default(cuid())
-  createdAt      DateTime @default(now())
-  sourceType     String
-  proofId        String?
-  proofTitle     String
-  proofSummary   String?
-  proofUrl       String?
-  score          Float
-  isRealShipped  Boolean  @default(true)
-  isCustomPlan   Boolean  @default(false)
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  sourceType    String
+  proofId       String?
+  proofTitle    String
+  proofSummary  String?
+  proofUrl      String?
+  score         Float
+  isRealShipped Boolean  @default(true)
+  isCustomPlan  Boolean  @default(false)
 
   prospectId String
   prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
 
   workflowHypothesisId    String?
-  workflowHypothesis      WorkflowHypothesis? @relation(fields: [workflowHypothesisId], references: [id], onDelete: SetNull)
+  workflowHypothesis      WorkflowHypothesis?    @relation(fields: [workflowHypothesisId], references: [id], onDelete: SetNull)
   automationOpportunityId String?
   automationOpportunity   AutomationOpportunity? @relation(fields: [automationOpportunityId], references: [id], onDelete: SetNull)
   evidenceItemId          String?
-  evidenceItem            EvidenceItem? @relation(fields: [evidenceItemId], references: [id], onDelete: SetNull)
-  useCaseId   String?
-  useCase     UseCase? @relation(fields: [useCaseId], references: [id], onDelete: SetNull)
+  evidenceItem            EvidenceItem?          @relation(fields: [evidenceItemId], references: [id], onDelete: SetNull)
+  useCaseId               String?
+  useCase                 UseCase?               @relation(fields: [useCaseId], references: [id], onDelete: SetNull)
 
   @@index([prospectId])
   @@index([workflowHypothesisId])
@@ -480,25 +552,141 @@ model ProofMatch {
 }
 
 model UseCase {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  title       String
-  summary     String
-  category    String
-  outcomes    String[]
-  tags        String[]
+  title         String
+  summary       String
+  category      String
+  outcomes      String[]
+  tags          String[]
   caseStudyRefs String[]
-  isActive    Boolean  @default(true)
-  isShipped   Boolean  @default(true)
-  sourceRef   String?
-  externalUrl String?
+  isActive      Boolean  @default(true)
+  isShipped     Boolean  @default(true)
+  sourceRef     String?
+  externalUrl   String?
+
+  projectId String  @default("project_klarifai")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
 
   proofMatches ProofMatch[]
 
   @@index([isActive, isShipped])
   @@index([category])
+  @@index([projectId, updatedAt])
+  @@index([projectId, sourceRef])
+}
+
+model Project {
+  id          String      @id @default(cuid())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  slug        String      @unique
+  name        String
+  projectType ProjectType
+  brandName   String?
+  bookingUrl  String?
+  metadata    Json?
+
+  prospects        Prospect[]
+  campaigns        Campaign[]
+  useCases         UseCase[]
+  spvs             SPV[]
+  projectDocuments ProjectDocument[]
+  ragIngestionRuns RagIngestionRun[]
+
+  @@index([projectType])
+}
+
+model SPV {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  slug            String   @unique
+  name            String
+  code            String   @unique
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  metricsTemplate Json?
+  isActive        Boolean  @default(true)
+
+  prospects        Prospect[]
+  projectDocuments ProjectDocument[]
+
+  @@index([projectId, isActive])
+}
+
+model ProjectDocument {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  spvId String?
+  spv   SPV?    @relation(fields: [spvId], references: [id], onDelete: SetNull)
+
+  sourcePath     String
+  sourceHash     String
+  sourceType     String    @default("RAG_VOLUME")
+  documentId     String
+  title          String
+  volume         String?
+  metadata       Json?
+  sectionCount   Int       @default(0)
+  lastIngestedAt DateTime?
+
+  chunks ProjectDocumentChunk[]
+
+  @@unique([projectId, sourcePath])
+  @@index([projectId, volume])
+  @@index([spvId])
+  @@index([documentId])
+}
+
+model ProjectDocumentChunk {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectDocumentId String
+  projectDocument   ProjectDocument @relation(fields: [projectDocumentId], references: [id], onDelete: Cascade)
+
+  chunkIndex          Int
+  chunkType           String                      @default("TEXT")
+  sectionHeader       String?
+  content             String
+  tokenEstimate       Int
+  metadata            Json?
+  embeddingModel      String
+  embeddingDimensions Int                         @default(1536)
+  embedding           Unsupported("vector(1536)")
+
+  @@unique([projectDocumentId, chunkIndex])
+  @@index([projectDocumentId])
+  @@index([embeddingModel])
+}
+
+model RagIngestionRun {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectId         String
+  project           Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourcePath        String?
+  model             String
+  filesScanned      Int     @default(0)
+  documentsUpserted Int     @default(0)
+  chunksUpserted    Int     @default(0)
+  embeddingTokens   Int     @default(0)
+  estimatedCostUsd  Float   @default(0)
+  status            String  @default("COMPLETED")
+  errors            Json?
+
+  @@index([projectId, createdAt])
 }
 
 model WorkflowLossMap {
@@ -520,12 +708,12 @@ model WorkflowLossMap {
   ctaStep1      String
   ctaStep2      String
 
-  prospectId String
-  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  prospectId    String
+  prospect      Prospect    @relation(fields: [prospectId], references: [id], onDelete: Cascade)
   researchRunId String
   researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
-  campaignId String?
-  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  campaignId    String?
+  campaign      Campaign?   @relation(fields: [campaignId], references: [id], onDelete: SetNull)
 
   outreachSequences OutreachSequence[]
   callPrepPlans     CallPrepPlan[]
@@ -543,14 +731,14 @@ model OutreachSequence {
   isEvidenceBacked Boolean        @default(false)
   metadata         Json?
 
-  prospectId String
-  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  contactId String?
-  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  campaignId String?
-  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  researchRunId String?
-  researchRun   ResearchRun? @relation(fields: [researchRunId], references: [id], onDelete: SetNull)
+  prospectId        String
+  prospect          Prospect         @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  contactId         String?
+  contact           Contact?         @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  campaignId        String?
+  campaign          Campaign?        @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  researchRunId     String?
+  researchRun       ResearchRun?     @relation(fields: [researchRunId], references: [id], onDelete: SetNull)
   workflowLossMapId String?
   workflowLossMap   WorkflowLossMap? @relation(fields: [workflowLossMapId], references: [id], onDelete: SetNull)
 
@@ -562,31 +750,31 @@ model OutreachSequence {
 }
 
 model OutreachStep {
-  id         String         @id @default(cuid())
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  stepOrder  Int
-  subject    String?
-  bodyText   String
-  bodyHtml   String?
-  plannedAt  DateTime?
-  sentAt     DateTime?
-  status     SequenceStatus @default(DRAFTED)
-  metadata   Json?
+  id        String         @id @default(cuid())
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  stepOrder Int
+  subject   String?
+  bodyText  String
+  bodyHtml  String?
+  plannedAt DateTime?
+  sentAt    DateTime?
+  status    SequenceStatus @default(DRAFTED)
+  metadata  Json?
 
   // Phase 10: Cadence Engine columns
-  scheduledAt     DateTime?  // When this step was scheduled by cadence engine
-  triggeredBy     String?    // 'manual' | 'cadence' | TriggerSource values
-  nextStepReadyAt DateTime?  // When the NEXT step should be created (cron-queryable)
+  scheduledAt     DateTime? // When this step was scheduled by cadence engine
+  triggeredBy     String? // 'manual' | 'cadence' | TriggerSource values
+  nextStepReadyAt DateTime? // When the NEXT step should be created (cron-queryable)
 
-  sequenceId String
-  sequence   OutreachSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  sequenceId    String
+  sequence      OutreachSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
   outreachLogId String?
-  outreachLog   OutreachLog? @relation(fields: [outreachLogId], references: [id], onDelete: SetNull)
+  outreachLog   OutreachLog?     @relation(fields: [outreachLogId], references: [id], onDelete: SetNull)
 
   @@unique([sequenceId, stepOrder])
   @@index([outreachLogId])
-  @@index([nextStepReadyAt])  // Enables efficient cron sweep query
+  @@index([nextStepReadyAt]) // Enables efficient cron sweep query
 }
 
 model CallPrepPlan {
@@ -605,12 +793,12 @@ model CallPrepPlan {
   riskList           Json?
   demoFlow           Json?
 
-  prospectId String
-  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
-  campaignId String?
-  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  researchRunId String
-  researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
+  prospectId        String
+  prospect          Prospect         @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  campaignId        String?
+  campaign          Campaign?        @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  researchRunId     String
+  researchRun       ResearchRun      @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
   workflowLossMapId String?
   workflowLossMap   WorkflowLossMap? @relation(fields: [workflowLossMapId], references: [id], onDelete: SetNull)
 

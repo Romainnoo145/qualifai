@@ -2,7 +2,10 @@ import { inferSourceType, type EvidenceDraft } from '@/lib/workflow-engine';
 import type { EvidenceSourceType } from '@prisma/client';
 import { fetchStealth } from '@/lib/enrichment/scrapling';
 import { extractMarkdown } from '@/lib/enrichment/crawl4ai';
-import { detectJsHeavy } from '@/lib/enrichment/source-discovery';
+import {
+  detectJsHeavy,
+  type UrlProvenance,
+} from '@/lib/enrichment/source-discovery';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -16,6 +19,7 @@ import { detectJsHeavy } from '@/lib/enrichment/source-discovery';
  * this budget. The SERP deep-crawl path in research-executor.ts is separate.
  */
 export const BROWSER_BUDGET_MAX = 5;
+const WEBSITE_DRAFT_MAX = 20;
 
 // ---------------------------------------------------------------------------
 // Internal types
@@ -275,11 +279,30 @@ const SOFT_404_INDICATORS = [
   '404 not found',
 ];
 
-function looksLikeSoft404(html: string): boolean {
-  const text = stripHtml(html).toLowerCase();
-  // Only flag short pages — real content pages are long even if they mention "404"
-  if (text.length > 3000) return false;
+const SOFT_404_RECOVERY_HINTS = [
+  'back to home',
+  'ga naar home',
+  'terug naar home',
+  'back to homepage',
+  'zoek opnieuw',
+  'search again',
+];
+
+function hasSoft404Marker(text: string): boolean {
   return SOFT_404_INDICATORS.some((i) => text.includes(i));
+}
+
+function looksLikeSoft404(html: string): boolean {
+  const title = extractTitle(html).toLowerCase();
+  if (hasSoft404Marker(title)) return true;
+
+  const text = normalizeWhitespace(stripHtml(html)).toLowerCase();
+  const leadText = text.slice(0, 1600);
+  if (!hasSoft404Marker(leadText)) return false;
+
+  // Most soft-404 templates are short; for long pages require an additional cue.
+  if (text.length <= 5000) return true;
+  return SOFT_404_RECOVERY_HINTS.some((i) => leadText.includes(i));
 }
 
 /**
@@ -287,9 +310,14 @@ function looksLikeSoft404(html: string): boolean {
  * but applied to markdown content instead of HTML).
  */
 function looksLikeCrawled404(markdown: string): boolean {
-  if (markdown.length > 3000) return false;
   const lower = markdown.toLowerCase();
-  return SOFT_404_INDICATORS.some((i) => lower.includes(i));
+  const headingMatch = /^\s{0,3}#{0,4}\s*(404|page not found|pagina niet gevonden)\b/im;
+  if (headingMatch.test(lower)) return true;
+
+  const leadText = lower.slice(0, 1600);
+  if (!hasSoft404Marker(leadText)) return false;
+  if (lower.length <= 5000) return true;
+  return SOFT_404_RECOVERY_HINTS.some((i) => leadText.includes(i));
 }
 
 // ---------------------------------------------------------------------------
@@ -300,9 +328,33 @@ function uniqueUrls(urls: string[]): string[] {
   return Array.from(new Set(urls.map((url) => url.trim()).filter(Boolean)));
 }
 
+function fallbackMetadata(metadata: unknown): boolean {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return false;
+  }
+  return (metadata as Record<string, unknown>).fallback === true;
+}
+
 function sourceTypeForUrl(url: string): EvidenceSourceType {
   const inferred = inferSourceType(url);
   return inferred === 'REVIEWS' ? 'MANUAL_URL' : inferred;
+}
+
+function urlPath(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const pathname = parsed.pathname.replace(/\/+$/, '');
+    return pathname || '/';
+  } catch {
+    return '';
+  }
+}
+
+function isRiskySeedGuess(
+  sourceUrl: string,
+  provenance: UrlProvenance | undefined,
+): boolean {
+  return provenance === 'seed' && urlPath(sourceUrl) !== '/';
 }
 
 // ---------------------------------------------------------------------------
@@ -513,13 +565,58 @@ function processCrawl4aiResult(
  */
 export async function ingestWebsiteEvidenceDrafts(
   urls: string[],
-  options?: { jsHeavyHints?: Map<string, boolean> },
+  options?: {
+    jsHeavyHints?: Map<string, boolean>;
+    urlProvenance?: Map<string, UrlProvenance>;
+    tuning?: {
+      browserBudgetMax?: number;
+      maxDrafts?: number;
+      targetUniqueSourceUrls?: number | null;
+    };
+  },
 ): Promise<EvidenceDraft[]> {
+  const maxDrafts = Math.max(1, options?.tuning?.maxDrafts ?? WEBSITE_DRAFT_MAX);
+  const browserBudgetMax = Math.max(
+    1,
+    options?.tuning?.browserBudgetMax ?? BROWSER_BUDGET_MAX,
+  );
+  const targetUniqueSourceUrlsRaw = options?.tuning?.targetUniqueSourceUrls;
+  const targetUniqueSourceUrls =
+    typeof targetUniqueSourceUrlsRaw === 'number' &&
+    Number.isFinite(targetUniqueSourceUrlsRaw)
+      ? Math.max(1, Math.floor(targetUniqueSourceUrlsRaw))
+      : null;
+
   const drafts: EvidenceDraft[] = [];
-  let browserBudget = BROWSER_BUDGET_MAX; // shared across all URLs in this call
+  const nonFallbackUniqueSources = new Set<string>();
+  let browserBudget = browserBudgetMax; // shared across all URLs in this call
+
+  const pushDraft = (draft: EvidenceDraft): void => {
+    if (drafts.length >= maxDrafts) return;
+    drafts.push(draft);
+    if (!fallbackMetadata(draft.metadata)) {
+      nonFallbackUniqueSources.add(draft.sourceUrl);
+    }
+  };
+
+  const pushDrafts = (items: EvidenceDraft[]): void => {
+    for (const draft of items) {
+      if (drafts.length >= maxDrafts) break;
+      pushDraft(draft);
+    }
+  };
+
+  const reachedLimit = (): boolean =>
+    drafts.length >= maxDrafts ||
+    (targetUniqueSourceUrls !== null &&
+      nonFallbackUniqueSources.size >= targetUniqueSourceUrls);
 
   for (const sourceUrl of uniqueUrls(urls)) {
+    if (reachedLimit()) break;
+
     const sourceType = sourceTypeForUrl(sourceUrl);
+    const provenance = options?.urlProvenance?.get(sourceUrl);
+    const riskySeedGuess = isRiskySeedGuess(sourceUrl, provenance);
 
     // Resolve jsHeavyHint: prefer caller-provided map, fall back to detection
     const jsHeavyHint =
@@ -531,7 +628,8 @@ export async function ingestWebsiteEvidenceDrafts(
       // ------------------------------------------------------------------
       if (shouldUseBrowserDirect(sourceUrl, jsHeavyHint)) {
         if (browserBudget <= 0) {
-          drafts.push(budgetExhaustedDraft(sourceUrl, sourceType));
+          if (riskySeedGuess) continue;
+          pushDraft(budgetExhaustedDraft(sourceUrl, sourceType));
           continue;
         }
         browserBudget--;
@@ -542,7 +640,7 @@ export async function ingestWebsiteEvidenceDrafts(
           markdown,
           title,
         );
-        if (result !== 'skip') drafts.push(result);
+        if (result !== 'skip') pushDraft(result);
         continue;
       }
 
@@ -557,7 +655,8 @@ export async function ingestWebsiteEvidenceDrafts(
         // Stealth returned insufficient content — escalate to Crawl4AI
         if (browserBudget <= 0) {
           // Budget exhausted — fall back without browser extraction
-          drafts.push(fallbackDraft(sourceUrl, sourceType));
+          if (riskySeedGuess) continue;
+          pushDraft(fallbackDraft(sourceUrl, sourceType));
           continue;
         }
         browserBudget--;
@@ -568,7 +667,12 @@ export async function ingestWebsiteEvidenceDrafts(
           markdown,
           title,
         );
-        if (result !== 'skip') drafts.push(result);
+        if (result !== 'skip') {
+          if (riskySeedGuess && fallbackMetadata(result.metadata)) {
+            continue;
+          }
+          pushDraft(result);
+        }
         continue;
       }
 
@@ -578,8 +682,8 @@ export async function ingestWebsiteEvidenceDrafts(
         continue;
       }
 
-      drafts.push(
-        ...extractWebsiteEvidenceFromHtml({
+      pushDrafts(
+        extractWebsiteEvidenceFromHtml({
           sourceUrl,
           sourceType,
           html: stealthHtml,
@@ -587,9 +691,10 @@ export async function ingestWebsiteEvidenceDrafts(
       );
     } catch (error) {
       console.error('website ingestion failed for source', sourceUrl, error);
-      drafts.push(fallbackDraft(sourceUrl, sourceType));
+      if (riskySeedGuess) continue;
+      pushDraft(fallbackDraft(sourceUrl, sourceType));
     }
   }
 
-  return drafts.slice(0, 20);
+  return drafts.slice(0, maxDrafts);
 }

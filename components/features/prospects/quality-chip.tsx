@@ -20,9 +20,9 @@ interface QualityChipProps {
 }
 
 const CHIP_COLORS: Record<'red' | 'amber' | 'green', string> = {
-  red: 'bg-red-50 text-red-600 border-red-100',
-  amber: 'bg-amber-50 text-amber-600 border-amber-100',
-  green: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+  red: 'admin-state-danger',
+  amber: 'admin-state-warning',
+  green: 'admin-state-success',
 };
 
 const CHIP_LABELS: Record<'red' | 'amber' | 'green', string> = {
@@ -98,7 +98,7 @@ export function QualityChip({
   // No research run yet — show grey placeholder chip
   if (!runId) {
     return (
-      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border bg-slate-50 text-slate-400 border-slate-100">
+      <span className="admin-state-pill h-[1.375rem] whitespace-nowrap leading-none admin-state-neutral">
         Geen data
       </span>
     );
@@ -188,12 +188,12 @@ export function QualityChip({
   const isApproved = qualityApproved === true;
 
   return (
-    <div className="relative">
+    <div className="relative inline-flex items-center h-[1.375rem]">
       <button
         ref={chipRef}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border transition-all ui-tap',
+          'admin-state-pill h-[1.375rem] whitespace-nowrap leading-none appearance-none transition-all ui-tap',
           CHIP_COLORS[displayLight],
         )}
       >

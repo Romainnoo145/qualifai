@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
-import { adminProcedure, router } from '../trpc';
+import { projectAdminProcedure, router } from '../trpc';
 import { executeResearchRun } from '@/lib/research-executor';
 import { buildDefaultReviewSeedUrls } from '@/lib/research-refresh';
 import {
@@ -17,6 +17,7 @@ import { env } from '@/env.mjs';
 import type { Prisma } from '@prisma/client';
 import { scoreContactForOutreach } from '@/lib/outreach/quality';
 import { buildDiscoverUrl } from '@/lib/prospect-url';
+import { TRPCError } from '@trpc/server';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -27,8 +28,68 @@ function metadataObject(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+function countrySortPriorityFromCampaignName(name: string): number {
+  const countryCode = name.split('|')[2]?.trim().toUpperCase();
+  if (countryCode === 'NL') return 0;
+  if (countryCode === 'DE') return 1;
+  if (countryCode === 'UK') return 2;
+  return 9;
+}
+
+async function assertCampaignInProject(
+  ctx: {
+    db: {
+      campaign: {
+        findFirst: (args: {
+          where: { id: string; projectId: string };
+          select: { id: true };
+        }) => Promise<{ id: string } | null>;
+      };
+    };
+    projectId: string;
+  },
+  campaignId: string,
+) {
+  const campaign = await ctx.db.campaign.findFirst({
+    where: { id: campaignId, projectId: ctx.projectId },
+    select: { id: true },
+  });
+  if (!campaign) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Campaign not found in active project scope',
+    });
+  }
+}
+
+async function assertProspectInProject(
+  ctx: {
+    db: {
+      prospect: {
+        findFirst: (args: {
+          where: { id: string; projectId: string };
+          select: { id: true };
+        }) => Promise<{ id: string } | null>;
+      };
+    };
+    projectId: string;
+  },
+  prospectId: string,
+) {
+  const prospect = await ctx.db.prospect.findFirst({
+    where: { id: prospectId, projectId: ctx.projectId },
+    select: { id: true },
+  });
+  if (!prospect) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Prospect not found in active project scope',
+    });
+  }
+}
+
 export const campaignsRouter = router({
-  create: adminProcedure
+  create: projectAdminProcedure
     .input(
       z.object({
         name: z.string().min(2),
@@ -41,6 +102,7 @@ export const campaignsRouter = router({
     .mutation(async ({ ctx, input }) => {
       return ctx.db.campaign.create({
         data: {
+          projectId: ctx.projectId,
           name: input.name,
           slug: nanoid(10),
           nicheKey: input.nicheKey,
@@ -51,7 +113,7 @@ export const campaignsRouter = router({
       });
     }),
 
-  list: adminProcedure
+  list: projectAdminProcedure
     .input(
       z
         .object({
@@ -61,11 +123,13 @@ export const campaignsRouter = router({
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      return ctx.db.campaign.findMany({
-        where:
-          input?.isActive === undefined
-            ? undefined
-            : { isActive: input.isActive },
+      const campaigns = await ctx.db.campaign.findMany({
+        where: {
+          projectId: ctx.projectId,
+          ...(input?.isActive === undefined
+            ? {}
+            : { isActive: input.isActive }),
+        },
         orderBy: { updatedAt: 'desc' },
         take: input?.limit ?? 50,
         include: {
@@ -78,13 +142,25 @@ export const campaignsRouter = router({
           },
         },
       });
+
+      if (ctx.activeProject.projectType === 'ATLANTIS') {
+        campaigns.sort((a, b) => {
+          const countryDelta =
+            countrySortPriorityFromCampaignName(a.name) -
+            countrySortPriorityFromCampaignName(b.name);
+          if (countryDelta !== 0) return countryDelta;
+          return a.name.localeCompare(b.name, 'nl', { sensitivity: 'base' });
+        });
+      }
+
+      return campaigns;
     }),
 
-  get: adminProcedure
+  get: projectAdminProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      return ctx.db.campaign.findUniqueOrThrow({
-        where: { id: input.id },
+      return ctx.db.campaign.findFirstOrThrow({
+        where: { id: input.id, projectId: ctx.projectId },
         include: {
           campaignProspects: {
             include: {
@@ -103,7 +179,7 @@ export const campaignsRouter = router({
       });
     }),
 
-  update: adminProcedure
+  update: projectAdminProcedure
     .input(
       z.object({
         id: z.string(),
@@ -116,6 +192,7 @@ export const campaignsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCampaignInProject(ctx, input.id);
       return ctx.db.campaign.update({
         where: { id: input.id },
         data: {
@@ -131,7 +208,7 @@ export const campaignsRouter = router({
       });
     }),
 
-  attachProspect: adminProcedure
+  attachProspect: projectAdminProcedure
     .input(
       z.object({
         campaignId: z.string(),
@@ -139,6 +216,8 @@ export const campaignsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCampaignInProject(ctx, input.campaignId);
+      await assertProspectInProject(ctx, input.prospectId);
       return ctx.db.campaignProspect.upsert({
         where: {
           campaignId_prospectId: {
@@ -154,7 +233,7 @@ export const campaignsRouter = router({
       });
     }),
 
-  detachProspect: adminProcedure
+  detachProspect: projectAdminProcedure
     .input(
       z.object({
         campaignId: z.string(),
@@ -162,6 +241,8 @@ export const campaignsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCampaignInProject(ctx, input.campaignId);
+      await assertProspectInProject(ctx, input.prospectId);
       await ctx.db.campaignProspect.deleteMany({
         where: {
           campaignId: input.campaignId,
@@ -171,11 +252,11 @@ export const campaignsRouter = router({
       return { success: true };
     }),
 
-  getWithFunnelData: adminProcedure
+  getWithFunnelData: projectAdminProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const campaign = await ctx.db.campaign.findUniqueOrThrow({
-        where: { id: input.id },
+      const campaign = await ctx.db.campaign.findFirstOrThrow({
+        where: { id: input.id, projectId: ctx.projectId },
       });
 
       const campaignProspects = await ctx.db.campaignProspect.findMany({
@@ -204,6 +285,44 @@ export const campaignsRouter = router({
       });
 
       const prospectIds = campaignProspects.map((cp) => cp.prospect.id);
+      const deepRuns =
+        prospectIds.length > 0
+          ? await ctx.db.researchRun.findMany({
+              where: {
+                prospectId: { in: prospectIds },
+                inputSnapshot: {
+                  path: ['deepCrawl'],
+                  equals: true,
+                },
+              },
+              orderBy: [{ prospectId: 'asc' }, { createdAt: 'desc' }],
+              select: {
+                id: true,
+                prospectId: true,
+                status: true,
+                completedAt: true,
+                inputSnapshot: true,
+              },
+            })
+          : [];
+      const deepRunMap = new Map<
+        string,
+        {
+          id: string;
+          status: string;
+          completedAt: Date | null;
+          inputSnapshot: unknown;
+        }
+      >();
+      for (const run of deepRuns) {
+        if (deepRunMap.has(run.prospectId)) continue;
+        deepRunMap.set(run.prospectId, {
+          id: run.id,
+          status: run.status,
+          completedAt: run.completedAt,
+          inputSnapshot: run.inputSnapshot,
+        });
+      }
 
       // Fetch research run counts (completed) per prospect
       const researchCounts = await ctx.db.researchRun.groupBy({
@@ -261,6 +380,12 @@ export const campaignsRouter = router({
         logoUrl: string | null;
         industry: string | null;
         funnelStage: FunnelStage;
+        latestDeepResearchRun: {
+          id: string;
+          status: string;
+          completedAt: Date | null;
+          inputSnapshot: unknown;
+        } | null;
       };
 
       const EMAILED_SEQUENCE_STATUSES = new Set([
@@ -319,6 +444,7 @@ export const campaignsRouter = router({
           logoUrl: p.logoUrl,
           industry: p.industry,
           funnelStage,
+          latestDeepResearchRun: deepRunMap.get(p.id) ?? null,
         };
       });
 
@@ -359,7 +485,7 @@ export const campaignsRouter = router({
       return { campaign, prospects, funnel, metrics };
     }),
 
-  runAutopilot: adminProcedure
+  runAutopilot: projectAdminProcedure
     .input(
       z.object({
         campaignId: z.string(),
@@ -369,8 +495,8 @@ export const campaignsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const campaign = await ctx.db.campaign.findUniqueOrThrow({
-        where: { id: input.campaignId },
+      const campaign = await ctx.db.campaign.findFirstOrThrow({
+        where: { id: input.campaignId, projectId: ctx.projectId },
         include: {
           campaignProspects: {
             include: {
@@ -381,6 +507,7 @@ export const campaignsRouter = router({
                   readableSlug: true,
                   domain: true,
                   companyName: true,
+                  projectId: true,
                 },
               },
             },
@@ -492,6 +619,7 @@ export const campaignsRouter = router({
               ctx.db,
               `${hypothesis.title} ${hypothesis.problemStatement}`,
               4,
+              { projectId: prospect.projectId },
             );
             for (const match of matches) {
               await ctx.db.proofMatch.create({
@@ -520,6 +648,7 @@ export const campaignsRouter = router({
               ctx.db,
               `${opportunity.title} ${opportunity.description}`,
               4,
+              { projectId: prospect.projectId },
             );
             for (const match of matches) {
               await ctx.db.proofMatch.create({

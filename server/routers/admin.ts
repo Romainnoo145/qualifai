@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { adminProcedure, router } from '../trpc';
+import { projectAdminProcedure, router } from '../trpc';
 import { nanoid } from 'nanoid';
 import { enrichCompany } from '@/lib/enrichment';
 import { mergeApolloWithKvk } from '@/lib/enrichment/merge';
@@ -13,6 +13,7 @@ import {
 } from '@/lib/readable-slug';
 import { executeResearchRun } from '@/lib/research-executor';
 import { matchProofs } from '@/lib/workflow-engine';
+import { TRPCError } from '@trpc/server';
 
 // Helper to cast to Prisma-compatible JSON
 function toJson(value: unknown): Prisma.InputJsonValue {
@@ -153,8 +154,32 @@ function isEnrichmentFresh(lastEnrichedAt: Date | null | undefined): boolean {
   return ageMs < REENRICH_AFTER_HOURS * 60 * 60 * 1000;
 }
 
+async function findScopedProspectOrThrow(
+  ctx: {
+    db: {
+      prospect: {
+        findFirst: (args: {
+          where: { id: string; projectId: string };
+        }) => Promise<{ id: string } | null>;
+      };
+    };
+    projectId: string;
+  },
+  id: string,
+) {
+  const prospect = await ctx.db.prospect.findFirst({
+    where: { id, projectId: ctx.projectId },
+  });
+  if (!prospect) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Prospect not found in active project scope',
+    });
+  }
+}
+
 export const adminRouter = router({
-  createProspect: adminProcedure
+  createProspect: projectAdminProcedure
     .input(z.object({ domain: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const slug = nanoid(8);
@@ -166,13 +191,14 @@ export const adminRouter = router({
             .split('/')[0]!,
           slug,
           status: 'DRAFT',
+          projectId: ctx.projectId,
         },
       });
 
       return prospect;
     }),
 
-  enrichProspect: adminProcedure
+  enrichProspect: projectAdminProcedure
     .input(
       z.object({
         id: z.string(),
@@ -180,8 +206,8 @@ export const adminRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const prospect = await ctx.db.prospect.findUniqueOrThrow({
-        where: { id: input.id },
+      const prospect = await ctx.db.prospect.findFirstOrThrow({
+        where: { id: input.id, projectId: ctx.projectId },
       });
 
       if (!input.force && isEnrichmentFresh(prospect.lastEnrichedAt)) {
@@ -214,11 +240,11 @@ export const adminRouter = router({
       return updated;
     }),
 
-  generateReadableSlug: adminProcedure
+  generateReadableSlug: projectAdminProcedure
     .input(z.object({ id: z.string(), override: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
-      const prospect = await ctx.db.prospect.findUniqueOrThrow({
-        where: { id: input.id },
+      const prospect = await ctx.db.prospect.findFirstOrThrow({
+        where: { id: input.id, projectId: ctx.projectId },
       });
 
       let candidate: string;
@@ -247,18 +273,19 @@ export const adminRouter = router({
       return updated;
     }),
 
-  deleteProspect: adminProcedure
+  deleteProspect: projectAdminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await findScopedProspectOrThrow(ctx, input.id);
       await ctx.db.prospect.delete({ where: { id: input.id } });
       return { success: true };
     }),
 
-  generateContent: adminProcedure
+  generateContent: projectAdminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const prospect = await ctx.db.prospect.findUniqueOrThrow({
-        where: { id: input.id },
+      const prospect = await ctx.db.prospect.findFirstOrThrow({
+        where: { id: input.id, projectId: ctx.projectId },
       });
 
       await ctx.db.prospect.update({
@@ -293,7 +320,7 @@ export const adminRouter = router({
     }),
 
   // Combined: create + enrich + generate in one action
-  createAndProcess: adminProcedure
+  createAndProcess: projectAdminProcedure
     .input(
       z.object({
         domain: z.string().min(1),
@@ -313,6 +340,7 @@ export const adminRouter = router({
           slug,
           status: 'DRAFT',
           internalNotes: input.internalNotes,
+          projectId: ctx.projectId,
         },
       });
 
@@ -381,50 +409,55 @@ export const adminRouter = router({
         },
       });
 
-      // Run research pipeline (non-blocking: failures don't break prospect creation)
-      try {
-        const result = await executeResearchRun(ctx.db, {
-          prospectId: prospect.id,
-          manualUrls: [],
-        });
-        const runId = result.run.id;
+      // Run research pipeline in background so create flow always returns quickly.
+      // Failures are logged and do not block prospect creation.
+      void (async () => {
+        try {
+          const result = await executeResearchRun(ctx.db, {
+            prospectId: prospect.id,
+            manualUrls: [],
+          });
+          const runId = result.run.id;
 
-        // Match proofs for all hypotheses
-        const hypotheses = await ctx.db.workflowHypothesis.findMany({
-          where: { researchRunId: runId },
-        });
-        for (const h of hypotheses) {
-          const query = `${h.title} ${h.problemStatement}`;
-          const matches = await matchProofs(ctx.db, query, 4);
-          for (const match of matches) {
-            await ctx.db.proofMatch.create({
-              data: {
-                prospectId: prospect.id,
-                workflowHypothesisId: h.id,
-                sourceType: match.sourceType,
-                proofId: match.proofId,
-                proofTitle: match.proofTitle,
-                proofSummary: match.proofSummary,
-                proofUrl: match.proofUrl,
-                score: match.score,
-                isRealShipped: match.isRealShipped,
-                isCustomPlan: match.isCustomPlan,
-                useCaseId: match.isCustomPlan ? undefined : match.proofId,
-              },
+          // Match proofs for all hypotheses
+          const hypotheses = await ctx.db.workflowHypothesis.findMany({
+            where: { researchRunId: runId },
+          });
+          for (const h of hypotheses) {
+            const query = `${h.title} ${h.problemStatement}`;
+            const matches = await matchProofs(ctx.db, query, 4, {
+              projectId: prospect.projectId,
             });
+            for (const match of matches) {
+              await ctx.db.proofMatch.create({
+                data: {
+                  prospectId: prospect.id,
+                  workflowHypothesisId: h.id,
+                  sourceType: match.sourceType,
+                  proofId: match.proofId,
+                  proofTitle: match.proofTitle,
+                  proofSummary: match.proofSummary,
+                  proofUrl: match.proofUrl,
+                  score: match.score,
+                  isRealShipped: match.isRealShipped,
+                  isCustomPlan: match.isCustomPlan,
+                  useCaseId: match.isCustomPlan ? undefined : match.proofId,
+                },
+              });
+            }
           }
-        }
 
-        // Hypotheses stay as DRAFT — admin reviews and accepts/rejects
-        // in the prospect detail Hypotheses tab before they appear on the public discovery dashboard
-      } catch (error) {
-        console.error('Research pipeline failed (non-blocking):', error);
-      }
+          // Hypotheses stay as DRAFT — admin reviews and accepts/rejects
+          // in the prospect detail Hypotheses tab before they appear on the public discovery dashboard
+        } catch (error) {
+          console.error('Research pipeline failed (background):', error);
+        }
+      })();
 
       return prospect;
     }),
 
-  listProspects: adminProcedure
+  listProspects: projectAdminProcedure
     .input(
       z
         .object({
@@ -435,7 +468,10 @@ export const adminRouter = router({
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const where = input?.status ? { status: input.status as never } : {};
+      const where = {
+        projectId: ctx.projectId,
+        ...(input?.status ? { status: input.status as never } : {}),
+      };
       const prospects = await ctx.db.prospect.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -460,6 +496,8 @@ export const adminRouter = router({
             select: {
               id: true,
               status: true,
+              completedAt: true,
+              inputSnapshot: true,
               qualityApproved: true,
               qualityReviewedAt: true,
               summary: true,
@@ -477,15 +515,109 @@ export const adminRouter = router({
         nextCursor = next?.id;
       }
 
-      return { prospects, nextCursor };
+      const prospectIds = prospects.map((prospect) => prospect.id);
+      const [completedResearchCounts, activeResearchCounts] =
+        prospectIds.length > 0
+          ? await Promise.all([
+              ctx.db.researchRun.groupBy({
+                by: ['prospectId'],
+                where: {
+                  prospectId: { in: prospectIds },
+                  status: 'COMPLETED',
+                },
+                _count: { id: true },
+              }),
+              ctx.db.researchRun.groupBy({
+                by: ['prospectId'],
+                where: {
+                  prospectId: { in: prospectIds },
+                  status: {
+                    in: [
+                      'PENDING',
+                      'CRAWLING',
+                      'EXTRACTING',
+                      'HYPOTHESIS',
+                      'BRIEFING',
+                    ],
+                  },
+                },
+                _count: { id: true },
+              }),
+            ])
+          : [[], []];
+      const completedResearchMap = new Map<string, number>(
+        completedResearchCounts.map((entry) => [entry.prospectId, entry._count.id]),
+      );
+      const activeResearchMap = new Map<string, number>(
+        activeResearchCounts.map((entry) => [entry.prospectId, entry._count.id]),
+      );
+
+      const deepRuns =
+        prospectIds.length > 0
+          ? await ctx.db.researchRun.findMany({
+              where: {
+                prospectId: { in: prospectIds },
+                inputSnapshot: {
+                  path: ['deepCrawl'],
+                  equals: true,
+                },
+              },
+              orderBy: [{ prospectId: 'asc' }, { createdAt: 'desc' }],
+              select: {
+                id: true,
+                prospectId: true,
+                status: true,
+                completedAt: true,
+                inputSnapshot: true,
+              },
+            })
+          : [];
+
+      const deepRunMap = new Map<
+        string,
+        {
+          id: string;
+          status: string;
+          completedAt: Date | null;
+          inputSnapshot: unknown;
+        }
+      >();
+      for (const run of deepRuns) {
+        if (deepRunMap.has(run.prospectId)) continue;
+        deepRunMap.set(run.prospectId, {
+          id: run.id,
+          status: run.status,
+          completedAt: run.completedAt,
+          inputSnapshot: run.inputSnapshot,
+        });
+      }
+
+      const prospectsWithDeepStatus = prospects.map((prospect) => ({
+        ...prospect,
+        latestDeepResearchRun: deepRunMap.get(prospect.id) ?? null,
+        researchStats: {
+          completedRuns: completedResearchMap.get(prospect.id) ?? 0,
+          activeRuns: activeResearchMap.get(prospect.id) ?? 0,
+        },
+      }));
+
+      return { prospects: prospectsWithDeepStatus, nextCursor };
     }),
 
-  getProspect: adminProcedure
+  getProspect: projectAdminProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      return ctx.db.prospect.findUniqueOrThrow({
-        where: { id: input.id },
+      return ctx.db.prospect.findFirstOrThrow({
+        where: { id: input.id, projectId: ctx.projectId },
         include: {
+          project: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              projectType: true,
+            },
+          },
           sessions: { orderBy: { createdAt: 'desc' }, take: 20 },
           notificationLogs: { orderBy: { createdAt: 'desc' }, take: 10 },
           contacts: {
@@ -511,7 +643,7 @@ export const adminRouter = router({
       });
     }),
 
-  updateProspect: adminProcedure
+  updateProspect: projectAdminProcedure
     .input(
       z.object({
         id: z.string(),
@@ -532,6 +664,7 @@ export const adminRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await findScopedProspectOrThrow(ctx, input.id);
       return ctx.db.prospect.update({
         where: { id: input.id },
         data: {
@@ -543,7 +676,7 @@ export const adminRouter = router({
       });
     }),
 
-  getActionQueue: adminProcedure.query(async ({ ctx }) => {
+  getActionQueue: projectAdminProcedure.query(async ({ ctx }) => {
     const now = new Date();
 
     // PIPE-02: statuses that indicate research is still in progress
@@ -561,6 +694,7 @@ export const adminRouter = router({
         where: {
           status: 'DRAFT',
           prospect: {
+            projectId: ctx.projectId,
             researchRuns: {
               none: {
                 status: { in: researchInProgressStatuses },
@@ -597,6 +731,7 @@ export const adminRouter = router({
           status: 'draft',
           contact: {
             prospect: {
+              projectId: ctx.projectId,
               researchRuns: {
                 none: {
                   status: { in: researchInProgressStatuses },
@@ -639,6 +774,7 @@ export const adminRouter = router({
           channel: { in: ['call', 'linkedin', 'whatsapp', 'email'] },
           contact: {
             prospect: {
+              projectId: ctx.projectId,
               researchRuns: {
                 none: {
                   status: { in: researchInProgressStatuses },
@@ -681,6 +817,7 @@ export const adminRouter = router({
           status: 'received',
           contact: {
             prospect: {
+              projectId: ctx.projectId,
               researchRuns: {
                 none: {
                   status: { in: researchInProgressStatuses },
@@ -823,7 +960,23 @@ export const adminRouter = router({
     };
   }),
 
-  getDashboardStats: adminProcedure.query(async ({ ctx }) => {
+  getDashboardStats: projectAdminProcedure.query(async ({ ctx }) => {
+    const [projectProspects, projectContacts] = await Promise.all([
+      ctx.db.prospect.findMany({
+        where: { projectId: ctx.projectId },
+        select: { id: true },
+      }),
+      ctx.db.contact.findMany({
+        where: { prospect: { projectId: ctx.projectId } },
+        select: { id: true },
+      }),
+    ]);
+
+    const projectProspectIds = projectProspects.map((prospect) => prospect.id);
+    const projectContactIds = projectContacts.map((contact) => contact.id);
+    const hasScopedUsageIds =
+      projectProspectIds.length > 0 || projectContactIds.length > 0;
+
     const [
       total,
       ready,
@@ -843,29 +996,95 @@ export const adminRouter = router({
       recentSessions,
       creditUsage,
     ] = await Promise.all([
-      ctx.db.prospect.count(),
-      ctx.db.prospect.count({ where: { status: 'READY' } }),
-      ctx.db.prospect.count({ where: { status: 'VIEWED' } }),
-      ctx.db.prospect.count({ where: { status: 'ENGAGED' } }),
-      ctx.db.prospect.count({ where: { status: 'CONVERTED' } }),
-      ctx.db.contact.count(),
-      ctx.db.signal.count(),
-      ctx.db.signal.count({ where: { isProcessed: false } }),
-      ctx.db.contact.count({ where: { outreachStatus: 'QUEUED' } }),
-      ctx.db.contact.count({ where: { outreachStatus: 'EMAIL_SENT' } }),
-      ctx.db.contact.count({ where: { outreachStatus: 'OPENED' } }),
-      ctx.db.contact.count({ where: { outreachStatus: 'REPLIED' } }),
-      ctx.db.outreachSequence.count({ where: { status: 'BOOKED' } }),
-      ctx.db.contact.count({ where: { outreachStatus: 'CONVERTED' } }),
-      ctx.db.outreachLog.count({ where: { status: 'draft' } }),
+      ctx.db.prospect.count({ where: { projectId: ctx.projectId } }),
+      ctx.db.prospect.count({
+        where: { projectId: ctx.projectId, status: 'READY' },
+      }),
+      ctx.db.prospect.count({
+        where: { projectId: ctx.projectId, status: 'VIEWED' },
+      }),
+      ctx.db.prospect.count({
+        where: { projectId: ctx.projectId, status: 'ENGAGED' },
+      }),
+      ctx.db.prospect.count({
+        where: { projectId: ctx.projectId, status: 'CONVERTED' },
+      }),
+      ctx.db.contact.count({
+        where: { prospect: { projectId: ctx.projectId } },
+      }),
+      ctx.db.signal.count({
+        where: {
+          OR: [
+            { prospect: { projectId: ctx.projectId } },
+            { contact: { prospect: { projectId: ctx.projectId } } },
+          ],
+        },
+      }),
+      ctx.db.signal.count({
+        where: {
+          isProcessed: false,
+          OR: [
+            { prospect: { projectId: ctx.projectId } },
+            { contact: { prospect: { projectId: ctx.projectId } } },
+          ],
+        },
+      }),
+      ctx.db.contact.count({
+        where: {
+          outreachStatus: 'QUEUED',
+          prospect: { projectId: ctx.projectId },
+        },
+      }),
+      ctx.db.contact.count({
+        where: {
+          outreachStatus: 'EMAIL_SENT',
+          prospect: { projectId: ctx.projectId },
+        },
+      }),
+      ctx.db.contact.count({
+        where: {
+          outreachStatus: 'OPENED',
+          prospect: { projectId: ctx.projectId },
+        },
+      }),
+      ctx.db.contact.count({
+        where: {
+          outreachStatus: 'REPLIED',
+          prospect: { projectId: ctx.projectId },
+        },
+      }),
+      ctx.db.outreachSequence.count({
+        where: { status: 'BOOKED', prospect: { projectId: ctx.projectId } },
+      }),
+      ctx.db.contact.count({
+        where: {
+          outreachStatus: 'CONVERTED',
+          prospect: { projectId: ctx.projectId },
+        },
+      }),
+      ctx.db.outreachLog.count({
+        where: {
+          status: 'draft',
+          contact: { prospect: { projectId: ctx.projectId } },
+        },
+      }),
       ctx.db.wizardSession.findMany({
+        where: { prospect: { projectId: ctx.projectId } },
         orderBy: { createdAt: 'desc' },
         take: 10,
         include: { prospect: { select: { companyName: true, slug: true } } },
       }),
-      ctx.db.creditUsage.aggregate({
-        _sum: { credits: true },
-      }),
+      hasScopedUsageIds
+        ? ctx.db.creditUsage.aggregate({
+            where: {
+              OR: [
+                { prospectId: { in: projectProspectIds } },
+                { contactId: { in: projectContactIds } },
+              ],
+            },
+            _sum: { credits: true },
+          })
+        : Promise.resolve({ _sum: { credits: 0 } }),
     ]);
 
     return {

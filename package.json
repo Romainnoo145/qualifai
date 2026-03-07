@@ -16,6 +16,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio --port 9101",
+    "rag:ingest:atlantis": "tsx scripts/ingest-atlantis-rag.ts",
+    "audit:site-coverage": "tsx scripts/audit-site-coverage.ts",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",

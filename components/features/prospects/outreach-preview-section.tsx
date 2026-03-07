@@ -130,7 +130,30 @@ export function OutreachPreviewSection({
         </div>
       )}
 
-      {/* 1. Email Content */}
+      {/* 1. Prospect Dashboard */}
+      <div className="glass-card p-6 rounded-[1.6rem] space-y-4">
+        <h4 className="text-lg font-black text-[#040026] tracking-tight flex items-center gap-2">
+          <ExternalLink className="w-5 h-5 text-[#EBCB4B]" /> Prospect Dashboard
+        </h4>
+        <p className="text-xs text-slate-400">
+          This is what the prospect sees when they click the link in the email.
+        </p>
+        {dashboardUrl ? (
+          <a
+            href={dashboardUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ui-tap inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] hover:bg-[#D4B43B] hover:border-[#D4B43B] border border-[#EBCB4B] transition-all"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            {dashboardLabel}
+          </a>
+        ) : (
+          <p className="text-sm text-slate-400">No dashboard URL available.</p>
+        )}
+      </div>
+
+      {/* 2. Email Content */}
       <div className="glass-card p-6 rounded-[1.6rem] space-y-4 mt-1">
         <div className="flex items-center justify-between">
           <h4 className="text-lg font-black text-[#040026] tracking-tight flex items-center gap-2">
@@ -218,29 +241,6 @@ export function OutreachPreviewSection({
             No outreach email generated yet.{' '}
             {!latestRunId && 'Run research first to enable generation.'}
           </p>
-        )}
-      </div>
-
-      {/* 2. Prospect Dashboard */}
-      <div className="glass-card p-6 rounded-[1.6rem] space-y-4">
-        <h4 className="text-lg font-black text-[#040026] tracking-tight flex items-center gap-2">
-          <ExternalLink className="w-5 h-5 text-[#EBCB4B]" /> Prospect Dashboard
-        </h4>
-        <p className="text-xs text-slate-400">
-          This is what the prospect sees when they click the link in the email.
-        </p>
-        {dashboardUrl ? (
-          <a
-            href={dashboardUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ui-tap inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-600 hover:text-[#040026] hover:bg-[#EBCB4B] hover:border-[#D4B43B] border border-slate-100 transition-all"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            {dashboardLabel}
-          </a>
-        ) : (
-          <p className="text-sm text-slate-400">No dashboard URL available.</p>
         )}
       </div>
 

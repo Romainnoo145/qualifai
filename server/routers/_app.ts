@@ -6,6 +6,7 @@ import { campaignsRouter } from './campaigns';
 import { contactsRouter } from './contacts';
 import { hypothesesRouter } from './hypotheses';
 import { outreachRouter } from './outreach';
+import { projectsRouter } from './projects';
 import { proofRouter } from './proof';
 import { researchRouter } from './research';
 import { searchRouter } from './search';
@@ -22,6 +23,7 @@ export const appRouter = router({
   contacts: contactsRouter,
   hypotheses: hypothesesRouter,
   outreach: outreachRouter,
+  projects: projectsRouter,
   proof: proofRouter,
   research: researchRouter,
   search: searchRouter,

@@ -9,6 +9,10 @@ export const proofRouter = router({
       const run = await ctx.db.researchRun.findUniqueOrThrow({
         where: { id: input.runId },
       });
+      const prospectScope = await ctx.db.prospect.findUniqueOrThrow({
+        where: { id: run.prospectId },
+        select: { projectId: true },
+      });
 
       const [hypotheses, opportunities] = await Promise.all([
         ctx.db.workflowHypothesis.findMany({
@@ -28,7 +32,9 @@ export const proofRouter = router({
           where: { workflowHypothesisId: hypothesis.id },
         });
         const query = `${hypothesis.title} ${hypothesis.problemStatement}`;
-        const matches = await matchProofs(ctx.db, query, 4);
+        const matches = await matchProofs(ctx.db, query, 4, {
+          projectId: prospectScope.projectId,
+        });
         for (const match of matches) {
           await ctx.db.proofMatch.create({
             data: {
@@ -54,7 +60,9 @@ export const proofRouter = router({
           where: { automationOpportunityId: opportunity.id },
         });
         const query = `${opportunity.title} ${opportunity.description}`;
-        const matches = await matchProofs(ctx.db, query, 4);
+        const matches = await matchProofs(ctx.db, query, 4, {
+          projectId: prospectScope.projectId,
+        });
         for (const match of matches) {
           await ctx.db.proofMatch.create({
             data: {

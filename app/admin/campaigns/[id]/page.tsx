@@ -4,8 +4,16 @@ import { api } from '@/components/providers';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
-import { ArrowLeft, Building2, Plus, X, Loader2, Search } from 'lucide-react';
+import {
+  ArrowLeft,
+  Building2,
+  Plus,
+  X,
+  Loader2,
+  Search,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { deepAnalysisStatus } from '@/lib/deep-analysis';
 
 type FunnelStage =
   | 'imported'
@@ -63,12 +71,12 @@ function FunnelBar({ funnel }: { funnel: Record<FunnelStage, number> }) {
       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">
         Funnel
       </p>
-      <div className="grid grid-cols-6 gap-4">
+      <div className="grid w-full grid-cols-7 gap-4">
         {FUNNEL_STAGES.map(({ key, barColor }) => {
           const count = funnel[key];
           const widthPct = Math.max((count / max) * 100, 10);
           return (
-            <div key={key} className="flex flex-col gap-2">
+            <div key={key} className="flex min-w-0 flex-col gap-2">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                 {STAGE_LABELS[key]}
               </p>
@@ -99,6 +107,11 @@ function ProspectRow({
     logoUrl: string | null;
     industry: string | null;
     funnelStage: FunnelStage;
+    latestDeepResearchRun: {
+      status: string;
+      completedAt: string | Date | null;
+      inputSnapshot: unknown;
+    } | null;
   };
   campaignId: string;
   onDetach: () => void;
@@ -114,9 +127,38 @@ function ProspectRow({
     onSuccess: () => {
       utils.campaigns.getWithFunnelData.invalidate({ id: campaignId });
     },
+    onSettled: () => {
+      setStartMode(null);
+    },
   });
+  const [startMode, setStartMode] = useState<'standard' | 'deep' | null>(null);
 
+  const deepStatus = deepAnalysisStatus(prospect.latestDeepResearchRun);
   const canStartResearch = prospect.funnelStage === 'imported';
+  const hasCompletedResearch = [
+    'researched',
+    'approved',
+    'emailed',
+    'replied',
+    'booked',
+  ].includes(prospect.funnelStage);
+  const canStartDeepResearch =
+    hasCompletedResearch &&
+    deepStatus !== 'completed';
+  const deepSubtitle =
+    (startResearch.isPending && startMode === 'deep') || deepStatus === 'running'
+      ? 'Running now...'
+      : deepStatus === 'failed'
+          ? 'Failed · retry'
+          : 'Not run yet';
+  const deepStatusToneClass =
+    deepStatus === 'completed'
+      ? 'text-emerald-600'
+      : deepStatus === 'failed'
+        ? 'text-red-600'
+        : deepStatus === 'running'
+          ? 'text-cyan-600'
+          : 'text-slate-500';
 
   return (
     <div className="glass-card glass-card-hover p-5 flex items-center justify-between gap-4">
@@ -157,18 +199,51 @@ function ProspectRow({
         </span>
         {canStartResearch && (
           <button
-            onClick={() =>
-              startResearch.mutate({ prospectId: prospect.id, campaignId })
-            }
+            onClick={() => {
+              setStartMode('standard');
+              startResearch.mutate({
+                prospectId: prospect.id,
+                campaignId,
+                deepCrawl: false,
+              });
+            }}
             disabled={startResearch.isPending}
             className="ui-tap inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all disabled:opacity-50 text-[9px] font-black uppercase tracking-widest"
           >
-            {startResearch.isPending ? (
+            {startResearch.isPending && startMode !== 'deep' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
               <Search className="w-3.5 h-3.5" />
             )}
             Start Research
+          </button>
+        )}
+        {canStartDeepResearch && (
+          <button
+            onClick={() => {
+              setStartMode('deep');
+              startResearch.mutate({
+                prospectId: prospect.id,
+                campaignId,
+                deepCrawl: true,
+              });
+            }}
+            disabled={startResearch.isPending}
+            className="ui-tap inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-[#040026] hover:text-white hover:border-[#040026] transition-all disabled:opacity-50"
+          >
+            {startResearch.isPending && startMode === 'deep' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Search className="w-3.5 h-3.5" />
+            )}
+            <span className="flex flex-col items-start leading-tight text-left">
+              <span className="text-[9px] font-black uppercase tracking-widest">
+                Deep Analysis
+              </span>
+              <span className={cn('text-[10px] font-semibold', deepStatusToneClass)}>
+                {deepSubtitle}
+              </span>
+            </span>
           </button>
         )}
         {prospect.funnelStage === 'researching' && (
@@ -368,20 +443,29 @@ export default function CampaignDetailPage() {
               {prospects.length}
             </span>
           </div>
-          <button
-            onClick={() => setShowAdd((v) => !v)}
-            className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 btn-pill-secondary text-[10px] font-black uppercase tracking-widest"
-          >
-            {showAdd ? (
-              <>
-                <X className="w-4 h-4" /> Close
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4" /> Add Company
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/admin/campaigns/new?campaignId=${id}`}
+              className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 btn-pill-primary text-[10px] font-black uppercase tracking-widest"
+            >
+              <Search className="w-4 h-4" />
+              Search Prospects
+            </Link>
+            <button
+              onClick={() => setShowAdd((v) => !v)}
+              className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 btn-pill-secondary text-[10px] font-black uppercase tracking-widest"
+            >
+              {showAdd ? (
+                <>
+                  <X className="w-4 h-4" /> Close
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" /> Add Company
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {showAdd && (

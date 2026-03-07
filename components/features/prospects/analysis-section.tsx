@@ -26,6 +26,18 @@ type Finding = {
   }>;
 };
 
+type PartnershipTrigger = {
+  triggerType: string;
+  title: string;
+  rationale: string;
+  whyNow: string;
+  confidenceScore: number;
+  readinessImpact: number;
+  urgency: 'low' | 'medium' | 'high';
+  evidenceRefs: string[];
+  sourceTypes: string[];
+};
+
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: 'Pending validation',
   ACCEPTED: 'Confirmed by prospect', // Confirmed by prospect on public discovery dashboard
@@ -272,7 +284,70 @@ const ORDER: Record<string, number> = {
   REJECTED: 3,
 };
 
-export function AnalysisSection({ prospectId }: { prospectId: string }) {
+function urgencyPill(urgency: PartnershipTrigger['urgency']): string {
+  if (urgency === 'high') {
+    return 'bg-red-50 text-red-700 border-red-200';
+  }
+  if (urgency === 'medium') {
+    return 'bg-amber-50 text-amber-700 border-amber-200';
+  }
+  return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+}
+
+function TriggerCard({ trigger }: { trigger: PartnershipTrigger }) {
+  return (
+    <div className="glass-card p-5 rounded-[1.4rem] border border-slate-100 hover:border-slate-200 transition-colors">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="inline-flex items-center rounded-full border border-[#EBCB4B] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-[#040026] bg-[#EBCB4B]/20">
+              Partnership Trigger
+            </span>
+            <span
+              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] ${urgencyPill(trigger.urgency)}`}
+            >
+              {trigger.urgency} urgency
+            </span>
+          </div>
+          <h3 className="text-[15px] font-black text-[#040026] leading-tight line-clamp-2">
+            {trigger.title}
+          </h3>
+        </div>
+        <span className="inline-flex items-center rounded-full border border-blue-200 px-2.5 py-1 text-[11px] font-black tracking-tight text-blue-700 bg-blue-50 shrink-0">
+          {Math.round(trigger.confidenceScore * 100)}%
+        </span>
+      </div>
+
+      <p className="mt-3 text-[13px] text-slate-600 leading-relaxed line-clamp-3">
+        {trigger.rationale}
+      </p>
+      <p className="mt-2 text-[12px] text-slate-500 leading-relaxed">
+        <span className="font-black text-slate-600">Why now:</span>{' '}
+        {trigger.whyNow}
+      </p>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <span className="inline-flex items-center rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50/70">
+          Readiness +{trigger.readinessImpact}
+        </span>
+        <span className="inline-flex items-center rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50/70">
+          Evidence {trigger.evidenceRefs.length}
+        </span>
+        <span className="inline-flex items-center rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50/70">
+          Sources {trigger.sourceTypes.join(', ').slice(0, 40)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function AnalysisSection({
+  prospectId,
+  projectType,
+}: {
+  prospectId: string;
+  projectType?: 'KLARIFAI' | 'ATLANTIS' | null;
+}) {
   const { data, isLoading } = api.hypotheses.listByProspect.useQuery({
     prospectId,
   }) as { data: any; isLoading: boolean };
@@ -316,7 +391,23 @@ export function AnalysisSection({ prospectId }: { prospectId: string }) {
     return (ORDER[a.status] ?? 1) - (ORDER[b.status] ?? 1);
   });
 
-  if (findings.length === 0) {
+  const partnership = data?.partnership as
+    | {
+        readinessScore?: number;
+        triggerCount?: number;
+        strategyVersion?: string;
+        triggers?: PartnershipTrigger[];
+        gaps?: string[];
+      }
+    | undefined;
+  const partnershipTriggers = Array.isArray(partnership?.triggers)
+    ? partnership.triggers
+    : [];
+  const showPartnership =
+    projectType === 'ATLANTIS' &&
+    (partnershipTriggers.length > 0 || (partnership?.readinessScore ?? 0) > 0);
+
+  if (findings.length === 0 && !showPartnership) {
     return (
       <div className="glass-card p-8 text-center rounded-[2.5rem]">
         <p className="text-sm text-slate-400">
@@ -330,12 +421,51 @@ export function AnalysisSection({ prospectId }: { prospectId: string }) {
 
   return (
     <div className="space-y-6">
-      <p className="text-xs font-black text-slate-400 uppercase tracking-[0.15em]">
-        Analysis ({findings.length} finding{findings.length !== 1 ? 's' : ''})
-      </p>
-      {findings.map((f) => (
-        <FindingCard key={`${f.kind}-${f.id}`} finding={f} />
-      ))}
+      {showPartnership && (
+        <div className="space-y-4">
+          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.15em]">
+            Partnership Triggers ({partnershipTriggers.length})
+          </p>
+          <div className="glass-card p-5 rounded-[1.6rem] border border-slate-100">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full border border-[#EBCB4B] px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#040026] bg-[#EBCB4B]/30">
+                Readiness {partnership?.readinessScore ?? 0}/100
+              </span>
+              <span className="inline-flex items-center rounded-full border border-slate-200 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 bg-slate-50/70">
+                {partnership?.strategyVersion ?? 'partnership-v1'}
+              </span>
+            </div>
+            {Array.isArray(partnership?.gaps) &&
+              partnership.gaps.length > 0 && (
+                <ul className="mt-3 space-y-1">
+                  {partnership.gaps.slice(0, 2).map((gap) => (
+                    <li key={gap} className="text-[12px] text-slate-500">
+                      {gap}
+                    </li>
+                  ))}
+                </ul>
+              )}
+          </div>
+          {partnershipTriggers.map((trigger, index) => (
+            <TriggerCard
+              key={`${trigger.triggerType}-${index}`}
+              trigger={trigger}
+            />
+          ))}
+        </div>
+      )}
+
+      {findings.length > 0 && (
+        <>
+          <p className="text-xs font-black text-slate-400 uppercase tracking-[0.15em]">
+            Analysis ({findings.length} finding
+            {findings.length !== 1 ? 's' : ''})
+          </p>
+          {findings.map((f) => (
+            <FindingCard key={`${f.kind}-${f.id}`} finding={f} />
+          ))}
+        </>
+      )}
     </div>
   );
 }

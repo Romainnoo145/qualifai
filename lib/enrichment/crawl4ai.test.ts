@@ -106,6 +106,8 @@ describe('crawl4ai client', () => {
           cache_mode: 'bypass',
           magic: true,
           simulate_user: true,
+          remove_overlay_elements: true,
+          flatten_shadow_dom: true,
           wait_for_timeout: 15000,
           delay_before_return_html: 2,
         },

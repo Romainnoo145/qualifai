@@ -7,16 +7,89 @@ import {
 } from '@/lib/research-executor';
 import { runResearchRefreshSweep } from '@/lib/research-refresh';
 import { discoverSitemapUrls } from '@/lib/enrichment/sitemap';
-import { discoverSerpUrls } from '@/lib/enrichment/serp';
+import { discoverSiteUrlsWithKatana } from '@/lib/enrichment/katana';
+import { inferSourceType } from '@/lib/workflow-engine';
 import {
-  buildSourceSet,
+  detectJsHeavy,
   defaultResearchUrls,
-  extractSourceSet,
 } from '@/lib/enrichment/source-discovery';
+import {
+  selectResearchUrls,
+  type CandidateSource,
+  type ResearchUrlCandidate,
+} from '@/lib/enrichment/url-selection';
 import type { Prisma } from '@prisma/client';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
+}
+
+const WEBSITE_TOP_N = 60;
+
+interface WebsiteCandidate extends ResearchUrlCandidate {
+  source: CandidateSource;
+  topSegment: string;
+  pathDepth: number;
+  lastmod: string | null;
+}
+
+function candidateFromUrl(
+  url: string,
+  source: CandidateSource,
+  lastmod: string | null = null,
+): WebsiteCandidate | null {
+  try {
+    const parsed = new URL(url);
+    const topSegment = parsed.pathname.split('/').filter(Boolean)[0] ?? 'root';
+    const pathDepth = parsed.pathname.split('/').filter(Boolean).length;
+    return {
+      url,
+      source,
+      lastmod,
+      topSegment: topSegment.toLowerCase(),
+      pathDepth,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function fallbackReasonFromSitemapStatus(
+  status: 'ok' | 'blocked' | 'empty' | 'error',
+): string | null {
+  if (status === 'blocked') return 'sitemap_blocked';
+  if (status === 'empty') return 'sitemap_empty';
+  if (status === 'error') return 'sitemap_error';
+  return null;
+}
+
+function buildRawCounts(input: {
+  discoveredCandidates: WebsiteCandidate[];
+  selectedBySource: Record<string, number>;
+}): Record<string, { discovered: number; capped: number }> {
+  const discoveredBySource: Record<string, number> = {};
+  for (const candidate of input.discoveredCandidates) {
+    discoveredBySource[candidate.source] =
+      (discoveredBySource[candidate.source] ?? 0) + 1;
+  }
+
+  const keys = new Set<string>([
+    ...Object.keys(discoveredBySource),
+    ...Object.keys(input.selectedBySource),
+    'sitemap',
+    'serp',
+    'default',
+  ]);
+
+  const rawCounts: Record<string, { discovered: number; capped: number }> = {};
+  for (const key of keys) {
+    rawCounts[key] = {
+      discovered: discoveredBySource[key] ?? 0,
+      capped: input.selectedBySource[key] ?? 0,
+    };
+  }
+
+  return rawCounts;
 }
 
 export const researchRouter = router({
@@ -81,60 +154,136 @@ export const researchRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // 1. Fetch the ResearchRun
       const run = await ctx.db.researchRun.findUniqueOrThrow({
         where: { id: input.runId },
-        select: { id: true, prospectId: true, inputSnapshot: true },
+        select: {
+          id: true,
+          prospectId: true,
+          campaignId: true,
+          inputSnapshot: true,
+        },
       });
 
-      // 2. Fetch the Prospect
       const prospect = await ctx.db.prospect.findUniqueOrThrow({
         where: { id: run.prospectId },
-        select: { domain: true, companyName: true },
+        select: {
+          domain: true,
+          companyName: true,
+          industry: true,
+          description: true,
+          specialties: true,
+          country: true,
+        },
       });
+      const campaign = run.campaignId
+        ? await ctx.db.campaign.findUnique({
+            where: { id: run.campaignId },
+            select: { nicheKey: true, language: true },
+          })
+        : null;
 
-      // 3. Extract existing sourceSet from inputSnapshot
       const existingSnapshot = run.inputSnapshot;
-      const existingSourceSet = extractSourceSet(existingSnapshot);
+      const manualUrls = manualUrlsFromSnapshot(existingSnapshot).filter(
+        (url) => inferSourceType(url) !== 'REVIEWS',
+      );
 
-      // 4. SERP cache guard
-      const serpAge = existingSourceSet?.serpDiscoveredAt
-        ? Date.now() - new Date(existingSourceSet.serpDiscoveredAt).getTime()
-        : Infinity;
-      const serpCacheHit = !input.force && serpAge < 24 * 60 * 60 * 1000;
+      const sitemapResult = await discoverSitemapUrls(prospect.domain);
+      const useCrawlerFallback =
+        sitemapResult.status !== 'ok' || sitemapResult.discoveredTotal === 0;
+      const katanaResult = useCrawlerFallback
+        ? await discoverSiteUrlsWithKatana({
+            domain: prospect.domain,
+            maxResults: 200,
+          })
+        : { status: 'ok' as const, urls: [] };
+      const katanaSiteUrls = katanaResult.status === 'ok' ? katanaResult.urls : [];
+      const serpSiteUrls: string[] = [];
 
-      // 5. Always refresh sitemap
-      const sitemapUrls = await discoverSitemapUrls(prospect.domain);
-
-      // 6. SERP discovery — skip if cache is fresh and force=false
-      let serpUrls: string[] = [];
-      let serpDiscoveredAt: string;
-
-      if (serpCacheHit && existingSourceSet?.serpDiscoveredAt) {
-        // Reuse cached SERP URLs from existing sourceSet
-        serpUrls = existingSourceSet.urls
-          .filter((u) => u.provenance === 'serp')
-          .map((u) => u.url);
-        serpDiscoveredAt = existingSourceSet.serpDiscoveredAt;
-      } else {
-        // Call SERP (stale cache or force bypass)
-        const serpResult = await discoverSerpUrls({
-          companyName: prospect.companyName,
-          domain: prospect.domain,
-        });
-        serpUrls = [...serpResult.reviewUrls, ...serpResult.jobUrls];
-        serpDiscoveredAt = new Date().toISOString();
+      let sourceUsed: 'sitemap' | 'katana_site' | 'serp_site' | 'fallback' = 'fallback';
+      if (sitemapResult.status === 'ok' && sitemapResult.discoveredTotal > 0) {
+        sourceUsed = 'sitemap';
+      } else if (katanaSiteUrls.length > 0) {
+        sourceUsed = 'katana_site';
       }
 
-      // 7. Build new sourceSet
-      const sourceSet = buildSourceSet({
-        sitemapUrls,
-        serpUrls,
-        defaultUrls: defaultResearchUrls(prospect.domain),
-        serpDiscoveredAt,
+      const discoveredCandidates: WebsiteCandidate[] = [];
+      if (sourceUsed === 'sitemap') {
+        for (const candidate of sitemapResult.candidates) {
+          const mapped = candidateFromUrl(candidate.url, 'sitemap', candidate.lastmod);
+          if (!mapped) continue;
+          discoveredCandidates.push(mapped);
+        }
+      } else if (sourceUsed === 'katana_site') {
+        for (const url of katanaSiteUrls) {
+          const mapped = candidateFromUrl(url, 'katana_site', null);
+          if (!mapped) continue;
+          discoveredCandidates.push(mapped);
+        }
+      }
+
+      for (const manualUrl of manualUrls) {
+        const mapped = candidateFromUrl(manualUrl, 'manual', null);
+        if (!mapped) continue;
+        discoveredCandidates.push(mapped);
+      }
+
+      const fallbackReason = fallbackReasonFromSitemapStatus(sitemapResult.status);
+      if (discoveredCandidates.length === 0) {
+        sourceUsed = 'fallback';
+        for (const url of defaultResearchUrls(prospect.domain).slice(0, 6)) {
+          const mapped = candidateFromUrl(url, 'seed', null);
+          if (!mapped) continue;
+          discoveredCandidates.push(mapped);
+        }
+      }
+
+      const selection = selectResearchUrls({
+        candidates: discoveredCandidates,
+        topN: WEBSITE_TOP_N,
+        context: {
+          industry: prospect.industry,
+          description: prospect.description,
+          specialties: prospect.specialties,
+          country: prospect.country,
+          nicheKey: campaign?.nicheKey ?? null,
+          language: campaign?.language ?? null,
+        },
       });
 
-      // 8. Merge into existing inputSnapshot — spread all fields to preserve manualUrls, campaignId, deepCrawl, etc.
+      const sourceSet = {
+        urls: selection.selectedUrls.map((item) => ({
+          url: item.url,
+          provenance: item.source,
+          jsHeavyHint: detectJsHeavy(item.url),
+        })),
+        discoveredAt: new Date().toISOString(),
+        dedupRemovedCount: Math.max(
+          0,
+          discoveredCandidates.length - selection.discoveredTotal,
+        ),
+        rawCounts: buildRawCounts({
+          discoveredCandidates,
+          selectedBySource: selection.selectedBySource,
+        }),
+        discovery: {
+          sourceUsed,
+          sitemapStatus: sitemapResult.status,
+          sitemapErrorCode: sitemapResult.errorCode ?? null,
+          sitemapDiscoveredTotal: sitemapResult.discoveredTotal,
+          katanaSiteDiscoveredTotal: katanaSiteUrls.length,
+          serpSiteDiscoveredTotal: serpSiteUrls.length,
+          fallbackReason,
+        },
+        selection: {
+          strategyVersion: selection.strategyVersion,
+          topN: WEBSITE_TOP_N,
+          discoveredTotal: selection.discoveredTotal,
+          selectedTotal: selection.selectedTotal,
+          selectedBySource: selection.selectedBySource,
+          selectedBySegment: selection.selectedBySegment,
+        },
+      };
+
       const existingFields =
         existingSnapshot &&
         typeof existingSnapshot === 'object' &&
@@ -144,16 +293,19 @@ export const researchRouter = router({
 
       const updatedSnapshot = toJson({
         ...existingFields,
+        sitemapCache: {
+          discoveredAt: new Date().toISOString(),
+          urls: sitemapResult.candidates.map((candidate) => candidate.url),
+          result: sitemapResult,
+        },
         sourceSet,
       });
 
-      // 9. Update the ResearchRun — ONLY inputSnapshot.sourceSet, nothing else
       await ctx.db.researchRun.update({
         where: { id: input.runId },
         data: { inputSnapshot: updatedSnapshot },
       });
 
-      // 10. Return the new sourceSet
       return { sourceSet };
     }),
 

@@ -30,6 +30,7 @@ import { ResultsSection } from '@/components/features/prospects/results-section'
 import { ContactsSection } from '@/components/features/prospects/contacts-section';
 import { QualityChip } from '@/components/features/prospects/quality-chip';
 import { buildDiscoverPath } from '@/lib/prospect-url';
+import { deepAnalysisStatus } from '@/lib/deep-analysis';
 
 // ---------------------------------------------------------------------------
 // Typed helper for ResearchRun rows returned by api.research.listRuns
@@ -59,9 +60,9 @@ type ResearchRunRow = Prisma.ResearchRunGetPayload<{
 
 function gateTypeBadgeClass(gateType: string): string {
   if (gateType === 'pain') {
-    return 'inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-100';
+    return 'admin-state-pill admin-state-warning';
   }
-  return 'inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 border border-rose-100';
+  return 'admin-state-pill admin-state-danger';
 }
 
 // ---------------------------------------------------------------------------
@@ -110,19 +111,23 @@ export default function ProspectDetail() {
 
   const prospect = api.admin.getProspect.useQuery({ id });
   const researchRuns = api.research.listRuns.useQuery({ prospectId: id });
+  const latestRunId = researchRuns.data?.[0]?.id ?? null;
+  const overrideAudits = api.research.listOverrideAudits.useQuery(
+    { runId: latestRunId! },
+    { enabled: !!latestRunId },
+  );
   const utils = api.useUtils();
 
   const copyLink = () => {
     if (!prospect.data) return;
-    // TODO: tRPC v11 inference — getProspect return type is too deep for TS to infer field names
-    const data = prospect.data as Record<string, unknown>;
+    // TODO: tRPC v11 inference — getProspect return type too deep; p is typed as any below
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = prospect.data as any;
     const url = `${window.location.origin}${buildDiscoverPath({
-      slug: prospect.data.slug,
-      readableSlug:
-        typeof data.readableSlug === 'string' ? data.readableSlug : null,
-      companyName:
-        typeof data.companyName === 'string' ? data.companyName : null,
-      domain: typeof data.domain === 'string' ? data.domain : null,
+      slug: data.slug,
+      readableSlug: data.readableSlug ?? null,
+      companyName: data.companyName ?? null,
+      domain: data.domain ?? null,
     })}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
@@ -149,8 +154,9 @@ export default function ProspectDetail() {
     );
   }
 
-  // TODO: tRPC v11 inference — getProspect return type is too deep for TS to infer all Prospect fields
-  const p = prospect.data as Record<string, unknown> & { slug: string };
+  // TODO: tRPC v11 inference — getProspect return type too deep for TS to infer Prospect fields
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const p = prospect.data as any;
   const enrichmentMeta =
     p.lushaRawData &&
     typeof p.lushaRawData === 'object' &&
@@ -175,14 +181,37 @@ export default function ProspectDetail() {
       : null;
   const metaPillClass =
     'inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3.5 py-1.5 text-[12px] font-semibold text-slate-700 shadow-[0_1px_0_0_rgba(15,23,42,0.03)]';
-  const latestRunId = researchRuns.data?.[0]?.id ?? null;
   // ResearchRunRow mirrors the listRuns query include shape — replaces TS2589 as any casts
   const runs = researchRuns.data as ResearchRunRow[] | undefined;
   const latestRun = runs?.[0] ?? null;
-  const overrideAudits = api.research.listOverrideAudits.useQuery(
-    { runId: latestRunId! },
-    { enabled: !!latestRunId },
+  const latestDeepRun = runs?.find(
+    (run) => deepAnalysisStatus(run) !== 'not_started',
   );
+  const deepStatus = deepAnalysisStatus(latestDeepRun);
+  const deepStatusLabel =
+    deepStatus === 'completed'
+      ? 'Deep Analysis Done'
+      : deepStatus === 'running'
+        ? 'Deep Analysis Running'
+        : deepStatus === 'failed'
+          ? 'Deep Analysis Failed'
+          : null;
+  const deepStatusClass =
+    deepStatus === 'completed'
+      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+      : deepStatus === 'running'
+        ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
+        : deepStatus === 'failed'
+          ? 'bg-red-50 text-red-700 border-red-200'
+          : null;
+  const deepCompletedLabel =
+    deepStatus === 'completed' && latestDeepRun?.completedAt
+      ? new Date(latestDeepRun.completedAt).toLocaleDateString('nl-NL', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })
+      : null;
 
   return (
     <div className="space-y-8">
@@ -203,6 +232,18 @@ export default function ProspectDetail() {
                   qualityApproved: runs[0].qualityApproved ?? null,
                 }
               : null,
+            hasCompletedResearch:
+              runs?.some((run) => run.status === 'COMPLETED') ?? false,
+            hasActiveResearch:
+              runs?.some((run) =>
+                [
+                  'PENDING',
+                  'CRAWLING',
+                  'EXTRACTING',
+                  'HYPOTHESIS',
+                  'BRIEFING',
+                ].includes(run.status),
+              ) ?? false,
             hasSession: (p._count?.sessions ?? 0) > 0,
             hasBookedSession:
               p.sessions?.some((s: any) => s.callBooked) ?? false,
@@ -339,6 +380,17 @@ export default function ProspectDetail() {
               <span>{p._count.sessions} sessions</span>
             </div>
           )}
+          {deepStatusLabel && deepStatusClass && (
+            <div
+              className={cn(
+                'inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12px] font-semibold',
+                deepStatusClass,
+              )}
+            >
+              <span>{deepStatusLabel}</span>
+              {deepCompletedLabel && <span>· {deepCompletedLabel}</span>}
+            </div>
+          )}
           {(p.notificationLogs?.length ?? 0) > 0 && (
             <div className={metaPillClass}>
               <Phone className="w-4 h-4 text-teal-500" />
@@ -370,22 +422,22 @@ export default function ProspectDetail() {
         onContactCreated={() => utils.admin.getProspect.invalidate({ id })}
       />
 
-      {/* Tab nav — naked tabs */}
-      <nav className="flex items-center gap-6 overflow-x-auto w-full px-2 mt-8 mb-6 border-b border-slate-200">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              'ui-tap pb-2 text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-b-2',
-              activeTab === tab.id
-                ? 'text-[#040026] border-[#EBCB4B]'
-                : 'text-slate-400 border-transparent hover:text-[#040026]',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Tab nav */}
+      <nav className="mt-8 mb-6 overflow-x-auto">
+        <div className="admin-toggle-group w-max">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'ui-tap ui-focus admin-toggle-btn admin-toggle-btn-sm',
+                activeTab === tab.id && 'admin-toggle-btn-active',
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </nav>
 
       {/* All sections stay mounted, inactive ones hidden via CSS */}
@@ -399,13 +451,17 @@ export default function ProspectDetail() {
           <SourceSetSection
             runId={latestRunId}
             inputSnapshot={latestRun?.inputSnapshot ?? null}
+            prospectId={id}
           />
         )}
         <EvidenceSection
           prospectId={id}
+          latestRunId={latestRunId}
+          projectType={p.project?.projectType}
           signals={p.signals}
           latestRunSummary={latestRun?.summary}
           latestRunError={latestRun?.error ?? null}
+          latestRunInputSnapshot={latestRun?.inputSnapshot ?? null}
         />
         {(overrideAudits.data?.length ?? 0) > 0 && (
           <div className="glass-card p-6 space-y-3">
@@ -444,7 +500,10 @@ export default function ProspectDetail() {
         )}
       </div>
       <div className={cn('pt-1', activeTab === 'analysis' ? '' : 'hidden')}>
-        <AnalysisSection prospectId={id} />
+        <AnalysisSection
+          prospectId={id}
+          projectType={p.project?.projectType ?? null}
+        />
       </div>
       <div
         className={cn('pt-1', activeTab === 'outreach-preview' ? '' : 'hidden')}

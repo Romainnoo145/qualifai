@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { adminProcedure, router } from '../trpc';
+import { projectAdminProcedure, router } from '../trpc';
 import { env } from '@/env.mjs';
 import { scanVaultForUseCases } from '@/lib/vault-reader';
 import { analyzeCodebase } from '@/lib/codebase-analyzer';
@@ -8,9 +8,40 @@ import {
   offersToCandidates,
   readJsonSafe,
 } from '@/lib/workflow-engine';
+import { scanAtlantisVolumesForUseCases } from '@/lib/atlantis-volume-reader';
+import { TRPCError } from '@trpc/server';
+
+const DEFAULT_ATLANTIS_VOLUMES_PATH =
+  '/home/klarifai/Documents/obsidian/Nexus-Point/10_The_Forge/atlantis/RAG-Volumes';
+
+async function assertUseCaseInProject(
+  ctx: {
+    db: {
+      useCase: {
+        findFirst: (args: {
+          where: { id: string; projectId: string };
+          select: { id: true };
+        }) => Promise<{ id: string } | null>;
+      };
+    };
+    projectId: string;
+  },
+  id: string,
+) {
+  const useCase = await ctx.db.useCase.findFirst({
+    where: { id, projectId: ctx.projectId },
+    select: { id: true },
+  });
+  if (!useCase) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Use case not found in active project scope',
+    });
+  }
+}
 
 export const useCasesRouter = router({
-  list: adminProcedure
+  list: projectAdminProcedure
     .input(
       z
         .object({
@@ -22,9 +53,12 @@ export const useCasesRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const where: {
+        projectId: string;
         category?: string;
         isActive?: boolean;
-      } = {};
+      } = {
+        projectId: ctx.projectId,
+      };
       if (input?.category !== undefined) where.category = input.category;
       if (input?.isActive !== undefined) where.isActive = input.isActive;
 
@@ -42,13 +76,22 @@ export const useCasesRouter = router({
       });
     }),
 
-  getById: adminProcedure
+  getById: projectAdminProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      return ctx.db.useCase.findUniqueOrThrow({ where: { id: input.id } });
+      const useCase = await ctx.db.useCase.findFirst({
+        where: { id: input.id, projectId: ctx.projectId },
+      });
+      if (!useCase) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Use case not found in active project scope',
+        });
+      }
+      return useCase;
     }),
 
-  create: adminProcedure
+  create: projectAdminProcedure
     .input(
       z.object({
         title: z.string().min(2),
@@ -67,12 +110,13 @@ export const useCasesRouter = router({
       return ctx.db.useCase.create({
         data: {
           ...rest,
+          projectId: ctx.projectId,
           externalUrl: externalUrl === '' ? null : (externalUrl ?? null),
         },
       });
     }),
 
-  update: adminProcedure
+  update: projectAdminProcedure
     .input(
       z.object({
         id: z.string(),
@@ -89,26 +133,30 @@ export const useCasesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { id, externalUrl, ...rest } = input;
+      await assertUseCaseInProject(ctx, id);
+
       const data: Record<string, unknown> = { ...rest };
       if (externalUrl !== undefined) {
         data.externalUrl = externalUrl === '' ? null : externalUrl;
       }
+
       return ctx.db.useCase.update({
         where: { id },
         data,
       });
     }),
 
-  delete: adminProcedure
+  delete: projectAdminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await assertUseCaseInProject(ctx, input.id);
       return ctx.db.useCase.update({
         where: { id: input.id },
         data: { isActive: false },
       });
     }),
 
-  importFromObsidian: adminProcedure.mutation(async ({ ctx }) => {
+  importFromObsidian: projectAdminProcedure.mutation(async ({ ctx }) => {
     const errors: string[] = [];
 
     let inventoryPayload: unknown = null;
@@ -148,7 +196,10 @@ export const useCasesRouter = router({
 
     for (const candidate of candidates) {
       const existing = await ctx.db.useCase.findFirst({
-        where: { sourceRef: candidate.proofId },
+        where: {
+          projectId: ctx.projectId,
+          sourceRef: candidate.proofId,
+        },
       });
 
       if (existing) {
@@ -158,6 +209,7 @@ export const useCasesRouter = router({
 
       await ctx.db.useCase.create({
         data: {
+          projectId: ctx.projectId,
           title: candidate.title,
           summary: candidate.summary,
           category: 'workflow',
@@ -177,7 +229,7 @@ export const useCasesRouter = router({
     return { created, skipped, errors };
   }),
 
-  importFromVault: adminProcedure.mutation(async ({ ctx }) => {
+  importFromVault: projectAdminProcedure.mutation(async ({ ctx }) => {
     const configuredPath =
       env.OBSIDIAN_VAULT_PATH ?? process.env.OBSIDIAN_VAULT_PATH;
 
@@ -196,7 +248,10 @@ export const useCasesRouter = router({
 
     for (const candidate of scanResult.candidates) {
       const existing = await ctx.db.useCase.findFirst({
-        where: { sourceRef: candidate.sourceRef },
+        where: {
+          projectId: ctx.projectId,
+          sourceRef: candidate.sourceRef,
+        },
       });
 
       if (existing) {
@@ -206,6 +261,7 @@ export const useCasesRouter = router({
 
       await ctx.db.useCase.create({
         data: {
+          projectId: ctx.projectId,
           title: candidate.title,
           summary: candidate.summary,
           category: candidate.category,
@@ -230,7 +286,107 @@ export const useCasesRouter = router({
     };
   }),
 
-  importFromCodebase: adminProcedure
+  importFromAtlantisVolumes: projectAdminProcedure.mutation(async ({ ctx }) => {
+    if (ctx.activeProject.projectType !== 'ATLANTIS') {
+      return {
+        created: 0,
+        skipped: 0,
+        filesScanned: 0,
+        errors: ['Active project is not ATLANTIS; switch scope to europe-gate'],
+      };
+    }
+
+    const configuredPath =
+      env.ATLANTIS_RAG_VOLUMES_PATH ?? DEFAULT_ATLANTIS_VOLUMES_PATH;
+
+    const scanResult = await scanAtlantisVolumesForUseCases(configuredPath);
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+
+    for (const candidate of scanResult.candidates) {
+      const existing = await ctx.db.useCase.findFirst({
+        where: {
+          projectId: ctx.projectId,
+          sourceRef: candidate.sourceRef,
+        },
+        select: {
+          id: true,
+          title: true,
+          summary: true,
+          category: true,
+          outcomes: true,
+          tags: true,
+          externalUrl: true,
+          isActive: true,
+          isShipped: true,
+        },
+      });
+
+      if (!existing) {
+        await ctx.db.useCase.create({
+          data: {
+            projectId: ctx.projectId,
+            title: candidate.title,
+            summary: candidate.summary,
+            category: candidate.category,
+            outcomes: candidate.outcomes,
+            tags: candidate.tags,
+            caseStudyRefs: [],
+            isActive: true,
+            isShipped: true,
+            sourceRef: candidate.sourceRef,
+            externalUrl: candidate.externalUrl,
+          },
+        });
+
+        created++;
+        continue;
+      }
+
+      const hasChanges =
+        existing.title !== candidate.title ||
+        existing.summary !== candidate.summary ||
+        existing.category !== candidate.category ||
+        JSON.stringify(existing.outcomes) !== JSON.stringify(candidate.outcomes) ||
+        JSON.stringify(existing.tags) !== JSON.stringify(candidate.tags) ||
+        existing.externalUrl !== candidate.externalUrl ||
+        existing.isActive !== true ||
+        existing.isShipped !== true;
+
+      if (!hasChanges) {
+        skipped++;
+        continue;
+      }
+
+      await ctx.db.useCase.update({
+        where: { id: existing.id },
+        data: {
+          title: candidate.title,
+          summary: candidate.summary,
+          category: candidate.category,
+          outcomes: candidate.outcomes,
+          tags: candidate.tags,
+          isActive: true,
+          isShipped: true,
+          externalUrl: candidate.externalUrl,
+        },
+      });
+
+      updated++;
+    }
+
+    return {
+      created,
+      updated,
+      skipped,
+      filesScanned: scanResult.filesScanned,
+      errors: scanResult.errors,
+      scannedPath: configuredPath,
+    };
+  }),
+
+  importFromCodebase: projectAdminProcedure
     .input(
       z.object({
         projectPath: z.string().min(1),
@@ -243,7 +399,10 @@ export const useCasesRouter = router({
 
       for (const candidate of analysis.candidates) {
         const existing = await ctx.db.useCase.findFirst({
-          where: { sourceRef: candidate.sourceRef },
+          where: {
+            projectId: ctx.projectId,
+            sourceRef: candidate.sourceRef,
+          },
         });
 
         if (existing) {
@@ -253,6 +412,7 @@ export const useCasesRouter = router({
 
         await ctx.db.useCase.create({
           data: {
+            projectId: ctx.projectId,
             title: candidate.title,
             summary: candidate.summary,
             category: candidate.category,

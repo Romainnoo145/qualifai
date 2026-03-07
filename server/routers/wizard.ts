@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 import { publicProcedure, router } from '../trpc';
 import { notifyAdmin } from '@/lib/notifications';
 import { createEngagementCallTask } from '@/lib/outreach/engagement-triggers';
+import { resolveAdminProjectScope } from '@/server/admin-auth';
 
 export const wizardRouter = router({
   getWizard: publicProcedure
@@ -46,6 +47,11 @@ export const wizardRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const isAdminPreview = Boolean(resolveAdminProjectScope(ctx.adminToken));
+      if (isAdminPreview) {
+        return null;
+      }
+
       const prospect = await ctx.db.prospect.findUnique({
         where: { slug: input.slug },
       });

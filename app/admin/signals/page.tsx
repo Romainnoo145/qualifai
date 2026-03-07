@@ -7,13 +7,13 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 const signalTypeColors: Record<string, string> = {
-  JOB_CHANGE: 'bg-blue-50 text-blue-600',
-  PROMOTION: 'bg-purple-50 text-purple-600',
-  NEW_JOB_LISTING: 'bg-cyan-50 text-cyan-600',
-  HEADCOUNT_GROWTH: 'bg-emerald-50 text-emerald-600',
-  FUNDING_EVENT: 'bg-amber-50 text-amber-600',
-  TECHNOLOGY_ADOPTION: 'bg-indigo-50 text-indigo-600',
-  INTENT_TOPIC: 'bg-orange-50 text-orange-600',
+  JOB_CHANGE: 'admin-state-info',
+  PROMOTION: 'admin-state-accent',
+  NEW_JOB_LISTING: 'admin-state-info',
+  HEADCOUNT_GROWTH: 'admin-state-success',
+  FUNDING_EVENT: 'admin-state-warning',
+  TECHNOLOGY_ADOPTION: 'admin-state-info',
+  INTENT_TOPIC: 'admin-state-warning',
 };
 
 export default function SignalsPage() {
@@ -38,12 +38,20 @@ export default function SignalsPage() {
         <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
           Signals
         </h1>
-        <label className="ui-tap flex items-center gap-3 px-6 py-2.5 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#040026] transition-all cursor-pointer">
+        <label className="admin-btn-primary cursor-pointer select-none">
           <input
             type="checkbox"
             checked={showProcessed}
             onChange={(e) => setShowProcessed(e.target.checked)}
-            className="w-4 h-4 rounded-md border-slate-200 text-[#040026] focus:ring-[#EBCB4B]"
+            className="sr-only"
+          />
+          <span
+            className={cn(
+              'inline-flex h-4 w-4 items-center justify-center rounded-md border',
+              showProcessed
+                ? 'border-[#040026] bg-[#040026]'
+                : 'border-[#040026]/20 bg-[#F3DB7B]',
+            )}
           />
           Show processed
         </label>
@@ -107,16 +115,14 @@ export default function SignalsPage() {
                   <div className="flex flex-wrap items-center gap-3">
                     <span
                       className={cn(
-                        'text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-widest border',
-                        signalTypeColors[signal.signalType]
-                          ?.replace('bg-', 'bg-')
-                          .replace('text-', 'text-') ??
-                          'bg-slate-50 text-slate-400 border-slate-100',
+                        'admin-state-pill',
+                        signalTypeColors[signal.signalType] ??
+                          'admin-state-neutral',
                       )}
                     >
                       {signal.signalType.replace(/_/g, ' ')}
                     </span>
-                    <span className="text-[10px] font-bold text-slate-300 flex items-center gap-1.5 uppercase tracking-tighter">
+                    <span className="admin-eyebrow flex items-center gap-1.5 text-slate-400">
                       <Clock className="w-3.5 h-3.5" />
                       Detected{' '}
                       {new Date(signal.detectedAt).toLocaleDateString()}
@@ -126,7 +132,7 @@ export default function SignalsPage() {
                     {signal.title}
                   </p>
                   {signal.description && (
-                    <p className="text-sm font-bold text-slate-400 leading-relaxed max-w-2xl">
+                    <p className="admin-meta-text leading-relaxed max-w-2xl">
                       {signal.description}
                     </p>
                   )}
@@ -134,7 +140,7 @@ export default function SignalsPage() {
                     {signal.prospect && (
                       <Link
                         href={`/admin/prospects/${signal.prospect.id}`}
-                        className="text-[10px] font-black uppercase tracking-widest text-[#040026] hover:text-[#EBCB4B] flex items-center gap-2 transition-colors"
+                        className="admin-eyebrow text-[#040026] hover:text-[#EBCB4B] flex items-center gap-2 transition-colors"
                       >
                         <Building2 className="w-3.5 h-3.5 opacity-50" />
                         {signal.prospect.companyName ?? signal.prospect.domain}
@@ -143,7 +149,7 @@ export default function SignalsPage() {
                     {signal.contact && (
                       <Link
                         href={`/admin/contacts/${signal.contact.id}`}
-                        className="text-[10px] font-black uppercase tracking-widest text-[#040026] hover:text-[#EBCB4B] flex items-center gap-2 transition-colors"
+                        className="admin-eyebrow text-[#040026] hover:text-[#EBCB4B] flex items-center gap-2 transition-colors"
                       >
                         <Users className="w-3.5 h-3.5 opacity-50" />
                         {signal.contact.firstName} {signal.contact.lastName}
@@ -154,7 +160,7 @@ export default function SignalsPage() {
                 {!signal.isProcessed && (
                   <button
                     onClick={() => markProcessed.mutate({ id: signal.id })}
-                    className="ui-tap w-12 h-12 flex items-center justify-center rounded-2xl bg-[#FCFCFD] border border-slate-100 text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 hover:border-emerald-100 transition-all shadow-sm"
+                    className="admin-btn-icon admin-btn-icon-success"
                     title="Mark as processed"
                   >
                     <Check className="w-5 h-5" />

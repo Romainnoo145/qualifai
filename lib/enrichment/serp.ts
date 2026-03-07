@@ -24,6 +24,114 @@ interface GoogleJobsResult {
   }>;
 }
 
+interface GoogleSearchResult {
+  organic_results?: Array<{
+    link?: string;
+    title?: string;
+    snippet?: string;
+  }>;
+}
+
+const NON_CONTENT_FILE_RE =
+  /\.(jpg|jpeg|png|gif|svg|pdf|xml|css|js|woff|woff2|ttf|ico|mp4|mp3|zip|webp)$/i;
+
+function normalizeDomain(domain: string): string {
+  return domain.replace(/^https?:\/\//i, '').replace(/^www\./i, '').trim();
+}
+
+function normalizeContentUrl(raw: string): string | null {
+  try {
+    const parsed = new URL(raw);
+    const pathname = parsed.pathname.replace(/\/+$/, '');
+    const normalized = `${parsed.protocol}//${parsed.host}${pathname}${parsed.search}`;
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
+function isOwnDomainUrl(raw: string, domain: string): boolean {
+  try {
+    const parsed = new URL(raw);
+    const host = parsed.hostname.toLowerCase();
+    const root = normalizeDomain(domain).toLowerCase();
+    return host === root || host === `www.${root}`;
+  } catch {
+    return false;
+  }
+}
+
+function isLikelyContentUrl(raw: string): boolean {
+  try {
+    const parsed = new URL(raw);
+    const path = parsed.pathname.toLowerCase();
+    if (NON_CONTENT_FILE_RE.test(path)) return false;
+    if (
+      path.includes('/wp-json') ||
+      path.includes('/feed') ||
+      path.includes('/sitemap') ||
+      path.includes('/tag/') ||
+      path.includes('/category/')
+    ) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function contentUrlScore(raw: string): number {
+  try {
+    const parsed = new URL(raw);
+    const path = parsed.pathname.toLowerCase().replace(/\/+$/, '');
+    if (!path || path === '/') return 0;
+
+    const segments = path.split('/').filter(Boolean);
+    let score = 1 + Math.min(segments.length, 3);
+
+    const highIntentPatterns = [
+      'project',
+      'case',
+      'verhaal',
+      'news',
+      'nieuws',
+      'blog',
+      'dienst',
+      'service',
+      'expertise',
+      'sector',
+      'industry',
+      'oploss',
+      'solution',
+      'approach',
+      'werkwijze',
+      'aanpak',
+      'about',
+      'over-ons',
+      'contact',
+    ];
+
+    if (highIntentPatterns.some((pattern) => path.includes(pattern))) {
+      score += 4;
+    }
+
+    if (
+      path.includes('privacy') ||
+      path.includes('cookie') ||
+      path.includes('voorwaarden') ||
+      path.includes('terms') ||
+      path.includes('disclaimer')
+    ) {
+      score -= 2;
+    }
+
+    return score;
+  } catch {
+    return -1;
+  }
+}
+
 /**
  * External mention found via Google Search (reviews, job postings, news).
  */
@@ -105,6 +213,75 @@ export async function discoverGoogleSearchMentions(input: {
   return mentions
     .filter((mention) => !mention.url.includes(input.domain))
     .slice(0, 12);
+}
+
+/**
+ * Discover indexed own-domain content URLs via Google Search (site: query).
+ *
+ * Used as fallback when sitemap.xml is missing/empty, so website ingestion can
+ * still target real indexed pages instead of guessing many default paths.
+ */
+export async function discoverSiteUrlsFromSerp(input: {
+  domain: string;
+  maxResults?: number;
+}): Promise<string[]> {
+  const apiKey = process.env.SERP_API_KEY;
+  if (!apiKey) return [];
+
+  serpConfig.api_key = apiKey;
+  const domain = normalizeDomain(input.domain);
+  const maxResults = Math.min(Math.max(input.maxResults ?? 30, 1), 50);
+  const queries = [
+    `site:${domain} (projecten OR projecten OR cases OR verhalen OR diensten OR werkwijze OR aanpak OR nieuws OR blog OR sectors OR industries OR expertise)`,
+    `site:${domain}`,
+  ];
+  const maxPages = Math.ceil(maxResults / 10);
+
+  const collected: string[] = [];
+
+  for (const q of queries) {
+    for (let page = 0; page < maxPages; page++) {
+      try {
+        const result = (await getJson({
+          engine: 'google',
+          q,
+          gl: 'nl',
+          hl: 'nl',
+          google_domain: 'google.nl',
+          num: 10,
+          start: page * 10,
+          filter: '0',
+        })) as GoogleSearchResult;
+
+        for (const item of result.organic_results ?? []) {
+          if (!item.link) continue;
+          if (!isOwnDomainUrl(item.link, domain)) continue;
+          if (!isLikelyContentUrl(item.link)) continue;
+          const normalized = normalizeContentUrl(item.link);
+          if (!normalized) continue;
+          collected.push(normalized);
+        }
+
+        if ((result.organic_results?.length ?? 0) < 10) break;
+      } catch (error) {
+        console.error(`[SerpAPI] site discovery error for "${q}":`, error);
+        break;
+      }
+    }
+  }
+
+  const seen = new Set<string>();
+  const deduped: Array<{ url: string; score: number }> = [];
+  for (const url of collected) {
+    if (seen.has(url)) continue;
+    seen.add(url);
+    deduped.push({ url, score: contentUrlScore(url) });
+  }
+
+  return deduped
+    .sort((a, b) => b.score - a.score)
+    .slice(0, maxResults)
+    .map((item) => item.url);
 }
 
 /**

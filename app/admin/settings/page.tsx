@@ -10,6 +10,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useState } from 'react';
+import { ADMIN_TOKEN_STORAGE_KEY, normalizeAdminToken } from '@/lib/admin-token';
 
 export default function SettingsPage() {
   const stats = api.admin.getDashboardStats.useQuery();
@@ -19,10 +20,15 @@ export default function SettingsPage() {
   const [exportError, setExportError] = useState<string | null>(null);
 
   const downloadExport = async (kind: 'companies' | 'contacts') => {
-    const token = localStorage.getItem('admin-token');
+    const storedToken = localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY);
+    const token = normalizeAdminToken(storedToken);
     if (!token) {
       setExportError('Admin token missing. Sign in again to export data.');
       return;
+    }
+
+    if (storedToken !== token) {
+      localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token);
     }
 
     setExportError(null);

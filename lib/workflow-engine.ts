@@ -260,76 +260,7 @@ export function generateEvidenceDrafts(
   const companyName = prospect.companyName ?? prospect.domain;
   const website = `https://${prospect.domain}`;
   const reviewFirstMode = isConstructionOrInstall(prospect.industry);
-  const baseDrafts: EvidenceDraft[] = [
-    {
-      sourceType: 'WEBSITE',
-      sourceUrl: website,
-      title: `${companyName} - company context`,
-      snippet:
-        prospect.description ??
-        `${companyName} operates in ${prospect.industry ?? 'B2B services'} with workflow complexity across planning, handoff, and delivery.`,
-      workflowTag: 'workflow-context',
-      confidenceScore: 0.72,
-      metadata: {
-        technologies: prospect.technologies,
-        specialties: prospect.specialties,
-      },
-    },
-    {
-      sourceType: 'WEBSITE',
-      sourceUrl: `${website}/contact`,
-      title: 'Lead intake and first response workflow',
-      snippet:
-        'Public-facing contact and request flows indicate manual intake, qualification, and routing risk.',
-      workflowTag: 'lead-intake',
-      confidenceScore: 0.68,
-    },
-    {
-      sourceType: 'CAREERS',
-      sourceUrl: `${website}/careers`,
-      title: 'Hiring and role pain signals',
-      snippet:
-        'Open roles often indicate bottlenecks in planning, operations handoffs, and reporting load.',
-      workflowTag: 'handoff',
-      confidenceScore: 0.66,
-    },
-  ];
-
-  if (reviewFirstMode) {
-    baseDrafts.push(
-      {
-        sourceType: 'WEBSITE',
-        sourceUrl: `${website}/services`,
-        title: 'Planning and dispatch pressure',
-        snippet:
-          'Service-heavy operations usually rely on multi-step planning between office and field teams, creating handoff delay risk.',
-        workflowTag: 'planning',
-        confidenceScore: 0.77,
-      },
-      {
-        sourceType: 'WEBSITE',
-        sourceUrl: `${website}/projects`,
-        title: 'Field-to-office reporting load',
-        snippet:
-          'Project delivery suggests repetitive status updates, approvals, and documentation flow that can be standardized.',
-        workflowTag: 'field-reporting',
-        confidenceScore: 0.74,
-      },
-      {
-        sourceType: 'WEBSITE',
-        sourceUrl: `${website}/pricing`,
-        title: 'Quote-to-invoice leakage risk',
-        snippet:
-          'Quote, scope change, and invoicing transitions can leak margin when tracked manually.',
-        workflowTag: 'billing',
-        confidenceScore: 0.73,
-      },
-    );
-  }
-
-  // Review seed URLs are now fetched live via ingestReviewEvidenceDrafts —
-  // no longer prepend synthetic reviewSourceSeeds metadata.
-  const drafts = baseDrafts;
+  const drafts: EvidenceDraft[] = [];
 
   for (const url of manualUrls) {
     const sourceType = inferSourceType(url);
@@ -341,7 +272,12 @@ export function generateEvidenceDrafts(
       snippet: isReview
         ? 'Manually added review source for customer pain patterns and service workflow friction.'
         : 'Manually added source for role pain signals, process constraints, or customer-facing friction.',
-      workflowTag: isReview ? 'planning' : 'external-signal',
+      workflowTag:
+        isReview && reviewFirstMode
+          ? 'billing'
+          : isReview
+            ? 'planning'
+            : 'external-signal',
       confidenceScore: isReview ? 0.79 : 0.7,
       metadata: {
         addedByUser: true,
@@ -349,6 +285,24 @@ export function generateEvidenceDrafts(
       },
     });
   }
+
+  // Keep one stable company-context draft only.
+  // Real page evidence should come from discovered URLs via website ingestion,
+  // not synthetic guessed routes.
+  drafts.push({
+    sourceType: 'WEBSITE',
+    sourceUrl: website,
+    title: `${companyName} - company context`,
+    snippet:
+      prospect.description ??
+      `${companyName} operates in ${prospect.industry ?? 'B2B services'} with workflow complexity across planning, handoff, and delivery.`,
+    workflowTag: 'workflow-context',
+    confidenceScore: 0.72,
+    metadata: {
+      technologies: prospect.technologies,
+      specialties: prospect.specialties,
+    },
+  });
 
   return drafts.slice(0, 18);
 }
@@ -615,6 +569,10 @@ interface AIProspectContext {
   description: string | null;
 }
 
+interface HypothesisGenerationOptions {
+  projectType?: 'KLARIFAI' | 'ATLANTIS' | null;
+}
+
 interface AIHypothesisItem {
   title: string;
   problemStatement: string;
@@ -659,6 +617,7 @@ export async function generateHypothesisDraftsAI(
   prospectContext: AIProspectContext,
   confirmedPainTags: string[] = [], // ANLYS-06 — optional, defaults to [] for backward compat
   hypothesisModel: 'gemini-flash' | 'claude-sonnet' = 'gemini-flash', // MODEL-01 — configurable model selection
+  options?: HypothesisGenerationOptions,
 ): Promise<HypothesisDraft[]> {
   const METRIC_DEFAULTS = {
     hoursSavedWeekLow: 4,
@@ -702,6 +661,7 @@ export async function generateHypothesisDraftsAI(
     'REGISTRY',
     'LINKEDIN',
     'NEWS',
+    'RAG_DOCUMENT',
   ]);
 
   const VALID_WORKFLOW_TAGS = new Set([
@@ -710,6 +670,8 @@ export async function generateHypothesisDraftsAI(
     'project-management',
     'billing',
     'handoff',
+    'field-reporting',
+    'workflow-context',
     'scheduling',
     'reporting',
     'quality-control',
@@ -743,6 +705,7 @@ export async function generateHypothesisDraftsAI(
     LINKEDIN: 'diagnostic',
     NEWS: 'diagnostic',
     REGISTRY: 'registry',
+    RAG_DOCUMENT: 'partner-context',
     WEBSITE: 'marketing-context',
     MANUAL_URL: 'marketing-context',
   };
@@ -798,7 +761,21 @@ export async function generateHypothesisDraftsAI(
     const industryLabel = prospectContext.industry ?? 'B2B services';
     const validTagsList = Array.from(VALID_WORKFLOW_TAGS).join(', ');
 
-    const prompt = `You are analyzing external diagnostic signals to identify workflow pain hypotheses for a Dutch company. Klarifai is an AI/automation consultancy that could solve these pains.
+    const isAtlantis = options?.projectType === 'ATLANTIS';
+    const objectiveLead = isAtlantis
+      ? "You are analyzing external diagnostic signals to identify partnership triggers for a Dutch company. Atlantis (Europe's Gate) is pursuing strategic partnerships and SPV-aligned collaboration."
+      : 'You are analyzing external diagnostic signals to identify workflow pain hypotheses for a Dutch company. Klarifai is an AI/automation consultancy that could solve these pains.';
+    const focusInstruction = isAtlantis
+      ? '- [RAG_DOCUMENT/partner-context]: Atlantis internal partnership passages — use these as capability/citation anchors to validate partnership fit and execution readiness.'
+      : '';
+    const generationLabel = isAtlantis
+      ? 'distinct partnership trigger hypothesis/hypotheses'
+      : 'distinct workflow pain hypothesis/hypotheses';
+    const groundingRule = isAtlantis
+      ? '1. Be grounded in diagnostic signals (REVIEWS, CAREERS, LINKEDIN, NEWS) and support each hypothesis with at least one RAG_DOCUMENT citation when available'
+      : '1. Be grounded in diagnostic signals (REVIEWS, CAREERS, LINKEDIN, NEWS) — not website copy';
+
+    const prompt = `${objectiveLead}
 
 SOURCE TYPE GUIDE — how to interpret each label:
 - [REVIEWS/diagnostic]: Customer or employee voices — HIGHEST DIAGNOSTIC VALUE. Direct pain signal.
@@ -806,7 +783,10 @@ SOURCE TYPE GUIDE — how to interpret each label:
 - [LINKEDIN/diagnostic]: Company signals — organizational changes, strategic pressure, public statements.
 - [NEWS/diagnostic]: External press — market pressure, recent events, competitive context.
 - [REGISTRY/registry]: KvK data — factual reference (size, legal form, registered activities).
+- [RAG_DOCUMENT/partner-context]: Internal partnership and execution passages used as strategic citation context.
 - [WEBSITE/marketing-context]: Company's own marketing copy — LOWEST DIAGNOSTIC VALUE. Background context only.
+
+${focusInstruction}
 
 ANTI-PARROTING RULE: Do NOT derive hypotheses from what the company says about itself on its website. Website copy is marketing — it describes aspirations, not operational reality. Pain hypotheses must come from external signals (reviews, hiring, LinkedIn, news).
 
@@ -821,10 +801,10 @@ Company context:
 Evidence (sorted by relevance — diagnostic sources weighted higher):
 ${evidenceLines || 'No specific evidence snippets available — reason from company context only.'}
 
-Generate exactly ${targetCount} distinct workflow pain hypothesis/hypotheses for ${prospectContext.companyName ?? 'this company'} (${industryLabel}).
+Generate exactly ${targetCount} ${generationLabel} for ${prospectContext.companyName ?? 'this company'} (${industryLabel}).
 
 Each hypothesis MUST:
-1. Be grounded in diagnostic signals (REVIEWS, CAREERS, LINKEDIN, NEWS) — not website copy
+${groundingRule}
 2. Include at least one verbatim quoted snippet (using "...") in the problemStatement from a non-WEBSITE source
 3. Have a workflowTag from this list ONLY: ${validTagsList}
 4. Have a confidenceScore calibrated to evidence source quality:
@@ -877,8 +857,7 @@ After the closing </reasoning> tag, output ONLY the JSON array. No other text.
       const response = await getAnthropicClient().messages.create({
         model: CLAUDE_MODEL_SONNET,
         max_tokens: 4096,
-        system:
-          'You are analyzing external diagnostic signals to identify workflow pain hypotheses for a Dutch company. Klarifai is an AI/automation consultancy that could solve these pains.',
+        system: objectiveLead,
         messages: [{ role: 'user', content: prompt }],
       });
       const textBlock = response.content.find(
@@ -1761,9 +1740,15 @@ export async function matchProofs(
   db: PrismaClient,
   query: string,
   limit = 4,
+  options?: {
+    projectId?: string;
+  },
 ): Promise<ProofMatchResult[]> {
   const useCases = await db.useCase.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      ...(options?.projectId ? { projectId: options.projectId } : {}),
+    },
     select: {
       id: true,
       title: true,
@@ -1820,6 +1805,7 @@ export function runSummaryPayload(
       status: 'ok' | 'warning' | 'error' | 'skipped';
       message: string;
     }>;
+    partnership?: unknown;
   },
 ): Record<string, unknown> {
   return {
@@ -1837,5 +1823,6 @@ export function runSummaryPayload(
     ctaStep1: CTA_STEP_1,
     ctaStep2: CTA_STEP_2,
     bookingUrl: env.NEXT_PUBLIC_CALCOM_BOOKING_URL ?? null,
+    partnership: options?.partnership ?? null,
   };
 }

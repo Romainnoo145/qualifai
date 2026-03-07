@@ -12,7 +12,14 @@
 // Types
 // ---------------------------------------------------------------------------
 
-export type UrlProvenance = 'sitemap' | 'serp' | 'default';
+export type UrlProvenance =
+  | 'sitemap'
+  | 'serp'
+  | 'default'
+  | 'katana_site'
+  | 'serp_site'
+  | 'manual'
+  | 'seed';
 
 export interface DiscoveredUrl {
   url: string;
@@ -24,12 +31,25 @@ export interface SourceSet {
   urls: DiscoveredUrl[];
   discoveredAt: string;
   dedupRemovedCount: number;
-  rawCounts: {
-    sitemap: { discovered: number; capped: number };
-    serp: { discovered: number; capped: number };
-    default: { discovered: number; capped: number };
-  };
+  rawCounts: Record<string, { discovered: number; capped: number }>;
   serpDiscoveredAt?: string;
+  discovery?: {
+    sourceUsed: 'sitemap' | 'katana_site' | 'serp_site' | 'fallback';
+    sitemapStatus?: 'ok' | 'blocked' | 'empty' | 'error';
+    sitemapErrorCode?: string | null;
+    sitemapDiscoveredTotal?: number;
+    katanaSiteDiscoveredTotal?: number;
+    serpSiteDiscoveredTotal?: number;
+    fallbackReason?: string | null;
+  };
+  selection?: {
+    strategyVersion: string;
+    topN: number;
+    discoveredTotal: number;
+    selectedTotal: number;
+    selectedBySource: Record<string, number>;
+    selectedBySegment: Record<string, number>;
+  };
 }
 
 // ---------------------------------------------------------------------------

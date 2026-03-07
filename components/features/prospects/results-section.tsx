@@ -261,7 +261,7 @@ export function ResultsSection({
                 href={dashboardUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="ui-tap inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-[#040026]"
+                className="ui-tap inline-flex items-center gap-1.5 rounded-xl border border-[#EBCB4B] bg-[#EBCB4B] px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-[#040026] hover:bg-[#D4B43B] hover:border-[#D4B43B]"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 Preview

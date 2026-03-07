@@ -6,78 +6,103 @@ import {
   generateOpportunityDrafts,
   matchProofs,
 } from '@/lib/workflow-engine';
+import { generateDualEvidenceOpportunityDrafts } from '@/lib/rag/opportunity-generator';
 import type { Prisma } from '@prisma/client';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
 export const hypothesesRouter = router({
   listByProspect: adminProcedure
     .input(z.object({ prospectId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const [hypotheses, opportunities] = await Promise.all([
-        ctx.db.workflowHypothesis.findMany({
-          where: { prospectId: input.prospectId },
-          orderBy: { createdAt: 'desc' },
-          include: {
-            proofMatches: {
-              include: {
-                useCase: {
-                  select: {
-                    id: true,
-                    title: true,
-                    summary: true,
-                    category: true,
+      const [hypotheses, opportunities, prospectScope, latestRun] =
+        await Promise.all([
+          ctx.db.workflowHypothesis.findMany({
+            where: { prospectId: input.prospectId },
+            orderBy: { createdAt: 'desc' },
+            include: {
+              proofMatches: {
+                include: {
+                  useCase: {
+                    select: {
+                      id: true,
+                      title: true,
+                      summary: true,
+                      category: true,
+                    },
+                  },
+                  evidenceItem: {
+                    select: {
+                      id: true,
+                      sourceUrl: true,
+                      snippet: true,
+                      sourceType: true,
+                      workflowTag: true,
+                      title: true,
+                    },
                   },
                 },
-                evidenceItem: {
-                  select: {
-                    id: true,
-                    sourceUrl: true,
-                    snippet: true,
-                    sourceType: true,
-                    workflowTag: true,
-                    title: true,
+                orderBy: { score: 'desc' },
+                take: 6,
+              },
+            },
+          }),
+          ctx.db.automationOpportunity.findMany({
+            where: { prospectId: input.prospectId },
+            orderBy: { createdAt: 'desc' },
+            include: {
+              proofMatches: {
+                include: {
+                  useCase: {
+                    select: {
+                      id: true,
+                      title: true,
+                      summary: true,
+                      category: true,
+                    },
                   },
+                  evidenceItem: {
+                    select: {
+                      id: true,
+                      sourceUrl: true,
+                      snippet: true,
+                      sourceType: true,
+                      workflowTag: true,
+                      title: true,
+                    },
+                  },
+                },
+                orderBy: { score: 'desc' },
+                take: 6,
+              },
+            },
+          }),
+          ctx.db.prospect.findUnique({
+            where: { id: input.prospectId },
+            select: {
+              project: {
+                select: {
+                  projectType: true,
                 },
               },
-              orderBy: { score: 'desc' },
-              take: 6,
             },
-          },
-        }),
-        ctx.db.automationOpportunity.findMany({
-          where: { prospectId: input.prospectId },
-          orderBy: { createdAt: 'desc' },
-          include: {
-            proofMatches: {
-              include: {
-                useCase: {
-                  select: {
-                    id: true,
-                    title: true,
-                    summary: true,
-                    category: true,
-                  },
-                },
-                evidenceItem: {
-                  select: {
-                    id: true,
-                    sourceUrl: true,
-                    snippet: true,
-                    sourceType: true,
-                    workflowTag: true,
-                    title: true,
-                  },
-                },
-              },
-              orderBy: { score: 'desc' },
-              take: 6,
+          }),
+          ctx.db.researchRun.findFirst({
+            where: { prospectId: input.prospectId },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              summary: true,
             },
-          },
-        }),
-      ]);
+          }),
+        ]);
 
       // Resolve evidenceRefs (JSON array of IDs) into full EvidenceItem records
       const allEvidenceIds = [
@@ -97,25 +122,91 @@ export const hypothesesRouter = router({
           : [];
       const evidenceById = new Map(evidenceItemRecords.map((e) => [e.id, e]));
 
+      const summary = asRecord(latestRun?.summary);
+      const partnership = asRecord(summary?.partnership);
+      const triggersRaw = Array.isArray(partnership?.triggers)
+        ? partnership.triggers
+        : [];
+      const triggers = triggersRaw
+        .map((value) => asRecord(value))
+        .filter((item): item is Record<string, unknown> => item !== null)
+        .map((item) => ({
+          triggerType:
+            typeof item.triggerType === 'string' ? item.triggerType : 'unknown',
+          title:
+            typeof item.title === 'string' ? item.title : 'Untitled trigger',
+          rationale: typeof item.rationale === 'string' ? item.rationale : '',
+          whyNow: typeof item.whyNow === 'string' ? item.whyNow : '',
+          confidenceScore:
+            typeof item.confidenceScore === 'number'
+              ? item.confidenceScore
+              : 0.6,
+          readinessImpact:
+            typeof item.readinessImpact === 'number' ? item.readinessImpact : 0,
+          urgency:
+            item.urgency === 'high' ||
+            item.urgency === 'medium' ||
+            item.urgency === 'low'
+              ? item.urgency
+              : 'medium',
+          evidenceRefs: Array.isArray(item.evidenceRefs)
+            ? item.evidenceRefs.filter(
+                (ref): ref is string => typeof ref === 'string',
+              )
+            : [],
+          sourceTypes: Array.isArray(item.sourceTypes)
+            ? item.sourceTypes.filter(
+                (sourceType): sourceType is string =>
+                  typeof sourceType === 'string',
+              )
+            : [],
+        }));
+
       return {
         hypotheses: hypotheses.map((h) => ({
           ...h,
-          evidenceItems: (Array.isArray(h.evidenceRefs)
-            ? (h.evidenceRefs as string[])
-            : []
-          )
+          evidenceItems: [
+            ...new Set(
+              Array.isArray(h.evidenceRefs) ? (h.evidenceRefs as string[]) : [],
+            ),
+          ]
             .map((id) => evidenceById.get(id))
             .filter(Boolean),
         })),
         opportunities: opportunities.map((o) => ({
           ...o,
-          evidenceItems: (Array.isArray(o.evidenceRefs)
-            ? (o.evidenceRefs as string[])
-            : []
-          )
+          evidenceItems: [
+            ...new Set(
+              Array.isArray(o.evidenceRefs) ? (o.evidenceRefs as string[]) : [],
+            ),
+          ]
             .map((id) => evidenceById.get(id))
             .filter(Boolean),
         })),
+        partnership:
+          prospectScope?.project.projectType === 'ATLANTIS' && partnership
+            ? {
+                strategyVersion:
+                  typeof partnership.strategyVersion === 'string'
+                    ? partnership.strategyVersion
+                    : 'partnership-v1',
+                readinessScore:
+                  typeof partnership.readinessScore === 'number'
+                    ? partnership.readinessScore
+                    : 0,
+                triggerCount:
+                  typeof partnership.triggerCount === 'number'
+                    ? partnership.triggerCount
+                    : triggers.length,
+                triggers,
+                gaps: Array.isArray(partnership.gaps)
+                  ? partnership.gaps.filter(
+                      (gap): gap is string => typeof gap === 'string',
+                    )
+                  : [],
+                signalCounts: asRecord(partnership.signalCounts),
+              }
+            : null,
       };
     }),
 
@@ -175,6 +266,17 @@ export const hypothesesRouter = router({
       const run = await ctx.db.researchRun.findUniqueOrThrow({
         where: { id: input.runId },
       });
+      const prospectScope = await ctx.db.prospect.findUniqueOrThrow({
+        where: { id: run.prospectId },
+        select: {
+          projectId: true,
+          project: {
+            select: {
+              projectType: true,
+            },
+          },
+        },
+      });
       const evidence = await ctx.db.evidenceItem.findMany({
         where: { researchRunId: input.runId },
         orderBy: { confidenceScore: 'desc' },
@@ -187,7 +289,27 @@ export const hypothesesRouter = router({
         confidenceScore: item.confidenceScore,
       }));
       const hypotheses = generateHypothesisDrafts(evidenceForEngine);
-      const opportunities = generateOpportunityDrafts(evidenceForEngine);
+      const baselineOpportunities =
+        generateOpportunityDrafts(evidenceForEngine);
+      const opportunities =
+        prospectScope.project.projectType === 'ATLANTIS'
+          ? (() => {
+              const dualEvidence = generateDualEvidenceOpportunityDrafts(
+                evidence.map((item) => ({
+                  id: item.id,
+                  sourceType: item.sourceType,
+                  workflowTag: item.workflowTag,
+                  confidenceScore: item.confidenceScore,
+                  snippet: item.snippet,
+                  title: item.title,
+                  metadata: item.metadata,
+                })),
+                { maxCards: 4 },
+              );
+              if (dualEvidence.length >= 2) return dualEvidence;
+              return baselineOpportunities;
+            })()
+          : baselineOpportunities;
 
       await ctx.db.workflowHypothesis.deleteMany({
         where: { researchRunId: input.runId },
@@ -226,6 +348,7 @@ export const hypothesesRouter = router({
           ctx.db,
           `${hypothesis.title} ${hypothesis.problemStatement}`,
           4,
+          { projectId: prospectScope.projectId },
         );
         for (const match of hypothesisMatches) {
           await ctx.db.proofMatch.create({
@@ -276,6 +399,7 @@ export const hypothesesRouter = router({
           ctx.db,
           `${opportunity.title} ${opportunity.description}`,
           4,
+          { projectId: prospectScope.projectId },
         );
         for (const match of opportunityMatches) {
           await ctx.db.proofMatch.create({

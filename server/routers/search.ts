@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { adminProcedure, router } from '../trpc';
+import { projectAdminProcedure, router } from '../trpc';
 import {
   searchCompanies,
   searchContacts,
@@ -10,6 +10,7 @@ import { mergeApolloWithKvk } from '@/lib/enrichment/merge';
 import { nanoid } from 'nanoid';
 import type { Prisma } from '@prisma/client';
 import { env } from '@/env.mjs';
+import { TRPCError } from '@trpc/server';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -102,7 +103,7 @@ function buildProspectEnrichmentData(
 }
 
 export const searchRouter = router({
-  companies: adminProcedure
+  companies: projectAdminProcedure
     .input(
       z.object({
         companyName: z.string().optional(),
@@ -156,7 +157,7 @@ export const searchRouter = router({
       }
     }),
 
-  contacts: adminProcedure
+  contacts: projectAdminProcedure
     .input(
       z.object({
         jobTitles: z.array(z.string()).optional(),
@@ -208,7 +209,7 @@ export const searchRouter = router({
       }
     }),
 
-  importCompany: adminProcedure
+  importCompany: projectAdminProcedure
     .input(
       z.object({
         domain: z.string(),
@@ -223,7 +224,7 @@ export const searchRouter = router({
 
       // Check if already exists
       const existing = await ctx.db.prospect.findFirst({
-        where: { domain: cleanDomain },
+        where: { domain: cleanDomain, projectId: ctx.projectId },
       });
       if (existing) {
         if (input.enrich && !isEnrichmentFresh(existing.lastEnrichedAt)) {
@@ -266,6 +267,7 @@ export const searchRouter = router({
         data: {
           domain: cleanDomain,
           slug,
+          projectId: ctx.projectId,
           companyName: input.companyName,
           status: 'DRAFT',
         },
@@ -296,7 +298,7 @@ export const searchRouter = router({
       return { prospect, alreadyExists: false };
     }),
 
-  importContact: adminProcedure
+  importContact: projectAdminProcedure
     .input(
       z.object({
         prospectId: z.string(),
@@ -312,6 +314,17 @@ export const searchRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const scopedProspect = await ctx.db.prospect.findFirst({
+        where: { id: input.prospectId, projectId: ctx.projectId },
+        select: { id: true },
+      });
+      if (!scopedProspect) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Prospect not found in active project scope',
+        });
+      }
+
       // Check if already exists by external provider person ID
       if (input.lushaPersonId) {
         const existing = await ctx.db.contact.findUnique({
@@ -351,7 +364,7 @@ export const searchRouter = router({
       return { contact, alreadyExists: false };
     }),
 
-  saveSearch: adminProcedure
+  saveSearch: projectAdminProcedure
     .input(
       z.object({
         name: z.string(),
@@ -372,7 +385,7 @@ export const searchRouter = router({
       });
     }),
 
-  savedSearches: adminProcedure.query(async ({ ctx }) => {
+  savedSearches: projectAdminProcedure.query(async ({ ctx }) => {
     return ctx.db.savedSearch.findMany({
       orderBy: { updatedAt: 'desc' },
       take: 20,

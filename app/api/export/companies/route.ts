@@ -1,14 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { env } from '@/env.mjs';
 import prisma from '@/lib/prisma';
+import { resolveAdminProjectScope } from '@/server/admin-auth';
 
 export async function GET(req: NextRequest) {
-  const token = req.headers.get('x-admin-token');
-  if (token !== env.ADMIN_SECRET) {
+  const scope = resolveAdminProjectScope(req.headers.get('x-admin-token'));
+  if (!scope) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const project = await prisma.project.findUnique({
+    where: { slug: scope.allowedProjectSlug },
+    select: { id: true },
+  });
+  if (!project) {
+    return NextResponse.json(
+      { error: `Unknown project scope: ${scope.allowedProjectSlug}` },
+      { status: 400 },
+    );
+  }
+
   const prospects = await prisma.prospect.findMany({
+    where: { projectId: project.id },
     orderBy: { createdAt: 'desc' },
     select: {
       companyName: true,

@@ -5,6 +5,7 @@ import { createTRPCReact } from '@trpc/react-query';
 import { httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '@/server/routers/_app';
 import { useState } from 'react';
+import { ADMIN_TOKEN_STORAGE_KEY, normalizeAdminToken } from '@/lib/admin-token';
 
 export const api = createTRPCReact<AppRouter>();
 
@@ -39,7 +40,15 @@ installPerformanceMeasureGuard();
 
 function getAdminToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('admin-token');
+  const storedToken = localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY);
+  const token = normalizeAdminToken(storedToken);
+
+  if (!token) return null;
+  if (storedToken !== token) {
+    localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token);
+  }
+
+  return token;
 }
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
@@ -52,7 +61,11 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           url: '/api/trpc',
           headers() {
             const token = getAdminToken();
-            return token ? { 'x-admin-token': token } : {};
+            if (!token) return {};
+
+            return {
+              'x-admin-token': token,
+            };
           },
         }),
       ],

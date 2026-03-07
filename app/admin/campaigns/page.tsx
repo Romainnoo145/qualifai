@@ -15,7 +15,7 @@ export default function CampaignsPage() {
         </h1>
         <Link
           href="/admin/campaigns/new"
-          className="ui-tap inline-flex items-center gap-2 px-6 py-3 btn-pill-primary text-xs font-black uppercase tracking-widest"
+          className="admin-btn-primary"
         >
           <Plus className="w-4 h-4" /> Create Campaign
         </Link>
@@ -29,17 +29,21 @@ export default function CampaignsPage() {
         )}
 
         {!campaigns.isLoading && (campaigns.data ?? []).length === 0 && (
-          <div className="glass-card p-10 rounded-[2.5rem] text-center text-sm font-bold text-slate-400">
-            No campaigns yet. Start with the campaign setup wizard.
-            <div className="mt-4">
-              <Link
-                href="/admin/campaigns/new"
-                className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#1E1E4A] transition-all"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Start Wizard
-              </Link>
-            </div>
+          <div className="glass-card p-12 text-center">
+            <FolderKanban className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-sm font-black text-[#040026] uppercase tracking-widest mb-2">
+              No campaigns yet
+            </p>
+            <p className="admin-meta-text mb-4">
+              Start met de campaign setup wizard.
+            </p>
+            <Link
+              href="/admin/campaigns/new"
+              className="admin-btn-primary"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Start Wizard
+            </Link>
           </div>
         )}
 

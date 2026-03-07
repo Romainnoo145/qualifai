@@ -14,6 +14,7 @@ import {
   FolderSearch,
   CodeXml,
   ChevronDown,
+  Info,
 } from 'lucide-react';
 
 type UseCase = {
@@ -63,6 +64,7 @@ export default function UseCasesPage() {
   const utils = api.useUtils();
 
   const useCases = api.useCases.list.useQuery();
+  const activeProjectQuery = api.projects.listSpvsForActiveProject.useQuery();
 
   const createMutation = api.useCases.create.useMutation({
     onSuccess: async () => {
@@ -119,6 +121,21 @@ export default function UseCasesPage() {
     },
   });
 
+  const atlantisImportMutation =
+    api.useCases.importFromAtlantisVolumes.useMutation({
+      onSuccess: async (data) => {
+        await utils.useCases.list.invalidate();
+        let message = `Scanned ${data.filesScanned} files. Created ${data.created}, updated ${'updated' in data && typeof data.updated === 'number' ? data.updated : 0}, skipped ${data.skipped}.`;
+        if ('scannedPath' in data && typeof data.scannedPath === 'string') {
+          message += `\nPath: ${data.scannedPath}`;
+        }
+        if (data.errors.length > 0) {
+          message += `\n\nErrors:\n${data.errors.join('\n')}`;
+        }
+        window.alert(message);
+      },
+    });
+
   function startEdit(uc: UseCase) {
     setEditingId(uc.id);
     setShowCreateForm(false);
@@ -161,126 +178,166 @@ export default function UseCasesPage() {
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const list = (useCases.data ?? []) as UseCase[];
+  const activeProject = activeProjectQuery.data?.project;
+  const isAtlantisProject = activeProject?.projectType === 'ATLANTIS';
+  const isCatalogReadOnly = isAtlantisProject;
+  const showKlarifaiImportActions = !isAtlantisProject;
+  const catalogLabel = isAtlantisProject ? 'RAG Documents' : 'Use Cases';
+  const catalogItemLabel = isAtlantisProject ? 'RAG Document' : 'Use Case';
   const codebaseInputClass =
     'w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#040026]/5 focus:border-[#040026] transition-all';
 
   return (
     <div className="space-y-10">
       {/* Page header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-[#040026]">
-            Use Cases
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 font-medium">
-            {/* TERM-02: "proof matching" replaced with plain description */}
-            Service catalog — evidence-backed offerings that can be matched to
-            prospect needs
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              setShowCreateForm(true);
-              setEditingId(null);
-              setForm(emptyForm);
-            }}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#040026] text-white rounded-xl font-bold text-sm hover:opacity-90 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            New Use Case
-          </button>
-          <button
-            onClick={() => importMutation.mutate()}
-            disabled={importMutation.isPending}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50"
-          >
-            {importMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Importing...
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4" />
-                Import from Obsidian
-              </>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-black tracking-tight text-[#040026]">
+              {catalogLabel}
+            </h1>
+            {isCatalogReadOnly && (
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-full text-slate-400 hover:text-[#040026] transition-colors"
+                title="Atlantis catalog is read-only and synced from RAG volumes."
+                aria-label="Catalog info"
+              >
+                <Info className="w-4 h-4" />
+              </button>
             )}
-          </button>
-          <button
-            onClick={() => vaultImportMutation.mutate()}
-            disabled={vaultImportMutation.isPending}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50"
-          >
-            {vaultImportMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Scanning...
-              </>
-            ) : (
-              <>
-                <FolderSearch className="w-4 h-4" />
-                Scan Vault
-              </>
-            )}
-          </button>
+          </div>
         </div>
-      </div>
-
-      <div className="glass-card p-4 sm:p-5 space-y-3">
-        <button
-          onClick={() => setShowCodebaseForm((prev) => !prev)}
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
-        >
-          <ChevronDown
-            className={`w-4 h-4 transition-transform ${showCodebaseForm ? 'rotate-180' : ''}`}
-          />
-          Analyze a project codebase...
-        </button>
-
-        {showCodebaseForm && (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <input
-              value={codebasePath}
-              onChange={(e) => setCodebasePath(e.target.value)}
-              placeholder="/home/klarifai/Documents/klarifai/projects/copifai"
-              className={codebaseInputClass}
-            />
+        <div className="flex items-center gap-3 sm:self-start">
+          {!isCatalogReadOnly && (
             <button
-              onClick={() =>
-                codebaseImportMutation.mutate({ projectPath: codebasePath })
-              }
-              disabled={
-                codebaseImportMutation.isPending ||
-                codebasePath.trim().length === 0
-              }
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50 sm:shrink-0"
+              onClick={() => {
+                setShowCreateForm(true);
+                setEditingId(null);
+                setForm(emptyForm);
+              }}
+              className="admin-btn-primary"
             >
-              {codebaseImportMutation.isPending ? (
+              <Plus className="w-4 h-4" />
+              New {catalogItemLabel}
+            </button>
+          )}
+          {showKlarifaiImportActions && (
+            <>
+              <button
+                onClick={() => importMutation.mutate()}
+                disabled={importMutation.isPending}
+                className="admin-btn-secondary"
+              >
+                {importMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Importing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Import from Obsidian
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => vaultImportMutation.mutate()}
+                disabled={vaultImportMutation.isPending}
+                className="admin-btn-secondary"
+              >
+                {vaultImportMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Scanning...
+                  </>
+                ) : (
+                  <>
+                    <FolderSearch className="w-4 h-4" />
+                    Scan Vault
+                  </>
+                )}
+              </button>
+            </>
+          )}
+          {isAtlantisProject && (
+            <button
+              onClick={() => atlantisImportMutation.mutate()}
+              disabled={atlantisImportMutation.isPending}
+              className="admin-btn-primary"
+            >
+              {atlantisImportMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Analyzing...
+                  Importing Atlantis...
                 </>
               ) : (
                 <>
-                  <CodeXml className="w-4 h-4" />
-                  Analyze Codebase
+                  <Upload className="w-4 h-4" />
+                  Sync Atlantis Volumes
                 </>
               )}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+      {showKlarifaiImportActions && (
+        <div className="glass-card p-4 sm:p-5 space-y-3">
+          <button
+            onClick={() => setShowCodebaseForm((prev) => !prev)}
+            className="admin-btn-secondary"
+          >
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${showCodebaseForm ? 'rotate-180' : ''}`}
+            />
+            Analyze a project codebase...
+          </button>
+
+          {showCodebaseForm && (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <input
+                value={codebasePath}
+                onChange={(e) => setCodebasePath(e.target.value)}
+                placeholder="/home/klarifai/Documents/klarifai/projects/copifai"
+                className={codebaseInputClass}
+              />
+              <button
+                onClick={() =>
+                  codebaseImportMutation.mutate({ projectPath: codebasePath })
+                }
+                disabled={
+                  codebaseImportMutation.isPending ||
+                  codebasePath.trim().length === 0
+                }
+                className="admin-btn-secondary sm:shrink-0"
+              >
+                {codebaseImportMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <CodeXml className="w-4 h-4" />
+                    Analyze Codebase
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Create form */}
       {showCreateForm && (
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-sm font-black text-[#040026] uppercase tracking-wider">
-            New Use Case
+            New {catalogItemLabel}
           </h2>
           <UseCaseForm
             form={form}
             setForm={setForm}
+            itemLabel={catalogItemLabel}
             onSave={handleSave}
             onCancel={cancelForm}
             isSaving={isSaving}
@@ -300,7 +357,9 @@ export default function UseCasesPage() {
         <div className="glass-card p-12 text-center rounded-[2.5rem]">
           <BookOpen className="w-10 h-10 text-slate-200 mx-auto mb-4" />
           <p className="text-sm font-medium text-slate-400">
-            No use cases yet. Create one, import from Obsidian, or scan vault.
+            {isAtlantisProject
+              ? 'No Atlantis RAG documents yet. Sync from Atlantis volumes.'
+              : 'No use cases yet. Create one, import from Obsidian, or scan vault.'}
           </p>
         </div>
       )}
@@ -313,11 +372,12 @@ export default function UseCasesPage() {
               {editingId === uc.id ? (
                 <div className="space-y-4">
                   <h3 className="text-sm font-black text-[#040026] uppercase tracking-wider">
-                    Edit Use Case
+                    Edit {catalogItemLabel}
                   </h3>
                   <UseCaseForm
                     form={form}
                     setForm={setForm}
+                    itemLabel={catalogItemLabel}
                     onSave={handleSave}
                     onCancel={cancelForm}
                     isSaving={isSaving}
@@ -350,27 +410,29 @@ export default function UseCasesPage() {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => startEdit(uc)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Deactivate "${uc.title}"?`)) {
-                            deleteMutation.mutate({ id: uc.id });
-                          }
-                        }}
-                        disabled={deleteMutation.isPending}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 border border-red-100 rounded-lg text-xs font-medium text-red-500 hover:bg-red-50 transition-all disabled:opacity-50"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Delete
-                      </button>
-                    </div>
+                    {!isCatalogReadOnly && (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => startEdit(uc)}
+                          className="admin-btn-secondary admin-btn-sm"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Deactivate "${uc.title}"?`)) {
+                              deleteMutation.mutate({ id: uc.id });
+                            }
+                          }}
+                          disabled={deleteMutation.isPending}
+                          className="admin-btn-danger admin-btn-sm"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Summary */}
@@ -434,12 +496,14 @@ type FormState = typeof emptyForm;
 function UseCaseForm({
   form,
   setForm,
+  itemLabel,
   onSave,
   onCancel,
   isSaving,
 }: {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
+  itemLabel: string;
   onSave: () => void;
   onCancel: () => void;
   isSaving: boolean;
@@ -582,7 +646,7 @@ function UseCaseForm({
             form.summary.trim().length < 10 ||
             form.category.trim().length < 2
           }
-          className="px-6 py-3 bg-[#040026] text-white rounded-xl font-bold text-sm hover:opacity-90 transition-all disabled:opacity-50"
+          className="admin-btn-primary"
         >
           {isSaving ? (
             <span className="inline-flex items-center gap-2">
@@ -590,12 +654,12 @@ function UseCaseForm({
               Saving...
             </span>
           ) : (
-            'Save Use Case'
+            `Save ${itemLabel}`
           )}
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all"
+          className="admin-btn-secondary"
         >
           Cancel
         </button>

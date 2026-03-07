@@ -7,6 +7,112 @@ const adapter = new PrismaPg({
 });
 const prisma = new PrismaClient({ adapter });
 
+const projects = [
+  {
+    slug: 'klarifai',
+    name: 'Klarifai',
+    projectType: 'KLARIFAI' as const,
+    brandName: 'Klarifai',
+    bookingUrl: process.env.NEXT_PUBLIC_CALCOM_BOOKING_URL ?? null,
+    metadata: {
+      discoverTemplate: 'klarifai-default',
+    },
+  },
+  {
+    slug: 'europes-gate',
+    name: "Atlantis (Europe's Gate)",
+    projectType: 'ATLANTIS' as const,
+    brandName: 'Atlantis',
+    bookingUrl: process.env.NEXT_PUBLIC_CALCOM_BOOKING_URL ?? null,
+    metadata: {
+      discoverTemplate: 'atlantis-partnership',
+      partnerLabel: "Europe's Gate",
+    },
+  },
+];
+
+type AtlantisCountryCode = 'NL' | 'DE' | 'UK';
+
+const atlantisSpvs = [
+  { slug: 'infraco', code: 'INFRA', name: 'InfraCo' },
+  { slug: 'energyco', code: 'ENERGY', name: 'EnergyCo' },
+  { slug: 'steelco', code: 'STEEL', name: 'SteelCo' },
+  { slug: 'realestateco', code: 'REALESTATE', name: 'RealEstateCo' },
+  { slug: 'dataco', code: 'DATA', name: 'DataCo' },
+  { slug: 'mobilityco', code: 'MOBILITY', name: 'MobilityCo' },
+  { slug: 'blueco', code: 'BLUE', name: 'BlueCo' },
+  { slug: 'defenceco', code: 'DEFENCE', name: 'DefenceCo' },
+] as const;
+
+const atlantisCampaignBlueprints: Array<{
+  spvSlug: (typeof atlantisSpvs)[number]['slug'];
+  sector: string;
+  countryCodes: AtlantisCountryCode[];
+}> = [
+  {
+    spvSlug: 'infraco',
+    sector: 'Bouw & Installatie',
+    countryCodes: ['NL', 'DE', 'UK'],
+  },
+  {
+    spvSlug: 'realestateco',
+    sector: 'Vastgoed',
+    countryCodes: ['NL', 'UK', 'DE'],
+  },
+  {
+    spvSlug: 'mobilityco',
+    sector: 'Industrie',
+    countryCodes: ['NL', 'DE', 'UK'],
+  },
+  {
+    spvSlug: 'energyco',
+    sector: 'Industrie',
+    countryCodes: ['NL', 'DE', 'UK'],
+  },
+  {
+    spvSlug: 'steelco',
+    sector: 'Industrie',
+    countryCodes: ['DE', 'NL', 'UK'],
+  },
+  {
+    spvSlug: 'defenceco',
+    sector: 'Industrie',
+    countryCodes: ['DE', 'UK', 'NL'],
+  },
+  {
+    spvSlug: 'blueco',
+    sector: 'Industrie',
+    countryCodes: ['UK', 'NL', 'DE'],
+  },
+  {
+    spvSlug: 'dataco',
+    sector: 'SaaS & Software',
+    countryCodes: ['UK', 'NL', 'DE'],
+  },
+];
+
+const atlantisCampaignSeeds = atlantisCampaignBlueprints.flatMap((blueprint) => {
+  const spv = atlantisSpvs.find((item) => item.slug === blueprint.spvSlug);
+  if (!spv) return [];
+
+  return blueprint.countryCodes.map((countryCode, index) => {
+    const isPrimary = index === 0;
+    return {
+      slug: isPrimary
+        ? `atlantis-${spv.slug}-partnership`
+        : `atlantis-${spv.slug}-${countryCode.toLowerCase()}-partnership`,
+      name: `${spv.name} | ${blueprint.sector} | ${countryCode} | 51-100 medewerkers`,
+      nicheKey: isPrimary
+        ? `atlantis_${spv.slug}_partnership`
+        : `atlantis_${spv.slug}_${countryCode.toLowerCase()}_partnership`,
+      language: 'en',
+      tone: 'Strategic and board-ready partnership outreach',
+      strictGate: true,
+      isActive: true,
+    };
+  });
+});
+
 const templates = [
   {
     industry: 'Technology',
@@ -655,6 +761,99 @@ const templates = [
 ];
 
 async function main() {
+  console.log('Seeding projects...');
+
+  for (const project of projects) {
+    await prisma.project.upsert({
+      where: { slug: project.slug },
+      update: {
+        name: project.name,
+        projectType: project.projectType,
+        brandName: project.brandName,
+        bookingUrl: project.bookingUrl,
+        metadata: project.metadata,
+      },
+      create: {
+        slug: project.slug,
+        name: project.name,
+        projectType: project.projectType,
+        brandName: project.brandName,
+        bookingUrl: project.bookingUrl,
+        metadata: project.metadata,
+      },
+    });
+    console.log(`  Seeded project: ${project.slug}`);
+  }
+
+  const atlantisProject = await prisma.project.findUniqueOrThrow({
+    where: { slug: 'europes-gate' },
+    select: { id: true },
+  });
+
+  console.log('Seeding Atlantis SPVs...');
+  for (const spv of atlantisSpvs) {
+    await prisma.sPV.upsert({
+      where: { slug: spv.slug },
+      update: {
+        name: spv.name,
+        code: spv.code,
+        projectId: atlantisProject.id,
+        metricsTemplate: {
+          headlineMetrics: [
+            'capexEfficiency',
+            'riskMitigation',
+            'throughputAcceleration',
+          ],
+          scoreModel: 'partnership-readiness-v1',
+        },
+        isActive: true,
+      },
+      create: {
+        slug: spv.slug,
+        name: spv.name,
+        code: spv.code,
+        projectId: atlantisProject.id,
+        metricsTemplate: {
+          headlineMetrics: [
+            'capexEfficiency',
+            'riskMitigation',
+            'throughputAcceleration',
+          ],
+          scoreModel: 'partnership-readiness-v1',
+        },
+        isActive: true,
+      },
+    });
+    console.log(`  Seeded SPV: ${spv.name}`);
+  }
+
+  console.log('Seeding Atlantis campaigns (per SPV)...');
+  for (const campaign of atlantisCampaignSeeds) {
+    await prisma.campaign.upsert({
+      where: { slug: campaign.slug },
+      update: {
+        projectId: atlantisProject.id,
+        name: campaign.name,
+        nicheKey: campaign.nicheKey,
+        language: campaign.language,
+        tone: campaign.tone,
+        strictGate: campaign.strictGate,
+        isActive: campaign.isActive,
+      },
+      create: {
+        projectId: atlantisProject.id,
+        slug: campaign.slug,
+        name: campaign.name,
+        nicheKey: campaign.nicheKey,
+        language: campaign.language,
+        tone: campaign.tone,
+        strictGate: campaign.strictGate,
+        isActive: campaign.isActive,
+      },
+    });
+    console.log(`  Seeded campaign: ${campaign.name}`);
+  }
+
   console.log('Seeding industry templates...');
 
   for (const template of templates) {

@@ -21,6 +21,10 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { api } from '@/components/providers';
+import {
+  getProjectUiProfile,
+  type AppProjectType,
+} from '@/lib/project-ui-profile';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -83,6 +87,8 @@ interface DashboardClientProps {
   successStories: Record<string, unknown>;
   aiRoadmap: Record<string, unknown>;
   trustSnapshot?: TrustSnapshot;
+  projectType?: AppProjectType;
+  projectBrandName?: string | null;
 }
 
 // ─── Step configuration ───────────────────────────────────────────────────────
@@ -111,6 +117,8 @@ export function DashboardClient({
   dataOpportunities,
   automationAgents,
   successStories,
+  projectType,
+  projectBrandName,
 }: DashboardClientProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -118,6 +126,13 @@ export function DashboardClient({
   const [quoteRequested, setQuoteRequested] = useState(false);
   const stepTimesRef = useRef<Record<string, number>>({});
   const stepStartRef = useRef<number>(Date.now());
+  const uiProfile = getProjectUiProfile(projectType);
+  const normalizedBrandName = projectBrandName?.trim();
+  const brandName =
+    normalizedBrandName && normalizedBrandName.length > 0
+      ? normalizedBrandName
+      : 'Klarifai';
+  const brandMark = brandName.charAt(0).toUpperCase();
 
   // Hypothesis validation state — optimistic updates
   const [validationState, setValidationState] = useState<
@@ -337,7 +352,7 @@ export function DashboardClient({
   // WhatsApp message
   const whatsappClean = whatsappNumber?.replace(/[^0-9]/g, '') ?? '';
   const whatsappText = encodeURIComponent(
-    `Hallo Klarifai, ik heb de analyse voor ${companyName} bekeken en wil graag meer informatie.`,
+    `Hallo ${brandName}, ik heb de analyse voor ${companyName} bekeken en wil graag meer informatie.`,
   );
 
   return (
@@ -347,7 +362,9 @@ export function DashboardClient({
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-9 h-9 rounded-2xl bg-[#040026] flex items-center justify-center shadow-lg shadow-[#040026]/10">
-              <span className="text-[#EBCB4B] font-black text-xs">K</span>
+              <span className="text-[#EBCB4B] font-black text-xs">
+                {brandMark}
+              </span>
             </div>
             <span className="text-md font-black text-[#040026] tracking-tighter">
               {companyName}
@@ -734,7 +751,7 @@ export function DashboardClient({
                   </h2>
                   <p className="text-slate-500 mt-2">
                     {uniqueUseCases.length > 0
-                      ? `${uniqueUseCases.length} bewezen use cases die direct toepasbaar zijn voor ${companyName}`
+                      ? `${uniqueUseCases.length} bewezen ${uiProfile.discoverEvidencePluralLabel} die direct toepasbaar zijn voor ${companyName}`
                       : `Oplossingen voor ${companyName}`}
                   </p>
                 </div>

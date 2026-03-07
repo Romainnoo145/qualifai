@@ -1,20 +1,37 @@
-import { createEnv } from "@t3-oss/env-nextjs";
-import { z } from "zod";
+import { createEnv } from '@t3-oss/env-nextjs';
+import { z } from 'zod';
 
 export const env = createEnv({
   server: {
-    NODE_ENV: z.enum(["development", "test", "production"]),
+    NODE_ENV: z.enum(['development', 'test', 'production']),
     DATABASE_URL: z.string().url(),
     ADMIN_SECRET: z.string().min(8),
+    ATLANTIS_ADMIN_SECRET: z.string().min(8).optional(),
     INTERNAL_CRON_SECRET: z.string().min(8).optional(),
     RESEARCH_REFRESH_STALE_DAYS: z.coerce.number().int().positive().optional(),
     APOLLO_API_KEY: z.string().min(1).optional(),
-    ENRICHMENT_PROVIDER: z.enum(["apollo"]).optional(),
-    ENRICHMENT_MEMORY_CACHE_TTL_SECONDS: z.coerce.number().int().positive().optional(),
-    ENRICHMENT_SEARCH_CACHE_TTL_SECONDS: z.coerce.number().int().positive().optional(),
+    ENRICHMENT_PROVIDER: z.enum(['apollo']).optional(),
+    ENRICHMENT_MEMORY_CACHE_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .optional(),
+    ENRICHMENT_SEARCH_CACHE_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .optional(),
     ENRICHMENT_CACHE_MAX_ENTRIES: z.coerce.number().int().positive().optional(),
-    ENRICHMENT_REENRICH_AFTER_HOURS: z.coerce.number().int().positive().optional(),
+    ENRICHMENT_REENRICH_AFTER_HOURS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .optional(),
     ANTHROPIC_API_KEY: z.string().min(1).optional(),
+    OPENAI_API_KEY: z.string().min(1).optional(),
+    OPENAI_EMBEDDING_MODEL: z.string().min(1).optional(),
+    OPENAI_EMBEDDING_PRICE_PER_1K: z.coerce.number().positive().optional(),
+    RAG_SIMILARITY_THRESHOLD: z.coerce.number().min(0).max(1).optional(),
     GOOGLE_AI_API_KEY: z.string().min(1).optional(),
     RESEND_API_KEY: z.string().min(1),
     ADMIN_EMAIL: z.string().email(),
@@ -28,6 +45,7 @@ export const env = createEnv({
     OBSIDIAN_INVENTORY_JSON_PATH: z.string().optional(),
     OBSIDIAN_CLIENT_OFFERS_JSON_PATH: z.string().optional(),
     OBSIDIAN_VAULT_PATH: z.string().optional(),
+    ATLANTIS_RAG_VOLUMES_PATH: z.string().optional(),
     PDF_STORAGE_BUCKET: z.string().optional(),
     PDF_STORAGE_REGION: z.string().optional(),
     PDF_STORAGE_ACCESS_KEY: z.string().optional(),
@@ -39,7 +57,7 @@ export const env = createEnv({
     SERP_API_KEY: z.string().min(1).optional(),
     CRAWL4AI_BASE_URL: z.string().url().optional(),
     KVK_API_KEY: z.string().min(1).optional(),
-    KVK_TEST_MODE: z.enum(["true", "false"]).optional(),
+    KVK_TEST_MODE: z.enum(['true', 'false']).optional(),
   },
 
   client: {
@@ -54,15 +72,23 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     DATABASE_URL: process.env.DATABASE_URL,
     ADMIN_SECRET: process.env.ADMIN_SECRET,
+    ATLANTIS_ADMIN_SECRET: process.env.ATLANTIS_ADMIN_SECRET,
     INTERNAL_CRON_SECRET: process.env.INTERNAL_CRON_SECRET,
     RESEARCH_REFRESH_STALE_DAYS: process.env.RESEARCH_REFRESH_STALE_DAYS,
     APOLLO_API_KEY: process.env.APOLLO_API_KEY,
     ENRICHMENT_PROVIDER: process.env.ENRICHMENT_PROVIDER,
-    ENRICHMENT_MEMORY_CACHE_TTL_SECONDS: process.env.ENRICHMENT_MEMORY_CACHE_TTL_SECONDS,
-    ENRICHMENT_SEARCH_CACHE_TTL_SECONDS: process.env.ENRICHMENT_SEARCH_CACHE_TTL_SECONDS,
+    ENRICHMENT_MEMORY_CACHE_TTL_SECONDS:
+      process.env.ENRICHMENT_MEMORY_CACHE_TTL_SECONDS,
+    ENRICHMENT_SEARCH_CACHE_TTL_SECONDS:
+      process.env.ENRICHMENT_SEARCH_CACHE_TTL_SECONDS,
     ENRICHMENT_CACHE_MAX_ENTRIES: process.env.ENRICHMENT_CACHE_MAX_ENTRIES,
-    ENRICHMENT_REENRICH_AFTER_HOURS: process.env.ENRICHMENT_REENRICH_AFTER_HOURS,
+    ENRICHMENT_REENRICH_AFTER_HOURS:
+      process.env.ENRICHMENT_REENRICH_AFTER_HOURS,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_EMBEDDING_MODEL: process.env.OPENAI_EMBEDDING_MODEL,
+    OPENAI_EMBEDDING_PRICE_PER_1K: process.env.OPENAI_EMBEDDING_PRICE_PER_1K,
+    RAG_SIMILARITY_THRESHOLD: process.env.RAG_SIMILARITY_THRESHOLD,
     GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,
@@ -74,8 +100,10 @@ export const env = createEnv({
     WORKER_BASE_URL: process.env.WORKER_BASE_URL,
     WORKER_SHARED_SECRET: process.env.WORKER_SHARED_SECRET,
     OBSIDIAN_INVENTORY_JSON_PATH: process.env.OBSIDIAN_INVENTORY_JSON_PATH,
-    OBSIDIAN_CLIENT_OFFERS_JSON_PATH: process.env.OBSIDIAN_CLIENT_OFFERS_JSON_PATH,
+    OBSIDIAN_CLIENT_OFFERS_JSON_PATH:
+      process.env.OBSIDIAN_CLIENT_OFFERS_JSON_PATH,
     OBSIDIAN_VAULT_PATH: process.env.OBSIDIAN_VAULT_PATH,
+    ATLANTIS_RAG_VOLUMES_PATH: process.env.ATLANTIS_RAG_VOLUMES_PATH,
     PDF_STORAGE_BUCKET: process.env.PDF_STORAGE_BUCKET,
     PDF_STORAGE_REGION: process.env.PDF_STORAGE_REGION,
     PDF_STORAGE_ACCESS_KEY: process.env.PDF_STORAGE_ACCESS_KEY,

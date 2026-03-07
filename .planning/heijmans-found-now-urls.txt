@@ -1,0 +1,30 @@
+# Run cmmdfynx80016pwij7mgds6kx
+# Internal unique URLs (18)
+INTERNAL	https://www.heijmans.nl/nl/verbinden/hoe-doen-we-dat/projectaanpak
+INTERNAL	https://www.heijmans.nl/nl/horizon/horizon-projecten
+INTERNAL	https://www.heijmans.nl/nl/flex/flex-projecten
+INTERNAL	https://www.heijmans.nl/nl/nieuws/jaarresultaten-2025
+INTERNAL	https://www.heijmans.nl/nl/wonen/heijmans-co/over-onze-aanpak
+INTERNAL	https://www.heijmans.nl/nl/projecten/bloei030
+INTERNAL	https://www.heijmans.nl/nl/projecten?page=8
+INTERNAL	https://www.heijmans.nl/nl/nieuws
+INTERNAL	https://www.heijmans.nl/nl/verbinden/wat-we-doen
+INTERNAL	https://www.heijmans.nl/nl/verbinden/regio
+INTERNAL	https://www.heijmans.nl/nl/verbinden/dichtbij
+INTERNAL	https://www.heijmans.nl/nl/verbinden/wat-we-doen/infra-energie/verbindingen
+INTERNAL	https://www.heijmans.nl/nl/verbinden/hoe-doen-we-dat
+INTERNAL	https://www.heijmans.nl/nl/themas/team
+INTERNAL	https://www.heijmans.nl/nl/verhalen?page=13
+INTERNAL	https://www.heijmans.nl/nl/werken
+INTERNAL	https://www.heijmans.nl/nl/vacatures
+INTERNAL	https://heijmans.nl
+
+# External URLs (8)
+REVIEWS	https://www.google.com/search?q=Heijmans+reviews
+REVIEWS	https://www.google.com/maps/search/Heijmans
+REVIEWS	https://www.trustpilot.com/review/heijmans.nl
+LINKEDIN	http://www.linkedin.com/company/heijmans
+RAG_DOCUMENT	atlantis://rag/Volume-II%2FEG-II-3.0-Spoor-Infrastructuur.md#chunk-47
+RAG_DOCUMENT	atlantis://rag/Volume-VI%2FEG-VI-4.0-Goederenvervoer.md#chunk-28
+RAG_DOCUMENT	atlantis://rag/Volume-IV%2FEG-IV-4.0-Grondexploitatie.md#chunk-34
+RAG_DOCUMENT	atlantis://rag/Volume-V%2FEG-V-3.0-Smart-City.md#chunk-14

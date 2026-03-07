@@ -1,8 +1,9 @@
 import { type NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
+import { normalizeAdminToken } from '@/lib/admin-token';
 
 export const createTRPCContext = async (req: NextRequest) => {
-  const adminToken = req.headers.get('x-admin-token');
+  const adminToken = normalizeAdminToken(req.headers.get('x-admin-token'));
 
   return {
     db: prisma,
