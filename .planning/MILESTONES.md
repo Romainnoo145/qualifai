@@ -182,3 +182,50 @@
 - Dual-phase sourceSet (initial at run create, full after SERP) avoids restructuring existing pipeline
 
 ---
+
+## v3.0 — Sharp Analysis (Completed)
+
+**Started:** 2026-03-02
+**Shipped:** 2026-03-05
+**Phases:** 31–35 (5 phases, 11 plans)
+
+### What shipped:
+
+- Tech debt foundation across hypothesis pipeline: SERP cache bug fix, model-string upgrade to `gemini-2.5-flash`, TS2589 cleanup patterns, and stable check baseline (Phase 31)
+- Hypothesis prompt rewrite with source-tier reasoning, anti-parroting guardrails, mandatory non-website quotes, and dynamic 1-3 hypothesis count (Phase 32)
+- Configurable hypothesis model path (Gemini/Claude) with two-pass reasoning flow (analysis then synthesis) (Phase 33)
+- AI-derived metric ranges and primary source attribution persisted to DB and shown in admin analysis UI (Phase 34)
+- Validation and calibration closure: Crawl4AI v0.8.x params added, pain-gate thresholds validated against real prospects, and `/discover/` validation assertions passing with ACCEPTED + DECLINED transitions (Phase 35)
+
+### Key learnings:
+
+- Calibration scripts must mirror production gate logic exactly (`aiRelevance` filter + threshold constants) to avoid false conclusions
+- Prospect validation flow can be verified deterministically through the same `validateByProspect` mutation path used by `/discover/`
+- Closing checkpoints with runnable assertion scripts (`scripts/check-discover-validation.mjs`) keeps milestone completion auditable
+- Separating evidence analysis from hypothesis synthesis yields more grounded, prospect-specific outputs than single-pass prompting
+
+---
+
+## v4.0 — Atlantis Partnership Outreach (In Progress)
+
+**Started:** 2026-03-05
+**Phase range:** 36–41
+
+### Progress so far:
+
+- Phase 36 shipped: multi-project schema/seed foundations with Atlantis project + 8 SPVs
+- Auth scope moved server-side by login token (no client project selector)
+- Atlantis-specific discover branching + Atlantis use-case import path integrated
+- Phase 37-01 shipped: markdown chunker with tests and table-preserving behavior
+- Phase 37-02 completed: live embedding ingestion validated (35 docs, 2326 chunks) and idempotent rerun confirmed (35 skipped)
+- Phase 38 completed: Atlantis-only RAG retrieval with project/SPV scope filters, similarity thresholding, `RAG_DOCUMENT` persistence, and dual-evidence opportunity generation (2-4 cards)
+- Phase 39 completed: Atlantis discover partnership narrative shipped (readiness score, top triggers, why-now bullets, evidence attribution, CTA profile routing)
+- Phase 40-01 implemented and rolled back the same day: SPV assignment/filtering created UI clutter for current Atlantis workflow
+
+### Current blocker:
+
+- Scope discipline: avoid adding new admin controls before discover quality/validation proves need
+
+### Next checkpoint:
+
+- Continue discover quality improvements + Atlantis validation (Phase 41 track)

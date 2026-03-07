@@ -1,106 +1,129 @@
-# Requirements: Qualifai v3.0 Sharp Analysis
+# Requirements: Qualifai v4.0 Atlantis Partnership Outreach
 
-**Defined:** 2026-03-02
-**Core Value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service Klarifai actually delivers.
+**Defined:** 2026-03-05
+**Core Value:** Every outreach narrative must bridge real prospect evidence with cited project capabilities, so claims are verifiable and not generic pitch language.
 
-## v3.0 Requirements
+## v4.0 Requirements
 
-Requirements for v3.0 release. Each maps to roadmap phases.
+Requirements for the Atlantis multi-project milestone. Each maps to phases 36-41.
 
-### Analysis Quality
+### Multi-Project Foundation
 
-- [x] **ANLYS-01**: Hypothesis prompt prioritizes REVIEWS, CAREERS, and LINKEDIN evidence over WEBSITE content via explicit source-tier instruction
-- [x] **ANLYS-02**: Hypothesis prompt labels each source type diagnostically (what the signal means: reviews = customer pain, careers = operational gaps, website = marketing context only)
-- [x] **ANLYS-03**: Hypothesis prompt includes anti-parroting constraint preventing derivation from company's own marketing copy
-- [x] **ANLYS-04**: Each hypothesis problemStatement includes at least one mandatory quoted snippet from a non-WEBSITE evidence source
-- [x] **ANLYS-05**: Source signal summary (counts by tier) injected above evidence block to prime LLM reasoning
-- [x] **ANLYS-06**: Hypothesis count varies 1-3 based on confirmed pain tag evidence quality (not forced 3)
-- [x] **ANLYS-07**: Confidence score instruction maps score tiers to evidence quality levels (REVIEWS 0.80-0.95, hiring 0.70-0.80, website-only 0.60-0.65)
-- [x] **ANLYS-08**: Two-pass chain-of-thought reasoning separates evidence analysis from hypothesis synthesis
-- [x] **ANLYS-09**: Primary source attribution badge (sourceType that most drove each hypothesis) displayed per hypothesis in admin detail view
+- [x] **MPROJ-01**: System has a `Project` entity with `projectType`, slug, branding, and booking configuration.
+- [x] **MPROJ-02**: System has an `SPV` entity linked to `Project`, with metric template metadata.
+- [x] **MPROJ-03**: `Prospect` records are linked to `projectId` and optional `spvId`.
+- [x] **MPROJ-04**: Existing legacy prospects are backfilled to the seeded Klarifai project before `projectId` becomes required.
+- [x] **MPROJ-05**: Project seed includes at least two projects (`klarifai`, `europes-gate`) and eight Atlantis SPVs.
 
-### Model & Metrics
+### RAG Ingestion
 
-- [x] **MODEL-01**: Hypothesis generation supports configurable model selection (Gemini Flash vs Claude) via env var
-- [x] **MODEL-02**: Gemini model string upgraded from `gemini-2.0-flash` to `gemini-2.5-flash` across all files
-- [x] **MODEL-03**: AI-estimated metric ranges (hours saved, handoff speed, error reduction, revenue leakage) replace hardcoded METRIC_DEFAULTS — contextual to each prospect's industry and evidence
+- [x] **RAG-01**: pgvector is enabled in PostgreSQL and schema supports 1536-dim chunk embeddings.
+- [x] **RAG-02**: Markdown chunker is header-aware and preserves tables as atomic chunks.
+- [x] **RAG-03**: Chunk metadata captures document id, section header, volume, and SPV linkage.
+- [x] **RAG-04**: Ingestion CLI script is rerunnable/idempotent for document updates.
+- [x] **RAG-05**: Embeddings are generated with OpenAI `text-embedding-3-small`.
+- [x] **RAG-06**: Ingestion run logs chunk count and estimated embedding token cost.
 
-### Validation & Calibration
+### Dual Evidence Pipeline
 
-- [ ] **VALID-01**: /discover/ validation session run with real prospects to verify hypothesis confirmation flow works end-to-end
-- [x] **VALID-02**: Crawl4AI v0.8.x features verified (consent popup removal, shadow DOM flattening) against real pages
-- [x] **VALID-03**: Pain gate calibration SQL run against real prospect data to tune PAIN_GATE threshold constants
+- [x] **PIPE-01**: RAG retrieval runs only when `projectType=atlantis`; Klarifai pipeline path remains unchanged.
+- [x] **PIPE-02**: Retrieved passages are persisted as `EvidenceItem` with `sourceType=RAG_DOCUMENT`.
+- [x] **PIPE-03**: Retrieval filters by project/SPV scope before similarity ranking.
+- [x] **PIPE-04**: Retrieval enforces a minimum similarity threshold to reduce topically-wrong passages.
+- [x] **PIPE-05**: Opportunity generation combines external evidence and RAG passages into 2-4 cards.
+- [x] **PIPE-06**: Each opportunity card carries document citation metadata (document id + section).
+- [x] **PIPE-07**: RAG step failure degrades gracefully (warning + continue), not full run failure.
 
-### Tech Debt
+### Partnership Discover Experience
 
-- [x] **DEBT-01**: SERP cache re-read after overwrite bug fixed in research-executor.ts (pre-read snapshot before overwrite in deepCrawl block)
-- [x] **DEBT-02**: Unused logoUrl prop removed from DashboardClient interface and all call sites
-- [x] **DEBT-03**: E2E send test refactored to use tRPC quality gate instead of calling Resend directly
-- [x] **DEBT-04**: Detail-view Prisma `as any` cast replaced with narrow typed cast
-- [x] **DEBT-05**: Import ordering anomaly fixed in workflow-engine.ts (move import block to top)
-- [x] **DEBT-06**: TS2589 deep Prisma `as any` casts cleaned up — categorized into 3 types (deep inference, tRPC mutation, Json field access), each fixed with appropriate pattern
+- [x] **DISC-01**: `/discover/[slug]` branches by project type (existing Klarifai template vs Atlantis partnership template).
+- [x] **DISC-02**: Atlantis cards show dual-evidence bridge format with external + RAG citation context.
+- [ ] **DISC-03**: SPV-specific metric template controls which metrics are shown on each card.
+- [x] **DISC-04**: Partnership template reuses shared shell/session tracking components to avoid route divergence.
+- [x] **DISC-05**: CTA flow supports partnership brief download and strategy call booking with tracking.
+
+### Admin Project Operations
+
+- [x] **ADMIN-01**: Admin scope is derived from login token (account-scoped auth), not client-side project switching.
+- [ ] **ADMIN-02**: Prospect list and prospect create/edit flows support SPV assignment and filtering in scoped project. (deferred)
+- [x] **ADMIN-03**: Use cases can be filtered/scoped per project in admin.
+- [x] **ADMIN-04**: v4 ships with seeded project/SPV data only (no project CRUD UI).
+
+### Validation and Safety
+
+- [ ] **VALID-01**: End-to-end run passes for Atlantis path: prospect create -> research -> dual evidence -> `/discover/`.
+- [ ] **VALID-02**: Regression checks confirm existing Klarifai outputs are not changed by Atlantis additions.
+- [ ] **VALID-03**: First real Atlantis target prospect is validated with manually reviewed citations.
+- [ ] **VALID-04**: Quality calibration report is produced for Atlantis opportunity confidence thresholds.
+- [ ] **VALID-05**: Sensitive Atlantis docs are app-scoped by project so non-Atlantis prospects do not access Atlantis citations.
 
 ## Future Requirements
 
-Deferred to future release. Tracked but not in current roadmap.
+### Governance
 
-### Feedback Loop
+- **GOV-01**: Per-project RBAC (different admin roles per project).
+- **GOV-02**: Audit policy for document-level access and citation exposure.
 
-- **FEED-01**: Automated training loop from /discover/ prospect validation data into hypothesis quality scoring
-- **FEED-02**: Per-industry prompt templates based on accumulated validation data
+### RAG Productization
 
-### Evidence Expansion
-
-- **EVID-01**: Additional evidence source types beyond current 8+
-- **EVID-02**: RAG/vector retrieval over evidence corpus for larger prospect sets
+- **RAG-UX-01**: Document management UI (upload/version/retire) instead of CLI-only ingestion.
+- **RAG-UX-02**: Automated SPV classifier feedback loop from won/lost outcomes.
 
 ## Out of Scope
 
-| Feature                       | Reason                                                    |
-| ----------------------------- | --------------------------------------------------------- |
-| Fine-tuning a custom model    | Only 7 validated prospects — need 100+ for useful signal  |
-| RAG/vector retrieval          | Evidence fits in one prompt at current scale              |
-| Per-industry prompt templates | AI reasons dynamically from evidence + industry label     |
-| Streaming hypothesis output   | Background async generation — no UX need                  |
-| LLM self-evaluation scoring   | Self-referential bias; admin review is the quality signal |
-| Adding more evidence sources  | Problem is prompt reasoning, not evidence scarcity        |
-| `@google/genai` SDK migration | Deadline June 24, 2026 — defer to v4.x                    |
+| Feature                       | Reason                                                                                         |
+| ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| Separate Atlantis app         | Same-app multi-project architecture reuses existing infrastructure and keeps operations simple |
+| Project CRUD admin panel      | Two known projects are enough for v4; seed scripts are faster and safer                        |
+| Document upload UI            | Corpus is curated and maintained outside app; CLI ingestion is sufficient                      |
+| RAG chatbot                   | Objective is evidence-backed outreach cards, not conversational search                         |
+| Per-project billing/analytics | Not needed at current scale and would delay core delivery                                      |
+| Per-user permissions          | Single-admin model remains acceptable for v4                                                   |
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
-
-| Requirement | Phase | Status   |
-| ----------- | ----- | -------- |
-| ANLYS-01    | 32    | Complete |
-| ANLYS-02    | 32    | Complete |
-| ANLYS-03    | 32    | Complete |
-| ANLYS-04    | 32    | Complete |
-| ANLYS-05    | 32    | Complete |
-| ANLYS-06    | 32    | Complete |
-| ANLYS-07    | 32    | Complete |
-| ANLYS-08    | 33    | Complete |
-| ANLYS-09    | 34    | Complete |
-| MODEL-01    | 33    | Complete |
-| MODEL-02    | 31    | Complete |
-| MODEL-03    | 34    | Complete |
-| VALID-01    | 35    | Pending  |
-| VALID-02    | 35    | Complete |
-| VALID-03    | 35    | Complete |
-| DEBT-01     | 31    | Complete |
-| DEBT-02     | 31    | Complete |
-| DEBT-03     | 31    | Complete |
-| DEBT-04     | 31    | Complete |
-| DEBT-05     | 31    | Complete |
-| DEBT-06     | 31    | Complete |
+| Requirement | Phase | Status    |
+| ----------- | ----- | --------- |
+| MPROJ-01    | 36    | Completed |
+| MPROJ-02    | 36    | Completed |
+| MPROJ-03    | 36    | Completed |
+| MPROJ-04    | 36    | Completed |
+| MPROJ-05    | 36    | Completed |
+| RAG-01      | 37    | Completed |
+| RAG-02      | 37    | Completed |
+| RAG-03      | 37    | Completed |
+| RAG-04      | 37    | Completed |
+| RAG-05      | 37    | Completed |
+| RAG-06      | 37    | Completed |
+| PIPE-01     | 38    | Completed |
+| PIPE-02     | 38    | Completed |
+| PIPE-03     | 38    | Completed |
+| PIPE-04     | 38    | Completed |
+| PIPE-05     | 38    | Completed |
+| PIPE-06     | 38    | Completed |
+| PIPE-07     | 38    | Completed |
+| DISC-01     | 39    | Completed |
+| DISC-02     | 39    | Completed |
+| DISC-03     | 39    | Pending   |
+| DISC-04     | 39    | Completed |
+| DISC-05     | 39    | Completed |
+| ADMIN-01    | 40    | Completed |
+| ADMIN-02    | 40    | Deferred  |
+| ADMIN-03    | 40    | Completed |
+| ADMIN-04    | 40    | Completed |
+| VALID-01    | 41    | Pending   |
+| VALID-02    | 41    | Pending   |
+| VALID-03    | 41    | Pending   |
+| VALID-04    | 41    | Pending   |
+| VALID-05    | 41    | Pending   |
 
 **Coverage:**
 
-- v3.0 requirements: 21 total
-- Mapped to phases: 21
+- v4.0 requirements: 32 total
+- Mapped to phases: 32
 - Unmapped: 0
 
 ---
 
-_Requirements defined: 2026-03-02_
-_Last updated: 2026-03-02 after roadmap creation — all 21 requirements mapped_
+_Requirements defined: 2026-03-05_
+_Last updated: 2026-03-07 after Phase 40-01 rollback/defer decision_

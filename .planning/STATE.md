@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-03)
+See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** v4.0 Atlantis Partnership Outreach — defining requirements
+**Current focus:** v4.0 Atlantis Partnership Outreach — discover quality + validation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-03 — Milestone v4.0 started
+Phase: 40 (deferred) -> 41 (next)
+Plan: 40-01 (reverted/deferred) / 40-02 (deferred)
+Status: Admin SPV assignment/filtering was de-scoped; priority shifted to discover coverage/relevance quality and Atlantis E2E validation
+Last activity: 2026-03-07 — Phase 40-01 rollback completed and roadmap reprioritized
 
-Progress: [████████████████████░░░░░░░░░░] 66% (30 phases complete across 7 milestones)
+Progress: [█████████████████████████░░░░░] 77% (35 phases complete across 8 shipped milestones)
 
 ## Milestones Shipped
 
@@ -24,10 +24,11 @@ Progress: [████████████████████░░░
 - v2.0 Streamlined Flow — 2026-02-23 (Phases 17-22)
 - v2.1 Production Bootstrap — 2026-03-02 (Phases 23-27.1)
 - v2.2 Verified Pain Intelligence — 2026-03-02 (Phases 28-30)
+- v3.0 Sharp Analysis — 2026-03-05 (Phases 31-35)
 
 ## Parked
 
-- v3.0 Sharp Analysis (Phases 31-35) — Phase 35-02 checkpoint pending. Resume with `/gsd:execute-phase 35`.
+- Phase 40 admin SPV UX work (40-01, 40-02) until operational need is proven.
 
 ## Accumulated Context
 
@@ -44,18 +45,17 @@ Recent decisions affecting v4.0:
 
 ### Pending Todos
 
-- Run /discover/ validation session with real prospect (v3.0 Phase 35 — parked)
-- Crawl4AI v0.8.x live verification (v3.0 Phase 35 — parked)
+- Execute discover-focused validation track:
+  - confirm URL selection quality on real Atlantis prospects
+  - tighten discover evidence relevance before adding new admin surface
 
 ### Blockers/Concerns
 
-- v3.0 Phase 35-02 has checkpoint pending — /discover/ validation session requires browser interaction. Will resume after v4.0 planning.
-- RAG document corpus is 34 markdown files totaling 1.8M+ words — need efficient ingestion and retrieval strategy.
-- Europe's Gate documents contain sensitive financial data — access control per project may be needed.
+- Europe's Gate documents contain sensitive financial data — keep strict project-scoped auth boundaries for retrieval/citations.
 
 ## Session Continuity
 
-Last session: 2026-03-03
-Stopped at: v4.0 research complete (STACK, FEATURES, ARCHITECTURE, PITFALLS, SUMMARY all written + committed). Next step: define requirements (Step 9 of new-milestone workflow), then spawn roadmapper.
-Resume file: None
-Resume command: `/gsd:new-milestone` — skip to Step 9 (requirements), research already committed.
+Last session: 2026-03-07
+Stopped at: v4.0 Phase 40 deferred after rollback.
+Resume file: .planning/phases/39-partnership-discover-template/39-02-SUMMARY.md
+Resume command: `/gsd:execute-phase 41`

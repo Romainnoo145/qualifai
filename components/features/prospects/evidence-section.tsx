@@ -1,6 +1,11 @@
 'use client';
 
 import { api } from '@/components/providers';
+import { extractSourceSet } from '@/lib/enrichment/source-discovery';
+import {
+  getProjectUiProfile,
+  type AppProjectType,
+} from '@/lib/project-ui-profile';
 import {
   ExternalLink,
   Zap,
@@ -20,6 +25,10 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
   JOB_BOARD: 'Job Listings',
   REVIEWS: 'Reviews',
   MANUAL_URL: 'Manually Added',
+  NEWS: 'News & Press',
+  LINKEDIN: 'LinkedIn',
+  REGISTRY: 'Registry',
+  RAG_DOCUMENT: 'Knowledge Context',
 };
 
 const WORKFLOW_TAG_LABELS: Record<string, string> = {
@@ -36,7 +45,13 @@ const WORKFLOW_TAG_LABELS: Record<string, string> = {
   automation_potential: 'Improvement Area',
 };
 
-type EvidenceGroupKey = 'website' | 'reviews' | 'career' | 'other';
+type EvidenceGroupKey =
+  | 'website'
+  | 'reviews'
+  | 'career'
+  | 'intel'
+  | 'rag'
+  | 'other';
 
 const EVIDENCE_GROUPS: Array<{
   key: EvidenceGroupKey;
@@ -53,6 +68,16 @@ const EVIDENCE_GROUPS: Array<{
     key: 'career',
     label: 'Career Pages',
     sourceTypes: ['CAREERS', 'JOB_BOARD'],
+  },
+  {
+    key: 'intel',
+    label: 'External Signals',
+    sourceTypes: ['NEWS', 'LINKEDIN', 'REGISTRY'],
+  },
+  {
+    key: 'rag',
+    label: 'Internal RAG Context',
+    sourceTypes: ['RAG_DOCUMENT'],
   },
   { key: 'other', label: 'Other Sources', sourceTypes: [] },
 ];
@@ -101,7 +126,8 @@ type SourceDiagnostic = {
 type ProcessedEvidenceGroup = {
   key: EvidenceGroupKey;
   label: string;
-  rawCount: number;
+  snippetCount: number;
+  uniqueUrlCount: number;
   items: EvidenceItem[];
   stackClues: Array<{ label: string; tone: string }>;
 };
@@ -282,6 +308,8 @@ function buildEvidenceGroups(items: EvidenceItem[]): ProcessedEvidenceGroup[] {
     website: [],
     reviews: [],
     career: [],
+    intel: [],
+    rag: [],
     other: [],
   };
 
@@ -295,6 +323,8 @@ function buildEvidenceGroups(items: EvidenceItem[]): ProcessedEvidenceGroup[] {
     const seen = new Set<string>();
     const clueKeys = new Set<string>();
     const stackCluesRaw: string[] = [];
+    const uniqueUrlKeys = new Set<string>();
+    let snippetCount = 0;
 
     for (const item of rawItems) {
       if (isStackClueItem(item)) {
@@ -307,6 +337,9 @@ function buildEvidenceGroups(items: EvidenceItem[]): ProcessedEvidenceGroup[] {
         }
         continue;
       }
+
+      snippetCount += 1;
+      uniqueUrlKeys.add(normalizedUrl(item.sourceUrl));
 
       const key = [
         normalizedUrl(item.sourceUrl),
@@ -342,14 +375,34 @@ function buildEvidenceGroups(items: EvidenceItem[]): ProcessedEvidenceGroup[] {
     return {
       key: group.key,
       label: group.label,
-      rawCount: rawItems.length,
+      snippetCount,
+      uniqueUrlCount: uniqueUrlKeys.size,
       items: deduped,
       stackClues,
     };
-  }).filter((group) => group.rawCount > 0);
+  }).filter((group) => group.snippetCount > 0);
 }
 
-function EvidenceCard({ item }: { item: EvidenceItem }) {
+function sourceTypeLabel(
+  sourceType: string,
+  projectType: AppProjectType,
+): string {
+  if (sourceType === 'RAG_DOCUMENT') {
+    return getProjectUiProfile(projectType).ragSourceLabel;
+  }
+  return (
+    SOURCE_TYPE_LABELS[sourceType] ??
+    toSentenceCase(sourceType.replace(/_/g, ' '))
+  );
+}
+
+function EvidenceCard({
+  item,
+  projectType,
+}: {
+  item: EvidenceItem;
+  projectType: AppProjectType;
+}) {
   const title = item.title?.trim() || formatDomain(item.sourceUrl);
 
   return (
@@ -361,8 +414,7 @@ function EvidenceCard({ item }: { item: EvidenceItem }) {
               {workflowTagLabel(item.workflowTag)}
             </span>
             <span className="inline-flex items-center rounded-full border border-slate-200 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-slate-500 bg-slate-50/70">
-              {SOURCE_TYPE_LABELS[item.sourceType] ??
-                toSentenceCase(item.sourceType.replace(/_/g, ' '))}
+              {sourceTypeLabel(item.sourceType, projectType)}
             </span>
           </div>
           <a
@@ -400,18 +452,27 @@ function EvidenceCard({ item }: { item: EvidenceItem }) {
 
 export function EvidenceSection({
   prospectId,
+  latestRunId,
+  projectType,
   signals,
   latestRunSummary,
   latestRunError,
+  latestRunInputSnapshot,
 }: {
   prospectId: string;
+  latestRunId?: string | null;
+  projectType?: AppProjectType;
   signals?: Signal[];
   latestRunSummary?: unknown;
   latestRunError?: string | null;
+  latestRunInputSnapshot?: unknown;
 }) {
-  const evidence = api.research.listEvidence.useQuery({ prospectId });
+  const evidence = api.research.listEvidence.useQuery(
+    latestRunId ? { runId: latestRunId } : { prospectId },
+  );
   const items: EvidenceItem[] = evidence.data ?? EMPTY_EVIDENCE_ITEMS;
   const groupedEvidence = useMemo(() => buildEvidenceGroups(items), [items]);
+  const uiProfile = getProjectUiProfile(projectType);
   const [visibleByGroup, setVisibleByGroup] = useState<
     Partial<Record<EvidenceGroupKey, number>>
   >({});
@@ -420,6 +481,10 @@ export function EvidenceSection({
   const actionableDiagnostics = diagnostics.filter(
     (item) => item.status === 'warning' || item.status === 'error',
   );
+  const sourceSet = extractSourceSet(latestRunInputSnapshot);
+  const selectedSourceUrls =
+    sourceSet?.selection?.selectedTotal ?? sourceSet?.urls.length ?? 0;
+  const websiteGroup = groupedEvidence.find((group) => group.key === 'website');
 
   if (evidence.isLoading) {
     return (
@@ -459,6 +524,19 @@ export function EvidenceSection({
 
   return (
     <div className="space-y-6">
+      {websiteGroup && selectedSourceUrls > 0 && (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 mb-1">
+            Website Coverage
+          </p>
+          <p className="text-xs text-slate-700">
+            {websiteGroup.uniqueUrlCount} unieke pagina&apos;s met evidence uit{' '}
+            {selectedSourceUrls} geselecteerde URLs ({websiteGroup.snippetCount}{' '}
+            snippets).
+          </p>
+        </div>
+      )}
+
       {(latestRunError || actionableDiagnostics.length > 0) && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.15em] text-amber-700 mb-2">
@@ -540,14 +618,36 @@ export function EvidenceSection({
               <div className="flex items-center gap-2.5 min-w-0">
                 <FileText className="w-4 h-4 text-slate-400 shrink-0" />
                 <p className="text-xs font-black text-slate-400 uppercase tracking-[0.15em]">
-                  {group.label} ({group.rawCount})
+                  {group.key === 'rag'
+                    ? uiProfile.ragSectionLabel
+                    : group.label}{' '}
+                  (
+                  {group.key === 'website'
+                    ? group.uniqueUrlCount
+                    : group.items.length}
+                  )
                 </p>
               </div>
               <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
             </summary>
 
             <div className="px-5 pb-5 border-t border-slate-100/80 space-y-3">
-              {group.stackClues.length > 0 && (
+              {group.key === 'website' && (
+                <p className="mt-2 text-[11px] text-slate-500">
+                  {group.snippetCount} snippets across {group.uniqueUrlCount}{' '}
+                  unique pages.
+                </p>
+              )}
+
+              {group.key === 'rag' && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+                  <p className="text-xs text-slate-600">
+                    {uiProfile.ragDescription}
+                  </p>
+                </div>
+              )}
+
+              {uiProfile.showStackClues && group.stackClues.length > 0 && (
                 <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3">
                   <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 flex items-center gap-2">
                     <Layers className="w-3.5 h-3.5" />
@@ -570,7 +670,11 @@ export function EvidenceSection({
 
               <div className="space-y-2.5">
                 {visibleItems.map((item) => (
-                  <EvidenceCard key={item.id} item={item} />
+                  <EvidenceCard
+                    key={item.id}
+                    item={item}
+                    projectType={projectType}
+                  />
                 ))}
               </div>
 

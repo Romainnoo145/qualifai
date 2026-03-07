@@ -61,21 +61,17 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ### Active
 
-<!-- v3.0 Sharp Analysis — in progress -->
+<!-- v4.0 Atlantis Partnership Outreach — planning -->
 
-- [ ] Rewrite hypothesis generation prompt to prioritize non-website evidence (reviews, hiring, LinkedIn)
-- [ ] Add Claude as configurable model option for hypothesis generation
-- [ ] Remove hardcoded metric defaults (hours saved, error reduction) or derive from evidence
-- [ ] Allow variable hypothesis count (1-3) based on evidence quality
-- [ ] /discover/ prospect validation session with real prospects
-- [ ] Crawl4AI v0.8.x feature verification (consent popup, shadow DOM)
-- [ ] Pain gate calibration SQL against real prospect data
-- [ ] Fix SERP cache re-read after overwrite bug
-- [ ] Remove unused logoUrl prop from DashboardClient
-- [ ] Fix E2E send test to use tRPC quality gate
-- [ ] Fix detail-view `as any` Prisma cast
-- [ ] Fix import ordering anomaly in workflow-engine.ts
-- [ ] Clean up TS2589 deep Prisma `as any` casts
+- [x] Define v4.0 requirements from research artifacts (`STACK.md`, `FEATURES.md`, `ARCHITECTURE.md`, `PITFALLS.md`, `SUMMARY.md`)
+- [x] Create v4.0 roadmap (phases 36-41) for schema, ingestion, retrieval, /discover/ template, admin filter, and integration test
+- [x] Execute Phase 36-01 (schema + migration + backfill to Klarifai project)
+- [x] Execute Phase 36-02 (project/SPV seeds + project-scoped router plumbing)
+- [x] Create phase execution folder for 36 and begin first plan artifact
+- [x] Execute Phase 37-01 (Atlantis markdown chunker + metadata extraction)
+- [x] Execute Phase 37-02 (embedding generation + idempotent ingestion CLI)
+- [x] Execute Phase 38-01 (SPV/project-scoped retriever + similarity threshold + `RAG_DOCUMENT` persistence)
+- [x] Execute Phase 38-02 (dual-evidence opportunity generation + graceful RAG degradation)
 
 ### Out of Scope
 
@@ -105,7 +101,7 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - **Email delivery:** Resend API with idempotency guards, DKIM/SPF/DMARC verified for klarifai.nl
 - **Scheduling:** Cal.com with HMAC-signed webhook → automatic call prep generation
 - **Current codebase:** ~34,658 LOC TypeScript
-- **Shipped:** v1.0 (Feb 20) → v1.1 (Feb 21) → v1.2 (Feb 22) → v2.0 (Feb 23) → v2.1 (Mar 2) → v2.2 (Mar 2)
+- **Shipped:** v1.0 (Feb 20) → v1.1 (Feb 21) → v1.2 (Feb 22) → v2.0 (Feb 23) → v2.1 (Mar 2) → v2.2 (Mar 2) → v3.0 (Mar 5)
 - **Prospects in DB:** 7+ real companies, all passing quality gate after AI scoring overhaul
 
 ## Constraints
@@ -158,18 +154,18 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - Partnership-focused /discover/ template with opportunity cards bridging prospect needs ↔ project capabilities
 - SPV-specific metrics (CO2 reduction, capacity, investment size, payback years)
 - Target group → SPV → Document routing (4 groups: Hyperscalers→DataCo, Steel→SteelCo, Infra/Pension→InfraCo, Energy→EnergyCo)
-- Admin project switcher for managing Klarifai vs Atlantis campaigns
+- Auth-scoped account context: login token determines project scope (no manual project switcher)
 
 **Architecture principle:** Project type determines which pipeline additions run and which /discover/ template renders. Shared infrastructure (admin, auth, email, DB, tRPC) stays project-agnostic. No coupling between project-specific code paths.
 
 ## Current State
 
-**Latest shipped:** v2.2 Verified Pain Intelligence (2026-03-02) — source discovery with provenance, two-tier browser extraction, advisory pain gate, immutable override audit trail.
+**Latest shipped:** v3.0 Sharp Analysis (2026-03-05) — hypothesis analysis quality uplift, configurable model selection, AI metric derivation + source attribution, and validation/calibration closure.
 
-**Parked milestone:** v3.0 Sharp Analysis — hypothesis generation rewrite, pending todo resolution, tech debt cleanup. Phase 35 in progress (35-01 complete, 35-02 checkpoint pending).
+**Completed milestone:** v3.0 Sharp Analysis — all requirements closed (ANLYS, MODEL, VALID, DEBT); final VALID-01 check passed with ACCEPTED + DECLINED status transitions confirmed for Mujjo.
 
-**Active milestone:** v4.0 Atlantis Partnership Outreach — multi-project outreach platform for Europe's Gate
+**Active milestone:** v4.0 Atlantis Partnership Outreach — discover quality + validation focus (Phase 40 deferred)
 
 ---
 
-_Last updated: 2026-03-03 after v4.0 milestone start_
+_Last updated: 2026-03-07 after Phase 40 reprioritization_

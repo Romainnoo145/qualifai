@@ -7,6 +7,9 @@ import {
   runSummaryPayload,
   reviewSeedUrls,
 } from '@/lib/workflow-engine';
+import { retrieveRagPassages, buildRagQueryInputs } from '@/lib/rag/retriever';
+import { generateDualEvidenceOpportunityDrafts } from '@/lib/rag/opportunity-generator';
+import { generatePartnershipAssessment } from '@/lib/partnership/trigger-generator';
 import { ingestReviewEvidenceDrafts } from '@/lib/review-adapters';
 import { ingestWebsiteEvidenceDrafts } from '@/lib/web-evidence-adapter';
 import {
@@ -14,6 +17,7 @@ import {
   discoverGoogleSearchMentions,
   type SerpDiscoveryResult,
 } from '@/lib/enrichment/serp';
+import { discoverSiteUrlsWithKatana } from '@/lib/enrichment/katana';
 import { ingestCrawl4aiEvidenceDrafts } from '@/lib/enrichment/crawl4ai';
 import { fetchLinkedInPosts } from '@/lib/enrichment/linkedin-posts';
 import { fetchGoogleReviews } from '@/lib/enrichment/google-reviews';
@@ -27,14 +31,22 @@ import { fetchCustomerReviews } from '@/lib/enrichment/google-reviews';
 import { scoreEvidenceBatch, type ScoredEvidence } from '@/lib/evidence-scorer';
 import {
   discoverSitemapUrls,
+  type SitemapCandidate,
+  type SitemapDiscoveryResult,
   type SitemapCache,
 } from '@/lib/enrichment/sitemap';
 import {
-  buildSourceSet,
+  detectJsHeavy,
   defaultResearchUrls as defaultResearchUrlsFn,
-  extractSourceSet,
+  type DiscoveredUrl,
   type SourceSet,
 } from '@/lib/enrichment/source-discovery';
+import {
+  selectResearchUrls,
+  type CandidateSource,
+  type ResearchUrlCandidate,
+} from '@/lib/enrichment/url-selection';
+import { triggerProspectSiteCatalogSync } from '@/lib/site-catalog';
 import { fetchKvkData, kvkDataToEvidenceDraft } from '@/lib/enrichment/kvk';
 import type { Prisma, PrismaClient } from '@prisma/client';
 
@@ -54,10 +66,268 @@ function uniqueUrls(urls: string[]): string[] {
   return Array.from(new Set(urls.map((url) => url.trim()).filter(Boolean)));
 }
 
+const WEBSITE_TOP_N_MAX = 60;
+const INTERACTIVE_WEBSITE_INGESTION = {
+  browserBudgetMax: 12,
+  maxDrafts: 40,
+  targetUniqueSourceUrls: 30,
+} as const;
+const DEEP_WEBSITE_INGESTION = {
+  browserBudgetMax: 24,
+  maxDrafts: 120,
+  targetUniqueSourceUrls: 60,
+} as const;
+const INTERACTIVE_EVIDENCE_DRAFT_CAP = 60;
+const DEEP_EVIDENCE_DRAFT_CAP = 140;
+
+interface WebsiteCandidate extends ResearchUrlCandidate {
+  source: CandidateSource;
+  topSegment: string;
+  pathDepth: number;
+  lastmod: string | null;
+}
+
+function candidateFromUrl(
+  url: string,
+  source: CandidateSource,
+  lastmod: string | null = null,
+): WebsiteCandidate | null {
+  try {
+    const parsed = new URL(url);
+    const topSegment = parsed.pathname.split('/').filter(Boolean)[0] ?? 'root';
+    const pathDepth = parsed.pathname.split('/').filter(Boolean).length;
+    return {
+      url,
+      source,
+      lastmod,
+      topSegment: topSegment.toLowerCase(),
+      pathDepth,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function fallbackSeedUrls(domain: string): string[] {
+  return defaultResearchUrlsFn(domain).slice(0, 6);
+}
+
+function fallbackReasonFromSitemapStatus(
+  status: SitemapDiscoveryResult['status'],
+): string | null {
+  if (status === 'blocked') return 'sitemap_blocked';
+  if (status === 'empty') return 'sitemap_empty';
+  if (status === 'error') return 'sitemap_error';
+  return null;
+}
+
+function normalizeUrlForSelection(raw: string): string | null {
+  try {
+    const parsed = new URL(raw);
+    parsed.hash = '';
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.replace(/\/+$/, '') || '/';
+    return `${parsed.protocol}//${host}${path}${parsed.search}`;
+  } catch {
+    return null;
+  }
+}
+
+function estimateUniqueCandidateCount(candidates: WebsiteCandidate[]): number {
+  const seen = new Set<string>();
+  for (const candidate of candidates) {
+    const normalized = normalizeUrlForSelection(candidate.url);
+    if (!normalized) continue;
+    seen.add(normalized);
+  }
+  return seen.size;
+}
+
+function computeAdaptiveWebsiteTopN(input: {
+  discoveredTotal: number;
+  deepCrawl: boolean;
+}): number {
+  const discoveredTotal = Math.max(0, input.discoveredTotal);
+  if (discoveredTotal === 0) return 0;
+
+  const baseline = input.deepCrawl
+    ? Math.round(discoveredTotal * 0.2 + 14)
+    : Math.round(discoveredTotal * 0.14 + 10);
+  const floor = input.deepCrawl ? 20 : 12;
+  const clamped = Math.max(floor, Math.min(WEBSITE_TOP_N_MAX, baseline));
+  return Math.min(discoveredTotal, clamped);
+}
+
+function websiteIngestionTuningForRun(input: {
+  deepCrawl: boolean;
+  selectedTopN: number;
+}) {
+  const base = input.deepCrawl
+    ? DEEP_WEBSITE_INGESTION
+    : INTERACTIVE_WEBSITE_INGESTION;
+  return {
+    ...base,
+    targetUniqueSourceUrls: Math.min(
+      base.targetUniqueSourceUrls,
+      input.selectedTopN,
+    ),
+  };
+}
+
+function toDiscoveredUrl(candidate: WebsiteCandidate): DiscoveredUrl {
+  return {
+    url: candidate.url,
+    provenance: candidate.source,
+    jsHeavyHint: detectJsHeavy(candidate.url),
+  };
+}
+
+function ensureLegacyRawCountKeys(
+  rawCounts: Record<string, { discovered: number; capped: number }>,
+): Record<string, { discovered: number; capped: number }> {
+  const next = { ...rawCounts };
+  if (!next.sitemap) next.sitemap = { discovered: 0, capped: 0 };
+  if (!next.serp) next.serp = { discovered: 0, capped: 0 };
+  if (!next.default) next.default = { discovered: 0, capped: 0 };
+  return next;
+}
+
+function buildSourceSetFromSelection(input: {
+  selectedCandidates: WebsiteCandidate[];
+  discoveredCandidates: WebsiteCandidate[];
+  selectedTopN: number;
+  sourceUsed: 'sitemap' | 'katana_site' | 'serp_site' | 'fallback';
+  fallbackReason: string | null;
+  sitemapResult: SitemapDiscoveryResult;
+  katanaSiteDiscoveredTotal: number;
+  serpSiteDiscoveredTotal: number;
+  selection: ReturnType<typeof selectResearchUrls>;
+}): SourceSet {
+  const discoveredBySource: Record<string, number> = {};
+  for (const candidate of input.discoveredCandidates) {
+    discoveredBySource[candidate.source] =
+      (discoveredBySource[candidate.source] ?? 0) + 1;
+  }
+
+  const selectedBySource = input.selection.selectedBySource;
+  const rawCounts = ensureLegacyRawCountKeys(
+    Object.fromEntries(
+      Array.from(
+        new Set([
+          ...Object.keys(discoveredBySource),
+          ...Object.keys(selectedBySource),
+          'sitemap',
+          'serp',
+          'default',
+        ]),
+      ).map((source) => [
+        source,
+        {
+          discovered: discoveredBySource[source] ?? 0,
+          capped: selectedBySource[source] ?? 0,
+        },
+      ]),
+    ),
+  );
+
+  const dedupRemovedCount = Math.max(
+    0,
+    input.discoveredCandidates.length - input.selection.discoveredTotal,
+  );
+
+  return {
+    urls: input.selectedCandidates.map(toDiscoveredUrl),
+    discoveredAt: new Date().toISOString(),
+    dedupRemovedCount,
+    rawCounts,
+    discovery: {
+      sourceUsed: input.sourceUsed,
+      sitemapStatus: input.sitemapResult.status,
+      sitemapErrorCode: input.sitemapResult.errorCode ?? null,
+      sitemapDiscoveredTotal: input.sitemapResult.discoveredTotal,
+      katanaSiteDiscoveredTotal: input.katanaSiteDiscoveredTotal,
+      serpSiteDiscoveredTotal: input.serpSiteDiscoveredTotal,
+      fallbackReason: input.fallbackReason,
+    },
+    selection: {
+      strategyVersion: input.selection.strategyVersion,
+      topN: input.selectedTopN,
+      discoveredTotal: input.selection.discoveredTotal,
+      selectedTotal: input.selection.selectedTotal,
+      selectedBySource: input.selection.selectedBySource,
+      selectedBySegment: input.selection.selectedBySegment,
+    },
+  };
+}
+
 function extractSitemapCache(snapshot: unknown): SitemapCache | null {
   const payload = snapshot as { sitemapCache?: SitemapCache } | null;
   if (!payload?.sitemapCache?.discoveredAt) return null;
-  return payload.sitemapCache;
+  const cache = payload.sitemapCache;
+
+  if (cache.result) return cache;
+
+  // Backwards-compatible hydration for old snapshots where only `urls` existed.
+  const legacyUrls = Array.isArray(cache.urls) ? cache.urls : [];
+  const hydratedCandidates: SitemapCandidate[] = [];
+  for (const url of legacyUrls) {
+    const candidate = candidateFromUrl(url, 'sitemap', null);
+    if (!candidate) continue;
+    const normalized = (() => {
+      try {
+        const parsed = new URL(candidate.url);
+        const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+        const path = parsed.pathname.replace(/\/+$/, '') || '/';
+        return `${host}${path}${parsed.search}`;
+      } catch {
+        return candidate.url;
+      }
+    })();
+    hydratedCandidates.push({
+      url: candidate.url,
+      normalizedUrl: normalized,
+      lastmod: null,
+      sourceSitemap: 'cache://legacy',
+      topSegment: candidate.topSegment,
+      pathDepth: candidate.pathDepth,
+    });
+  }
+
+  return {
+    discoveredAt: cache.discoveredAt,
+    urls: legacyUrls,
+    result: {
+      status: hydratedCandidates.length > 0 ? 'ok' : 'empty',
+      candidates: hydratedCandidates,
+      seedUrls: [],
+      crawledSitemaps: [],
+      discoveredTotal: hydratedCandidates.length,
+    },
+  };
+}
+
+function extractSerpCache(snapshot: unknown): SerpDiscoveryResult | null {
+  const payload = snapshot as { serpCache?: unknown } | null;
+  const cache = payload?.serpCache;
+  if (!cache || typeof cache !== 'object' || Array.isArray(cache)) return null;
+  const record = cache as Record<string, unknown>;
+  if (typeof record.discoveredAt !== 'string') return null;
+
+  const reviewUrls = Array.isArray(record.reviewUrls)
+    ? record.reviewUrls.filter((u): u is string => typeof u === 'string')
+    : [];
+  const jobUrls = Array.isArray(record.jobUrls)
+    ? record.jobUrls.filter((u): u is string => typeof u === 'string')
+    : [];
+  const mapsDataId =
+    typeof record.mapsDataId === 'string' ? record.mapsDataId : undefined;
+
+  return {
+    reviewUrls,
+    jobUrls,
+    discoveredAt: record.discoveredAt,
+    ...(mapsDataId ? { mapsDataId } : {}),
+  };
 }
 
 function dedupeEvidenceDrafts<
@@ -72,6 +342,16 @@ function dedupeEvidenceDrafts<
     unique.push(draft);
   }
   return unique;
+}
+
+function isFallbackEvidenceDraft(
+  draft: { metadata?: unknown } | null | undefined,
+): boolean {
+  const metadata = draft?.metadata;
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return false;
+  }
+  return (metadata as Record<string, unknown>).fallback === true;
 }
 
 type SourceStatus = 'ok' | 'warning' | 'error' | 'skipped';
@@ -93,7 +373,8 @@ interface SourceDiagnostic {
     | 'linkedin_jobs'
     | 'customer_reviews'
     | 'dutch_industry_news'
-    | 'evidence_scoring';
+    | 'evidence_scoring'
+    | 'rag_retrieval';
   status: SourceStatus;
   message: string;
 }
@@ -117,14 +398,28 @@ export async function executeResearchRun(
       companyName: true,
       industry: true,
       employeeRange: true,
+      country: true,
       description: true,
       technologies: true,
       specialties: true,
       linkedinUrl: true, // for EVID-08 LinkedIn evidence
+      project: {
+        select: {
+          id: true,
+          projectType: true,
+        },
+      },
+      spv: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+        },
+      },
     },
   });
 
-  // Pre-read existing snapshot for sitemap cache AND sourceSet BEFORE run create/update overwrites it
+  // Pre-read existing snapshot caches BEFORE run create/update overwrites them.
   const priorSnapshot = input.existingRunId
     ? (
         await db.researchRun.findUnique({
@@ -138,11 +433,11 @@ export async function executeResearchRun(
     sitemapCache &&
     Date.now() - new Date(sitemapCache.discoveredAt).getTime() <
       24 * 60 * 60 * 1000;
-  const priorSourceSet = extractSourceSet(priorSnapshot);
-  const serpAge = priorSourceSet?.serpDiscoveredAt
-    ? Date.now() - new Date(priorSourceSet.serpDiscoveredAt).getTime()
+  const priorSerpCache = extractSerpCache(priorSnapshot);
+  const serpAge = priorSerpCache?.discoveredAt
+    ? Date.now() - new Date(priorSerpCache.discoveredAt).getTime()
     : Infinity;
-  const useSerpFromSourceSet = serpAge < 24 * 60 * 60 * 1000;
+  const useSerpCache = serpAge < 24 * 60 * 60 * 1000;
 
   const campaign = input.campaignId
     ? await db.campaign.findUnique({
@@ -159,50 +454,167 @@ export async function executeResearchRun(
     : null;
   const diagnostics: SourceDiagnostic[] = [];
 
-  // Sitemap discovery — always runs (zero API cost)
-  // Cache was pre-read before run create/update
-  const sitemapUrls = isSitemapCacheValid
-    ? sitemapCache.urls
-    : await discoverSitemapUrls(prospect.domain);
-  if (sitemapUrls.length > 0) {
+  const sitemapResult: SitemapDiscoveryResult =
+    isSitemapCacheValid && sitemapCache?.result
+      ? sitemapCache.result
+      : await discoverSitemapUrls(prospect.domain);
+
+  const sitemapStatusToDiagnosticStatus: Record<
+    SitemapDiscoveryResult['status'],
+    SourceStatus
+  > = {
+    ok: 'ok',
+    blocked: 'warning',
+    empty: 'warning',
+    error: 'error',
+  };
+  diagnostics.push({
+    source: 'sitemap',
+    status: sitemapStatusToDiagnosticStatus[sitemapResult.status],
+    message:
+      sitemapResult.status === 'ok'
+        ? `Sitemap discovery found ${sitemapResult.discoveredTotal} URLs.`
+        : `Sitemap discovery status ${sitemapResult.status}${sitemapResult.errorCode ? ` (${sitemapResult.errorCode})` : ''}.`,
+  });
+
+  const shouldUseCrawlerFallback =
+    sitemapResult.status !== 'ok' || sitemapResult.discoveredTotal === 0;
+  const katanaResult = shouldUseCrawlerFallback
+    ? await discoverSiteUrlsWithKatana({
+        domain: prospect.domain,
+        maxResults: 200,
+      })
+    : { status: 'ok' as const, urls: [] };
+  const katanaSiteUrls = katanaResult.status === 'ok' ? katanaResult.urls : [];
+  const serpSiteUrls: string[] = [];
+
+  if (shouldUseCrawlerFallback) {
     diagnostics.push({
-      source: 'sitemap',
-      status: 'ok',
-      message: `Sitemap discovery found ${sitemapUrls.length} URLs.`,
-    });
-  } else {
-    diagnostics.push({
-      source: 'sitemap',
-      status: 'warning',
-      message: 'No sitemap URLs discovered for this domain.',
+      source: 'website',
+      status: katanaSiteUrls.length > 0 ? 'ok' : 'warning',
+      message:
+        katanaSiteUrls.length > 0
+          ? `Katana fallback found ${katanaSiteUrls.length} crawled website URLs.`
+          : katanaResult.status === 'unavailable'
+            ? 'Katana fallback unavailable (binary not found); proceeding with manual/seed fallback.'
+            : 'Katana fallback returned no usable website URLs; proceeding with manual/seed fallback.',
     });
   }
 
-  // Build fresh cache object when we actually fetched sitemap
-  const freshSitemapCache: SitemapCache | undefined =
-    !isSitemapCacheValid && sitemapUrls.length > 0
-      ? { discoveredAt: new Date().toISOString(), urls: sitemapUrls }
-      : undefined;
-
-  // Build initial sourceSet with sitemap + default URLs (SERP URLs added later in deepCrawl block)
-  // nonReviewManualUrls are included in the default bucket alongside standard research paths
-  const nonReviewManualUrlsForSourceSet = input.manualUrls.filter(
+  const nonReviewManualUrls = input.manualUrls.filter(
     (url) => inferSourceType(url) !== 'REVIEWS',
   );
-  const initialSourceSet: SourceSet = buildSourceSet({
-    sitemapUrls,
-    serpUrls: useSerpFromSourceSet
-      ? (priorSourceSet?.urls
-          .filter((u) => u.provenance === 'serp')
-          .map((u) => u.url) ?? [])
-      : [],
-    defaultUrls: [
-      ...defaultResearchUrlsFn(prospect.domain),
-      ...nonReviewManualUrlsForSourceSet,
-    ],
-    ...(useSerpFromSourceSet && priorSourceSet?.serpDiscoveredAt
-      ? { serpDiscoveredAt: priorSourceSet.serpDiscoveredAt }
+
+  let sourceUsed: 'sitemap' | 'katana_site' | 'serp_site' | 'fallback' =
+    'fallback';
+  if (sitemapResult.status === 'ok' && sitemapResult.discoveredTotal > 0) {
+    sourceUsed = 'sitemap';
+  } else if (katanaSiteUrls.length > 0) {
+    sourceUsed = 'katana_site';
+  }
+
+  const discoveredCandidates: WebsiteCandidate[] = [];
+  if (sourceUsed === 'sitemap') {
+    for (const candidate of sitemapResult.candidates) {
+      const mapped = candidateFromUrl(
+        candidate.url,
+        'sitemap',
+        candidate.lastmod,
+      );
+      if (!mapped) continue;
+      discoveredCandidates.push(mapped);
+    }
+  } else if (sourceUsed === 'katana_site') {
+    for (const url of katanaSiteUrls) {
+      const mapped = candidateFromUrl(url, 'katana_site', null);
+      if (!mapped) continue;
+      discoveredCandidates.push(mapped);
+    }
+  }
+
+  for (const url of nonReviewManualUrls) {
+    const mapped = candidateFromUrl(url, 'manual', null);
+    if (!mapped) continue;
+    discoveredCandidates.push(mapped);
+  }
+
+  const fallbackReason = fallbackReasonFromSitemapStatus(sitemapResult.status);
+  if (discoveredCandidates.length === 0) {
+    sourceUsed = 'fallback';
+    for (const url of fallbackSeedUrls(prospect.domain)) {
+      const mapped = candidateFromUrl(url, 'seed', null);
+      if (!mapped) continue;
+      discoveredCandidates.push(mapped);
+    }
+  }
+
+  const estimatedUniqueCandidates =
+    estimateUniqueCandidateCount(discoveredCandidates);
+  const selectedTopN = computeAdaptiveWebsiteTopN({
+    discoveredTotal: estimatedUniqueCandidates,
+    deepCrawl: input.deepCrawl ?? false,
+  });
+
+  const selection = selectResearchUrls({
+    candidates: discoveredCandidates,
+    topN: selectedTopN,
+    context: {
+      industry: prospect.industry,
+      description: prospect.description,
+      specialties: prospect.specialties,
+      country: prospect.country ?? null,
+      nicheKey: campaign?.nicheKey ?? null,
+      language: campaign?.language ?? null,
+    },
+  });
+
+  const selectedCandidates: WebsiteCandidate[] = selection.selectedUrls.map(
+    (item) => ({
+      url: item.url,
+      source: item.source,
+      lastmod: item.lastmod ?? null,
+      topSegment: item.topSegment ?? 'root',
+      pathDepth: item.pathDepth ?? 0,
+    }),
+  );
+
+  diagnostics.push({
+    source: 'website',
+    status: selection.selectedTotal > 0 ? 'ok' : 'warning',
+    message: `URL selection (${selection.strategyVersion}) targeted ${selectedTopN} and selected ${selection.selectedTotal} of ${selection.discoveredTotal} candidates via ${sourceUsed}.`,
+  });
+
+  const initialSourceSet: SourceSet = buildSourceSetFromSelection({
+    selectedCandidates,
+    discoveredCandidates,
+    selectedTopN,
+    sourceUsed,
+    fallbackReason,
+    sitemapResult,
+    katanaSiteDiscoveredTotal: katanaSiteUrls.length,
+    serpSiteDiscoveredTotal: serpSiteUrls.length,
+    selection,
+  });
+
+  // Build fresh cache object when we actually fetched sitemap
+  const freshSitemapCache: SitemapCache | undefined = !isSitemapCacheValid
+    ? {
+        discoveredAt: new Date().toISOString(),
+        urls: sitemapResult.candidates.map((candidate) => candidate.url),
+        result: sitemapResult,
+      }
+    : undefined;
+
+  const initialInputSnapshot = toJson({
+    manualUrls: input.manualUrls,
+    campaignId: input.campaignId,
+    deepCrawl: input.deepCrawl ?? false,
+    hypothesisModel: input.hypothesisModel ?? 'gemini-flash',
+    ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
+    ...(input.deepCrawl && useSerpCache && priorSerpCache
+      ? { serpCache: priorSerpCache }
       : {}),
+    sourceSet: initialSourceSet,
   });
 
   const run = input.existingRunId
@@ -213,14 +625,7 @@ export async function executeResearchRun(
           startedAt: new Date(),
           completedAt: null,
           error: null,
-          inputSnapshot: toJson({
-            manualUrls: input.manualUrls,
-            campaignId: input.campaignId,
-            deepCrawl: input.deepCrawl ?? false,
-            hypothesisModel: input.hypothesisModel ?? 'gemini-flash',
-            ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
-            sourceSet: initialSourceSet,
-          }),
+          inputSnapshot: initialInputSnapshot,
         },
       })
     : await db.researchRun.create({
@@ -229,16 +634,43 @@ export async function executeResearchRun(
           campaignId: input.campaignId,
           status: 'CRAWLING',
           startedAt: new Date(),
-          inputSnapshot: toJson({
-            manualUrls: input.manualUrls,
-            campaignId: input.campaignId,
-            deepCrawl: input.deepCrawl ?? false,
-            hypothesisModel: input.hypothesisModel ?? 'gemini-flash',
-            ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
-            sourceSet: initialSourceSet,
-          }),
+          inputSnapshot: initialInputSnapshot,
         },
       });
+
+  // Re-runs update the same ResearchRun row.
+  // Clear prior generated rows first so stale evidence URLs from older logic
+  // do not persist (for example historical guessed /contact|/services pages).
+  if (input.existingRunId) {
+    await db.$transaction([
+      db.evidenceItem.deleteMany({ where: { researchRunId: run.id } }),
+      db.workflowHypothesis.deleteMany({ where: { researchRunId: run.id } }),
+      db.automationOpportunity.deleteMany({ where: { researchRunId: run.id } }),
+    ]);
+  }
+
+  triggerProspectSiteCatalogSync(db, {
+    prospectId: prospect.id,
+    domain: prospect.domain,
+    manualUrls: nonReviewManualUrls,
+    context: {
+      industry: prospect.industry,
+      description: prospect.description,
+      specialties: prospect.specialties,
+      country: prospect.country ?? null,
+      nicheKey: campaign?.nicheKey ?? null,
+      language: campaign?.language ?? null,
+    },
+    precomputed: {
+      discovery: sitemapResult,
+      katanaSiteUrls,
+      serpSiteUrls,
+      discoveredCandidates,
+      selection,
+      sourceUsed,
+      fallbackReason,
+    },
+  });
 
   const manualReviewUrls = input.manualUrls.filter(
     (url) => inferSourceType(url) === 'REVIEWS',
@@ -248,36 +680,52 @@ export async function executeResearchRun(
     prospect.domain,
   );
   const reviewUrls = uniqueUrls([...manualReviewUrls, ...seedUrls]);
-  const nonReviewManualUrls = input.manualUrls.filter(
-    (url) => inferSourceType(url) !== 'REVIEWS',
-  );
-
-  // Derive researchUrls from sourceSet — provenance-tagged, deduped, capped
-  // (sourceSet.urls excludes serp URLs at this point; deepCrawl SERP URLs are passed to Crawl4AI separately)
-  const researchUrls = initialSourceSet.urls
-    .filter((u) => u.provenance !== 'serp')
-    .map((u) => u.url);
+  // Derive researchUrls from selected sourceSet URLs.
+  const researchUrls = initialSourceSet.urls.map((u) => u.url);
 
   const jsHeavyHints = new Map<string, boolean>(
     initialSourceSet.urls.map((u) => [u.url, u.jsHeavyHint]),
   );
+  const urlProvenance = new Map(
+    initialSourceSet.urls.map((u) => [u.url, u.provenance]),
+  );
+  const websiteIngestionTuning = websiteIngestionTuningForRun({
+    deepCrawl: input.deepCrawl ?? false,
+    selectedTopN,
+  });
   const websiteEvidenceDrafts = await ingestWebsiteEvidenceDrafts(
     researchUrls,
     {
       jsHeavyHints,
+      urlProvenance,
+      tuning: websiteIngestionTuning,
     },
   );
+  const websiteEvidenceUrlCount = new Set(
+    websiteEvidenceDrafts
+      .filter((draft) => !isFallbackEvidenceDraft(draft))
+      .map((draft) => draft.sourceUrl),
+  ).size;
+  const websiteFallbackUrlCount = new Set(
+    websiteEvidenceDrafts
+      .filter((draft) => isFallbackEvidenceDraft(draft))
+      .map((draft) => draft.sourceUrl),
+  ).size;
   if (websiteEvidenceDrafts.length > 0) {
+    const fallbackSuffix =
+      websiteFallbackUrlCount > 0
+        ? ` (${websiteFallbackUrlCount} fallback placeholders).`
+        : '.';
     diagnostics.push({
       source: 'website',
       status: 'ok',
-      message: `Website ingestion produced ${websiteEvidenceDrafts.length} evidence items.`,
+      message: `Website ingestion produced ${websiteEvidenceDrafts.length} evidence items across ${websiteEvidenceUrlCount}/${researchUrls.length} selected URLs${fallbackSuffix}`,
     });
   } else {
     diagnostics.push({
       source: 'website',
       status: 'warning',
-      message: 'Website ingestion returned no evidence.',
+      message: `Website ingestion returned no evidence across ${researchUrls.length} selected URLs.`,
     });
   }
   const baseEvidenceDrafts = generateEvidenceDrafts(
@@ -306,9 +754,7 @@ export async function executeResearchRun(
   ];
 
   if (input.deepCrawl) {
-    // SERP cache guard: use sourceSet.serpDiscoveredAt (pre-read BEFORE run create/update overwrites snapshot)
-    // useSerpFromSourceSet is computed at the top of executeResearchRun from priorSourceSet.
-    const isCacheValid = useSerpFromSourceSet;
+    const isCacheValid = useSerpCache && priorSerpCache !== null;
 
     const serpApiConfigured = Boolean(process.env.SERP_API_KEY);
     if (!serpApiConfigured) {
@@ -321,15 +767,7 @@ export async function executeResearchRun(
     }
 
     const serpResult: SerpDiscoveryResult = isCacheValid
-      ? {
-          reviewUrls:
-            priorSourceSet?.urls
-              .filter((u) => u.provenance === 'serp')
-              .map((u) => u.url) ?? [],
-          jobUrls: [],
-          discoveredAt:
-            priorSourceSet?.serpDiscoveredAt ?? new Date().toISOString(),
-        }
+      ? priorSerpCache
       : await discoverSerpUrls({
           companyName: prospect.companyName,
           domain: prospect.domain,
@@ -350,22 +788,8 @@ export async function executeResearchRun(
       });
     }
 
-    // Rebuild sourceSet with SERP URLs now that we have them
-    const serpDiscoveredAt = !isCacheValid
-      ? new Date().toISOString()
-      : (priorSourceSet?.serpDiscoveredAt ?? new Date().toISOString());
-    const fullSourceSet: SourceSet = buildSourceSet({
-      sitemapUrls,
-      serpUrls: [...serpResult.reviewUrls, ...serpResult.jobUrls],
-      defaultUrls: [
-        ...defaultResearchUrlsFn(prospect.domain),
-        ...nonReviewManualUrls,
-      ],
-      serpDiscoveredAt,
-    });
-
-    // Persist updated sourceSet + serpCache in inputSnapshot
-    if (!isCacheValid || !priorSourceSet) {
+    // Persist newly discovered SERP cache without mutating the selected sourceSet.
+    if (!isCacheValid) {
       await db.researchRun.update({
         where: { id: run.id },
         data: {
@@ -376,22 +800,7 @@ export async function executeResearchRun(
             hypothesisModel: input.hypothesisModel ?? 'gemini-flash',
             serpCache: serpResult,
             ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
-            sourceSet: fullSourceSet,
-          }),
-        },
-      });
-    } else {
-      // Cache hit — still update sourceSet with full SERP-enriched set
-      await db.researchRun.update({
-        where: { id: run.id },
-        data: {
-          inputSnapshot: toJson({
-            manualUrls: input.manualUrls,
-            campaignId: input.campaignId,
-            deepCrawl: true,
-            hypothesisModel: input.hypothesisModel ?? 'gemini-flash',
-            ...(freshSitemapCache ? { sitemapCache: freshSitemapCache } : {}),
-            sourceSet: fullSourceSet,
+            sourceSet: initialSourceSet,
           }),
         },
       });
@@ -434,7 +843,7 @@ export async function executeResearchRun(
       });
       for (const mention of googleMentions) {
         allDrafts.push({
-          sourceType: 'WEBSITE',
+          sourceType: 'NEWS',
           sourceUrl: mention.url,
           title: mention.title,
           snippet: mention.snippet.slice(0, 240),
@@ -793,7 +1202,13 @@ export async function executeResearchRun(
     });
   }
 
-  const evidenceDrafts = dedupeEvidenceDrafts(allDrafts).slice(0, 60);
+  const evidenceDraftCap = input.deepCrawl
+    ? DEEP_EVIDENCE_DRAFT_CAP
+    : INTERACTIVE_EVIDENCE_DRAFT_CAP;
+  const evidenceDrafts = dedupeEvidenceDrafts(allDrafts).slice(
+    0,
+    evidenceDraftCap,
+  );
 
   // AI evidence scoring — score all items for workflow/automation relevance
   const scoredMap = new Map<number, ScoredEvidence>();
@@ -891,6 +1306,114 @@ export async function executeResearchRun(
     evidenceRecords.push(record);
   }
 
+  if (prospect.project.projectType === 'ATLANTIS') {
+    try {
+      const queryInputs = buildRagQueryInputs(
+        {
+          companyName: prospect.companyName ?? prospect.domain,
+          industry: prospect.industry,
+          evidence: evidenceRecords
+            .filter((item) => item.sourceType !== 'RAG_DOCUMENT')
+            .map((item) => ({
+              workflowTag: item.workflowTag,
+              snippet: item.snippet,
+              confidenceScore: item.confidenceScore,
+              sourceType: item.sourceType,
+            })),
+        },
+        4,
+      );
+
+      const ragPassages = await retrieveRagPassages(db, {
+        projectId: prospect.project.id,
+        spvId: prospect.spv?.id ?? null,
+        queryInputs,
+        limitPerQuery: 8,
+        maxResults: 12,
+      });
+
+      for (const passage of ragPassages) {
+        const confidenceScore = Math.min(
+          0.95,
+          Math.max(0.62, passage.similarity),
+        );
+        const citation = {
+          documentId: passage.documentId,
+          sectionHeader: passage.sectionHeader,
+          sourcePath: passage.sourcePath,
+          volume: passage.volume,
+          spvSlug: passage.spvSlug,
+        };
+        const metadata = {
+          adapter: 'rag-pgvector',
+          query: passage.query,
+          similarity: passage.similarity,
+          citation,
+          projectDocumentId: passage.projectDocumentId,
+          chunkId: passage.chunkId,
+          chunkIndex: passage.chunkIndex,
+          documentId: passage.documentId,
+          documentTitle: passage.documentTitle,
+          sourcePath: passage.sourcePath,
+          sectionHeader: passage.sectionHeader,
+          volume: passage.volume,
+          spvSlug: passage.spvSlug,
+          spvName: passage.spvName,
+          inheritedWorkflowTag: passage.workflowTag,
+          chunkMetadata: passage.chunkMetadata,
+        };
+        const record = await db.evidenceItem.create({
+          data: {
+            researchRunId: run.id,
+            prospectId: input.prospectId,
+            sourceType: 'RAG_DOCUMENT',
+            sourceUrl: `atlantis://rag/${encodeURIComponent(passage.sourcePath)}#chunk-${passage.chunkIndex}`,
+            title:
+              passage.sectionHeader != null
+                ? `${passage.documentId} — ${passage.sectionHeader}`
+                : `${passage.documentId} — ${passage.documentTitle}`,
+            snippet: passage.content.slice(0, 1800),
+            workflowTag: passage.workflowTag,
+            confidenceScore,
+            metadata: toJson(metadata),
+          },
+          select: {
+            id: true,
+            sourceType: true,
+            sourceUrl: true,
+            title: true,
+            snippet: true,
+            workflowTag: true,
+            confidenceScore: true,
+            metadata: true,
+          },
+        });
+        evidenceRecords.push(record);
+      }
+
+      diagnostics.push({
+        source: 'rag_retrieval',
+        status: ragPassages.length > 0 ? 'ok' : 'warning',
+        message:
+          ragPassages.length > 0
+            ? `RAG retrieval produced ${ragPassages.length} Atlantis passage matches.`
+            : 'RAG retrieval returned no passages above similarity threshold.',
+      });
+    } catch (err) {
+      diagnostics.push({
+        source: 'rag_retrieval',
+        status: 'warning',
+        message: `RAG retrieval skipped: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      });
+    }
+  } else {
+    diagnostics.push({
+      source: 'rag_retrieval',
+      status: 'skipped',
+      message: 'RAG retrieval skipped (projectType is not ATLANTIS).',
+    });
+  }
+
   const gate = evaluateQualityGate(
     evidenceRecords.map((item) => ({
       id: item.id,
@@ -925,6 +1448,7 @@ export async function executeResearchRun(
     },
     gate.confirmedPainTags,
     input.hypothesisModel,
+    { projectType: prospect.project.projectType },
   );
   for (const hypothesis of hypotheses) {
     await db.workflowHypothesis.create({
@@ -950,14 +1474,50 @@ export async function executeResearchRun(
     });
   }
 
-  const opportunities = generateOpportunityDrafts(
-    evidenceRecords.map((item) => ({
+  const opportunityEvidence = evidenceRecords.map((item) => ({
+    id: item.id,
+    sourceType: item.sourceType,
+    workflowTag: item.workflowTag,
+    confidenceScore: item.confidenceScore,
+    snippet: item.snippet,
+    title: item.title,
+    metadata: item.metadata,
+  }));
+  const baselineOpportunities = generateOpportunityDrafts(
+    opportunityEvidence.map((item) => ({
       id: item.id,
       sourceType: item.sourceType,
       workflowTag: item.workflowTag,
       confidenceScore: item.confidenceScore,
     })),
   );
+  const opportunities =
+    prospect.project.projectType === 'ATLANTIS'
+      ? (() => {
+          const dualEvidence = generateDualEvidenceOpportunityDrafts(
+            opportunityEvidence,
+            { maxCards: 4 },
+          );
+          if (dualEvidence.length >= 2) return dualEvidence;
+          return baselineOpportunities;
+        })()
+      : baselineOpportunities;
+
+  const partnershipAssessment =
+    prospect.project.projectType === 'ATLANTIS'
+      ? generatePartnershipAssessment(opportunityEvidence)
+      : null;
+  if (partnershipAssessment) {
+    diagnostics.push({
+      source: 'rag_retrieval',
+      status:
+        partnershipAssessment.triggerCount > 0 &&
+        partnershipAssessment.readinessScore >= 55
+          ? 'ok'
+          : 'warning',
+      message: `Partnership trigger assessment (${partnershipAssessment.strategyVersion}) produced ${partnershipAssessment.triggerCount} triggers with readiness ${partnershipAssessment.readinessScore}/100.`,
+    });
+  }
   for (const opportunity of opportunities) {
     await db.automationOpportunity.create({
       data: {
@@ -982,6 +1542,7 @@ export async function executeResearchRun(
 
   const summary = runSummaryPayload(gate, campaign, {
     diagnostics,
+    partnership: partnershipAssessment,
   });
   const completed = await db.researchRun.update({
     where: { id: run.id },
