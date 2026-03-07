@@ -10,6 +10,7 @@ import {
 import {
   retrieveRagPassages,
   buildRagQueryInputs,
+  buildRagQueryInputsFromIntent,
   rankRagPassagesForProspect,
 } from '@/lib/rag/retriever';
 import { generateDualEvidenceOpportunityDrafts } from '@/lib/rag/opportunity-generator';
@@ -381,6 +382,7 @@ interface SourceDiagnostic {
     | 'dutch_industry_news'
     | 'evidence_scoring'
     | 'intent_extraction'
+    | 'rag_query_strategy'
     | 'rag_retrieval';
   status: SourceStatus;
   message: string;
@@ -1375,27 +1377,43 @@ export async function executeResearchRun(
 
   if (prospect.project.projectType === 'ATLANTIS') {
     try {
-      const queryInputs = buildRagQueryInputs(
-        {
-          companyName: prospect.companyName ?? prospect.domain,
-          industry: prospect.industry,
-          description: prospect.description,
-          specialties: prospect.specialties,
-          technologies: prospect.technologies,
-          country: prospect.country ?? null,
-          campaignNiche: campaign?.nicheKey ?? null,
-          spvName: prospect.spv?.name ?? null,
-          evidence: evidenceRecords
-            .filter((item) => item.sourceType !== 'RAG_DOCUMENT')
-            .map((item) => ({
-              workflowTag: item.workflowTag,
-              snippet: item.snippet,
-              confidenceScore: item.confidenceScore,
-              sourceType: item.sourceType,
-            })),
-        },
-        6,
-      );
+      // Intent-driven RAG queries when extraction succeeded with >= 2 categories
+      const useIntentQueries =
+        intentVars !== null && intentVars.populatedCount >= 2;
+      const queryInputs = useIntentQueries
+        ? buildRagQueryInputsFromIntent(intentVars!, {
+            companyName: prospect.companyName ?? prospect.domain,
+            industry: prospect.industry,
+            spvName: prospect.spv?.name ?? null,
+          })
+        : buildRagQueryInputs(
+            {
+              companyName: prospect.companyName ?? prospect.domain,
+              industry: prospect.industry,
+              description: prospect.description,
+              specialties: prospect.specialties,
+              technologies: prospect.technologies,
+              country: prospect.country ?? null,
+              campaignNiche: campaign?.nicheKey ?? null,
+              spvName: prospect.spv?.name ?? null,
+              evidence: evidenceRecords
+                .filter((item) => item.sourceType !== 'RAG_DOCUMENT')
+                .map((item) => ({
+                  workflowTag: item.workflowTag,
+                  snippet: item.snippet,
+                  confidenceScore: item.confidenceScore,
+                  sourceType: item.sourceType,
+                })),
+            },
+            6,
+          );
+      diagnostics.push({
+        source: 'rag_query_strategy',
+        status: 'ok',
+        message: useIntentQueries
+          ? `Intent-driven RAG queries (${intentVars!.populatedCount} categories, ${queryInputs.length} queries).`
+          : `Keyword-fallback RAG queries (${queryInputs.length} queries).`,
+      });
 
       const primaryRagPassages = await retrieveRagPassages(db, {
         projectId: prospect.project.id,
