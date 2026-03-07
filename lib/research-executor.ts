@@ -55,6 +55,8 @@ import { triggerProspectSiteCatalogSync } from '@/lib/site-catalog';
 import { fetchKvkData, kvkDataToEvidenceDraft } from '@/lib/enrichment/kvk';
 import { extractIntentVariables } from '@/lib/extraction/intent-extractor';
 import type { IntentVariables } from '@/lib/extraction/types';
+import { generateMasterAnalysis } from '@/lib/analysis/master-analyzer';
+import type { MasterAnalysisInput } from '@/lib/analysis/types';
 import type { Prisma, PrismaClient } from '@prisma/client';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
@@ -383,7 +385,8 @@ interface SourceDiagnostic {
     | 'evidence_scoring'
     | 'intent_extraction'
     | 'rag_query_strategy'
-    | 'rag_retrieval';
+    | 'rag_retrieval'
+    | 'master_analysis';
   status: SourceStatus;
   message: string;
 }
@@ -407,7 +410,9 @@ export async function executeResearchRun(
       companyName: true,
       industry: true,
       employeeRange: true,
+      revenueRange: true,
       country: true,
+      city: true,
       description: true,
       technologies: true,
       specialties: true,
@@ -1525,6 +1530,80 @@ export async function executeResearchRun(
             ? `RAG retrieval produced ${ragPassages.length}/${rawRagPassages.length} prospect-aligned Atlantis passage matches.`
             : 'RAG retrieval returned no passages above similarity threshold.',
       });
+
+      // Phase 43: Master analysis generation — produces structured discover content
+      try {
+        const spvs = await db.sPV.findMany({
+          where: { projectId: prospect.project.id, isActive: true },
+          select: {
+            name: true,
+            code: true,
+            slug: true,
+            metricsTemplate: true,
+          },
+        });
+
+        const analysisInput: MasterAnalysisInput = {
+          intentVars: intentVars ?? {
+            categories: {
+              sector_fit: [],
+              operational_pains: [],
+              esg_csrd: [],
+              investment_growth: [],
+              workforce: [],
+            },
+            extras: [],
+            populatedCount: 0,
+            sparse: true,
+          },
+          passages: ragPassages,
+          prospect: {
+            companyName: prospect.companyName ?? prospect.domain,
+            industry: prospect.industry ?? null,
+            description: prospect.description ?? null,
+            specialties: prospect.specialties ?? [],
+            country: prospect.country ?? null,
+            city: prospect.city ?? null,
+            employeeRange: prospect.employeeRange ?? null,
+            revenueRange: prospect.revenueRange ?? null,
+          },
+          spvs: spvs.map((s) => ({
+            name: s.name,
+            code: s.code,
+            slug: s.slug,
+            metricsTemplate: s.metricsTemplate,
+          })),
+        };
+
+        const analysisResult = await generateMasterAnalysis(analysisInput);
+
+        await db.prospectAnalysis.create({
+          data: {
+            researchRunId: run.id,
+            prospectId: input.prospectId,
+            version: 'analysis-v1',
+            content: toJson(analysisResult),
+            modelUsed: analysisResult.modelUsed,
+            inputSnapshot: toJson({
+              intentVarCount: intentVars?.populatedCount ?? 0,
+              passageCount: ragPassages.length,
+              spvCount: spvs.length,
+            }),
+          },
+        });
+
+        diagnostics.push({
+          source: 'master_analysis',
+          status: 'ok',
+          message: `Master analysis generated: ${analysisResult.triggers.length} triggers, ${analysisResult.tracks.length} tracks`,
+        });
+      } catch (analysisErr) {
+        diagnostics.push({
+          source: 'master_analysis',
+          status: 'warning',
+          message: `Master analysis skipped: ${analysisErr instanceof Error ? analysisErr.message : 'Unknown error'}`,
+        });
+      }
     } catch (err) {
       diagnostics.push({
         source: 'rag_retrieval',
