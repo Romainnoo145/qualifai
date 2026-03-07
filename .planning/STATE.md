@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-05)
+See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** v4.0 Atlantis Partnership Outreach — discover quality + validation
+**Current focus:** v5.0 Atlantis Intelligence & NDA Pipeline — AI-powered discover content generation
 
 ## Current Position
 
-Phase: 40 (deferred) -> 41 (next)
-Plan: 40-01 (reverted/deferred) / 40-02 (deferred)
-Status: Admin SPV assignment/filtering was de-scoped; priority shifted to discover coverage/relevance quality and Atlantis E2E validation
-Last activity: 2026-03-07 — Phase 40-01 rollback completed and roadmap reprioritized
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-07 — Milestone v5.0 started
 
-Progress: [█████████████████████████░░░░░] 77% (35 phases complete across 8 shipped milestones)
+Progress: [██████████████████████████░░░░] 80% (39 phases complete across 8 shipped milestones)
 
 ## Milestones Shipped
 
@@ -25,37 +25,38 @@ Progress: [███████████████████████
 - v2.1 Production Bootstrap — 2026-03-02 (Phases 23-27.1)
 - v2.2 Verified Pain Intelligence — 2026-03-02 (Phases 28-30)
 - v3.0 Sharp Analysis — 2026-03-05 (Phases 31-35)
+- v4.0 Atlantis Partnership Outreach — 2026-03-07 (Phases 36-39, 40-41 deferred)
 
 ## Parked
 
-- Phase 40 admin SPV UX work (40-01, 40-02) until operational need is proven.
+- v4.0 Phase 40 (Admin Project Operations) — deferred, no operational need proven
+- v4.0 Phase 41 (Validation + First Real Atlantis Prospect) — folded into v5.0 scope
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting v4.0:
+Recent decisions affecting v5.0:
 
-- v4.0: Same-app multi-project approach over separate app — reuses 80% of infrastructure, one codebase to maintain
-- v4.0: Dual evidence pipeline — external research reveals prospect needs, RAG matching shows how Europe's Gate addresses them
-- v4.0: Project entity determines pipeline additions and /discover/ template — clean separation via projectType
-- v4.0: 8 SPVs from Europe's Gate juridische structuur: InfraCo, EnergyCo, SteelCo, RealEstateCo, DataCo, MobilityCo, BlueCo, DefenceCo
-- v4.0: 4 initial target groups: Hyperscalers→DataCo, Steel→SteelCo, Infra/Pension→InfraCo/HeatCo, Energy→EnergyCo
+- v5.0: AI-generated discover content replaces template-based opportunity cards and rule-based triggers
+- v5.0: Extraction matrix approach — scraper data analyzed into intent variables before RAG query
+- v5.0: Three-section discover: Context (hook/KPIs) → Triggers (why you/now) → Partnership (NDA gate)
+- v5.0: Boardroom tone — visionary, data-backed, never mention AI/RAG/scraping
+- v5.0: NDA e-sign is lower priority than extraction + analysis quality
+- v5.0: Goal is intrigue, not precision — scale numbers create awe, prospect should feel "I need to be part of this"
 
 ### Pending Todos
 
-- Execute discover-focused validation track:
-  - confirm URL selection quality on real Atlantis prospects
-  - tighten discover evidence relevance before adding new admin surface
+- Define v5.0 requirements and roadmap
 
 ### Blockers/Concerns
 
-- Europe's Gate documents contain sensitive financial data — keep strict project-scoped auth boundaries for retrieval/citations.
+- Europe's Gate documents contain sensitive financial data — keep strict project-scoped auth boundaries
+- NDA e-sign has legal implications — may need lawyer review of NDA template text
 
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: v4.0 Phase 40 deferred after rollback.
-Resume file: .planning/phases/39-partnership-discover-template/39-02-SUMMARY.md
-Resume command: `/gsd:execute-phase 41`
+Stopped at: Defining v5.0 requirements
+Resume command: `/gsd:new-milestone`

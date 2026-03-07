@@ -61,17 +61,9 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ### Active
 
-<!-- v4.0 Atlantis Partnership Outreach — planning -->
+<!-- v5.0 Atlantis Intelligence & NDA Pipeline -->
 
-- [x] Define v4.0 requirements from research artifacts (`STACK.md`, `FEATURES.md`, `ARCHITECTURE.md`, `PITFALLS.md`, `SUMMARY.md`)
-- [x] Create v4.0 roadmap (phases 36-41) for schema, ingestion, retrieval, /discover/ template, admin filter, and integration test
-- [x] Execute Phase 36-01 (schema + migration + backfill to Klarifai project)
-- [x] Execute Phase 36-02 (project/SPV seeds + project-scoped router plumbing)
-- [x] Create phase execution folder for 36 and begin first plan artifact
-- [x] Execute Phase 37-01 (Atlantis markdown chunker + metadata extraction)
-- [x] Execute Phase 37-02 (embedding generation + idempotent ingestion CLI)
-- [x] Execute Phase 38-01 (SPV/project-scoped retriever + similarity threshold + `RAG_DOCUMENT` persistence)
-- [x] Execute Phase 38-02 (dual-evidence opportunity generation + graceful RAG degradation)
+(Requirements being defined — see REQUIREMENTS.md)
 
 ### Out of Scope
 
@@ -142,29 +134,29 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ---
 
-## Current Milestone: v4.0 Atlantis Partnership Outreach
+## Current Milestone: v5.0 Atlantis Intelligence & NDA Pipeline
 
-**Goal:** Transform Qualifai into a multi-project outreach platform — starting with Europe's Gate, a mega-infrastructure project (Amsterdam-London corridor) with 8 SPVs targeting hyperscalers, steel producers, infrastructure funds, and energy companies. Each prospect sees dual evidence: external research reveals their needs, RAG-matched documents show how Europe's Gate addresses those needs.
+**Goal:** Replace the template-based Atlantis discover pipeline with AI-powered content generation that creates intrigue. Scraped prospect data gets analyzed into intent variables (sector fit, operational pains, ESG signals, growth patterns), then AI combines those with RAG passages to generate boardroom-ready discover pages that make prospects feel "this project could change our industry." The discover page is a teaser — intriguing enough to drive NDA signing, which unlocks the full dossier and EU subsidie process.
 
 **Target features:**
 
-- Multi-project data model (Project, SPV, ProjectDocument entities)
-- RAG document ingestion pipeline for 34 Atlantis technical volumes (8 volumes, 1.8M words)
-- Dual evidence pipeline: external research (existing) + RAG document passage matching (new)
-- Partnership-focused /discover/ template with opportunity cards bridging prospect needs ↔ project capabilities
-- SPV-specific metrics (CO2 reduction, capacity, investment size, payback years)
-- Target group → SPV → Document routing (4 groups: Hyperscalers→DataCo, Steel→SteelCo, Infra/Pension→InfraCo, Energy→EnergyCo)
-- Auth-scoped account context: login token determines project scope (no manual project switcher)
+- Extraction matrix: scraper data → intent variables (sector, pains, ESG targets, investments, growth signals)
+- AI master analysis: Claude/Gemini prompt combining intent variables + RAG passages into prospect-specific narrative
+- Three-section discover page: Context (scale/awe hook + KPIs) → Triggers (why you, why now) → Partnership (NDA gate)
+- Boardroom tone: visionary but data-backed, never mention AI/RAG/scraping, specific numbers from RAG docs
+- Digital NDA e-sign flow in discover dashboard (legal text, signature, PDF generation, DB storage)
+- Post-NDA content unlock (detailed dossier access)
+- Real prospect validation end-to-end
 
-**Architecture principle:** Project type determines which pipeline additions run and which /discover/ template renders. Shared infrastructure (admin, auth, email, DB, tRPC) stays project-agnostic. No coupling between project-specific code paths.
+**Architecture principle:** The analysis layer (extraction → AI reasoning → narrative) is the core investment. Discover page renders whatever the analysis produces. NDA flow is an add-on CTA, not the priority.
 
 ## Current State
 
-**Latest shipped:** v3.0 Sharp Analysis (2026-03-05) — hypothesis analysis quality uplift, configurable model selection, AI metric derivation + source attribution, and validation/calibration closure.
+**Latest shipped:** v4.0 Atlantis Partnership Outreach (2026-03-07) — multi-project schema, RAG ingestion, retrieval + dual evidence, partnership discover template. Phases 40-41 deferred.
 
-**Completed milestone:** v3.0 Sharp Analysis — all requirements closed (ANLYS, MODEL, VALID, DEBT); final VALID-01 check passed with ACCEPTED + DECLINED status transitions confirmed for Mujjo.
+**Previous milestone:** v3.0 Sharp Analysis (2026-03-05) — hypothesis analysis quality uplift, configurable model selection, AI metric derivation + source attribution, validation/calibration closure.
 
-**Active milestone:** v4.0 Atlantis Partnership Outreach — discover quality + validation focus (Phase 40 deferred)
+**Active milestone:** v5.0 Atlantis Intelligence & NDA Pipeline
 
 ---
 
