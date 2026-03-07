@@ -183,6 +183,7 @@ model Prospect {
   gateOverrideAudits      GateOverrideAudit[]
   siteCatalogRuns         ProspectSiteCatalogRun[]
   siteCatalogUrls         ProspectSiteUrl[]
+  intentExtractions       IntentExtraction[]
 
   @@index([domain])
   @@index([status])
@@ -382,6 +383,7 @@ model ResearchRun {
   outreachSequences       OutreachSequence[]
   callPrepPlans           CallPrepPlan[]
   gateOverrideAudits      GateOverrideAudit[]
+  intentExtraction        IntentExtraction?
 
   @@index([prospectId])
   @@index([campaignId])
@@ -899,4 +901,26 @@ model GateOverrideAudit {
   @@index([researchRunId])
   @@index([prospectId])
   @@index([createdAt])
+}
+
+// =============================================================================
+// INTENT EXTRACTION (Phase 42)
+// =============================================================================
+
+model IntentExtraction {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  variables      Json     // IntentVariables object
+  populatedCount Int
+  sparse         Boolean  @default(false)
+  modelUsed      String?  // which AI model produced this
+
+  researchRunId String      @unique
+  researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
+  prospectId    String
+  prospect      Prospect    @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@index([prospectId])
+  @@index([researchRunId])
 }
