@@ -568,4 +568,13 @@ export const researchRouter = router({
         where: { researchRunId: input.runId },
       });
     }),
+
+  getProspectAnalysis: adminProcedure
+    .input(z.object({ prospectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.prospectAnalysis.findFirst({
+        where: { prospectId: input.prospectId },
+        orderBy: { createdAt: 'desc' },
+      });
+    }),
 });
