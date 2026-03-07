@@ -7,7 +7,11 @@ import {
   runSummaryPayload,
   reviewSeedUrls,
 } from '@/lib/workflow-engine';
-import { retrieveRagPassages, buildRagQueryInputs } from '@/lib/rag/retriever';
+import {
+  retrieveRagPassages,
+  buildRagQueryInputs,
+  rankRagPassagesForProspect,
+} from '@/lib/rag/retriever';
 import { generateDualEvidenceOpportunityDrafts } from '@/lib/rag/opportunity-generator';
 import { generatePartnershipAssessment } from '@/lib/partnership/trigger-generator';
 import { ingestReviewEvidenceDrafts } from '@/lib/review-adapters';
@@ -48,6 +52,8 @@ import {
 } from '@/lib/enrichment/url-selection';
 import { triggerProspectSiteCatalogSync } from '@/lib/site-catalog';
 import { fetchKvkData, kvkDataToEvidenceDraft } from '@/lib/enrichment/kvk';
+import { extractIntentVariables } from '@/lib/extraction/intent-extractor';
+import type { IntentVariables } from '@/lib/extraction/types';
 import type { Prisma, PrismaClient } from '@prisma/client';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
@@ -374,6 +380,7 @@ interface SourceDiagnostic {
     | 'customer_reviews'
     | 'dutch_industry_news'
     | 'evidence_scoring'
+    | 'intent_extraction'
     | 'rag_retrieval';
   status: SourceStatus;
   message: string;
@@ -1306,12 +1313,78 @@ export async function executeResearchRun(
     evidenceRecords.push(record);
   }
 
+  // Phase 42: Intent extraction for Atlantis prospects (before RAG retrieval)
+  let intentVars: IntentVariables | null = null;
+  if (prospect.project.projectType === 'ATLANTIS') {
+    try {
+      intentVars = await extractIntentVariables(
+        evidenceRecords
+          .filter(
+            (item) =>
+              item.sourceType !== 'RAG_DOCUMENT' && item.confidenceScore >= 0.5,
+          )
+          .map((item) => ({
+            id: item.id,
+            sourceType: item.sourceType,
+            sourceUrl: item.sourceUrl,
+            snippet: item.snippet,
+            title: item.title,
+            confidenceScore: item.confidenceScore,
+            workflowTag: item.workflowTag,
+            metadata: item.metadata,
+          })),
+        {
+          companyName: prospect.companyName ?? prospect.domain,
+          industry: prospect.industry ?? null,
+          description: prospect.description ?? null,
+          specialties: prospect.specialties,
+        },
+      );
+
+      await db.intentExtraction.create({
+        data: {
+          researchRunId: run.id,
+          prospectId: input.prospectId,
+          variables: toJson(intentVars),
+          populatedCount: intentVars.populatedCount,
+          sparse: intentVars.sparse,
+          modelUsed: 'gemini-2.0-flash',
+        },
+      });
+
+      diagnostics.push({
+        source: 'intent_extraction',
+        status: intentVars.sparse ? 'warning' : 'ok',
+        message: intentVars.sparse
+          ? `Intent extraction sparse: ${intentVars.populatedCount}/5 core categories populated.`
+          : `Intent extraction complete: ${intentVars.populatedCount}/5 core categories populated (${Object.entries(
+              intentVars.categories,
+            )
+              .filter(([, v]) => v.length > 0)
+              .map(([k]) => k)
+              .join(', ')}).`,
+      });
+    } catch (extractionErr) {
+      diagnostics.push({
+        source: 'intent_extraction',
+        status: 'warning',
+        message: `Intent extraction skipped: ${extractionErr instanceof Error ? extractionErr.message : 'Unknown error'}`,
+      });
+    }
+  }
+
   if (prospect.project.projectType === 'ATLANTIS') {
     try {
       const queryInputs = buildRagQueryInputs(
         {
           companyName: prospect.companyName ?? prospect.domain,
           industry: prospect.industry,
+          description: prospect.description,
+          specialties: prospect.specialties,
+          technologies: prospect.technologies,
+          country: prospect.country ?? null,
+          campaignNiche: campaign?.nicheKey ?? null,
+          spvName: prospect.spv?.name ?? null,
           evidence: evidenceRecords
             .filter((item) => item.sourceType !== 'RAG_DOCUMENT')
             .map((item) => ({
@@ -1321,16 +1394,51 @@ export async function executeResearchRun(
               sourceType: item.sourceType,
             })),
         },
-        4,
+        6,
       );
 
-      const ragPassages = await retrieveRagPassages(db, {
+      const primaryRagPassages = await retrieveRagPassages(db, {
         projectId: prospect.project.id,
         spvId: prospect.spv?.id ?? null,
         queryInputs,
-        limitPerQuery: 8,
-        maxResults: 12,
+        limitPerQuery: 16,
+        maxResults: 36,
+        similarityThreshold: 0.4,
       });
+      let rawRagPassages = primaryRagPassages;
+      if (primaryRagPassages.length < 8) {
+        const broadRagPassages = await retrieveRagPassages(db, {
+          projectId: prospect.project.id,
+          spvId: null,
+          queryInputs,
+          limitPerQuery: 24,
+          maxResults: 56,
+          similarityThreshold: 0.32,
+        });
+        const mergedByChunk = new Map(
+          [...primaryRagPassages, ...broadRagPassages].map((passage) => [
+            passage.chunkId,
+            passage,
+          ]),
+        );
+        rawRagPassages = Array.from(mergedByChunk.values())
+          .sort((a, b) => b.similarity - a.similarity)
+          .slice(0, 48);
+      }
+      const ragPassages = rankRagPassagesForProspect(
+        rawRagPassages,
+        {
+          companyName: prospect.companyName ?? prospect.domain,
+          industry: prospect.industry,
+          description: prospect.description,
+          specialties: prospect.specialties,
+          technologies: prospect.technologies,
+          country: prospect.country ?? null,
+          campaignNiche: campaign?.nicheKey ?? null,
+          spvName: prospect.spv?.name ?? null,
+        },
+        12,
+      );
 
       for (const passage of ragPassages) {
         const confidenceScore = Math.min(
@@ -1396,7 +1504,7 @@ export async function executeResearchRun(
         status: ragPassages.length > 0 ? 'ok' : 'warning',
         message:
           ragPassages.length > 0
-            ? `RAG retrieval produced ${ragPassages.length} Atlantis passage matches.`
+            ? `RAG retrieval produced ${ragPassages.length}/${rawRagPassages.length} prospect-aligned Atlantis passage matches.`
             : 'RAG retrieval returned no passages above similarity threshold.',
       });
     } catch (err) {
