@@ -121,12 +121,12 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 1. Running research on an Atlantis prospect produces structured intent variables (sector fit, operational pains, ESG/CSRD signals, investment/growth patterns, workforce signals) with source attribution per variable
 2. RAG retrieval queries are constructed from intent variables instead of keyword-stuffed profile fragments, returning more relevant passages
 3. Intent variables are persisted to the database and available for inspection in admin prospect detail
-   **Plans**: TBD
+   **Plans**: 2 plans
 
 Plans:
 
-- [ ] 42-01: TBD
-- [ ] 42-02: TBD
+- [ ] 42-01-PLAN.md — Intent variable types, schema, extraction module, and research pipeline integration
+- [ ] 42-02-PLAN.md — Intent-driven RAG query builder and admin Intent Signals UI
 
 ### Phase 43: AI Master Analysis
 
@@ -226,7 +226,7 @@ Phases execute in numeric order: 42 → 43 → 44 → 45
 | 39. Partnership Discover Template      | v4.0      | 2/2            | Complete    | 2026-03-07 |
 | 40. Admin Project Operations           | v4.0      | 0/2            | Deferred    | -          |
 | 41. Validation + First Atlantis        | v4.0      | 0/2            | Deferred    | -          |
-| 42. Extraction Matrix                  | v5.0      | 0/?            | Not started | -          |
+| 42. Extraction Matrix                  | v5.0      | 0/2            | Not started | -          |
 | 43. AI Master Analysis                 | v5.0      | 0/?            | Not started | -          |
 | 44. Discover Rendering                 | v5.0      | 0/?            | Not started | -          |
 | 45. End-to-End Validation              | v5.0      | 0/?            | Not started | -          |
