@@ -412,9 +412,7 @@ function DraftQueue() {
             <div className="bg-[#FCFCFD] rounded-2xl p-6 border border-slate-100">
               <p className="text-sm font-black text-[#040026] mb-4 flex items-center gap-2">
                 <Mail className="w-4 h-4 text-slate-300" />
-                <span className="admin-eyebrow mr-2">
-                  Subject
-                </span>
+                <span className="admin-eyebrow mr-2">Subject</span>
                 {draft.subject}
               </p>
               <div
@@ -443,18 +441,7 @@ function TouchTaskQueue() {
     limit: 200,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const queueTask = (api.outreach.queueTouchTask as any).useMutation({
-    onSuccess: async () => {
-      setSubject('');
-      setNotes('');
-      setDueAt('');
-      await Promise.all([
-        utils.outreach.getTouchTaskQueue.invalidate(),
-        utils.outreach.getHistory.invalidate(),
-      ]);
-    },
-  });
+  // queueTouchTask removed in 46-02 — manual task creation replaced by automated cadence
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const completeTask = (api.outreach.completeTouchTask as any).useMutation({
@@ -479,16 +466,8 @@ function TouchTaskQueue() {
   const taskItems = (tasks.data?.items ?? []) as any[];
   const contactOptions = (contacts.data?.contacts ?? []) as any[];
 
-  const submitTask = () => {
-    if (!contactId) return;
-    queueTask.mutate({
-      contactId,
-      channel,
-      subject: subject.trim() || undefined,
-      notes: notes.trim() || undefined,
-      dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
-    });
-  };
+  // submitTask removed in 46-02 — manual task creation replaced by automated cadence
+  const submitTask = () => {};
 
   return (
     <div className="space-y-4">
@@ -565,18 +544,11 @@ function TouchTaskQueue() {
         />
         <button
           onClick={submitTask}
-          disabled={queueTask.isPending || !contactId}
+          disabled={true}
           className="ui-focus inline-flex items-center gap-2 px-4 py-2 btn-pill-secondary text-xs disabled:opacity-50"
+          title="Manual task creation disabled — cadence handles follow-ups automatically"
         >
-          {queueTask.isPending ? (
-            <>
-              <Loader2 className="w-3 h-3 animate-spin" /> Queueing...
-            </>
-          ) : (
-            <>
-              <ListChecks className="w-3 h-3" /> Add Task
-            </>
-          )}
+          <ListChecks className="w-3 h-3" /> Add Task (Disabled)
         </button>
       </div>
 
@@ -963,9 +935,7 @@ function SentHistory() {
                   @ {log.contact.prospect.companyName}
                 </span>
               )}
-              <p className="admin-meta-text mt-0.5">
-                {log.subject}
-              </p>
+              <p className="admin-meta-text mt-0.5">{log.subject}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">

@@ -21,7 +21,13 @@ import {
   captureInboundReply,
 } from '@/lib/outreach/reply-workflow';
 import { scoreContactForOutreach } from '@/lib/outreach/quality';
-import { evaluateCadence, DEFAULT_CADENCE_CONFIG } from '@/lib/cadence/engine';
+import {
+  evaluateCadence,
+  DEFAULT_CADENCE_CONFIG,
+  REMINDER_STATUS_OPEN,
+  REMINDER_STATUS_DONE,
+  REMINDER_STATUS_SKIPPED,
+} from '@/lib/cadence/engine';
 import { buildDiscoverUrl } from '@/lib/prospect-url';
 
 function metadataAsObject(value: unknown): Record<string, unknown> {
@@ -48,9 +54,6 @@ async function resolveSequenceId(
 }
 
 const TOUCH_TASK_CHANNELS = ['email', 'call', 'linkedin', 'whatsapp'] as const;
-const TOUCH_TASK_STATUS_OPEN = 'touch_open';
-const TOUCH_TASK_STATUS_DONE = 'touch_done';
-const TOUCH_TASK_STATUS_SKIPPED = 'touch_skipped';
 
 type TouchTaskChannel = (typeof TOUCH_TASK_CHANNELS)[number];
 
@@ -1066,66 +1069,6 @@ Klarifai`;
       });
     }),
 
-  queueTouchTask: adminProcedure
-    .input(
-      z.object({
-        contactId: z.string(),
-        channel: z.enum(TOUCH_TASK_CHANNELS).default('call'),
-        subject: z.string().min(2).max(180).optional(),
-        notes: z.string().max(2000).optional(),
-        dueAt: z.string().datetime().optional(),
-        priority: z.enum(['low', 'medium', 'high']).default('medium'),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      await ctx.db.contact.findUniqueOrThrow({
-        where: { id: input.contactId },
-        select: { id: true },
-      });
-
-      const defaultSubject =
-        input.channel === 'call'
-          ? 'Manual call follow-up'
-          : input.channel === 'linkedin'
-            ? 'LinkedIn touch follow-up'
-            : input.channel === 'whatsapp'
-              ? 'WhatsApp follow-up'
-              : 'Manual email follow-up';
-
-      return ctx.db.outreachLog.create({
-        data: {
-          contactId: input.contactId,
-          type: 'FOLLOW_UP',
-          channel: input.channel,
-          status: TOUCH_TASK_STATUS_OPEN,
-          subject: input.subject?.trim() || defaultSubject,
-          bodyText: input.notes?.trim() || null,
-          metadata: {
-            kind: 'touch_task',
-            priority: input.priority,
-            dueAt: input.dueAt ?? null,
-            notes: input.notes?.trim() || null,
-            createdBy: 'admin-ui',
-          } as never,
-        },
-        include: {
-          contact: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              primaryEmail: true,
-              primaryPhone: true,
-              linkedinUrl: true,
-              prospect: {
-                select: { id: true, companyName: true, domain: true },
-              },
-            },
-          },
-        },
-      });
-    }),
-
   getTouchTaskQueue: adminProcedure
     .input(
       z
@@ -1143,15 +1086,15 @@ Klarifai`;
       const status = input?.status ?? 'open';
       const statusFilter =
         status === 'open'
-          ? [TOUCH_TASK_STATUS_OPEN]
+          ? [REMINDER_STATUS_OPEN]
           : status === 'completed'
-            ? [TOUCH_TASK_STATUS_DONE]
+            ? [REMINDER_STATUS_DONE]
             : status === 'skipped'
-              ? [TOUCH_TASK_STATUS_SKIPPED]
+              ? [REMINDER_STATUS_SKIPPED]
               : [
-                  TOUCH_TASK_STATUS_OPEN,
-                  TOUCH_TASK_STATUS_DONE,
-                  TOUCH_TASK_STATUS_SKIPPED,
+                  REMINDER_STATUS_OPEN,
+                  REMINDER_STATUS_DONE,
+                  REMINDER_STATUS_SKIPPED,
                 ];
 
       const logs = await ctx.db.outreachLog.findMany({
@@ -1189,7 +1132,7 @@ Klarifai`;
         .map((log) => {
           const touchMeta = getTouchTaskMetadata(log.metadata);
           const isOverdue =
-            log.status === TOUCH_TASK_STATUS_OPEN &&
+            log.status === REMINDER_STATUS_OPEN &&
             touchMeta.dueAt !== null &&
             touchMeta.dueAt.getTime() < now;
           return {
@@ -1224,13 +1167,13 @@ Klarifai`;
         items,
         summary: {
           total: items.length,
-          open: items.filter((item) => item.status === TOUCH_TASK_STATUS_OPEN)
+          open: items.filter((item) => item.status === REMINDER_STATUS_OPEN)
             .length,
           completed: items.filter(
-            (item) => item.status === TOUCH_TASK_STATUS_DONE,
+            (item) => item.status === REMINDER_STATUS_DONE,
           ).length,
           skipped: items.filter(
-            (item) => item.status === TOUCH_TASK_STATUS_SKIPPED,
+            (item) => item.status === REMINDER_STATUS_SKIPPED,
           ).length,
           overdue: items.filter((item) => item.task.isOverdue).length,
           byChannel,
@@ -1250,8 +1193,8 @@ Klarifai`;
         where: { id: input.id },
       });
 
-      if (task.status !== TOUCH_TASK_STATUS_OPEN) {
-        throw new Error('Only open touch tasks can be completed');
+      if (task.status !== REMINDER_STATUS_OPEN) {
+        throw new Error('Only open reminders can be completed');
       }
 
       const metadata = metadataAsObject(task.metadata);
@@ -1259,7 +1202,7 @@ Klarifai`;
       const updated = await ctx.db.outreachLog.update({
         where: { id: input.id },
         data: {
-          status: TOUCH_TASK_STATUS_DONE,
+          status: REMINDER_STATUS_DONE,
           sentAt: completedAt,
           metadata: {
             ...metadata,
@@ -1332,8 +1275,8 @@ Klarifai`;
         where: { id: input.id },
       });
 
-      if (task.status !== TOUCH_TASK_STATUS_OPEN) {
-        throw new Error('Only open touch tasks can be skipped');
+      if (task.status !== REMINDER_STATUS_OPEN) {
+        throw new Error('Only open reminders can be skipped');
       }
 
       const metadata = metadataAsObject(task.metadata);
@@ -1341,7 +1284,7 @@ Klarifai`;
       const updated = await ctx.db.outreachLog.update({
         where: { id: input.id },
         data: {
-          status: TOUCH_TASK_STATUS_SKIPPED,
+          status: REMINDER_STATUS_SKIPPED,
           metadata: {
             ...metadata,
             kind: metadata.kind ?? 'touch_task',

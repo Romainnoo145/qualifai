@@ -66,15 +66,7 @@ export default function ContactDetail() {
       ]);
     },
   });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const queueTouchTask = (api.outreach.queueTouchTask as any).useMutation({
-    onSuccess: async () => {
-      await Promise.all([
-        utils.contacts.get.invalidate({ id }),
-        utils.outreach.getTouchTaskQueue.invalidate(),
-      ]);
-    },
-  });
+  // queueTouchTask removed in 46-02 — manual task creation replaced by automated cadence
 
   if (contact.isLoading) {
     return (
@@ -169,24 +161,7 @@ export default function ContactDetail() {
                   ? 'Initialize Outreach'
                   : 'No Report Yet'}
             </button>
-            <button
-              onClick={() =>
-                queueTouchTask.mutate({ contactId: id, channel: 'call' })
-              }
-              disabled={queueTouchTask.isPending}
-              className="ui-tap px-6 py-3 rounded-2xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-            >
-              Queue Call
-            </button>
-            <button
-              onClick={() =>
-                queueTouchTask.mutate({ contactId: id, channel: 'linkedin' })
-              }
-              disabled={queueTouchTask.isPending}
-              className="ui-tap px-6 py-3 rounded-2xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-            >
-              Queue LinkedIn
-            </button>
+            {/* Queue Call / Queue LinkedIn buttons removed in 46-02 — cadence handles follow-ups */}
           </div>
         </div>
       </div>
