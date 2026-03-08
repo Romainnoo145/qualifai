@@ -25,6 +25,13 @@ Requirements for outreach simplification. Removes manual multi-touch task manage
 - [ ] **BKCL-02**: touch_open/touch_done/touch_skipped status values removed from outreach flow
 - [ ] **BKCL-03**: completeTouchTask and skipTouchTask endpoints refactored to handle reminder dismissal
 
+### SERP API Replacement
+
+- [ ] **SERP-01**: Google News enrichment uses free RSS feed (news.google.com/rss/search) instead of SerpAPI
+- [ ] **SERP-02**: Google Reviews enrichment uses Scrapling DynamicFetcher + Google Places API free tier instead of SerpAPI
+- [ ] **SERP-03**: Deep URL discovery (review/job seed URLs) uses Scrapling Google search scraping instead of SerpAPI
+- [ ] **SERP-04**: LinkedIn Jobs enrichment remains on SerpAPI (no free alternative) — isolated as the only SERP dependency
+
 ## Previous Milestone Requirements (v5.0 — Complete)
 
 ### Extraction

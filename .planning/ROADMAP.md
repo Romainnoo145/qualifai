@@ -113,10 +113,11 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 ### v6.0 Outreach Simplification (In Progress)
 
-**Milestone Goal:** Remove manual multi-touch task management and let the cadence engine own follow-up scheduling. The outreach page drops from 4 tabs to 3 by killing Multi-touch Tasks. Admin workflow becomes: approve drafts, triage replies, review sent history. No manual task creation, no channel selection, no due dates.
+**Milestone Goal:** Remove manual multi-touch task management, automate cadence follow-ups, and replace paid SerpAPI with free alternatives where possible. The outreach page drops from 4 tabs to 3 by killing Multi-touch Tasks. Evidence pipeline stops burning SERP credits for Google News and Reviews.
 
 - [ ] **Phase 46: Automated Cadence + Backend Cleanup** - Cadence engine auto-generates follow-up drafts and reminders, manual task endpoints removed
 - [ ] **Phase 47: Outreach UI Simplification** - Multi-touch Tasks tab killed, reminders shown inline in Drafts Queue
+- [ ] **Phase 48: SERP API Replacement** - Google News via RSS, Google Reviews via Scrapling, SERP dependency isolated to LinkedIn Jobs only
 
 ## Phase Details
 
@@ -155,10 +156,29 @@ Plans:
 
 - [ ] 47-01: TBD
 
+### Phase 48: SERP API Replacement
+
+**Goal**: Replace paid SerpAPI calls with free alternatives (RSS, Scrapling, Places API) for Google News, Google Reviews, and deep URL discovery — isolating LinkedIn Jobs as the only remaining SERP dependency
+**Depends on**: Phase 46 (no UI dependency, but sequential for focus)
+**Requirements**: SERP-01, SERP-02, SERP-03, SERP-04
+**Success Criteria** (what must be TRUE):
+
+1. Google News enrichment fetches articles from Google News RSS feed without any SerpAPI call
+2. Google Reviews enrichment uses Scrapling DynamicFetcher to scrape Google Maps reviews and/or Google Places API free tier — no SerpAPI call
+3. Deep URL discovery (serp.ts discoverSerpUrls) uses Scrapling-based Google search scraping instead of SerpAPI getJson
+4. LinkedIn Jobs enrichment is the only module that imports from 'serpapi' — all other serpapi imports are removed
+5. Research pipeline produces equivalent or better evidence quality with the free alternatives
+   **Plans**: TBD
+
+Plans:
+
+- [ ] 48-01: TBD
+- [ ] 48-02: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 46 → 47
+Phases execute in numeric order: 46 → 47 → 48
 
 | Phase                                   | Milestone | Plans Complete | Status      | Completed  |
 | --------------------------------------- | --------- | -------------- | ----------- | ---------- |
@@ -206,3 +226,4 @@ Phases execute in numeric order: 46 → 47
 | 45. End-to-End Validation               | v5.0      | —              | Complete    | 2026-03-08 |
 | 46. Automated Cadence + Backend Cleanup | v6.0      | 0/2            | Not started | -          |
 | 47. Outreach UI Simplification          | v6.0      | 0/?            | Not started | -          |
+| 48. SERP API Replacement                | v6.0      | 0/?            | Not started | -          |
