@@ -13,6 +13,16 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
+import { generateFollowUp } from '@/lib/ai/generate-outreach';
+import type { OutreachContext } from '@/lib/ai/outreach-prompts';
+
+// =============================================================================
+// Reminder statuses — used for non-email cadence channels
+// =============================================================================
+
+export const REMINDER_STATUS_OPEN = 'reminder_open';
+export const REMINDER_STATUS_DONE = 'reminder_done';
+export const REMINDER_STATUS_SKIPPED = 'reminder_skipped';
 
 // =============================================================================
 // Types
@@ -281,8 +291,47 @@ export async function evaluateCadence(
 }
 
 // =============================================================================
-// processDueCadenceSteps — cron sweep, promotes due steps to touch tasks
+// processDueCadenceSteps — cron sweep, promotes due steps to drafts/reminders
 // =============================================================================
+
+/**
+ * Build an OutreachContext for AI email generation from prospect + contact data.
+ */
+function buildCadenceOutreachContext(
+  contact: {
+    firstName: string;
+    lastName: string;
+    jobTitle: string | null;
+    seniority: string | null;
+    department: string | null;
+  },
+  prospect: {
+    companyName: string | null;
+    domain: string;
+    industry: string | null;
+    employeeRange: string | null;
+    technologies: string[];
+    description: string | null;
+  },
+): OutreachContext {
+  return {
+    contact: {
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      jobTitle: contact.jobTitle,
+      seniority: contact.seniority,
+      department: contact.department,
+    },
+    company: {
+      companyName: prospect.companyName ?? prospect.domain,
+      domain: prospect.domain,
+      industry: prospect.industry ?? null,
+      employeeRange: prospect.employeeRange ?? null,
+      technologies: prospect.technologies ?? [],
+      description: prospect.description ?? null,
+    },
+  };
+}
 
 export async function processDueCadenceSteps(db: PrismaClient): Promise<{
   processed: number;
@@ -320,30 +369,110 @@ export async function processDueCadenceSteps(db: PrismaClient): Promise<{
       continue;
     }
 
-    // Create an OutreachLog touch task for the rep to action
-    const newLog = await db.outreachLog.create({
-      data: {
-        contactId,
-        type: 'FOLLOW_UP',
-        channel,
-        status: 'touch_open',
-        subject: `Cadence follow-up: ${channel}`,
-        bodyText: `Cadence task (${channel}) for ${
-          step.sequence.prospect.companyName ?? step.sequence.prospect.domain
-        }.`,
-        metadata: {
-          kind: 'touch_task',
-          priority: 'medium',
-          dueAt: step.nextStepReadyAt?.toISOString() ?? null,
-          createdBy: 'cadence-engine',
-          outreachSequenceId: step.sequenceId,
-          outreachStepId: step.id,
-        } as never,
-      },
-      select: { id: true },
-    });
+    const companyName =
+      step.sequence.prospect.companyName ?? step.sequence.prospect.domain;
 
-    // Promote step to QUEUED and link to the touch log
+    let newLog: { id: string };
+
+    if (channel === 'email') {
+      // ---- EMAIL: generate AI follow-up draft ----
+      const contact = step.sequence.contact;
+
+      // Find last sent email subject for follow-up threading
+      const lastSent = await db.outreachLog.findFirst({
+        where: {
+          contactId,
+          channel: 'email',
+          status: 'sent',
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { subject: true },
+      });
+      const previousSubject =
+        lastSent?.subject ?? `Introduction — ${companyName}`;
+
+      let subject = `Follow-up: ${companyName}`;
+      let bodyHtml = '';
+      let bodyText = '';
+
+      if (contact) {
+        try {
+          const outreachCtx = buildCadenceOutreachContext(
+            contact as {
+              firstName: string;
+              lastName: string;
+              jobTitle: string | null;
+              seniority: string | null;
+              department: string | null;
+            },
+            step.sequence.prospect as {
+              companyName: string | null;
+              domain: string;
+              industry: string | null;
+              employeeRange: string | null;
+              technologies: string[];
+              description: string | null;
+            },
+          );
+          const generated = await generateFollowUp(
+            outreachCtx,
+            previousSubject,
+          );
+          subject = generated.subject;
+          bodyHtml = generated.bodyHtml;
+          bodyText = generated.bodyText;
+        } catch (err) {
+          console.error(
+            `[cadence-engine] generateFollowUp failed for step=${step.id}, contact=${contactId}:`,
+            err,
+          );
+          // Fall back to empty-body draft — admin can write copy manually
+        }
+      }
+
+      newLog = await db.outreachLog.create({
+        data: {
+          contactId,
+          type: 'FOLLOW_UP',
+          channel: 'email',
+          status: 'draft',
+          subject,
+          bodyHtml,
+          bodyText,
+          metadata: {
+            kind: 'cadence_draft',
+            createdBy: 'cadence-engine',
+            outreachSequenceId: step.sequenceId,
+            outreachStepId: step.id,
+            evidenceBacked: true,
+          } as never,
+        },
+        select: { id: true },
+      });
+    } else {
+      // ---- NON-EMAIL (call, linkedin, whatsapp): create reminder ----
+      newLog = await db.outreachLog.create({
+        data: {
+          contactId,
+          type: 'FOLLOW_UP',
+          channel,
+          status: REMINDER_STATUS_OPEN,
+          subject: `Cadence reminder: ${channel} - ${companyName}`,
+          bodyText: '',
+          metadata: {
+            kind: 'cadence_reminder',
+            priority: 'medium',
+            dueAt: step.nextStepReadyAt?.toISOString() ?? null,
+            createdBy: 'cadence-engine',
+            outreachSequenceId: step.sequenceId,
+            outreachStepId: step.id,
+          } as never,
+        },
+        select: { id: true },
+      });
+    }
+
+    // Promote step to QUEUED and link to the log
     await db.outreachStep.update({
       where: { id: step.id },
       data: {

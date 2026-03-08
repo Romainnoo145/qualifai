@@ -49,7 +49,7 @@ export async function createEngagementCallTask(
   const existing = await db.outreachLog.findFirst({
     where: {
       channel: 'call',
-      status: 'touch_open',
+      status: 'reminder_open',
       contact: { prospectId },
       metadata: { path: ['triggerSource'], equals: triggerSource },
     },
@@ -74,10 +74,10 @@ export async function createEngagementCallTask(
       contactId,
       type: 'FOLLOW_UP',
       channel: 'call',
-      status: 'touch_open',
+      status: 'reminder_open',
       subject: TRIGGER_SUBJECTS[triggerSource],
       metadata: {
-        kind: 'touch_task',
+        kind: 'cadence_reminder',
         priority: 'high',
         dueAt: null,
         notes: null,
