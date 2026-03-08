@@ -9,9 +9,9 @@ Requirements for outreach simplification. Removes manual multi-touch task manage
 
 ### Cadence Automation
 
-- [ ] **CADNC-01**: Cadence engine auto-generates personalized follow-up email drafts and places them in the Drafts Queue for approval
-- [ ] **CADNC-02**: Non-email follow-ups (call, LinkedIn, WhatsApp) are auto-created by cadence engine as lightweight reminders (no manual task creation UI)
-- [ ] **CADNC-03**: Cron sweep promotes due cadence steps directly to draft/reminder state without the touch_open intermediary
+- [x] **CADNC-01**: Cadence engine auto-generates personalized follow-up email drafts and places them in the Drafts Queue for approval
+- [x] **CADNC-02**: Non-email follow-ups (call, LinkedIn, WhatsApp) are auto-created by cadence engine as lightweight reminders (no manual task creation UI)
+- [x] **CADNC-03**: Cron sweep promotes due cadence steps directly to draft/reminder state without the touch_open intermediary
 
 ### UI Cleanup
 
@@ -84,17 +84,17 @@ Requirements for outreach simplification. Removes manual multi-touch task manage
 
 ## Traceability
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| CADNC-01    | 46    | Pending |
-| CADNC-02    | 46    | Pending |
-| CADNC-03    | 46    | Pending |
-| UICL-01     | 47    | Pending |
-| UICL-02     | 47    | Pending |
-| UICL-03     | 47    | Pending |
-| BKCL-01     | 46    | Pending |
-| BKCL-02     | 46    | Pending |
-| BKCL-03     | 46    | Pending |
+| Requirement | Phase | Status   |
+| ----------- | ----- | -------- |
+| CADNC-01    | 46    | Complete |
+| CADNC-02    | 46    | Complete |
+| CADNC-03    | 46    | Complete |
+| UICL-01     | 47    | Pending  |
+| UICL-02     | 47    | Pending  |
+| UICL-03     | 47    | Pending  |
+| BKCL-01     | 46    | Pending  |
+| BKCL-02     | 46    | Pending  |
+| BKCL-03     | 46    | Pending  |
 
 **Coverage:**
 
