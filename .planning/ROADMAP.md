@@ -150,11 +150,12 @@ Plans:
 1. The outreach page shows exactly 3 tabs: Drafts Queue, Replies, and Sent History -- Multi-touch Tasks tab is gone
 2. There is no manual touch task creation form or related UI anywhere in the application
 3. Non-email reminders (call, LinkedIn, WhatsApp) appear as a lightweight section within the Drafts Queue tab, visually distinct from email drafts
-   **Plans**: TBD
+   **Plans**: 2 plans
 
 Plans:
 
-- [ ] 47-01: TBD
+- [ ] 47-01-PLAN.md — Remove Multi-touch Tasks tab and TouchTaskQueue component (4 tabs to 3)
+- [ ] 47-02-PLAN.md — Add inline reminders section to Drafts Queue, rename endpoint
 
 ### Phase 48: SERP API Replacement
 
