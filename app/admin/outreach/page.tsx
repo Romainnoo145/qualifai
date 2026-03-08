@@ -7,15 +7,12 @@ import {
   Check,
   X,
   Clock,
-  Phone,
-  Linkedin,
   Building2,
   Loader2,
   Send,
   History,
   ShieldCheck,
   MessageSquare,
-  ListChecks,
   WandSparkles,
   Sparkles,
   AlertTriangle,
@@ -23,8 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
-type View = 'queue' | 'tasks' | 'replies' | 'sent';
-type TouchChannel = 'email' | 'call' | 'linkedin' | 'whatsapp';
+type View = 'queue' | 'replies' | 'sent';
 
 export default function OutreachPage() {
   const [view, setView] = useState<View>('queue');
@@ -51,15 +47,6 @@ export default function OutreachPage() {
             <Mail className="w-4 h-4" /> Drafts Queue
           </button>
           <button
-            onClick={() => setView('tasks')}
-            className={cn(
-              'ui-tap ui-focus admin-toggle-btn',
-              view === 'tasks' && 'admin-toggle-btn-active',
-            )}
-          >
-            <ListChecks className="w-4 h-4" /> Multi-touch Tasks
-          </button>
-          <button
             onClick={() => setView('replies')}
             className={cn(
               'ui-tap ui-focus admin-toggle-btn',
@@ -82,8 +69,6 @@ export default function OutreachPage() {
 
       {view === 'queue' ? (
         <DraftQueue />
-      ) : view === 'tasks' ? (
-        <TouchTaskQueue />
       ) : view === 'replies' ? (
         <ReplyInbox />
       ) : (
@@ -423,225 +408,6 @@ function DraftQueue() {
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function TouchTaskQueue() {
-  const utils = api.useUtils();
-  const [contactId, setContactId] = useState('');
-  const [channel, setChannel] = useState<TouchChannel>('call');
-  const [subject, setSubject] = useState('');
-  const [notes, setNotes] = useState('');
-  const [dueAt, setDueAt] = useState('');
-
-  const contacts = api.contacts.list.useQuery({ limit: 150 });
-  const tasks = api.outreach.getTouchTaskQueue.useQuery({
-    status: 'open',
-    limit: 200,
-  });
-
-  // queueTouchTask removed in 46-02 — manual task creation replaced by automated cadence
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const completeTask = (api.outreach.completeTouchTask as any).useMutation({
-    onSuccess: async () => {
-      await Promise.all([
-        utils.outreach.getTouchTaskQueue.invalidate(),
-        utils.outreach.getHistory.invalidate(),
-      ]);
-    },
-  });
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const skipTask = (api.outreach.skipTouchTask as any).useMutation({
-    onSuccess: async () => {
-      await Promise.all([
-        utils.outreach.getTouchTaskQueue.invalidate(),
-        utils.outreach.getHistory.invalidate(),
-      ]);
-    },
-  });
-
-  const taskItems = (tasks.data?.items ?? []) as any[];
-  const contactOptions = (contacts.data?.contacts ?? []) as any[];
-
-  // submitTask removed in 46-02 — manual task creation replaced by automated cadence
-  const submitTask = () => {};
-
-  return (
-    <div className="space-y-4">
-      <div className="glass-card p-5 flex flex-wrap items-center gap-3 text-xs text-slate-600">
-        <span>
-          Open tasks: <strong>{tasks.data?.summary.open ?? 0}</strong>
-        </span>
-        <span className="text-amber-700">
-          Overdue: <strong>{tasks.data?.summary.overdue ?? 0}</strong>
-        </span>
-        <span>
-          Call: <strong>{tasks.data?.summary.byChannel.call ?? 0}</strong>
-        </span>
-        <span>
-          LinkedIn:{' '}
-          <strong>{tasks.data?.summary.byChannel.linkedin ?? 0}</strong>
-        </span>
-        <span>
-          WhatsApp:{' '}
-          <strong>{tasks.data?.summary.byChannel.whatsapp ?? 0}</strong>
-        </span>
-        <span>
-          Email: <strong>{tasks.data?.summary.byChannel.email ?? 0}</strong>
-        </span>
-      </div>
-
-      <div className="glass-card p-6 space-y-4">
-        <h2 className="text-lg font-black text-[#040026] tracking-tight">
-          Queue New Touch Task
-        </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <select
-            value={contactId}
-            onChange={(e) => setContactId(e.target.value)}
-            className="w-full px-4 py-2.5 input-minimal text-sm focus:outline-none focus:ring-2 focus:ring-[#EBCB4B]/40"
-          >
-            <option value="">Select contact</option>
-            {contactOptions.map((contact) => (
-              <option key={contact.id} value={contact.id}>
-                {contact.firstName} {contact.lastName} -{' '}
-                {contact.prospect.companyName ?? contact.prospect.domain}
-              </option>
-            ))}
-          </select>
-          <select
-            value={channel}
-            onChange={(e) => setChannel(e.target.value as TouchChannel)}
-            className="w-full px-4 py-2.5 input-minimal text-sm focus:outline-none focus:ring-2 focus:ring-[#EBCB4B]/40"
-          >
-            <option value="call">Call</option>
-            <option value="linkedin">LinkedIn</option>
-            <option value="whatsapp">WhatsApp</option>
-            <option value="email">Manual Email</option>
-          </select>
-          <input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="Task title (optional)"
-            className="w-full px-4 py-2.5 input-minimal text-sm focus:outline-none focus:ring-2 focus:ring-[#EBCB4B]/40"
-          />
-          <input
-            type="datetime-local"
-            value={dueAt}
-            onChange={(e) => setDueAt(e.target.value)}
-            className="w-full px-4 py-2.5 input-minimal text-sm focus:outline-none focus:ring-2 focus:ring-[#EBCB4B]/40"
-          />
-        </div>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={3}
-          placeholder="Context / notes for this touch"
-          className="w-full px-4 py-2.5 input-minimal text-sm focus:outline-none focus:ring-2 focus:ring-[#EBCB4B]/40 resize-none"
-        />
-        <button
-          onClick={submitTask}
-          disabled={true}
-          className="ui-focus inline-flex items-center gap-2 px-4 py-2 btn-pill-secondary text-xs disabled:opacity-50"
-          title="Manual task creation disabled — cadence handles follow-ups automatically"
-        >
-          <ListChecks className="w-3 h-3" /> Add Task (Disabled)
-        </button>
-      </div>
-
-      {taskItems.length === 0 ? (
-        <div className="glass-card p-10 text-center">
-          <ListChecks className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm font-black text-[#040026] uppercase tracking-widest mb-2">
-            No open multi-touch tasks
-          </p>
-          <p className="admin-meta-text">
-            Nieuwe tasks verschijnen hier na signal processing.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {taskItems.map((task) => (
-            <div
-              key={task.id}
-              className="glass-card card-interactive p-5 space-y-3"
-            >
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-black text-[#040026]">
-                    {task.contact.firstName} {task.contact.lastName}
-                  </p>
-                  <p className="admin-meta-text mt-0.5">
-                    {task.contact.prospect.companyName ??
-                      task.contact.prospect.domain}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="admin-state-pill admin-state-neutral">
-                    {task.channel}
-                  </span>
-                  {task.task?.isOverdue && (
-                    <span className="admin-state-pill admin-state-warning">
-                      Overdue
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="admin-meta-text-strong flex flex-wrap items-center gap-3">
-                <span className="inline-flex items-center gap-1.5">
-                  {task.channel === 'call' ? (
-                    <Phone className="w-3.5 h-3.5" />
-                  ) : task.channel === 'linkedin' ? (
-                    <Linkedin className="w-3.5 h-3.5" />
-                  ) : task.channel === 'whatsapp' ? (
-                    <MessageSquare className="w-3.5 h-3.5" />
-                  ) : (
-                    <Mail className="w-3.5 h-3.5" />
-                  )}
-                  {task.subject ?? 'Manual touch task'}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5" />
-                  {task.task?.dueAt
-                    ? `Due ${new Date(task.task.dueAt).toLocaleString()}`
-                    : 'No due date'}
-                </span>
-              </div>
-
-              {task.task?.notes && (
-                <p className="admin-meta-text-strong whitespace-pre-wrap bg-slate-50 rounded-lg p-3">
-                  {task.task.notes}
-                </p>
-              )}
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => completeTask.mutate({ id: task.id })}
-                  disabled={completeTask.isPending || skipTask.isPending}
-                  className="ui-focus ui-tap px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 disabled:opacity-50"
-                >
-                  <span className="inline-flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Completed
-                  </span>
-                </button>
-                <button
-                  onClick={() => skipTask.mutate({ id: task.id })}
-                  disabled={completeTask.isPending || skipTask.isPending}
-                  className="ui-focus ui-tap px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 disabled:opacity-50"
-                >
-                  <span className="inline-flex items-center gap-1">
-                    <X className="w-3 h-3" /> Skip
-                  </span>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
