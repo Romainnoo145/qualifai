@@ -134,30 +134,27 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ---
 
-## Current Milestone: v5.0 Atlantis Intelligence & NDA Pipeline
+## Current Milestone: v6.0 Outreach Simplification
 
-**Goal:** Replace the template-based Atlantis discover pipeline with AI-powered content generation that creates intrigue. Scraped prospect data gets analyzed into intent variables (sector fit, operational pains, ESG signals, growth patterns), then AI combines those with RAG passages to generate boardroom-ready discover pages that make prospects feel "this project could change our industry." The discover page is a teaser — intriguing enough to drive NDA signing, which unlocks the full dossier and EU subsidie process.
+**Goal:** Remove manual multi-touch task management and let the cadence engine handle follow-ups automatically. The outreach page goes from 4 tabs to 3 by killing Multi-touch Tasks. Admin workflow becomes: approve drafts → triage replies → review sent history. No manual task creation, no channel selection, no due dates — the system handles cadence across channels.
 
 **Target features:**
 
-- Extraction matrix: scraper data → intent variables (sector, pains, ESG targets, investments, growth signals)
-- AI master analysis: Claude/Gemini prompt combining intent variables + RAG passages into prospect-specific narrative
-- Three-section discover page: Context (scale/awe hook + KPIs) → Triggers (why you, why now) → Partnership (NDA gate)
-- Boardroom tone: visionary but data-backed, never mention AI/RAG/scraping, specific numbers from RAG docs
-- Digital NDA e-sign flow in discover dashboard (legal text, signature, PDF generation, DB storage)
-- Post-NDA content unlock (detailed dossier access)
-- Real prospect validation end-to-end
+- Kill Multi-touch Tasks tab and all manual task creation UI
+- Automate multi-channel follow-up cadence (system schedules call/LinkedIn/WhatsApp/email follow-ups)
+- 3-tab outreach: Drafts Queue (approve/reject, unchanged) → Replies (triage, unchanged) → Sent History (log, unchanged)
+- Remove touch_open/touch_done/touch_skipped status flow and related backend code
 
-**Architecture principle:** The analysis layer (extraction → AI reasoning → narrative) is the core investment. Discover page renders whatever the analysis produces. NDA flow is an add-on CTA, not the priority.
+**Architecture principle:** The cadence engine already exists — it just needs to own the follow-up scheduling instead of creating manual tasks for the admin.
 
 ## Current State
 
-**Latest shipped:** v4.0 Atlantis Partnership Outreach (2026-03-07) — multi-project schema, RAG ingestion, retrieval + dual evidence, partnership discover template. Phases 40-41 deferred.
+**Latest shipped:** v5.0 Atlantis Intelligence & NDA Pipeline (in progress) — extraction matrix, AI master analysis, boardroom discover rendering.
 
-**Previous milestone:** v3.0 Sharp Analysis (2026-03-05) — hypothesis analysis quality uplift, configurable model selection, AI metric derivation + source attribution, validation/calibration closure.
+**Previous milestone:** v4.0 Atlantis Partnership Outreach (2026-03-07) — multi-project schema, RAG ingestion, retrieval + dual evidence, partnership discover template.
 
-**Active milestone:** v5.0 Atlantis Intelligence & NDA Pipeline
+**Active milestone:** v6.0 Outreach Simplification
 
 ---
 
-_Last updated: 2026-03-07 after Phase 40 reprioritization_
+_Last updated: 2026-03-08 after v6.0 milestone start_

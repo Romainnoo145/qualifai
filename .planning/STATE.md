@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** v5.0 Phase 44 — Discover Rendering
+**Current focus:** v6.0 Outreach Simplification — defining requirements
 
 ## Current Position
 
-Phase: 44 of 45 (Discover Rendering)
-Plan: 1 of 2 complete
-Status: In Progress
-Last activity: 2026-03-08 — Completed 44-01 (Server-side analysis fetch and routing)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-08 — Milestone v6.0 started
 
-Progress: [█████████████████████████████░] 95% (43 phases complete, 1 in progress)
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
 ## Milestones Shipped
 
@@ -26,6 +26,7 @@ Progress: [███████████████████████
 - v2.2 Verified Pain Intelligence — 2026-03-02 (Phases 28-30)
 - v3.0 Sharp Analysis — 2026-03-05 (Phases 31-35)
 - v4.0 Atlantis Partnership Outreach — 2026-03-07 (Phases 36-39, 40-41 deferred)
+- v5.0 Atlantis Intelligence — 2026-03-08 (Phases 42-45)
 
 ## Accumulated Context
 
@@ -65,5 +66,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 44-01-PLAN.md — Server-side analysis fetch and routing
-Resume command: `/gsd:execute-phase 44` (continue with Plan 02)
+Stopped at: v6.0 milestone started — defining requirements
+Resume command: Continue requirements definition
