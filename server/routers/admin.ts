@@ -546,10 +546,16 @@ export const adminRouter = router({
             ])
           : [[], []];
       const completedResearchMap = new Map<string, number>(
-        completedResearchCounts.map((entry) => [entry.prospectId, entry._count.id]),
+        completedResearchCounts.map((entry) => [
+          entry.prospectId,
+          entry._count.id,
+        ]),
       );
       const activeResearchMap = new Map<string, number>(
-        activeResearchCounts.map((entry) => [entry.prospectId, entry._count.id]),
+        activeResearchCounts.map((entry) => [
+          entry.prospectId,
+          entry._count.id,
+        ]),
       );
 
       const deepRuns =
@@ -767,10 +773,10 @@ export const adminRouter = router({
         },
       }),
 
-      // 3. Open touch tasks (calls, LinkedIn, WhatsApp, email) — exclude prospects with active research runs
+      // 3. Open reminders (calls, LinkedIn, WhatsApp, email) — exclude prospects with active research runs
       ctx.db.outreachLog.findMany({
         where: {
-          status: 'touch_open',
+          status: 'reminder_open',
           channel: { in: ['call', 'linkedin', 'whatsapp', 'email'] },
           contact: {
             prospect: {
