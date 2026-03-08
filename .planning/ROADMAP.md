@@ -132,12 +132,12 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 3. The cron sweep promotes due cadence steps directly to draft or reminder state -- there is no touch_open intermediary status in the flow
 4. The queueTouchTask endpoint no longer exists -- calling it returns 404
 5. The completeTouchTask and skipTouchTask endpoints handle reminder dismissal (mark done / skip) instead of the old touch_open/touch_done/touch_skipped flow
-   **Plans**: TBD
+   **Plans**: 2 plans
 
 Plans:
 
-- [ ] 46-01: TBD
-- [ ] 46-02: TBD
+- [ ] 46-01-PLAN.md — Upgrade cadence engine: auto-generate email drafts and non-email reminders
+- [ ] 46-02-PLAN.md — Backend cleanup: remove queueTouchTask, refactor complete/skip for reminders
 
 ### Phase 47: Outreach UI Simplification
 
@@ -204,5 +204,5 @@ Phases execute in numeric order: 46 → 47
 | 43. AI Master Analysis                  | v5.0      | 2/2            | Complete    | 2026-03-07 |
 | 44. Discover Rendering                  | v5.0      | 2/2            | Complete    | 2026-03-08 |
 | 45. End-to-End Validation               | v5.0      | —              | Complete    | 2026-03-08 |
-| 46. Automated Cadence + Backend Cleanup | v6.0      | 0/?            | Not started | -          |
+| 46. Automated Cadence + Backend Cleanup | v6.0      | 0/2            | Not started | -          |
 | 47. Outreach UI Simplification          | v6.0      | 0/?            | Not started | -          |
