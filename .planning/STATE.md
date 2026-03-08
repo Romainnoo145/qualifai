@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** v5.0 Phase 43 — AI Master Analysis
+**Current focus:** v5.0 Phase 44 — Discover Rendering
 
 ## Current Position
 
-Phase: 43 of 45 (AI Master Analysis)
-Plan: 2 of 2 complete
-Status: Complete
-Last activity: 2026-03-07 — Completed 43-02 (Pipeline integration & persistence)
+Phase: 44 of 45 (Discover Rendering)
+Plan: 1 of 2 complete
+Status: In Progress
+Last activity: 2026-03-08 — Completed 44-01 (Server-side analysis fetch and routing)
 
-Progress: [█████████████████████████████░] 90% (42 phases complete, 1 remaining in v5.0)
+Progress: [█████████████████████████████░] 95% (43 phases complete, 1 in progress)
 
 ## Milestones Shipped
 
@@ -50,6 +50,9 @@ Recent decisions affecting v5.0:
 - 43-02: Master analysis runs inside RAG try block with nested try/catch for graceful degradation
 - 43-02: Empty IntentVariables fallback when extraction skipped — analysis still runs with RAG data
 - 43-02: getProspectAnalysis returns most recent analysis (orderBy createdAt desc)
+- 44-01: Runtime type validation for MasterAnalysis using simple checks (no zod)
+- 44-01: Removed parsePartnershipSnapshot and related helpers (unused after routing change, TS required)
+- 44-01: Inline pending state for ATLANTIS without analysis (no separate component)
 
 ### Pending Todos
 
@@ -61,6 +64,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-07
-Stopped at: Completed 43-02-PLAN.md — Pipeline integration & persistence (Phase 43 complete)
-Resume command: `/gsd:plan-phase 44` (start Discover Rendering)
+Last session: 2026-03-08
+Stopped at: Completed 44-01-PLAN.md — Server-side analysis fetch and routing
+Resume command: `/gsd:execute-phase 44` (continue with Plan 02)

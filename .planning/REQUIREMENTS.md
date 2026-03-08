@@ -24,7 +24,7 @@ Requirements for the Atlantis intelligence overhaul. Replaces template-based opp
 
 ### Discover
 
-- [ ] **DISC-01**: Atlantis discover renders three sections: Context (hook) → Triggers (why you, why now) → Partnership (tracks + CTA)
+- [x] **DISC-01**: Atlantis discover renders three sections: Context (hook) → Triggers (why you, why now) → Partnership (tracks + CTA)
 - [ ] **DISC-02**: Context section shows hook subtitle, 3 KPI blocks, and executive hook from persisted analysis
 - [ ] **DISC-03**: Trigger cards render with specific numbers, urgency indicators, and evidence attribution
 - [ ] **DISC-04**: Partnership section renders commercial tracks with scope, strategic tags, and interest CTA
@@ -67,7 +67,7 @@ Requirements for the Atlantis intelligence overhaul. Replaces template-based opp
 | ANLS-04     | Phase 43 | Complete |
 | ANLS-05     | Phase 43 | Complete |
 | ANLS-06     | Phase 43 | Complete |
-| DISC-01     | Phase 44 | Pending  |
+| DISC-01     | Phase 44 | Complete |
 | DISC-02     | Phase 44 | Pending  |
 | DISC-03     | Phase 44 | Pending  |
 | DISC-04     | Phase 44 | Pending  |
