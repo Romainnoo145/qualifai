@@ -4,12 +4,24 @@ import {
   evaluateCadence,
   processDueCadenceSteps,
   DEFAULT_CADENCE_CONFIG,
+  REMINDER_STATUS_OPEN,
 } from './engine';
 import type {
   CadenceConfig,
   ContactChannels,
   EngagementSignals,
 } from './engine';
+
+// Mock generateFollowUp before importing engine (hoisted by vitest)
+vi.mock('@/lib/ai/generate-outreach', () => ({
+  generateFollowUp: vi.fn().mockResolvedValue({
+    subject: 'Follow-up: AI Opportunities',
+    bodyHtml: '<p>Generated follow-up</p>',
+    bodyText: 'Generated follow-up',
+    personalizedOpener: 'Based on your...',
+    callToAction: 'Quick call?',
+  }),
+}));
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -407,6 +419,7 @@ describe('processDueCadenceSteps', () => {
     },
     outreachLog: {
       create: vi.fn(),
+      findFirst: vi.fn(),
     },
   });
 
@@ -421,20 +434,36 @@ describe('processDueCadenceSteps', () => {
       contactId: 'contact-1',
       contact: {
         id: 'contact-1',
-        primaryEmail: 'test@acme.nl',
+        firstName: 'Jan',
+        lastName: 'de Vries',
+        jobTitle: 'CTO',
+        seniority: 'C-Level',
+        department: 'Technology',
+        primaryEmail: 'jan@acme.nl',
       },
       prospect: {
         id: 'prospect-1',
+        companyName: 'Acme BV',
         domain: 'acme.nl',
+        industry: 'Technology',
+        employeeRange: '50-200',
+        technologies: ['React', 'Node.js'],
+        description: 'Dutch tech company',
       },
     },
   });
 
-  it('Test 11: promotes due steps — creates OutreachLog touch task and updates step status to QUEUED', async () => {
+  it('Test 11: email channel — creates draft with AI-generated copy and updates step to QUEUED', async () => {
+    const { generateFollowUp: mockGenerate } =
+      await import('@/lib/ai/generate-outreach');
+
     const db = makeDb();
     const dueStep = makeDueStep('step-1', 'email');
 
     db.outreachStep.findMany.mockResolvedValue([dueStep]);
+    db.outreachLog.findFirst.mockResolvedValue({
+      subject: 'Previous email subject',
+    });
     db.outreachLog.create.mockResolvedValue({ id: 'log-1' });
     db.outreachStep.update.mockResolvedValue({});
 
@@ -443,15 +472,24 @@ describe('processDueCadenceSteps', () => {
     expect(result.processed).toBe(1);
     expect(result.created).toBe(1);
 
-    // Verify OutreachLog.create called with correct fields
+    // Verify generateFollowUp was called
+    expect(mockGenerate).toHaveBeenCalled();
+
+    // Verify OutreachLog.create called with draft status and AI-generated content
     expect(db.outreachLog.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           type: 'FOLLOW_UP',
           channel: 'email',
           contactId: 'contact-1',
-          status: 'touch_open',
-          subject: 'Cadence follow-up: email',
+          status: 'draft',
+          subject: 'Follow-up: AI Opportunities',
+          bodyHtml: '<p>Generated follow-up</p>',
+          bodyText: 'Generated follow-up',
+          metadata: expect.objectContaining({
+            kind: 'cadence_draft',
+            createdBy: 'cadence-engine',
+          }),
         }),
       }),
     );
@@ -490,6 +528,113 @@ describe('processDueCadenceSteps', () => {
     expect(db.outreachStep.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         take: 50,
+      }),
+    );
+  });
+
+  it('Test 14: non-email channel (call) — creates reminder_open, not draft', async () => {
+    const db = makeDb();
+    const dueStep = makeDueStep('step-call-1', 'call');
+
+    db.outreachStep.findMany.mockResolvedValue([dueStep]);
+    db.outreachLog.create.mockResolvedValue({ id: 'log-call-1' });
+    db.outreachStep.update.mockResolvedValue({});
+
+    const result = await processDueCadenceSteps(db as never);
+
+    expect(result.processed).toBe(1);
+    expect(result.created).toBe(1);
+
+    // Verify OutreachLog.create called with reminder_open status
+    expect(db.outreachLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: 'FOLLOW_UP',
+          channel: 'call',
+          contactId: 'contact-1',
+          status: REMINDER_STATUS_OPEN,
+          subject: 'Cadence reminder: call - Acme BV',
+          metadata: expect.objectContaining({
+            kind: 'cadence_reminder',
+            priority: 'medium',
+            createdBy: 'cadence-engine',
+          }),
+        }),
+      }),
+    );
+
+    // Verify step promoted to QUEUED
+    expect(db.outreachStep.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'step-call-1' },
+        data: expect.objectContaining({
+          status: 'QUEUED',
+          outreachLogId: 'log-call-1',
+        }),
+      }),
+    );
+  });
+
+  it('Test 15: email channel with generateFollowUp failure — falls back to empty-body draft', async () => {
+    const { generateFollowUp: mockGenerate } =
+      await import('@/lib/ai/generate-outreach');
+    vi.mocked(mockGenerate).mockRejectedValueOnce(
+      new Error('AI generation failed'),
+    );
+
+    const db = makeDb();
+    const dueStep = makeDueStep('step-fail-1', 'email');
+
+    db.outreachStep.findMany.mockResolvedValue([dueStep]);
+    db.outreachLog.findFirst.mockResolvedValue(null);
+    db.outreachLog.create.mockResolvedValue({ id: 'log-fail-1' });
+    db.outreachStep.update.mockResolvedValue({});
+
+    const result = await processDueCadenceSteps(db as never);
+
+    expect(result.processed).toBe(1);
+    expect(result.created).toBe(1);
+
+    // Should still create a draft with empty body (fallback)
+    expect(db.outreachLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'draft',
+          bodyHtml: '',
+          bodyText: '',
+          subject: 'Follow-up: Acme BV',
+          metadata: expect.objectContaining({
+            kind: 'cadence_draft',
+          }),
+        }),
+      }),
+    );
+  });
+
+  it('Test 16: linkedin channel — creates reminder_open, not draft', async () => {
+    const db = makeDb();
+    const dueStep = makeDueStep('step-li-1', 'linkedin');
+
+    db.outreachStep.findMany.mockResolvedValue([dueStep]);
+    db.outreachLog.create.mockResolvedValue({ id: 'log-li-1' });
+    db.outreachStep.update.mockResolvedValue({});
+
+    const result = await processDueCadenceSteps(db as never);
+
+    expect(result.processed).toBe(1);
+    expect(result.created).toBe(1);
+
+    // Verify reminder_open status for linkedin
+    expect(db.outreachLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          channel: 'linkedin',
+          status: REMINDER_STATUS_OPEN,
+          subject: 'Cadence reminder: linkedin - Acme BV',
+          metadata: expect.objectContaining({
+            kind: 'cadence_reminder',
+          }),
+        }),
       }),
     );
   });
