@@ -15,8 +15,8 @@ Requirements for outreach simplification. Removes manual multi-touch task manage
 
 ### UI Cleanup
 
-- [ ] **UICL-01**: Multi-touch Tasks tab removed from outreach page (4 tabs → 3: Drafts, Replies, Sent History)
-- [ ] **UICL-02**: Manual touch task creation form and related UI elements removed
+- [x] **UICL-01**: Multi-touch Tasks tab removed from outreach page (4 tabs → 3: Drafts, Replies, Sent History)
+- [x] **UICL-02**: Manual touch task creation form and related UI elements removed
 - [ ] **UICL-03**: Non-email reminders displayed as a lightweight section in Drafts Queue (not a separate tab)
 
 ### Backend Cleanup
@@ -89,8 +89,8 @@ Requirements for outreach simplification. Removes manual multi-touch task manage
 | CADNC-01    | 46    | Complete |
 | CADNC-02    | 46    | Complete |
 | CADNC-03    | 46    | Complete |
-| UICL-01     | 47    | Pending  |
-| UICL-02     | 47    | Pending  |
+| UICL-01     | 47    | Complete |
+| UICL-02     | 47    | Complete |
 | UICL-03     | 47    | Pending  |
 | BKCL-01     | 46    | Complete |
 | BKCL-02     | 46    | Complete |
