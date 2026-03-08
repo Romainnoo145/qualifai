@@ -159,12 +159,12 @@ Plans:
 3. Trigger cards show specific numbers, urgency indicators, and evidence attribution — not placeholder text
 4. Partnership section shows commercial tracks with scope, strategic tags, and interest CTA per SPV
 5. Visual design is clean, confident, and data-rich — no generic "bridge" imagery or language, matches boardroom tone of the analysis
-   **Plans**: TBD
+   **Plans**: 2 plans
 
 Plans:
 
-- [ ] 44-01: TBD
-- [ ] 44-02: TBD
+- [ ] 44-01-PLAN.md — Server-side analysis fetch and three-way routing
+- [ ] 44-02-PLAN.md — AtlantisDiscoverClient with four-tab wizard and AI content sections
 
 ### Phase 45: End-to-End Validation
 
