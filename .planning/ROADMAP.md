@@ -10,7 +10,8 @@
 - ✅ **v2.2 Verified Pain Intelligence** — Phases 28-30 (shipped 2026-03-02)
 - ✅ **v3.0 Sharp Analysis** — Phases 31-35 (shipped 2026-03-05)
 - ✅ **v4.0 Atlantis Partnership Outreach** — Phases 36-39 (shipped 2026-03-07)
-- 🚧 **v5.0 Atlantis Intelligence & NDA Pipeline** — Phases 42-45 (in progress)
+- ✅ **v5.0 Atlantis Intelligence** — Phases 42-45 (shipped 2026-03-08)
+- 🚧 **v6.0 Outreach Simplification** — Phases 46-47 (in progress)
 
 ## Phases
 
@@ -100,133 +101,108 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 </details>
 
-### v5.0 Atlantis Intelligence & NDA Pipeline (In Progress)
+<details>
+<summary>✅ v5.0 Atlantis Intelligence (Phases 42-45) — SHIPPED 2026-03-08</summary>
 
-**Milestone Goal:** Replace template-based Atlantis discover pipeline with AI-powered content generation. Scraper data gets structured into intent variables, AI combines those with RAG passages into boardroom-ready narrative, and the discover page renders the result as a three-section teaser that drives NDA interest.
+- Phase 42: Extraction Matrix (2/2 plans) — Intent variable types, extraction module, RAG query builder
+- Phase 43: AI Master Analysis (2/2 plans) — Prompt builder, AI generation, pipeline integration, persistence
+- Phase 44: Discover Rendering (2/2 plans) — Server-side routing, AtlantisDiscoverClient sections
+- Phase 45: End-to-End Validation — Real prospect flow verified, regression confirmed
 
-- [x] **Phase 42: Extraction Matrix** - Scraper data structured into intent variables with source attribution (completed 2026-03-07)
-- [x] **Phase 43: AI Master Analysis** - Intent variables + RAG passages combined into prospect-specific narrative content (completed 2026-03-07)
-- [ ] **Phase 44: Discover Rendering** - Three-section discover page renders persisted analysis without further AI calls
-- [ ] **Phase 45: End-to-End Validation** - Real prospect flow verified, existing prospects unaffected
+</details>
+
+### v6.0 Outreach Simplification (In Progress)
+
+**Milestone Goal:** Remove manual multi-touch task management and let the cadence engine own follow-up scheduling. The outreach page drops from 4 tabs to 3 by killing Multi-touch Tasks. Admin workflow becomes: approve drafts, triage replies, review sent history. No manual task creation, no channel selection, no due dates.
+
+- [ ] **Phase 46: Automated Cadence + Backend Cleanup** - Cadence engine auto-generates follow-up drafts and reminders, manual task endpoints removed
+- [ ] **Phase 47: Outreach UI Simplification** - Multi-touch Tasks tab killed, reminders shown inline in Drafts Queue
 
 ## Phase Details
 
-### Phase 42: Extraction Matrix
+### Phase 46: Automated Cadence + Backend Cleanup
 
-**Goal**: Scraper output is reliably structured into intent variables that downstream analysis can consume, and those variables drive targeted RAG retrieval instead of keyword-stuffed queries
-**Depends on**: Phase 39 (v4.0 Atlantis pipeline in place)
-**Requirements**: EXTR-01, EXTR-02, EXTR-03
+**Goal**: Cadence engine owns all follow-up scheduling -- auto-generating email drafts for the approval queue and lightweight reminders for non-email channels -- while the old manual task creation backend is removed
+**Depends on**: Phase 45 (v5.0 complete)
+**Requirements**: CADNC-01, CADNC-02, CADNC-03, BKCL-01, BKCL-02, BKCL-03
 **Success Criteria** (what must be TRUE):
 
-1. Running research on an Atlantis prospect produces structured intent variables (sector fit, operational pains, ESG/CSRD signals, investment/growth patterns, workforce signals) with source attribution per variable
-2. RAG retrieval queries are constructed from intent variables instead of keyword-stuffed profile fragments, returning more relevant passages
-3. Intent variables are persisted to the database and available for inspection in admin prospect detail
-   **Plans**: 2 plans
-
-Plans:
-
-- [ ] 42-01-PLAN.md — Intent variable types, schema, extraction module, and research pipeline integration
-- [ ] 42-02-PLAN.md — Intent-driven RAG query builder and admin Intent Signals UI
-
-### Phase 43: AI Master Analysis
-
-**Goal**: AI generates complete discover page content (context, triggers, tracks) from intent variables and RAG passages in boardroom tone
-**Depends on**: Phase 42
-**Requirements**: ANLS-01, ANLS-02, ANLS-03, ANLS-04, ANLS-05, ANLS-06
-**Success Criteria** (what must be TRUE):
-
-1. Running analysis on a prospect with intent variables produces a context section with prospect-specific hook, 3 scale KPIs sourced from RAG documents, and an executive hook connecting their pain to Atlantis
-2. Running analysis produces a trigger section with 3 cards (market / compliance-ESG / capital de-risking) containing specific numbers from RAG documents, not generic filler
-3. Running analysis produces a partnership section with commercial tracks per SPV including scope and strategic tags
-4. All generated content reads as boardroom-ready — visionary and data-backed with zero AI/RAG/scraping terminology visible in output
-5. Analysis output is persisted to DB and can be loaded without making any AI calls
-   **Plans**: 2 plans
-
-Plans:
-
-- [ ] 43-01-PLAN.md — Analysis types, DB schema, prompt builder, and AI generation function
-- [ ] 43-02-PLAN.md — Research pipeline integration, DB persistence, and tRPC retrieval endpoint
-
-### Phase 44: Discover Rendering
-
-**Goal**: Atlantis discover page renders three-section narrative from persisted analysis data with clean, confident visual design
-**Depends on**: Phase 43
-**Requirements**: DISC-01, DISC-02, DISC-03, DISC-04, DISC-05
-**Success Criteria** (what must be TRUE):
-
-1. Atlantis discover page at /discover/[slug] shows three distinct sections in order: Context (hook + KPIs) then Triggers (why you, why now) then Partnership (tracks + CTA)
-2. Context section displays hook subtitle, 3 KPI blocks with numbers from RAG, and executive hook — all from persisted data
-3. Trigger cards show specific numbers, urgency indicators, and evidence attribution — not placeholder text
-4. Partnership section shows commercial tracks with scope, strategic tags, and interest CTA per SPV
-5. Visual design is clean, confident, and data-rich — no generic "bridge" imagery or language, matches boardroom tone of the analysis
-   **Plans**: 2 plans
-
-Plans:
-
-- [ ] 44-01-PLAN.md — Server-side analysis fetch and three-way routing
-- [ ] 44-02-PLAN.md — AtlantisDiscoverClient with four-tab wizard and AI content sections
-
-### Phase 45: End-to-End Validation
-
-**Goal**: Full Atlantis intelligence pipeline verified with real prospect data, existing Klarifai prospects confirmed unaffected
-**Depends on**: Phase 44
-**Requirements**: VALD-01, VALD-02
-**Success Criteria** (what must be TRUE):
-
-1. A real Atlantis prospect completes the full flow (scrape → extract intent variables → AI analysis → discover page renders correctly) with no manual intervention
-2. An existing Klarifai prospect's research pipeline, discover page, and outreach flow still work correctly (regression)
+1. After an initial email is sent, the cadence engine automatically generates a personalized follow-up email draft that appears in the Drafts Queue for admin approval
+2. After an initial email is sent, the cadence engine automatically creates call/LinkedIn/WhatsApp reminders without any manual task creation by the admin
+3. The cron sweep promotes due cadence steps directly to draft or reminder state -- there is no touch_open intermediary status in the flow
+4. The queueTouchTask endpoint no longer exists -- calling it returns 404
+5. The completeTouchTask and skipTouchTask endpoints handle reminder dismissal (mark done / skip) instead of the old touch_open/touch_done/touch_skipped flow
    **Plans**: TBD
 
 Plans:
 
-- [ ] 45-01: TBD
+- [ ] 46-01: TBD
+- [ ] 46-02: TBD
+
+### Phase 47: Outreach UI Simplification
+
+**Goal**: Admin sees a clean 3-tab outreach page (Drafts, Replies, Sent History) with non-email reminders shown as a lightweight section in the Drafts Queue
+**Depends on**: Phase 46
+**Requirements**: UICL-01, UICL-02, UICL-03
+**Success Criteria** (what must be TRUE):
+
+1. The outreach page shows exactly 3 tabs: Drafts Queue, Replies, and Sent History -- Multi-touch Tasks tab is gone
+2. There is no manual touch task creation form or related UI anywhere in the application
+3. Non-email reminders (call, LinkedIn, WhatsApp) appear as a lightweight section within the Drafts Queue tab, visually distinct from email drafts
+   **Plans**: TBD
+
+Plans:
+
+- [ ] 47-01: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 42 → 43 → 44 → 45
+Phases execute in numeric order: 46 → 47
 
-| Phase                                  | Milestone | Plans Complete | Status      | Completed  |
-| -------------------------------------- | --------- | -------------- | ----------- | ---------- |
-| 1-5. MVP                               | v1.0      | —              | Complete    | 2026-02-20 |
-| 6. Use Cases Foundation                | v1.1      | 3/3            | Complete    | 2026-02-20 |
-| 7. Evidence Approval Gate              | v1.1      | 2/2            | Complete    | 2026-02-20 |
-| 8. Deep Evidence Pipeline              | v1.1      | 3/3            | Complete    | 2026-02-21 |
-| 9. Engagement Triggers                 | v1.1      | 2/2            | Complete    | 2026-02-21 |
-| 10. Cadence Engine                     | v1.1      | 4/4            | Complete    | 2026-02-21 |
-| 11. Prospect Dashboard                 | v1.1      | 2/2            | Complete    | 2026-02-21 |
-| 12. Navigation and Language            | v1.2      | 2/2            | Complete    | 2026-02-21 |
-| 13. Prospect Story Flow                | v1.2      | 5/5            | Complete    | 2026-02-22 |
-| 14. Campaign Reporting                 | v1.2      | 2/2            | Complete    | 2026-02-22 |
-| 15. Action Queue Dashboard             | v1.2      | 2/2            | Complete    | 2026-02-22 |
-| 17. Evidence Pipeline Enrichment       | v2.0      | 3/3            | Complete    | 2026-02-22 |
-| 18. Research Quality Gate              | v2.0      | 3/3            | Complete    | 2026-02-22 |
-| 19. Client Hypothesis Validation       | v2.0      | 2/2            | Complete    | 2026-02-23 |
-| 20. One-Click Send Queue + Pipeline    | v2.0      | 3/3            | Complete    | 2026-02-23 |
-| 21. Prospect Discovery + Cleanup       | v2.0      | 2/2            | Complete    | 2026-02-23 |
-| 22. Hypothesis Flow Fix                | v2.0      | 1/1            | Complete    | 2026-02-23 |
-| 23. Use Case Extractors                | v2.1      | 2/2            | Complete    | 2026-02-24 |
-| 24. Data Population and Discovery      | v2.1      | 2/2            | Complete    | 2026-02-25 |
-| 25. Pipeline Hardening                 | v2.1      | 4/4            | Complete    | 2026-02-27 |
-| 26. Quality Calibration                | v2.1      | 2/2            | Complete    | 2026-02-28 |
-| 26.1. Evidence Pipeline Expansion      | v2.1      | 3/3            | Complete    | 2026-02-28 |
-| 27. End-to-End Cycle                   | v2.1      | 2/2            | Complete    | 2026-02-28 |
-| 27.1. Cal.com Booking Validation       | v2.1      | 1/1            | Complete    | 2026-03-01 |
-| 28. Source Discovery with Provenance   | v2.2      | 3/3            | Complete    | 2026-03-02 |
-| 29. Browser-Rendered Extraction        | v2.2      | 2/2            | Complete    | 2026-03-02 |
-| 30. Pain Confirmation Gate + Audit     | v2.2      | 4/4            | Complete    | 2026-03-02 |
-| 31. Tech Debt Foundation               | v3.0      | 3/3            | Complete    | 2026-03-02 |
-| 32. Hypothesis Prompt Rewrite          | v3.0      | 2/2            | Complete    | 2026-03-02 |
-| 33. Configurable Model Selection       | v3.0      | 2/2            | Complete    | 2026-03-02 |
-| 34. AI Metric Derivation + Attribution | v3.0      | 2/2            | Complete    | 2026-03-02 |
-| 35. Validation and Calibration         | v3.0      | 2/2            | Complete    | 2026-03-05 |
-| 36. Multi-Project Schema + Seed        | v4.0      | 2/2            | Complete    | 2026-03-05 |
-| 37. RAG Ingestion Pipeline             | v4.0      | 2/2            | Complete    | 2026-03-05 |
-| 38. Retrieval + Dual Evidence          | v4.0      | 2/2            | Complete    | 2026-03-05 |
-| 39. Partnership Discover Template      | v4.0      | 2/2            | Complete    | 2026-03-07 |
-| 40. Admin Project Operations           | v4.0      | 0/2            | Deferred    | -          |
-| 41. Validation + First Atlantis        | v4.0      | 0/2            | Deferred    | -          |
-| 42. Extraction Matrix                  | v5.0      | 2/2            | Complete    | 2026-03-07 |
-| 43. AI Master Analysis                 | 2/2       | Complete       | 2026-03-07  | -          |
-| 44. Discover Rendering                 | 1/2       | In Progress    |             | -          |
-| 45. End-to-End Validation              | v5.0      | 0/?            | Not started | -          |
+| Phase                                   | Milestone | Plans Complete | Status      | Completed  |
+| --------------------------------------- | --------- | -------------- | ----------- | ---------- |
+| 1-5. MVP                                | v1.0      | —              | Complete    | 2026-02-20 |
+| 6. Use Cases Foundation                 | v1.1      | 3/3            | Complete    | 2026-02-20 |
+| 7. Evidence Approval Gate               | v1.1      | 2/2            | Complete    | 2026-02-20 |
+| 8. Deep Evidence Pipeline               | v1.1      | 3/3            | Complete    | 2026-02-21 |
+| 9. Engagement Triggers                  | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 10. Cadence Engine                      | v1.1      | 4/4            | Complete    | 2026-02-21 |
+| 11. Prospect Dashboard                  | v1.1      | 2/2            | Complete    | 2026-02-21 |
+| 12. Navigation and Language             | v1.2      | 2/2            | Complete    | 2026-02-21 |
+| 13. Prospect Story Flow                 | v1.2      | 5/5            | Complete    | 2026-02-22 |
+| 14. Campaign Reporting                  | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 15. Action Queue Dashboard              | v1.2      | 2/2            | Complete    | 2026-02-22 |
+| 17. Evidence Pipeline Enrichment        | v2.0      | 3/3            | Complete    | 2026-02-22 |
+| 18. Research Quality Gate               | v2.0      | 3/3            | Complete    | 2026-02-22 |
+| 19. Client Hypothesis Validation        | v2.0      | 2/2            | Complete    | 2026-02-23 |
+| 20. One-Click Send Queue + Pipeline     | v2.0      | 3/3            | Complete    | 2026-02-23 |
+| 21. Prospect Discovery + Cleanup        | v2.0      | 2/2            | Complete    | 2026-02-23 |
+| 22. Hypothesis Flow Fix                 | v2.0      | 1/1            | Complete    | 2026-02-23 |
+| 23. Use Case Extractors                 | v2.1      | 2/2            | Complete    | 2026-02-24 |
+| 24. Data Population and Discovery       | v2.1      | 2/2            | Complete    | 2026-02-25 |
+| 25. Pipeline Hardening                  | v2.1      | 4/4            | Complete    | 2026-02-27 |
+| 26. Quality Calibration                 | v2.1      | 2/2            | Complete    | 2026-02-28 |
+| 26.1. Evidence Pipeline Expansion       | v2.1      | 3/3            | Complete    | 2026-02-28 |
+| 27. End-to-End Cycle                    | v2.1      | 2/2            | Complete    | 2026-02-28 |
+| 27.1. Cal.com Booking Validation        | v2.1      | 1/1            | Complete    | 2026-03-01 |
+| 28. Source Discovery with Provenance    | v2.2      | 3/3            | Complete    | 2026-03-02 |
+| 29. Browser-Rendered Extraction         | v2.2      | 2/2            | Complete    | 2026-03-02 |
+| 30. Pain Confirmation Gate + Audit      | v2.2      | 4/4            | Complete    | 2026-03-02 |
+| 31. Tech Debt Foundation                | v3.0      | 3/3            | Complete    | 2026-03-02 |
+| 32. Hypothesis Prompt Rewrite           | v3.0      | 2/2            | Complete    | 2026-03-02 |
+| 33. Configurable Model Selection        | v3.0      | 2/2            | Complete    | 2026-03-02 |
+| 34. AI Metric Derivation + Attribution  | v3.0      | 2/2            | Complete    | 2026-03-02 |
+| 35. Validation and Calibration          | v3.0      | 2/2            | Complete    | 2026-03-05 |
+| 36. Multi-Project Schema + Seed         | v4.0      | 2/2            | Complete    | 2026-03-05 |
+| 37. RAG Ingestion Pipeline              | v4.0      | 2/2            | Complete    | 2026-03-05 |
+| 38. Retrieval + Dual Evidence           | v4.0      | 2/2            | Complete    | 2026-03-05 |
+| 39. Partnership Discover Template       | v4.0      | 2/2            | Complete    | 2026-03-07 |
+| 40. Admin Project Operations            | v4.0      | 0/2            | Deferred    | -          |
+| 41. Validation + First Atlantis         | v4.0      | 0/2            | Deferred    | -          |
+| 42. Extraction Matrix                   | v5.0      | 2/2            | Complete    | 2026-03-07 |
+| 43. AI Master Analysis                  | v5.0      | 2/2            | Complete    | 2026-03-07 |
+| 44. Discover Rendering                  | v5.0      | 2/2            | Complete    | 2026-03-08 |
+| 45. End-to-End Validation               | v5.0      | —              | Complete    | 2026-03-08 |
+| 46. Automated Cadence + Backend Cleanup | v6.0      | 0/?            | Not started | -          |
+| 47. Outreach UI Simplification          | v6.0      | 0/?            | Not started | -          |

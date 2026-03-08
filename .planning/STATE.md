@@ -2,17 +2,17 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-07)
+See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** v6.0 Outreach Simplification — defining requirements
+**Current focus:** v6.0 Outreach Simplification — Phase 46 ready to plan
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 46 of 47 (Automated Cadence + Backend Cleanup)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-08 — Milestone v6.0 started
+Status: Ready to plan
+Last activity: 2026-03-08 — Roadmap created for v6.0
 
 Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -33,27 +33,11 @@ Progress: [░░░░░░░░░░░░░░░░░░░░░░░
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting v5.0:
+Recent decisions affecting v6.0:
 
-- v5.0: AI-generated discover content replaces template-based opportunity cards and rule-based triggers
-- v5.0: Extraction matrix approach — scraper data analyzed into intent variables before RAG query
-- v5.0: Three-section discover: Context (hook/KPIs) → Triggers (why you/now) → Partnership (tracks + CTA)
-- v5.0: Boardroom tone — visionary, data-backed, never mention AI/RAG/scraping
-- v5.0: NDA e-sign deferred to v6.0 — analysis quality is the priority
-- 42-01: Gemini Flash for intent extraction, pre-filter evidence >= 0.50, exclude RAG_DOCUMENT
-- 42-01: Graceful degradation — extraction failure logs warning, does not block pipeline
-- 42-01: intentVars stored in scope for Plan 02 RAG query construction
-- 42-02: Intent-driven queries use top 2-3 signals per category (max 200 chars), fallback at < 2 categories
-- 42-02: Intent Signals tab only for ATLANTIS projectType, positioned between Evidence and Analysis
-- 43-01: Adaptive tone prompting: visionary when sparse, data-first when rich passages
-- 43-01: Retry-once with corrective prompt on validation failure, hard fail after 2 attempts
-- 43-01: Numbered RAG passage references in prompt for generated content traceability
-- 43-02: Master analysis runs inside RAG try block with nested try/catch for graceful degradation
-- 43-02: Empty IntentVariables fallback when extraction skipped — analysis still runs with RAG data
-- 43-02: getProspectAnalysis returns most recent analysis (orderBy createdAt desc)
-- 44-01: Runtime type validation for MasterAnalysis using simple checks (no zod)
-- 44-01: Removed parsePartnershipSnapshot and related helpers (unused after routing change, TS required)
-- 44-01: Inline pending state for ATLANTIS without analysis (no separate component)
+- v6.0: Cadence engine already exists (lib/cadence/engine.ts) — modify, don't recreate
+- v6.0: 2 phases only — backend+cadence first, then UI cleanup
+- v6.0: Non-email reminders shown in Drafts Queue as lightweight section, not separate tab
 
 ### Pending Todos
 
@@ -61,10 +45,10 @@ None.
 
 ### Blockers/Concerns
 
-- Europe's Gate documents contain sensitive financial data — keep strict project-scoped auth boundaries
+None.
 
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: v6.0 milestone started — defining requirements
-Resume command: Continue requirements definition
+Stopped at: Roadmap created for v6.0
+Resume command: `/gsd:plan-phase 46`

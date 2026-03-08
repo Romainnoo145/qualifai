@@ -79,23 +79,23 @@ Requirements for outreach simplification. Removes manual multi-touch task manage
 
 | Requirement | Phase | Status  |
 | ----------- | ----- | ------- |
-| CADNC-01    | TBD   | Pending |
-| CADNC-02    | TBD   | Pending |
-| CADNC-03    | TBD   | Pending |
-| UICL-01     | TBD   | Pending |
-| UICL-02     | TBD   | Pending |
-| UICL-03     | TBD   | Pending |
-| BKCL-01     | TBD   | Pending |
-| BKCL-02     | TBD   | Pending |
-| BKCL-03     | TBD   | Pending |
+| CADNC-01    | 46    | Pending |
+| CADNC-02    | 46    | Pending |
+| CADNC-03    | 46    | Pending |
+| UICL-01     | 47    | Pending |
+| UICL-02     | 47    | Pending |
+| UICL-03     | 47    | Pending |
+| BKCL-01     | 46    | Pending |
+| BKCL-02     | 46    | Pending |
+| BKCL-03     | 46    | Pending |
 
 **Coverage:**
 
 - v6.0 requirements: 9 total
-- Mapped to phases: 0
-- Unmapped: 9 ⚠️
+- Mapped to phases: 9
+- Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-03-08_
-_Last updated: 2026-03-08 after initial definition_
+_Last updated: 2026-03-08 after roadmap creation_
