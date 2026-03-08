@@ -61,12 +61,10 @@ export default function ContactDetail() {
       await Promise.all([
         utils.contacts.get.invalidate({ id }),
         utils.outreach.getQueue.invalidate(),
-        utils.outreach.getTouchTaskQueue.invalidate(),
         utils.sequences.list.invalidate(),
       ]);
     },
   });
-  // queueTouchTask removed in 46-02 — manual task creation replaced by automated cadence
 
   if (contact.isLoading) {
     return (
