@@ -16,6 +16,8 @@ import {
   WandSparkles,
   Sparkles,
   AlertTriangle,
+  Phone,
+  Linkedin,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -103,6 +105,157 @@ function ProcessSignalsButton() {
         </>
       )}
     </button>
+  );
+}
+
+function ReminderSection() {
+  const reminders = api.outreach.getReminders.useQuery({
+    status: 'open',
+    limit: 50,
+  });
+  const utils = api.useUtils();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const complete = (api.outreach.completeTouchTask as any).useMutation({
+    onSuccess: () => {
+      utils.outreach.getReminders.invalidate();
+      utils.outreach.getDecisionInbox.invalidate();
+    },
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const skip = (api.outreach.skipTouchTask as any).useMutation({
+    onSuccess: () => {
+      utils.outreach.getReminders.invalidate();
+      utils.outreach.getDecisionInbox.invalidate();
+    },
+  });
+
+  const items = (reminders.data?.items ?? []) as Array<any>;
+  if (reminders.isLoading || items.length === 0) return null;
+
+  const channelIcon = (channel: string) => {
+    switch (channel) {
+      case 'call':
+        return <Phone className="w-3.5 h-3.5" />;
+      case 'linkedin':
+        return <Linkedin className="w-3.5 h-3.5" />;
+      case 'whatsapp':
+        return <MessageSquare className="w-3.5 h-3.5" />;
+      default:
+        return <Phone className="w-3.5 h-3.5" />;
+    }
+  };
+
+  const channelLabel = (channel: string) => {
+    switch (channel) {
+      case 'call':
+        return 'Bellen';
+      case 'linkedin':
+        return 'LinkedIn';
+      case 'whatsapp':
+        return 'WhatsApp';
+      default:
+        return channel;
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-indigo-100 bg-indigo-50/30 p-5 space-y-3">
+      <div className="flex items-center gap-2">
+        <Phone className="w-4 h-4 text-indigo-500" />
+        <h3 className="text-sm font-black text-[#040026] tracking-tight">
+          Reminders
+        </h3>
+        <span className="admin-state-pill admin-state-neutral text-[10px]">
+          {items.length}
+        </span>
+      </div>
+      <div className="space-y-1.5">
+        {items.map((item: any) => {
+          const now = Date.now();
+          const dueAt = item.task?.dueAt ? new Date(item.task.dueAt) : null;
+          const isOverdue = dueAt !== null && dueAt.getTime() < now;
+          const notes = item.task?.notes ?? item.subject;
+
+          return (
+            <div
+              key={item.id}
+              className="flex items-center gap-3 rounded-xl bg-white/60 border border-indigo-50 px-4 py-2.5"
+            >
+              <Link
+                href={`/admin/contacts/${item.contact.id}`}
+                className="flex-1 min-w-0 flex items-center gap-3 hover:text-[#007AFF] transition-colors"
+              >
+                <span className="text-xs font-black text-[#040026] truncate">
+                  {item.contact.firstName} {item.contact.lastName}
+                </span>
+                {item.contact.prospect && (
+                  <span className="admin-meta-text text-[11px] truncate hidden sm:inline">
+                    {item.contact.prospect.companyName ??
+                      item.contact.prospect.domain}
+                  </span>
+                )}
+              </Link>
+
+              <span
+                className={cn(
+                  'admin-state-pill text-[10px] flex items-center gap-1',
+                  item.channel === 'linkedin'
+                    ? 'bg-blue-50 text-blue-700'
+                    : item.channel === 'whatsapp'
+                      ? 'bg-green-50 text-green-700'
+                      : 'bg-slate-100 text-slate-600',
+                )}
+              >
+                {channelIcon(item.channel)}
+                {channelLabel(item.channel)}
+              </span>
+
+              {dueAt && (
+                <span
+                  className={cn(
+                    'admin-meta-text text-[10px] hidden md:inline',
+                    isOverdue && 'text-amber-600 font-bold',
+                  )}
+                >
+                  {isOverdue ? 'Overdue' : dueAt.toLocaleDateString()}
+                </span>
+              )}
+
+              {notes && (
+                <span className="admin-meta-text text-[10px] truncate max-w-[160px] hidden lg:inline">
+                  {notes}
+                </span>
+              )}
+
+              <div className="flex items-center gap-1.5 ml-auto shrink-0">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    complete.mutate({ id: item.id });
+                  }}
+                  disabled={complete.isPending}
+                  className="ui-focus ui-tap inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50"
+                >
+                  <Check className="w-3 h-3" /> Done
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    skip.mutate({ id: item.id });
+                  }}
+                  disabled={skip.isPending}
+                  className="ui-focus ui-tap inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all disabled:opacity-50"
+                >
+                  <X className="w-3 h-3" /> Skip
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -221,6 +374,8 @@ function DraftQueue() {
           )}
         </button>
       </div>
+
+      <ReminderSection />
 
       {(queueData.manualReviewLeads?.length ?? 0) > 0 && (
         <div className="glass-card p-5 space-y-3">

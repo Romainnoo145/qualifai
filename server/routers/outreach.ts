@@ -1069,7 +1069,7 @@ Klarifai`;
       });
     }),
 
-  getTouchTaskQueue: adminProcedure
+  getReminders: adminProcedure
     .input(
       z
         .object({
