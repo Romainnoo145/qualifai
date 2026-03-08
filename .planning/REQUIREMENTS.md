@@ -21,9 +21,9 @@ Requirements for outreach simplification. Removes manual multi-touch task manage
 
 ### Backend Cleanup
 
-- [ ] **BKCL-01**: queueTouchTask tRPC endpoint removed
-- [ ] **BKCL-02**: touch_open/touch_done/touch_skipped status values removed from outreach flow
-- [ ] **BKCL-03**: completeTouchTask and skipTouchTask endpoints refactored to handle reminder dismissal
+- [x] **BKCL-01**: queueTouchTask tRPC endpoint removed
+- [x] **BKCL-02**: touch_open/touch_done/touch_skipped status values removed from outreach flow
+- [x] **BKCL-03**: completeTouchTask and skipTouchTask endpoints refactored to handle reminder dismissal
 
 ### SERP API Replacement
 
@@ -92,9 +92,9 @@ Requirements for outreach simplification. Removes manual multi-touch task manage
 | UICL-01     | 47    | Pending  |
 | UICL-02     | 47    | Pending  |
 | UICL-03     | 47    | Pending  |
-| BKCL-01     | 46    | Pending  |
-| BKCL-02     | 46    | Pending  |
-| BKCL-03     | 46    | Pending  |
+| BKCL-01     | 46    | Complete |
+| BKCL-02     | 46    | Complete |
+| BKCL-03     | 46    | Complete |
 
 **Coverage:**
 

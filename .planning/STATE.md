@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** v6.0 Outreach Simplification — Phase 46 plan 01 complete
+**Current focus:** v6.0 Outreach Simplification — Phase 46 complete, Phase 47 next
 
 ## Current Position
 
-Phase: 46 of 47 (Automated Cadence + Backend Cleanup)
-Plan: 2 of 2
-Status: In progress
-Last activity: 2026-03-08 — Completed 46-01 (cadence draft/reminder split)
+Phase: 47 of 47 (Outreach UI Simplification)
+Plan: 1 of ?
+Status: Ready for planning
+Last activity: 2026-03-08 — Completed 46-02 (backend cleanup)
 
-Progress: [███████████████░░░░░░░░░░░░░░░░] 50%
+Progress: [████████████████████████████████] 100% (Phase 46)
 
 ## Milestones Shipped
 
@@ -40,6 +40,8 @@ Recent decisions affecting v6.0:
 - v6.0: Non-email reminders shown in Drafts Queue as lightweight section, not separate tab
 - 46-01: Email follow-ups use generateFollowUp for AI copy, land as status 'draft' in Drafts Queue
 - 46-01: Non-email channels use reminder_open status, AI failure falls back to empty-body draft
+- 46-02: Removed queueTouchTask entirely -- cadence automation replaces manual task creation
+- 46-02: Kept getTouchTaskQueue name until Phase 47 removes Multi-touch Tasks tab
 
 ### Pending Todos
 
@@ -52,5 +54,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 46-01-PLAN.md (cadence draft/reminder split)
-Resume command: `/gsd:execute-phase 46` (plan 02 next)
+Stopped at: Completed 46-02-PLAN.md (backend cleanup)
+Resume command: `/gsd:plan-phase 47`
