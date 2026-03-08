@@ -1,11 +1,31 @@
-# Requirements: Qualifai v5.0 Atlantis Intelligence & NDA Pipeline
+# Requirements: Qualifai v6.0 Outreach Simplification
 
-**Defined:** 2026-03-07
-**Core Value:** The Atlantis discover page must intrigue prospects into seeing Europe's Gate as the project that could transform their industry — through AI-generated, prospect-specific narrative backed by real evidence and hard numbers from the Atlantis dossier.
+**Defined:** 2026-03-08
+**Core Value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
 
-## v5.0 Requirements
+## v6.0 Requirements
 
-Requirements for the Atlantis intelligence overhaul. Replaces template-based opportunity cards and rule-based triggers with AI-powered content generation.
+Requirements for outreach simplification. Removes manual multi-touch task management and automates cadence follow-ups.
+
+### Cadence Automation
+
+- [ ] **CADNC-01**: Cadence engine auto-generates personalized follow-up email drafts and places them in the Drafts Queue for approval
+- [ ] **CADNC-02**: Non-email follow-ups (call, LinkedIn, WhatsApp) are auto-created by cadence engine as lightweight reminders (no manual task creation UI)
+- [ ] **CADNC-03**: Cron sweep promotes due cadence steps directly to draft/reminder state without the touch_open intermediary
+
+### UI Cleanup
+
+- [ ] **UICL-01**: Multi-touch Tasks tab removed from outreach page (4 tabs → 3: Drafts, Replies, Sent History)
+- [ ] **UICL-02**: Manual touch task creation form and related UI elements removed
+- [ ] **UICL-03**: Non-email reminders displayed as a lightweight section in Drafts Queue (not a separate tab)
+
+### Backend Cleanup
+
+- [ ] **BKCL-01**: queueTouchTask tRPC endpoint removed
+- [ ] **BKCL-02**: touch_open/touch_done/touch_skipped status values removed from outreach flow
+- [ ] **BKCL-03**: completeTouchTask and skipTouchTask endpoints refactored to handle reminder dismissal
+
+## Previous Milestone Requirements (v5.0 — Complete)
 
 ### Extraction
 
@@ -25,17 +45,17 @@ Requirements for the Atlantis intelligence overhaul. Replaces template-based opp
 ### Discover
 
 - [x] **DISC-01**: Atlantis discover renders three sections: Context (hook) → Triggers (why you, why now) → Partnership (tracks + CTA)
-- [ ] **DISC-02**: Context section shows hook subtitle, 3 KPI blocks, and executive hook from persisted analysis
-- [ ] **DISC-03**: Trigger cards render with specific numbers, urgency indicators, and evidence attribution
-- [ ] **DISC-04**: Partnership section renders commercial tracks with scope, strategic tags, and interest CTA
-- [ ] **DISC-05**: Visual design matches boardroom tone — clean, confident, data-rich, no generic "bridge" language
+- [x] **DISC-02**: Context section shows hook subtitle, 3 KPI blocks, and executive hook from persisted analysis
+- [x] **DISC-03**: Trigger cards render with specific numbers, urgency indicators, and evidence attribution
+- [x] **DISC-04**: Partnership section renders commercial tracks with scope, strategic tags, and interest CTA
+- [x] **DISC-05**: Visual design matches boardroom tone — clean, confident, data-rich, no generic "bridge" language
 
 ### Validation
 
-- [ ] **VALD-01**: End-to-end Atlantis flow succeeds with a real prospect (scrape → extract → analyze → discover renders correctly)
-- [ ] **VALD-02**: Existing Klarifai prospects remain unaffected (regression)
+- [x] **VALD-01**: End-to-end Atlantis flow succeeds with a real prospect (scrape → extract → analyze → discover renders correctly)
+- [x] **VALD-02**: Existing Klarifai prospects remain unaffected (regression)
 
-## v6.0 Requirements (Deferred)
+## Future Requirements (Deferred)
 
 ### NDA Pipeline
 
@@ -46,42 +66,36 @@ Requirements for the Atlantis intelligence overhaul. Replaces template-based opp
 
 ## Out of Scope
 
-| Feature                            | Reason                                              |
-| ---------------------------------- | --------------------------------------------------- |
-| NDA e-sign flow                    | Deferred to v6.0 — analysis quality is the priority |
-| Admin SPV assignment UI            | Deferred from v4.0 — no operational need proven     |
-| Partnership-to-campaign conversion | Deferred from v4.0 — needs NDA flow first           |
-| Precision financial projections    | Goal is intrigue/scale, not verified business cases |
-| Multi-language discover            | Dutch only for now                                  |
+| Feature                    | Reason                                            |
+| -------------------------- | ------------------------------------------------- |
+| NDA e-sign flow            | Deferred — analysis quality is the priority       |
+| Admin SPV assignment UI    | Deferred from v4.0 — no operational need proven   |
+| Auto-send without approval | Trust not calibrated, GDPR risk                   |
+| LinkedIn API automation    | ToS risk                                          |
+| WhatsApp API integration   | Too complex/expensive                             |
+| Full CRM task manager      | Contradicts "autopilot with oversight" philosophy |
 
 ## Traceability
 
-| Requirement | Phase    | Status   |
-| ----------- | -------- | -------- |
-| EXTR-01     | Phase 42 | Complete |
-| EXTR-02     | Phase 42 | Complete |
-| EXTR-03     | Phase 42 | Complete |
-| ANLS-01     | Phase 43 | Complete |
-| ANLS-02     | Phase 43 | Complete |
-| ANLS-03     | Phase 43 | Complete |
-| ANLS-04     | Phase 43 | Complete |
-| ANLS-05     | Phase 43 | Complete |
-| ANLS-06     | Phase 43 | Complete |
-| DISC-01     | Phase 44 | Complete |
-| DISC-02     | Phase 44 | Pending  |
-| DISC-03     | Phase 44 | Pending  |
-| DISC-04     | Phase 44 | Pending  |
-| DISC-05     | Phase 44 | Pending  |
-| VALD-01     | Phase 45 | Pending  |
-| VALD-02     | Phase 45 | Pending  |
+| Requirement | Phase | Status  |
+| ----------- | ----- | ------- |
+| CADNC-01    | TBD   | Pending |
+| CADNC-02    | TBD   | Pending |
+| CADNC-03    | TBD   | Pending |
+| UICL-01     | TBD   | Pending |
+| UICL-02     | TBD   | Pending |
+| UICL-03     | TBD   | Pending |
+| BKCL-01     | TBD   | Pending |
+| BKCL-02     | TBD   | Pending |
+| BKCL-03     | TBD   | Pending |
 
 **Coverage:**
 
-- v5.0 requirements: 16 total
-- Mapped to phases: 16
-- Unmapped: 0
+- v6.0 requirements: 9 total
+- Mapped to phases: 0
+- Unmapped: 9 ⚠️
 
 ---
 
-_Requirements defined: 2026-03-07_
-_Last updated: 2026-03-07 after roadmap creation_
+_Requirements defined: 2026-03-08_
+_Last updated: 2026-03-08 after initial definition_
