@@ -1,10 +1,6 @@
+import { AtlantisDiscoverClient } from '@/components/public/atlantis-discover-client';
 import { DashboardClient } from '@/components/public/prospect-dashboard-client';
-import { PartnershipDiscoverClient } from '@/components/public/partnership-discover-client';
-import type {
-  PartnershipDiscoverEvidence,
-  PartnershipDiscoverSnapshot,
-  PartnershipDiscoverTrigger,
-} from '@/lib/partnership/discover';
+import type { MasterAnalysis } from '@/lib/analysis/types';
 import prisma from '@/lib/prisma';
 import {
   buildDiscoverSlug,
@@ -27,27 +23,23 @@ interface DiscoverEvidenceItem {
   snippet: string;
 }
 
+function isStackClueEvidence(item: {
+  title: string | null;
+  snippet: string;
+  sourceUrl: string;
+}): boolean {
+  const haystack =
+    `${item.title ?? ''} ${item.snippet} ${item.sourceUrl}`.toLowerCase();
+  return (
+    haystack.includes('stack clues') ||
+    haystack.includes('public stack clues detected') ||
+    haystack.includes('tech stack clues')
+  );
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   return value as Record<string, unknown>;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function asStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((item): item is string => typeof item === 'string')
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-}
-
-function compactText(value: string, maxLength: number): string {
-  const normalized = value.replace(/\s+/g, ' ').trim();
-  if (normalized.length <= maxLength) return normalized;
-  return `${normalized.slice(0, maxLength - 1)}…`;
 }
 
 function toConfidencePercentage(value: unknown): number | null {
@@ -107,129 +99,26 @@ function discoverDescription(
   companyName: string,
 ): string {
   if (projectType === 'ATLANTIS') {
-    return `Partnership readiness analyse voor ${companyName} met trigger-gebaseerde prioriteiten.`;
+    return `Partnership analyse voor ${companyName} met strategische inzichten en samenwerkingsmogelijkheden.`;
   }
   return `Gepersonaliseerde workflow analyse voor ${companyName}`;
 }
 
-function parsePartnershipSnapshot(input: {
-  summary: Record<string, unknown> | null;
-  evidenceItems: DiscoverEvidenceItem[];
-}): PartnershipDiscoverSnapshot | null {
-  const partnership = asRecord(input.summary?.partnership);
-  if (!partnership) return null;
-
-  const evidenceById = new Map(
-    input.evidenceItems.map((item) => [item.id, item] as const),
-  );
-
-  const triggerRows = Array.isArray(partnership.triggers)
-    ? partnership.triggers
-    : [];
-  const triggers: PartnershipDiscoverTrigger[] = triggerRows
-    .map((item) => {
-      const trigger = asRecord(item);
-      if (!trigger) return null;
-      const title =
-        typeof trigger.title === 'string' && trigger.title.trim().length > 0
-          ? trigger.title.trim()
-          : null;
-      if (!title) return null;
-
-      const evidenceRefs = asStringArray(trigger.evidenceRefs);
-      const evidence: PartnershipDiscoverEvidence[] = evidenceRefs
-        .map((ref) => evidenceById.get(ref))
-        .filter((candidate): candidate is DiscoverEvidenceItem => !!candidate)
-        .slice(0, 3)
-        .map((candidate) => ({
-          id: candidate.id,
-          sourceType: candidate.sourceType,
-          sourceUrl: candidate.sourceUrl,
-          title: candidate.title,
-          snippet: compactText(candidate.snippet, 180),
-        }));
-
-      const urgency =
-        trigger.urgency === 'high' ||
-        trigger.urgency === 'medium' ||
-        trigger.urgency === 'low'
-          ? trigger.urgency
-          : 'low';
-
-      return {
-        triggerType:
-          typeof trigger.triggerType === 'string'
-            ? trigger.triggerType
-            : 'unknown',
-        title,
-        rationale:
-          typeof trigger.rationale === 'string' ? trigger.rationale : '',
-        whyNow: typeof trigger.whyNow === 'string' ? trigger.whyNow : '',
-        confidenceScore:
-          typeof trigger.confidenceScore === 'number'
-            ? clamp(trigger.confidenceScore, 0, 1)
-            : 0,
-        readinessImpact:
-          typeof trigger.readinessImpact === 'number'
-            ? Math.round(trigger.readinessImpact)
-            : 0,
-        urgency,
-        sourceTypes: asStringArray(trigger.sourceTypes),
-        evidence,
-      };
-    })
-    .filter((item): item is PartnershipDiscoverTrigger => item !== null);
-
-  const signalCountsRaw = asRecord(partnership.signalCounts);
-  const signalCounts = {
-    external:
-      typeof signalCountsRaw?.external === 'number'
-        ? Math.max(0, Math.round(signalCountsRaw.external))
-        : 0,
-    diagnostic:
-      typeof signalCountsRaw?.diagnostic === 'number'
-        ? Math.max(0, Math.round(signalCountsRaw.diagnostic))
-        : 0,
-    rag:
-      typeof signalCountsRaw?.rag === 'number'
-        ? Math.max(0, Math.round(signalCountsRaw.rag))
-        : 0,
-    sourceDiversity:
-      typeof signalCountsRaw?.sourceDiversity === 'number'
-        ? Math.max(0, Math.round(signalCountsRaw.sourceDiversity))
-        : 0,
-  };
-
-  const readinessScore =
-    typeof partnership.readinessScore === 'number'
-      ? clamp(Math.round(partnership.readinessScore), 0, 100)
-      : 0;
-  const triggerCount =
-    typeof partnership.triggerCount === 'number'
-      ? Math.max(0, Math.round(partnership.triggerCount))
-      : triggers.length;
-
-  const gaps = Array.isArray(partnership.gaps)
-    ? partnership.gaps.filter((item): item is string => typeof item === 'string')
-    : [];
-  const strategyVersion =
-    typeof partnership.strategyVersion === 'string' &&
-    partnership.strategyVersion.trim().length > 0
-      ? partnership.strategyVersion
-      : 'partnership-v1';
-
-  if (triggerCount === 0 && readinessScore === 0 && gaps.length === 0) {
+function parseMasterAnalysis(content: unknown): MasterAnalysis | null {
+  const obj = asRecord(content);
+  if (!obj) return null;
+  if (obj.version !== 'analysis-v1') return null;
+  const context = asRecord(obj.context);
+  if (
+    !context ||
+    typeof context.hook !== 'string' ||
+    typeof context.executiveHook !== 'string'
+  )
     return null;
-  }
-
-  return {
-    strategyVersion,
-    readinessScore,
-    triggerCount,
-    gaps,
-    signalCounts,
-    triggers,
-  };
+  if (!Array.isArray(context.kpis)) return null;
+  if (!Array.isArray(obj.triggers) || obj.triggers.length === 0) return null;
+  if (!Array.isArray(obj.tracks)) return null;
+  return obj as unknown as MasterAnalysis;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -269,7 +158,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title:
         prospect.project.projectType === 'ATLANTIS'
-          ? `Partnership readiness voor ${name}`
+          ? `Partnership Analyse voor ${name}`
           : `Workflow analyse voor ${name}`,
       description,
     },
@@ -353,12 +242,13 @@ export default async function DiscoverPage({ params }: Props) {
       },
       researchRuns: {
         orderBy: { createdAt: 'desc' },
-        take: 1,
+        take: 5,
         select: {
           status: true,
           completedAt: true,
           qualityApproved: true,
           summary: true,
+          inputSnapshot: true,
           evidenceItems: {
             select: {
               id: true,
@@ -382,6 +272,20 @@ export default async function DiscoverPage({ params }: Props) {
     notFound();
   }
 
+  // Fetch latest AI master analysis for ATLANTIS prospects
+  const prospectAnalysis =
+    prospect.project.projectType === 'ATLANTIS'
+      ? await prisma.prospectAnalysis.findFirst({
+          where: { prospectId: prospect.id },
+          orderBy: { createdAt: 'desc' },
+          select: { content: true, createdAt: true },
+        })
+      : null;
+
+  const masterAnalysis = prospectAnalysis
+    ? parseMasterAnalysis(prospectAnalysis.content)
+    : null;
+
   const canonicalSlug = buildDiscoverSlug({
     slug: prospect.slug,
     readableSlug: prospect.readableSlug,
@@ -396,19 +300,23 @@ export default async function DiscoverPage({ params }: Props) {
   const confidence = asRecord(enrichment?.confidence);
   const kvk = asRecord(enrichment?.kvk);
 
-  const latestRun = prospect.researchRuns[0] ?? null;
+  const latestAnyRun = prospect.researchRuns[0] ?? null;
+  const latestCompletedRun =
+    prospect.researchRuns.find((run) => run.status === 'COMPLETED') ?? null;
+  const latestRun = latestCompletedRun ?? latestAnyRun;
   const latestRunSummary = asRecord(latestRun?.summary);
-  const partnershipSnapshot = parsePartnershipSnapshot({
-    summary: latestRunSummary,
-    evidenceItems:
-      latestRun?.evidenceItems.map((item) => ({
-        id: item.id,
-        sourceType: item.sourceType,
-        sourceUrl: item.sourceUrl,
-        title: item.title,
-        snippet: item.snippet,
-      })) ?? [],
-  });
+  const rawEvidenceItems: DiscoverEvidenceItem[] =
+    latestRun?.evidenceItems.map((item) => ({
+      id: item.id,
+      sourceType: item.sourceType,
+      sourceUrl: item.sourceUrl,
+      title: item.title,
+      snippet: item.snippet,
+    })) ?? [];
+  const evidenceItemsForDiscover =
+    prospect.project.projectType === 'ATLANTIS'
+      ? rawEvidenceItems.filter((item) => !isStackClueEvidence(item))
+      : rawEvidenceItems;
   const diagnosticsRaw = Array.isArray(latestRunSummary?.diagnostics)
     ? latestRunSummary.diagnostics
     : [];
@@ -419,9 +327,9 @@ export default async function DiscoverPage({ params }: Props) {
     return count;
   }, 0);
 
-  const sourceTypeCount = latestRun
-    ? new Set(latestRun.evidenceItems.map((item) => item.sourceType)).size
-    : 0;
+  const sourceTypeCount = new Set(
+    evidenceItemsForDiscover.map((item) => item.sourceType),
+  ).size;
 
   const trustSnapshot = {
     combinedConfidencePct: toConfidencePercentage(confidence?.combined),
@@ -433,14 +341,14 @@ export default async function DiscoverPage({ params }: Props) {
     lastUpdateLabel:
       formatDateLabel(latestRun?.completedAt) ??
       formatDateLabel(prospect.lastEnrichedAt),
-    researchStatusLabel: statusLabel(latestRun?.status),
+    researchStatusLabel: statusLabel(latestAnyRun?.status ?? latestRun?.status),
     qualityLabel:
       latestRun?.qualityApproved === true
         ? 'Kwaliteitscheck akkoord'
         : latestRun?.qualityApproved === false
           ? 'Kwaliteitscheck in review'
           : null,
-    evidenceCount: latestRun?.evidenceItems.length ?? 0,
+    evidenceCount: evidenceItemsForDiscover.length,
     sourceTypeCount,
     diagnosticsWarningCount,
   };
@@ -466,14 +374,47 @@ export default async function DiscoverPage({ params }: Props) {
     projectBrandName: prospect.project.brandName ?? prospect.project.name,
   };
 
-  if (prospect.project.projectType === 'ATLANTIS') {
+  if (prospect.project.projectType === 'ATLANTIS' && masterAnalysis) {
+    const analysisDate = new Intl.DateTimeFormat('nl-NL', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'Europe/Amsterdam',
+    }).format(prospectAnalysis!.createdAt);
+
     return (
-      <PartnershipDiscoverClient
-        {...dashboardProps}
-        projectName={prospect.project.brandName ?? prospect.project.name}
-        spvName={prospect.spv?.name ?? null}
-        partnership={partnershipSnapshot}
+      <AtlantisDiscoverClient
+        companyName={dashboardProps.companyName}
+        industry={dashboardProps.industry}
+        prospectSlug={dashboardProps.prospectSlug}
+        analysis={masterAnalysis}
+        projectBrandName={dashboardProps.projectBrandName}
+        bookingUrl={dashboardProps.bookingUrl}
+        whatsappNumber={dashboardProps.whatsappNumber}
+        phoneNumber={dashboardProps.phoneNumber}
+        contactEmail={dashboardProps.contactEmail}
+        analysisDate={analysisDate}
       />
+    );
+  }
+
+  if (prospect.project.projectType === 'ATLANTIS') {
+    const brandName = prospect.project.brandName ?? prospect.project.name;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F8F9FA]">
+        <div className="mx-auto max-w-md rounded-2xl bg-white p-10 text-center shadow-lg">
+          <div className="mb-6 text-2xl font-bold tracking-tight text-gray-900">
+            {brandName}
+          </div>
+          <h1 className="mb-3 text-lg font-semibold text-gray-800">
+            {dashboardProps.companyName}
+          </h1>
+          <p className="text-sm leading-relaxed text-gray-600">
+            Uw analyse wordt momenteel voorbereid. U ontvangt bericht zodra deze
+            gereed is.
+          </p>
+        </div>
+      </div>
     );
   }
 
