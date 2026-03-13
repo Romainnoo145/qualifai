@@ -181,7 +181,12 @@ Plans:
 4. CTA positioned as NDA gateway to confidential dossier
 5. Visual design is clean, confident, boardroom-appropriate
 
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+
+- [ ] 51-01-PLAN.md — Rewrite AtlantisDiscoverClient as flowing boardroom document
+- [ ] 51-02-PLAN.md — NDA-driven CTA section
+- [ ] 51-03-PLAN.md — Clean up routing and remove dead code
 
 ### Phase 52: E2E Validation
 
