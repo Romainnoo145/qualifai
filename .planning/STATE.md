@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** v7.0 Atlantis Discover Pipeline Rebuild — Master Prompt Rebuild (Phase 50)
+**Current focus:** v7.0 Atlantis Discover Pipeline Rebuild — Discover Page Redesign (Phase 51)
 
 ## Current Position
 
-Phase: 50-master-prompt-rebuild
-Plan: 02 of 2 complete
-Status: Executing — plan 50-02 done, Phase 50 complete
-Last activity: 2026-03-13 — 50-02 (research-executor narrative analysis wiring) complete
+Phase: 51-discover-page-redesign
+Plan: 01 of 3 complete
+Status: Executing — plan 51-01 done
+Last activity: 2026-03-13 — 51-01 (AtlantisDiscoverClient flowing document rewrite) complete
 
-Progress: [██████░░░░░░░░░░░░░░░░░░░░░░░░░░] 25% (4 plans complete in v7.0, Phase 51 next)
+Progress: [███████░░░░░░░░░░░░░░░░░░░░░░░░░] 28% (5 plans complete in v7.0, 51-02 next)
 
 ## Milestones Shipped
 
@@ -51,6 +51,7 @@ Recent decisions affecting v7.0:
 - [50-01]: buildMasterPrompt dispatches on isNarrativeInput() type guard — v2 narrative path feeds raw evidence + sourceLabel-attributed RAG passages
 - [Phase 50-02]: generateMasterAnalysis removed from research-executor — replaced entirely by generateNarrativeAnalysis (analysis-v2)
 - [Phase 50-02]: Intent extraction block preserved for RAG query fallback chain (AI → intent → keyword) — not passed to analysis engine
+- [51-01]: AtlantisDiscoverClient exclusively renders NarrativeAnalysis (analysis-v2) — legacy parseMasterAnalysis removed; no-v2 prospects fall through to "analyse wordt voorbereid" waiting state
 
 ### Pending Todos
 
@@ -63,5 +64,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 50-02-PLAN.md (research-executor narrative analysis wiring — Phase 50 complete)
-Resume command: `/gsd:execute-phase 51` (Phase 51: Discover Page Redesign)
+Stopped at: Completed 51-01-PLAN.md (AtlantisDiscoverClient flowing document rewrite)
+Resume command: `/gsd:execute-phase 51` (Phase 51: Discover Page Redesign — plan 02 next)

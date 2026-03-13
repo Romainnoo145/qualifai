@@ -23,11 +23,11 @@ Rebuild the pipeline from evidence to discover page. Evidence scrapers are good 
 
 ### Discover Rendering (DISC) — Page Design
 
-- [ ] **DISC-01**: Discover page renders as a flowing boardroom document — not a rigid 3-section wizard with cards
-- [ ] **DISC-02**: Opening section has a prospect-specific hook that demonstrates understanding of their business ("Uw grootste kostenpost wordt uw grootste concurrentievoordeel")
-- [ ] **DISC-03**: Body content weaves evidence naturally — specific numbers, dates, project names from both scraper evidence and RAG docs
+- [x] **DISC-01**: Discover page renders as a flowing boardroom document — not a rigid 3-section wizard with cards
+- [x] **DISC-02**: Opening section has a prospect-specific hook that demonstrates understanding of their business ("Uw grootste kostenpost wordt uw grootste concurrentievoordeel")
+- [x] **DISC-03**: Body content weaves evidence naturally — specific numbers, dates, project names from both scraper evidence and RAG docs
 - [ ] **DISC-04**: CTA drives NDA signing (not generic "intake gesprek") — positioned as gateway to confidential dossier
-- [ ] **DISC-05**: Visual design matches boardroom tone — clean, confident, data-rich, no template feel
+- [x] **DISC-05**: Visual design matches boardroom tone — clean, confident, data-rich, no template feel
 
 ### Validation (VALD)
 
@@ -102,11 +102,11 @@ Rebuild the pipeline from evidence to discover page. Evidence scrapers are good 
 | RAG-01      | 49    | Complete |
 | RAG-02      | 49    | Complete |
 | RAG-03      | 49    | Complete |
-| DISC-01     | 51    | Pending  |
-| DISC-02     | 51    | Pending  |
-| DISC-03     | 51    | Pending  |
+| DISC-01     | 51    | Complete |
+| DISC-02     | 51    | Complete |
+| DISC-03     | 51    | Complete |
 | DISC-04     | 51    | Pending  |
-| DISC-05     | 51    | Pending  |
+| DISC-05     | 51    | Complete |
 | VALD-01     | 52    | Pending  |
 | VALD-02     | 52    | Pending  |
 | VALD-03     | 52    | Pending  |
