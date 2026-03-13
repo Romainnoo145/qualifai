@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-08)
+See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** v6.0 Outreach Simplification — Phase 46 complete, Phase 47 next
+**Current focus:** v7.0 Atlantis Discover Pipeline Rebuild — RAG Query Rebuild (Phase 49)
 
 ## Current Position
 
-Phase: 47 of 47 (Outreach UI Simplification)
-Plan: 2 of 2
-Status: In progress
-Last activity: 2026-03-08 — Completed 47-01 (outreach tab removal)
+Phase: 49-rag-query-rebuild
+Plan: 01 of 3 complete
+Status: Executing — plan 49-01 done
+Last activity: 2026-03-13 — 49-01 (AI-driven RAG query builder) complete
 
-Progress: [████████████████░░░░░░░░░░░░░░░░] 50% (Phase 47: 1/2 plans)
+Progress: [██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 8% (1 plan complete, 49-02 next)
 
 ## Milestones Shipped
 
@@ -27,22 +27,24 @@ Progress: [████████████████░░░░░░░
 - v3.0 Sharp Analysis — 2026-03-05 (Phases 31-35)
 - v4.0 Atlantis Partnership Outreach — 2026-03-07 (Phases 36-39, 40-41 deferred)
 - v5.0 Atlantis Intelligence — 2026-03-08 (Phases 42-45)
+- v6.0 Outreach Simplification — 2026-03-08 (Phases 46-47, Phase 48 deferred)
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting v6.0:
+Recent decisions affecting v7.0:
 
-- v6.0: Cadence engine already exists (lib/cadence/engine.ts) — modify, don't recreate
-- v6.0: 2 phases only — backend+cadence first, then UI cleanup
-- v6.0: Non-email reminders shown in Drafts Queue as lightweight section, not separate tab
-- 46-01: Email follow-ups use generateFollowUp for AI copy, land as status 'draft' in Drafts Queue
-- 46-01: Non-email channels use reminder_open status, AI failure falls back to empty-body draft
-- 46-02: Removed queueTouchTask entirely -- cadence automation replaces manual task creation
-- 46-02: Kept getTouchTaskQueue name until Phase 47 removes Multi-touch Tasks tab
-- 47-01: Removed TouchTaskQueue component and Multi-touch Tasks tab, outreach now 3 tabs
+- Evidence collection pipeline (scrapers, 83 items for Nedri) is GOOD — don't touch it
+- Problem is everything AFTER evidence collection: intent extraction, RAG retrieval, master prompt, discover UI
+- Eliminate lossy intent extraction middle-layer — feed evidence + RAG directly to master prompt
+- Master prompt produces narrative content, not rigid JSON categories (triggers/tracks)
+- Discover UI should be a flowing document, not a 4-step wizard
+- CTA drives NDA signing, not generic "intake"
+- Hand-written Nedri example is the gold standard for auto-generated output
+- Phase 48 (SERP API Replacement) deferred from v6.0
+- [Phase 49-rag-query-rebuild]: Use Gemini Flash for AI RAG query generation with three-level fallback: AI → intent → keyword
 
 ### Pending Todos
 
@@ -50,10 +52,10 @@ None.
 
 ### Blockers/Concerns
 
-None.
+- Heijmans has a stuck research run (CRAWLING since Mar 7) — needs rerun with Gemini Pro
 
 ## Session Continuity
 
-Last session: 2026-03-08
-Stopped at: Completed 47-01-PLAN.md (outreach tab removal)
-Resume command: `/gsd:execute-phase 47` (plan 02 remaining)
+Last session: 2026-03-13
+Stopped at: Completed 49-01-PLAN.md (AI-driven RAG query builder)
+Resume command: `/gsd:execute-phase 49` (continue with 49-02: RAG passage ranking)

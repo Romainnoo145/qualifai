@@ -143,7 +143,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 2. Retrieved passages include source document name and SPV context
 3. Steel manufacturer prospects get groenstaal/spoor passages, not generic hydrogen/wind results
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
 
 - [ ] 49-01-PLAN.md — AI-driven query generation from prospect evidence (Gemini Flash)
@@ -244,7 +244,7 @@ Phases execute in numeric order: 49 → 50 → 51 → 52
 | 46. Automated Cadence + Backend Cleanup | v6.0      | 2/2            | Complete    | 2026-03-08 |
 | 47. Outreach UI Simplification          | v6.0      | 2/2            | Complete    | 2026-03-08 |
 | 48. SERP API Replacement                | v6.0      | 0/?            | Deferred    | -          |
-| 49. RAG Query Rebuild                   | v7.0      | 0/?            | Not started | -          |
+| 49. RAG Query Rebuild                   | 1/2       | In Progress    |             | -          |
 | 50. Master Prompt Rebuild               | v7.0      | 0/?            | Not started | -          |
 | 51. Discover Page Redesign              | v7.0      | 0/?            | Not started | -          |
 | 52. E2E Validation                      | v7.0      | 0/?            | Not started | -          |
