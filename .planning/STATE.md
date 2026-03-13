@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-13)
 ## Current Position
 
 Phase: 50-master-prompt-rebuild
-Plan: 01 of 2 complete
-Status: Executing — plan 50-01 done
-Last activity: 2026-03-13 — 50-01 (analysis-v2 types + narrative master prompt) complete
+Plan: 02 of 2 complete
+Status: Executing — plan 50-02 done, Phase 50 complete
+Last activity: 2026-03-13 — 50-02 (research-executor narrative analysis wiring) complete
 
-Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░] 19% (3 plans complete in v7.0, 50-02 next)
+Progress: [██████░░░░░░░░░░░░░░░░░░░░░░░░░░] 25% (4 plans complete in v7.0, Phase 51 next)
 
 ## Milestones Shipped
 
@@ -49,6 +49,8 @@ Recent decisions affecting v7.0:
 - [49-02]: Evidence scoring is additive (+25 max) on top of profile overlap (+20) and focus lens (+18) — steel manufacturers boost groenstaal passages
 - [50-01]: MasterAnalysisInput.intentVars typed as `any` to keep types.ts self-contained (avoids circular import from extraction/types)
 - [50-01]: buildMasterPrompt dispatches on isNarrativeInput() type guard — v2 narrative path feeds raw evidence + sourceLabel-attributed RAG passages
+- [Phase 50-02]: generateMasterAnalysis removed from research-executor — replaced entirely by generateNarrativeAnalysis (analysis-v2)
+- [Phase 50-02]: Intent extraction block preserved for RAG query fallback chain (AI → intent → keyword) — not passed to analysis engine
 
 ### Pending Todos
 
@@ -61,5 +63,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 50-01-PLAN.md (analysis-v2 types + narrative master prompt rebuild)
-Resume command: `/gsd:execute-phase 50` (continue with 50-02: research-executor wiring)
+Stopped at: Completed 50-02-PLAN.md (research-executor narrative analysis wiring — Phase 50 complete)
+Resume command: `/gsd:execute-phase 51` (Phase 51: Discover Page Redesign)

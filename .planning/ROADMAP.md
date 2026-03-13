@@ -126,7 +126,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 **Milestone Goal:** Rebuild the entire pipeline from evidence collection to discover page rendering. The evidence scrapers are good (83 items for Nedri), but everything after — intent extraction, RAG retrieval, master prompt, and discover UI — produces low-quality output. Eliminate the lossy intent extraction middle-layer, feed evidence + RAG directly to a master prompt that generates flowing narrative content, and redesign the discover page as a boardroom-ready document with NDA-driven CTA.
 
 - [x] **Phase 49: RAG Query Rebuild** — Better query construction from evidence context, passage ranking by prospect-relevance, source attribution (completed 2026-03-13)
-- [ ] **Phase 50: Master Prompt Rebuild** — Raw evidence + RAG passages directly to master prompt, flowing narrative generation, cross-prospect connections
+- [x] **Phase 50: Master Prompt Rebuild** — Raw evidence + RAG passages directly to master prompt, flowing narrative generation, cross-prospect connections (completed 2026-03-13)
 - [ ] **Phase 51: Discover Page Redesign** — Flowing boardroom document, NDA-driven CTA, prospect-specific hooks
 - [ ] **Phase 52: E2E Validation** — Nedri gold standard comparison, multi-prospect quality check, regression
 
@@ -162,7 +162,7 @@ Plans:
 4. Cross-prospect connections are surfaced when both companies are in the system
 5. Output persists to DB as structured sections renderable without further AI calls
 
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 
 - [ ] 50-01-PLAN.md — Rebuild types + master prompt for narrative output with raw evidence input
@@ -249,6 +249,6 @@ Phases execute in numeric order: 49 → 50 → 51 → 52
 | 47. Outreach UI Simplification          | v6.0      | 2/2            | Complete    | 2026-03-08 |
 | 48. SERP API Replacement                | v6.0      | 0/?            | Deferred    | -          |
 | 49. RAG Query Rebuild                   | 2/2       | Complete       | 2026-03-13  | -          |
-| 50. Master Prompt Rebuild               | 1/2       | In Progress    |             | -          |
+| 50. Master Prompt Rebuild               | 2/2       | Complete       | 2026-03-13  | -          |
 | 51. Discover Page Redesign              | v7.0      | 0/?            | Not started | -          |
 | 52. E2E Validation                      | v7.0      | 0/?            | Not started | -          |
