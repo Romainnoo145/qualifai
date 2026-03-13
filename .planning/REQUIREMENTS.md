@@ -18,8 +18,8 @@ Rebuild the pipeline from evidence to discover page. Evidence scrapers are good 
 ### RAG Retrieval (RAG) — Query Quality
 
 - [x] **RAG-01**: RAG queries are constructed from prospect evidence context (industry, pains, signals) — not from keyword-stuffed profile fragments
-- [ ] **RAG-02**: Retrieved passages include source document attribution (which Atlantis volume, which SPV context)
-- [ ] **RAG-03**: Passage ranking prioritizes prospect-relevance over generic similarity — steel manufacturer gets groenstaal passages, not generic waterstof
+- [x] **RAG-02**: Retrieved passages include source document attribution (which Atlantis volume, which SPV context)
+- [x] **RAG-03**: Passage ranking prioritizes prospect-relevance over generic similarity — steel manufacturer gets groenstaal passages, not generic waterstof
 
 ### Discover Rendering (DISC) — Page Design
 
@@ -100,8 +100,8 @@ Rebuild the pipeline from evidence to discover page. Evidence scrapers are good 
 | PIPE-04     | 50    | Pending  |
 | PIPE-05     | 50    | Pending  |
 | RAG-01      | 49    | Complete |
-| RAG-02      | 49    | Pending  |
-| RAG-03      | 49    | Pending  |
+| RAG-02      | 49    | Complete |
+| RAG-03      | 49    | Complete |
 | DISC-01     | 51    | Pending  |
 | DISC-02     | 51    | Pending  |
 | DISC-03     | 51    | Pending  |

@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-13)
 ## Current Position
 
 Phase: 49-rag-query-rebuild
-Plan: 01 of 3 complete
-Status: Executing — plan 49-01 done
-Last activity: 2026-03-13 — 49-01 (AI-driven RAG query builder) complete
+Plan: 02 of 3 complete
+Status: Executing — plan 49-02 done
+Last activity: 2026-03-13 — 49-02 (Evidence-aware RAG passage ranking + sourceLabel) complete
 
-Progress: [██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 8% (1 plan complete, 49-02 next)
+Progress: [████░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 16% (2 plans complete, 49-03 next)
 
 ## Milestones Shipped
 
@@ -45,6 +45,8 @@ Recent decisions affecting v7.0:
 - Hand-written Nedri example is the gold standard for auto-generated output
 - Phase 48 (SERP API Replacement) deferred from v6.0
 - [Phase 49-rag-query-rebuild]: Use Gemini Flash for AI RAG query generation with three-level fallback: AI → intent → keyword
+- [49-02]: Extract rankRagPassagesForProspect to ranker.ts (file was 707 lines); re-export from retriever.ts to preserve callers
+- [49-02]: Evidence scoring is additive (+25 max) on top of profile overlap (+20) and focus lens (+18) — steel manufacturers boost groenstaal passages
 
 ### Pending Todos
 
@@ -57,5 +59,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 49-01-PLAN.md (AI-driven RAG query builder)
-Resume command: `/gsd:execute-phase 49` (continue with 49-02: RAG passage ranking)
+Stopped at: Completed 49-02-PLAN.md (Evidence-aware RAG passage ranking)
+Resume command: `/gsd:execute-phase 49` (continue with 49-03: master prompt update)
