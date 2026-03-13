@@ -56,8 +56,13 @@ import { triggerProspectSiteCatalogSync } from '@/lib/site-catalog';
 import { fetchKvkData, kvkDataToEvidenceDraft } from '@/lib/enrichment/kvk';
 import { extractIntentVariables } from '@/lib/extraction/intent-extractor';
 import type { IntentVariables } from '@/lib/extraction/types';
-import { generateMasterAnalysis } from '@/lib/analysis/master-analyzer';
-import type { MasterAnalysisInput } from '@/lib/analysis/types';
+import { generateNarrativeAnalysis } from '@/lib/analysis/master-analyzer';
+import type {
+  NarrativeAnalysisInput,
+  EvidenceItem,
+  RagPassageInput,
+  CrossProspectConnection,
+} from '@/lib/analysis/types';
 import type { Prisma, PrismaClient } from '@prisma/client';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
@@ -387,7 +392,8 @@ interface SourceDiagnostic {
     | 'intent_extraction'
     | 'rag_query_strategy'
     | 'rag_retrieval'
-    | 'master_analysis';
+    | 'master_analysis'
+    | 'cross_prospect';
   status: SourceStatus;
   message: string;
 }
@@ -1561,32 +1567,85 @@ export async function executeResearchRun(
             : 'RAG retrieval returned no passages above similarity threshold.',
       });
 
-      // Phase 43: Master analysis generation — produces structured discover content
+      // Cross-prospect connection detection (PIPE-05)
+      const crossConnections: CrossProspectConnection[] = [];
+      try {
+        // Find other Atlantis prospects in the same project
+        const otherProspects = await db.prospect.findMany({
+          where: {
+            projectId: prospect.project.id,
+            id: { not: input.prospectId },
+          },
+          select: { id: true, companyName: true, domain: true },
+        });
+
+        if (otherProspects.length > 0) {
+          // Search through evidence snippets for mentions of other prospect names
+          const prospectNames = otherProspects
+            .map((p) => ({ id: p.id, name: p.companyName ?? p.domain }))
+            .filter((p) => p.name.length >= 3); // skip very short names to avoid false positives
+
+          for (const other of prospectNames) {
+            const nameLower = other.name.toLowerCase();
+            const mentioningEvidence = evidenceRecords.find(
+              (e) =>
+                e.snippet.toLowerCase().includes(nameLower) ||
+                (e.title?.toLowerCase().includes(nameLower) ?? false),
+            );
+
+            if (mentioningEvidence) {
+              crossConnections.push({
+                companyName: other.name,
+                relationship: 'prospect', // generic — LLM will infer context from snippet
+                evidenceSnippet: mentioningEvidence.snippet.slice(0, 200),
+              });
+            }
+          }
+
+          if (crossConnections.length > 0) {
+            diagnostics.push({
+              source: 'cross_prospect',
+              status: 'ok',
+              message: `Found ${crossConnections.length} cross-prospect connection(s): ${crossConnections.map((c) => c.companyName).join(', ')}`,
+            });
+          }
+        }
+      } catch {
+        // Non-critical — proceed without cross-connections
+      }
+
+      // Phase 50: Narrative analysis generation — produces flowing boardroom content
       try {
         const spvs = await db.sPV.findMany({
           where: { projectId: prospect.project.id, isActive: true },
-          select: {
-            name: true,
-            code: true,
-            slug: true,
-            metricsTemplate: true,
-          },
+          select: { name: true, code: true, slug: true, metricsTemplate: true },
         });
 
-        const analysisInput: MasterAnalysisInput = {
-          intentVars: intentVars ?? {
-            categories: {
-              sector_fit: [],
-              operational_pains: [],
-              esg_csrd: [],
-              investment_growth: [],
-              workforce: [],
-            },
-            extras: [],
-            populatedCount: 0,
-            sparse: true,
-          },
-          passages: ragPassages,
+        // Map evidence records to EvidenceItem (PIPE-01: raw evidence, no intent compression)
+        const evidenceItems: EvidenceItem[] = evidenceRecords
+          .filter((item) => item.sourceType !== 'RAG_DOCUMENT')
+          .sort((a, b) => b.confidenceScore - a.confidenceScore)
+          .slice(0, 60)
+          .map((item) => ({
+            sourceType: item.sourceType,
+            sourceUrl: item.sourceUrl,
+            title: item.title,
+            snippet: item.snippet,
+            confidenceScore: item.confidenceScore,
+            workflowTag: item.workflowTag,
+          }));
+
+        // Map RAG passages to RagPassageInput (PIPE-02: with sourceLabel from Phase 49)
+        const passageInputs: RagPassageInput[] = ragPassages.map((p) => ({
+          content: p.content,
+          sourceLabel: p.sourceLabel,
+          similarity: p.similarity,
+          spvName: p.spvName ?? null,
+        }));
+
+        const narrativeInput: NarrativeAnalysisInput = {
+          evidence: evidenceItems,
+          passages: passageInputs,
           prospect: {
             companyName: prospect.companyName ?? prospect.domain,
             industry: prospect.industry ?? null,
@@ -1603,20 +1662,22 @@ export async function executeResearchRun(
             slug: s.slug,
             metricsTemplate: s.metricsTemplate,
           })),
+          crossConnections,
         };
 
-        const analysisResult = await generateMasterAnalysis(analysisInput);
+        const analysisResult = await generateNarrativeAnalysis(narrativeInput);
 
         await db.prospectAnalysis.create({
           data: {
             researchRunId: run.id,
             prospectId: input.prospectId,
-            version: 'analysis-v1',
+            version: 'analysis-v2',
             content: toJson(analysisResult),
             modelUsed: analysisResult.modelUsed,
             inputSnapshot: toJson({
-              intentVarCount: intentVars?.populatedCount ?? 0,
-              passageCount: ragPassages.length,
+              evidenceCount: evidenceItems.length,
+              passageCount: passageInputs.length,
+              crossConnectionCount: crossConnections.length,
               spvCount: spvs.length,
             }),
           },
@@ -1625,13 +1686,13 @@ export async function executeResearchRun(
         diagnostics.push({
           source: 'master_analysis',
           status: 'ok',
-          message: `Master analysis generated: ${analysisResult.triggers.length} triggers, ${analysisResult.tracks.length} tracks`,
+          message: `Narrative analysis generated: ${analysisResult.sections.length} sections, ${analysisResult.spvRecommendations.length} SPV recommendations`,
         });
       } catch (analysisErr) {
         diagnostics.push({
           source: 'master_analysis',
           status: 'warning',
-          message: `Master analysis skipped: ${analysisErr instanceof Error ? analysisErr.message : 'Unknown error'}`,
+          message: `Narrative analysis failed: ${analysisErr instanceof Error ? analysisErr.message : 'Unknown error'}`,
         });
       }
     } catch (err) {
