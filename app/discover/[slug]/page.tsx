@@ -1,6 +1,6 @@
 import { AtlantisDiscoverClient } from '@/components/public/atlantis-discover-client';
 import { DashboardClient } from '@/components/public/prospect-dashboard-client';
-import type { MasterAnalysis } from '@/lib/analysis/types';
+import type { NarrativeAnalysis } from '@/lib/analysis/types';
 import prisma from '@/lib/prisma';
 import {
   buildDiscoverSlug,
@@ -104,21 +104,15 @@ function discoverDescription(
   return `Gepersonaliseerde workflow analyse voor ${companyName}`;
 }
 
-function parseMasterAnalysis(content: unknown): MasterAnalysis | null {
+function parseNarrativeAnalysis(content: unknown): NarrativeAnalysis | null {
   const obj = asRecord(content);
   if (!obj) return null;
-  if (obj.version !== 'analysis-v1') return null;
-  const context = asRecord(obj.context);
-  if (
-    !context ||
-    typeof context.hook !== 'string' ||
-    typeof context.executiveHook !== 'string'
-  )
-    return null;
-  if (!Array.isArray(context.kpis)) return null;
-  if (!Array.isArray(obj.triggers) || obj.triggers.length === 0) return null;
-  if (!Array.isArray(obj.tracks)) return null;
-  return obj as unknown as MasterAnalysis;
+  if (obj.version !== 'analysis-v2') return null;
+  if (typeof obj.openingHook !== 'string') return null;
+  if (typeof obj.executiveSummary !== 'string') return null;
+  if (!Array.isArray(obj.sections) || obj.sections.length === 0) return null;
+  if (!Array.isArray(obj.spvRecommendations)) return null;
+  return obj as unknown as NarrativeAnalysis;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -282,8 +276,8 @@ export default async function DiscoverPage({ params }: Props) {
         })
       : null;
 
-  const masterAnalysis = prospectAnalysis
-    ? parseMasterAnalysis(prospectAnalysis.content)
+  const narrativeAnalysis = prospectAnalysis
+    ? parseNarrativeAnalysis(prospectAnalysis.content)
     : null;
 
   const canonicalSlug = buildDiscoverSlug({
@@ -374,7 +368,7 @@ export default async function DiscoverPage({ params }: Props) {
     projectBrandName: prospect.project.brandName ?? prospect.project.name,
   };
 
-  if (prospect.project.projectType === 'ATLANTIS' && masterAnalysis) {
+  if (prospect.project.projectType === 'ATLANTIS' && narrativeAnalysis) {
     const analysisDate = new Intl.DateTimeFormat('nl-NL', {
       day: '2-digit',
       month: 'long',
@@ -387,7 +381,7 @@ export default async function DiscoverPage({ params }: Props) {
         companyName={dashboardProps.companyName}
         industry={dashboardProps.industry}
         prospectSlug={dashboardProps.prospectSlug}
-        analysis={masterAnalysis}
+        analysis={narrativeAnalysis}
         projectBrandName={dashboardProps.projectBrandName}
         bookingUrl={dashboardProps.bookingUrl}
         whatsappNumber={dashboardProps.whatsappNumber}
@@ -400,20 +394,59 @@ export default async function DiscoverPage({ params }: Props) {
 
   if (prospect.project.projectType === 'ATLANTIS') {
     const brandName = prospect.project.brandName ?? prospect.project.name;
+    const brandMark = brandName.charAt(0).toUpperCase();
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F8F9FA]">
-        <div className="mx-auto max-w-md rounded-2xl bg-white p-10 text-center shadow-lg">
-          <div className="mb-6 text-2xl font-bold tracking-tight text-gray-900">
-            {brandName}
+      <div className="min-h-screen bg-[#F8F9FA] flex flex-col font-sans">
+        {/* Header — matches AtlantisDiscoverClient shell */}
+        <header className="sticky top-0 z-50 bg-[#F8F9FA]/80 backdrop-blur-3xl border-b border-black/5">
+          <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-4">
+            <div className="w-9 h-9 rounded-2xl bg-[#040026] flex items-center justify-center shadow-lg shadow-[#040026]/10">
+              <span className="text-[#EBCB4B] font-black text-xs">
+                {brandMark}
+              </span>
+            </div>
+            <span className="text-md font-black text-[#040026] tracking-tighter">
+              {dashboardProps.companyName}
+            </span>
           </div>
-          <h1 className="mb-3 text-lg font-semibold text-gray-800">
-            {dashboardProps.companyName}
-          </h1>
-          <p className="text-sm leading-relaxed text-gray-600">
-            Uw analyse wordt momenteel voorbereid. U ontvangt bericht zodra deze
-            gereed is.
-          </p>
-        </div>
+          <div className="h-0.5 bg-slate-100" />
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 flex items-center justify-center px-6">
+          <div className="max-w-lg text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-[#040026]/5 mb-8">
+              <svg
+                className="w-7 h-7 text-[#040026]/40 animate-pulse"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z"
+                />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-black text-[#040026] tracking-tight mb-3">
+              Uw partnership analyse wordt voorbereid
+            </h1>
+            <p className="text-sm leading-relaxed text-slate-500 max-w-sm mx-auto">
+              Wij analyseren de strategische mogelijkheden voor{' '}
+              {dashboardProps.companyName}. U ontvangt bericht zodra uw
+              persoonlijke analyse gereed is.
+            </p>
+          </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="py-6 text-center">
+          <span className="text-[10px] uppercase tracking-widest text-slate-300 font-medium">
+            {brandName}
+          </span>
+        </footer>
       </div>
     );
   }
