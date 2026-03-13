@@ -99,7 +99,7 @@ function discoverDescription(
   companyName: string,
 ): string {
   if (projectType === 'ATLANTIS') {
-    return `Partnership analyse voor ${companyName} met strategische inzichten en samenwerkingsmogelijkheden.`;
+    return `Strategische partnership analyse voor ${companyName}.`;
   }
   return `Gepersonaliseerde workflow analyse voor ${companyName}`;
 }
