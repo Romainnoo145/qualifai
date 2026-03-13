@@ -1484,6 +1484,13 @@ export async function executeResearchRun(
           spvName: prospect.spv?.name ?? null,
         },
         12,
+        evidenceRecords
+          .filter((item) => item.sourceType !== 'RAG_DOCUMENT')
+          .map((item) => ({
+            snippet: item.snippet,
+            workflowTag: item.workflowTag,
+            confidenceScore: item.confidenceScore,
+          })),
       );
 
       for (const passage of ragPassages) {

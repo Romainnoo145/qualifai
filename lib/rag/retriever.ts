@@ -1,6 +1,8 @@
 import { env } from '@/env.mjs';
 import { Prisma, type PrismaClient } from '@prisma/client';
 import type { IntentVariables, IntentCategory } from '@/lib/extraction/types';
+export { rankRagPassagesForProspect } from './ranker';
+export type { EvidenceSignal } from './ranker';
 
 const DEFAULT_EMBEDDING_MODEL = 'text-embedding-3-small';
 const DEFAULT_SIMILARITY_THRESHOLD = 0.5;
@@ -65,6 +67,8 @@ export type RagRetrievedPassage = {
   spvSlug: string | null;
   spvName: string | null;
   chunkMetadata: Prisma.JsonValue | null;
+  /** Ready-to-use label for downstream rendering, e.g. "EG-III-3.0 Groenstaal (SPV: Groenstaal BV)" */
+  sourceLabel: string;
 };
 
 export type RagProspectProfile = {
@@ -180,96 +184,10 @@ function inferSectorQueryPack(industry: string | null): SectorQueryPack {
   };
 }
 
-function tokenize(value: string): string[] {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9#\s-]/g, ' ')
-    .split(/[\s-]+/)
-    .map((token) => token.trim())
-    .filter((token) => token.length >= 3);
-}
-
 function uniqueStrings(values: string[]): string[] {
   return Array.from(
     new Set(values.map((value) => value.trim()).filter(Boolean)),
   );
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
-}
-
-function extractMetadataTags(metadata: Prisma.JsonValue | null): string[] {
-  const record = asRecord(metadata);
-  if (!record) return [];
-  const tags = record.tags;
-  if (!Array.isArray(tags)) return [];
-  return tags
-    .filter((item): item is string => typeof item === 'string')
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-}
-
-function inferIndustryLens(industry: string | null): {
-  focus: string[];
-  avoid: string[];
-} {
-  const haystack = (industry ?? '').toLowerCase();
-  if (
-    /(construction|bouw|infra|civil|real estate|housing|property|contractor)/.test(
-      haystack,
-    )
-  ) {
-    return {
-      focus: [
-        'woningbouw',
-        'housing',
-        'bouw',
-        'construction',
-        'infrastructure',
-        'infrastructuur',
-        'grond',
-        'land',
-        'stikstof',
-        'vergunning',
-        'permit',
-        'capex',
-      ],
-      avoid: ['seaweed', 'zeewier', 'aquaculture', 'algae', 'fishery'],
-    };
-  }
-  if (
-    /(steel|metals|manufacturing|industrial|chemic|refining|shipbuilding)/.test(
-      haystack,
-    )
-  ) {
-    return {
-      focus: [
-        'steel',
-        'dri',
-        'hydrogen',
-        'h2',
-        'industrial',
-        'co2',
-        'cbam',
-        'ets',
-      ],
-      avoid: ['consumer retail', 'tourism', 'hospitality'],
-    };
-  }
-  if (
-    /(data|datacenter|cloud|hosting|it|software|saas|telecom)/.test(haystack)
-  ) {
-    return {
-      focus: ['datacenter', 'it-load', 'pue', 'latency', 'grid', 'cooling'],
-      avoid: ['aquaculture', 'fisheries'],
-    };
-  }
-  return {
-    focus: [],
-    avoid: [],
-  };
 }
 
 async function createEmbeddings(
@@ -471,115 +389,6 @@ function compactQuery(parts: string[]): string {
     .trim();
 }
 
-export function rankRagPassagesForProspect(
-  passages: RagRetrievedPassage[],
-  profile: RagProspectProfile,
-  maxResults = 12,
-): RagRetrievedPassage[] {
-  if (passages.length === 0) return [];
-  const lens = inferIndustryLens(profile.industry);
-  const profileTokens = new Set(
-    tokenize(
-      [
-        profile.companyName,
-        profile.industry ?? '',
-        profile.description ?? '',
-        profile.country ?? '',
-        profile.campaignNiche ?? '',
-        profile.spvName ?? '',
-        profile.specialties.join(' '),
-        profile.technologies.join(' '),
-      ].join(' '),
-    ),
-  );
-  const focusTokens = new Set(tokenize(lens.focus.join(' ')));
-  const avoidTokens = tokenize(lens.avoid.join(' '));
-
-  const scored = passages.map((passage) => {
-    const tags = extractMetadataTags(passage.documentMetadata);
-    const corpus = [
-      passage.documentId,
-      passage.documentTitle,
-      passage.sourcePath,
-      passage.sectionHeader ?? '',
-      tags.join(' '),
-      passage.content.slice(0, 1000),
-    ].join(' ');
-    const passageTokens = new Set(tokenize(corpus));
-
-    let score = passage.similarity * 100;
-    let overlap = 0;
-    for (const token of profileTokens) {
-      if (passageTokens.has(token)) overlap += 1;
-    }
-    score += Math.min(20, overlap * 1.8);
-
-    let focusHit = 0;
-    for (const token of focusTokens) {
-      if (passageTokens.has(token)) focusHit += 1;
-    }
-    score += Math.min(18, focusHit * 2.4);
-
-    if (
-      profile.spvName &&
-      passage.spvName &&
-      passage.spvName.toLowerCase() === profile.spvName.toLowerCase()
-    ) {
-      score += 14;
-    }
-
-    const haystack = corpus.toLowerCase();
-    let avoidHit = 0;
-    for (const token of avoidTokens) {
-      if (haystack.includes(token)) avoidHit += 1;
-    }
-    score -= Math.min(36, avoidHit * 12);
-
-    if (
-      /(partners?\s+en\s+leveranciers|betrokken bedrijven|supplier|leverancier|bedrijvenlijst|vendor list)/i.test(
-        haystack,
-      )
-    ) {
-      score -= 18;
-    }
-    if (
-      /(capex|irr|roi|co2|cbam|ets|csrd|natura|vergunning|stikstof|woning|housing|land|km2|km²|m2|m²|mt|gw|pue|miljoen|miljard|trillion|billion)/i.test(
-        haystack,
-      )
-    ) {
-      score += 12;
-    }
-
-    return { passage, score };
-  });
-
-  scored.sort(
-    (a, b) => b.score - a.score || b.passage.similarity - a.passage.similarity,
-  );
-
-  const selected: RagRetrievedPassage[] = [];
-  const usedChunkIds = new Set<string>();
-  const usedDocumentIds = new Set<string>();
-
-  for (const item of scored) {
-    if (selected.length >= maxResults) break;
-    if (usedChunkIds.has(item.passage.chunkId)) continue;
-    if (usedDocumentIds.has(item.passage.documentId)) continue;
-    selected.push(item.passage);
-    usedChunkIds.add(item.passage.chunkId);
-    usedDocumentIds.add(item.passage.documentId);
-  }
-
-  for (const item of scored) {
-    if (selected.length >= maxResults) break;
-    if (usedChunkIds.has(item.passage.chunkId)) continue;
-    selected.push(item.passage);
-    usedChunkIds.add(item.passage.chunkId);
-  }
-
-  return selected;
-}
-
 export async function retrieveRagPassages(
   db: PrismaClient,
   input: {
@@ -679,6 +488,14 @@ export async function retrieveRagPassages(
         continue;
       }
 
+      // Build a ready-to-use source label for downstream consumers
+      const baseLabel = row.volume
+        ? `${row.volume} — ${row.documentTitle}`
+        : row.documentTitle;
+      const sourceLabel = row.spvName
+        ? `${baseLabel} (SPV: ${row.spvName})`
+        : baseLabel;
+
       byChunkId.set(row.chunkId, {
         chunkId: row.chunkId,
         chunkIndex: row.chunkIndex,
@@ -697,6 +514,7 @@ export async function retrieveRagPassages(
         spvSlug: row.spvSlug,
         spvName: row.spvName,
         chunkMetadata: row.chunkMetadata,
+        sourceLabel,
       });
     }
   }
