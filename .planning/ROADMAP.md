@@ -162,7 +162,11 @@ Plans:
 4. Cross-prospect connections are surfaced when both companies are in the system
 5. Output persists to DB as structured sections renderable without further AI calls
 
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+
+- [ ] 50-01-PLAN.md — Rebuild types + master prompt for narrative output with raw evidence input
+- [ ] 50-02-PLAN.md — Wire narrative analysis into research executor with cross-prospect detection
 
 ### Phase 51: Discover Page Redesign
 
