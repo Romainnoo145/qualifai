@@ -127,7 +127,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 - [x] **Phase 49: RAG Query Rebuild** — Better query construction from evidence context, passage ranking by prospect-relevance, source attribution (completed 2026-03-13)
 - [x] **Phase 50: Master Prompt Rebuild** — Raw evidence + RAG passages directly to master prompt, flowing narrative generation, cross-prospect connections (completed 2026-03-13)
-- [ ] **Phase 51: Discover Page Redesign** — Flowing boardroom document, NDA-driven CTA, prospect-specific hooks
+- [x] **Phase 51: Discover Page Redesign** — Flowing boardroom document, NDA-driven CTA, prospect-specific hooks (completed 2026-03-13)
 - [ ] **Phase 52: E2E Validation** — Nedri gold standard comparison, multi-prospect quality check, regression
 
 ## Phase Details
@@ -181,7 +181,7 @@ Plans:
 4. CTA positioned as NDA gateway to confidential dossier
 5. Visual design is clean, confident, boardroom-appropriate
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 
 - [ ] 51-01-PLAN.md — Rewrite AtlantisDiscoverClient as flowing boardroom document
@@ -255,5 +255,5 @@ Phases execute in numeric order: 49 → 50 → 51 → 52
 | 48. SERP API Replacement                | v6.0      | 0/?            | Deferred    | -          |
 | 49. RAG Query Rebuild                   | 2/2       | Complete       | 2026-03-13  | -          |
 | 50. Master Prompt Rebuild               | 2/2       | Complete       | 2026-03-13  | -          |
-| 51. Discover Page Redesign              | 2/3       | In Progress    |             | -          |
+| 51. Discover Page Redesign              | 3/3       | Complete       | 2026-03-13  | -          |
 | 52. E2E Validation                      | v7.0      | 0/?            | Not started | -          |
