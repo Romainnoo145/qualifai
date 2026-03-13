@@ -288,98 +288,99 @@ export function AtlantisDiscoverClient({
           )}
 
         {/* ── CTA section ───────────────────────────────────────────────── */}
-        <div className="max-w-3xl mx-auto space-y-8">
-          <div className="text-center space-y-4">
-            <h2 className="text-2xl font-heading font-bold text-[#040026]">
-              Geinteresseerd in een vertrouwelijk gesprek?
-            </h2>
-
-            {canBookCall && (
-              <button
-                onClick={handleBookCall}
-                className="inline-flex items-center gap-3 px-10 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#1E1E4A] transition-colors shadow-xl shadow-[#040026]/10"
-              >
-                <Calendar className="w-4 h-4" />
-                Plan een gesprek
-              </button>
-            )}
-          </div>
-
-          {/* Contact channels */}
-          {(whatsappNumber || phoneNumber || contactEmail) && (
-            <div className="space-y-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">
-                Of neem direct contact op
+        <div className="max-w-3xl mx-auto">
+          {/* Divider */}
+          <div className="border-t border-slate-200 py-16">
+            {/* NDA gateway card */}
+            <div className="bg-white rounded-2xl p-10 shadow-sm border border-slate-100 text-center space-y-6">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                Volgende stap
               </p>
-              <div className="flex flex-wrap justify-center gap-3">
-                {whatsappNumber && (
-                  <a
-                    href={`https://wa.me/${whatsappClean}?text=${whatsappText}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#25D366]/10 text-[#128C7E] hover:bg-[#25D366]/20 transition-colors border border-[#25D366]/20"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    WhatsApp
-                  </a>
-                )}
-                {phoneNumber && (
-                  <a
-                    href={`tel:${phoneNumber}`}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors border border-slate-100"
-                  >
-                    <Phone className="w-4 h-4" />
-                    Bel ons
-                  </a>
-                )}
-                {contactEmail && (
-                  <a
-                    href={`mailto:${contactEmail}?subject=${encodeURIComponent(`Partnership intake - ${companyName}`)}`}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors border border-slate-100"
-                  >
-                    <Mail className="w-4 h-4" />
-                    E-mail
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
 
-          {/* Quote request */}
-          <div className="bg-white rounded-2xl p-8 text-center space-y-4 shadow-sm">
-            <div>
-              <p className="text-lg font-black text-[#040026] tracking-tight">
-                Partnership Intake Aanvragen
+              <h2 className="text-2xl font-heading font-bold text-[#040026]">
+                Vertrouwelijk dossier beschikbaar
+              </h2>
+
+              <p className="text-base text-slate-600 leading-relaxed max-w-prose mx-auto">
+                Wat u hierboven leest is een samenvatting op basis van openbare
+                bronnen. Het volledige partnership dossier — met specifieke
+                financiële modellen, allocatiedetails en projecttijdlijnen — is
+                beschikbaar onder geheimhouding. Eén gesprek is genoeg om de
+                scope te bepalen.
               </p>
-              <p className="text-sm text-slate-500 mt-1">
-                Wij nemen binnen 1 werkdag contact met je op
-              </p>
+
+              {canBookCall ? (
+                <button
+                  onClick={handleBookCall}
+                  className="w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#1E1E4A] transition-colors shadow-xl shadow-[#040026]/10 flex items-center justify-center gap-3"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Plan vertrouwelijk gesprek
+                </button>
+              ) : quoteRequested ? (
+                <div className="flex items-center justify-center gap-3 py-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  <span className="text-sm font-bold text-emerald-600">
+                    Uw verzoek is ontvangen. Wij nemen binnen 1 werkdag contact
+                    op voor de geheimhoudingsverklaring.
+                  </span>
+                </div>
+              ) : (
+                <button
+                  onClick={handleRequestQuote}
+                  disabled={!sessionId || requestQuote.isPending}
+                  className="w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] hover:bg-[#D4B83E] transition-colors shadow-xl shadow-[#EBCB4B]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                >
+                  {requestQuote.isPending ? (
+                    <span>Versturen...</span>
+                  ) : (
+                    <>
+                      <ArrowRight className="w-4 h-4" />
+                      Verzoek toegang tot dossier
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
-            {quoteRequested ? (
-              <div className="flex items-center justify-center gap-3 py-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                <span className="text-sm font-bold text-emerald-600">
-                  Aanvraag ontvangen! Wij nemen snel contact op.
-                </span>
+            {/* Secondary contact options */}
+            {(whatsappNumber || phoneNumber || contactEmail) && (
+              <div className="mt-8 space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-center">
+                  Direct contact
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {whatsappNumber && (
+                    <a
+                      href={`https://wa.me/${whatsappClean}?text=${whatsappText}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors border border-slate-100"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      WhatsApp
+                    </a>
+                  )}
+                  {phoneNumber && (
+                    <a
+                      href={`tel:${phoneNumber}`}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors border border-slate-100"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      Bel ons
+                    </a>
+                  )}
+                  {contactEmail && (
+                    <a
+                      href={`mailto:${contactEmail}?subject=${encodeURIComponent(`Partnership dossier - ${companyName}`)}`}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors border border-slate-100"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      E-mail
+                    </a>
+                  )}
+                </div>
               </div>
-            ) : (
-              <button
-                onClick={handleRequestQuote}
-                disabled={
-                  !sessionId || requestQuote.isPending || quoteRequested
-                }
-                className="w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] hover:bg-[#D4B83E] transition-colors shadow-xl shadow-[#EBCB4B]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-              >
-                {requestQuote.isPending ? (
-                  <span>Versturen...</span>
-                ) : (
-                  <>
-                    <ArrowRight className="w-4 h-4" />
-                    Ja, start partnership intake
-                  </>
-                )}
-              </button>
             )}
           </div>
         </div>
