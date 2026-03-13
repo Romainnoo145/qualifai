@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-13)
 ## Current Position
 
 Phase: 51-discover-page-redesign
-Plan: 01 of 3 complete
-Status: Executing — plan 51-01 done
-Last activity: 2026-03-13 — 51-01 (AtlantisDiscoverClient flowing document rewrite) complete
+Plan: 02 of 3 complete
+Status: Executing — plan 51-02 done
+Last activity: 2026-03-13 — 51-02 (NDA-driven CTA section) complete
 
-Progress: [███████░░░░░░░░░░░░░░░░░░░░░░░░░] 28% (5 plans complete in v7.0, 51-02 next)
+Progress: [████████░░░░░░░░░░░░░░░░░░░░░░░░] 31% (6 plans complete in v7.0, 51-03 next)
 
 ## Milestones Shipped
 
@@ -52,6 +52,7 @@ Recent decisions affecting v7.0:
 - [Phase 50-02]: generateMasterAnalysis removed from research-executor — replaced entirely by generateNarrativeAnalysis (analysis-v2)
 - [Phase 50-02]: Intent extraction block preserved for RAG query fallback chain (AI → intent → keyword) — not passed to analysis engine
 - [51-01]: AtlantisDiscoverClient exclusively renders NarrativeAnalysis (analysis-v2) — legacy parseMasterAnalysis removed; no-v2 prospects fall through to "analyse wordt voorbereid" waiting state
+- [51-02]: CTA ternary: canBookCall → Cal.com booking button; quoteRequested → geheimhouding confirmation; else → quote request button. Secondary contact channels (WhatsApp/phone/email) demoted to understated links below the NDA gateway card.
 
 ### Pending Todos
 
@@ -64,5 +65,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 51-01-PLAN.md (AtlantisDiscoverClient flowing document rewrite)
-Resume command: `/gsd:execute-phase 51` (Phase 51: Discover Page Redesign — plan 02 next)
+Stopped at: Completed 51-02-PLAN.md (NDA-driven CTA section)
+Resume command: `/gsd:execute-phase 51` (Phase 51: Discover Page Redesign — plan 03 next)
