@@ -1,17 +1,23 @@
 /**
- * AI master analysis generation engine — calls Claude Sonnet to produce
- * structured MasterAnalysis from intent variables, RAG passages, prospect
- * profile, and SPV data.
+ * AI master analysis generation engine — calls Gemini 2.5 Pro to produce
+ * structured analysis from evidence items, RAG passages, prospect profile,
+ * and SPV data.
+ *
+ * Supports two output shapes:
+ *   - NarrativeAnalysis (analysis-v2): flowing narrative sections (new)
+ *   - MasterAnalysis (analysis-v1): rigid trigger/track JSON (legacy)
  */
 
-import { env } from '@/env.mjs';
-import Anthropic from '@anthropic-ai/sdk';
-import type { TextBlock } from '@anthropic-ai/sdk/resources/messages/messages';
-import { CLAUDE_MODEL_SONNET } from '@/lib/ai/constants';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GEMINI_MODEL_PRO } from '@/lib/ai/constants';
 import { buildMasterPrompt } from './master-prompt';
 import type {
   MasterAnalysis,
   MasterAnalysisInput,
+  NarrativeAnalysis,
+  NarrativeAnalysisInput,
+  NarrativeSection,
+  SPVRecommendation,
   AnalysisContext,
   AnalysisTrigger,
   AnalysisTrack,
@@ -19,13 +25,13 @@ import type {
   TriggerCategory,
 } from './types';
 
-// Lazy init — same pattern as workflow-engine.ts
-let anthropicClient: Anthropic | null = null;
-function getAnthropicClient(): Anthropic {
-  if (!anthropicClient) {
-    anthropicClient = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY! });
+// Lazy init — same pattern as intent-extractor.ts
+let genaiClient: GoogleGenerativeAI | null = null;
+function getGenAI(): GoogleGenerativeAI {
+  if (!genaiClient) {
+    genaiClient = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
   }
-  return anthropicClient;
+  return genaiClient;
 }
 
 const VALID_TRIGGER_CATEGORIES: TriggerCategory[] = [
@@ -37,7 +43,7 @@ const VALID_TRIGGER_CATEGORIES: TriggerCategory[] = [
 const VALID_URGENCY = ['high', 'medium', 'low'] as const;
 
 // ---------------------------------------------------------------------------
-// Validation
+// Shared helpers
 // ---------------------------------------------------------------------------
 
 function isNonEmptyString(value: unknown): value is string {
@@ -49,6 +55,99 @@ function isStringArray(value: unknown): value is string[] {
     Array.isArray(value) && value.every((item) => typeof item === 'string')
   );
 }
+
+// ---------------------------------------------------------------------------
+// analysis-v2 validation
+// ---------------------------------------------------------------------------
+
+function validateNarrativeSection(raw: unknown): NarrativeSection | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const obj = raw as Record<string, unknown>;
+  if (
+    !isNonEmptyString(obj.id) ||
+    !isNonEmptyString(obj.title) ||
+    !isNonEmptyString(obj.body)
+  ) {
+    return null;
+  }
+  if (!isStringArray(obj.citations)) return null;
+  return {
+    id: obj.id,
+    title: obj.title,
+    body: obj.body,
+    citations: obj.citations,
+  };
+}
+
+function validateSPVRecommendation(raw: unknown): SPVRecommendation | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const obj = raw as Record<string, unknown>;
+  if (
+    !isNonEmptyString(obj.spvName) ||
+    !isNonEmptyString(obj.spvCode) ||
+    !isNonEmptyString(obj.relevanceNarrative)
+  ) {
+    return null;
+  }
+  if (!isStringArray(obj.strategicTags)) return null;
+  return {
+    spvName: obj.spvName,
+    spvCode: obj.spvCode,
+    relevanceNarrative: obj.relevanceNarrative,
+    strategicTags: obj.strategicTags,
+  };
+}
+
+/**
+ * Validate a raw parsed object against the NarrativeAnalysis shape (analysis-v2).
+ * Returns null on any structural or content violation.
+ */
+export function validateNarrativeAnalysis(
+  raw: unknown,
+): NarrativeAnalysis | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const obj = raw as Record<string, unknown>;
+
+  if (obj.version !== 'analysis-v2') return null;
+  if (!isNonEmptyString(obj.openingHook)) return null;
+  if (!isNonEmptyString(obj.executiveSummary)) return null;
+
+  // sections: array of 2-7 items
+  if (!Array.isArray(obj.sections)) return null;
+  if (obj.sections.length < 2 || obj.sections.length > 7) return null;
+  const sections: NarrativeSection[] = [];
+  for (const sectionRaw of obj.sections) {
+    const section = validateNarrativeSection(sectionRaw);
+    if (!section) return null;
+    sections.push(section);
+  }
+
+  // spvRecommendations: array of 1-4 items
+  if (!Array.isArray(obj.spvRecommendations)) return null;
+  if (obj.spvRecommendations.length < 1 || obj.spvRecommendations.length > 4) {
+    return null;
+  }
+  const spvRecommendations: SPVRecommendation[] = [];
+  for (const recRaw of obj.spvRecommendations) {
+    const rec = validateSPVRecommendation(recRaw);
+    if (!rec) return null;
+    spvRecommendations.push(rec);
+  }
+
+  return {
+    version: 'analysis-v2',
+    openingHook: obj.openingHook,
+    executiveSummary: obj.executiveSummary,
+    sections,
+    spvRecommendations,
+    generatedAt: '', // filled by caller
+    modelUsed: '', // filled by caller
+  };
+}
+
+// ---------------------------------------------------------------------------
+// analysis-v1 validation (legacy)
+// ---------------------------------------------------------------------------
 
 function validateKPI(raw: unknown): AnalysisKPI | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -131,7 +230,7 @@ function validateTrack(raw: unknown): AnalysisTrack | null {
 }
 
 /**
- * Validate a raw parsed object against the MasterAnalysis shape.
+ * Validate a raw parsed object against the MasterAnalysis shape (analysis-v1).
  * Returns null on any structural or content violation.
  */
 export function validateMasterAnalysis(raw: unknown): MasterAnalysis | null {
@@ -180,7 +279,7 @@ export function validateMasterAnalysis(raw: unknown): MasterAnalysis | null {
 }
 
 // ---------------------------------------------------------------------------
-// JSON extraction
+// JSON extraction (shared)
 // ---------------------------------------------------------------------------
 
 function extractJSON(text: string): unknown | null {
@@ -216,19 +315,103 @@ function extractJSON(text: string): unknown | null {
 }
 
 // ---------------------------------------------------------------------------
-// Generation
+// analysis-v2 generation
 // ---------------------------------------------------------------------------
 
 /**
- * Generate a MasterAnalysis by calling Claude Sonnet with the constructed prompt.
+ * Generate a NarrativeAnalysis (analysis-v2) by calling Gemini 2.5 Pro
+ * with raw evidence items and RAG passages. Validates the response and
+ * retries once on parse/validation failure.
+ */
+export async function generateNarrativeAnalysis(
+  input: NarrativeAnalysisInput,
+): Promise<NarrativeAnalysis> {
+  const genai = getGenAI();
+  const prompt = buildMasterPrompt(input);
+  const model = GEMINI_MODEL_PRO;
+
+  const startMs = Date.now();
+  console.log(
+    `[master-analyzer] Generating narrative analysis (v2) for ${input.prospect.companyName} using ${model}...`,
+  );
+
+  let lastRawText = '';
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const geminiModel = genai.getGenerativeModel({ model });
+
+    let response;
+    if (attempt === 0) {
+      response = await geminiModel.generateContent(prompt);
+    } else {
+      const chat = geminiModel.startChat({
+        history: [
+          { role: 'user', parts: [{ text: prompt }] },
+          { role: 'model', parts: [{ text: lastRawText }] },
+        ],
+      });
+      response = await chat.sendMessage(
+        'De JSON was ongeldig of voldeed niet aan het schema. Corrigeer het en retourneer ALLEEN valide JSON in exact het gevraagde analysis-v2 formaat. Zorg voor: version "analysis-v2", niet-lege openingHook en executiveSummary, 2-7 sections met id/title/body/citations, en 1-4 spvRecommendations met spvName/spvCode/relevanceNarrative/strategicTags.',
+      );
+    }
+
+    const text = response.response.text();
+    if (!text) {
+      lastRawText = '[no text in response]';
+      continue;
+    }
+
+    lastRawText = text;
+    const parsed = extractJSON(lastRawText);
+    if (!parsed) {
+      console.warn(
+        `[master-analyzer] Attempt ${attempt + 1}: failed to extract JSON`,
+      );
+      continue;
+    }
+
+    const validated = validateNarrativeAnalysis(parsed);
+    if (!validated) {
+      console.warn(
+        `[master-analyzer] Attempt ${attempt + 1}: JSON did not match NarrativeAnalysis schema`,
+      );
+      continue;
+    }
+
+    const durationMs = Date.now() - startMs;
+    console.log(
+      `[master-analyzer] Narrative analysis generated in ${durationMs}ms (attempt ${attempt + 1})`,
+    );
+
+    return {
+      ...validated,
+      generatedAt: new Date().toISOString(),
+      modelUsed: model,
+    };
+  }
+
+  const durationMs = Date.now() - startMs;
+  throw new Error(
+    `[master-analyzer] Failed to generate valid NarrativeAnalysis for ${input.prospect.companyName} after 2 attempts (${durationMs}ms). Last response: ${lastRawText.slice(0, 500)}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// analysis-v1 generation (legacy)
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate a MasterAnalysis (analysis-v1) by calling Gemini 2.5 Pro.
  * Validates the response and retries once on parse/validation failure.
+ *
+ * @deprecated Use generateNarrativeAnalysis (analysis-v2) for new callers.
  */
 export async function generateMasterAnalysis(
   input: MasterAnalysisInput,
 ): Promise<MasterAnalysis> {
-  const client = getAnthropicClient();
+  const genai = getGenAI();
   const prompt = buildMasterPrompt(input);
-  const model = CLAUDE_MODEL_SONNET;
+  const model = GEMINI_MODEL_PRO;
 
   const startMs = Date.now();
   console.log(
@@ -238,34 +421,30 @@ export async function generateMasterAnalysis(
   let lastRawText = '';
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const messages: Anthropic.MessageParam[] =
-      attempt === 0
-        ? [{ role: 'user', content: prompt }]
-        : [
-            { role: 'user', content: prompt },
-            { role: 'assistant', content: lastRawText },
-            {
-              role: 'user',
-              content:
-                'De JSON was ongeldig of voldeed niet aan het schema. Corrigeer het en retourneer ALLEEN valide JSON in exact het gevraagde formaat. Zorg voor: exact 3 KPIs, exact 3 triggers (market, compliance_esg, capital_derisking), 2-3 tracks, en alle string-velden niet-leeg.',
-            },
-          ];
+    const geminiModel = genai.getGenerativeModel({ model });
 
-    const response = await client.messages.create({
-      model,
-      max_tokens: 4000,
-      messages,
-    });
+    let response;
+    if (attempt === 0) {
+      response = await geminiModel.generateContent(prompt);
+    } else {
+      const chat = geminiModel.startChat({
+        history: [
+          { role: 'user', parts: [{ text: prompt }] },
+          { role: 'model', parts: [{ text: lastRawText }] },
+        ],
+      });
+      response = await chat.sendMessage(
+        'De JSON was ongeldig of voldeed niet aan het schema. Corrigeer het en retourneer ALLEEN valide JSON in exact het gevraagde formaat. Zorg voor: exact 3 KPIs, exact 3 triggers (market, compliance_esg, capital_derisking), 2-3 tracks, en alle string-velden niet-leeg.',
+      );
+    }
 
-    const textBlock = response.content.find(
-      (block): block is TextBlock => block.type === 'text',
-    );
-    if (!textBlock) {
-      lastRawText = '[no text block in response]';
+    const text = response.response.text();
+    if (!text) {
+      lastRawText = '[no text in response]';
       continue;
     }
 
-    lastRawText = textBlock.text;
+    lastRawText = text;
     const parsed = extractJSON(lastRawText);
     if (!parsed) {
       console.warn(
