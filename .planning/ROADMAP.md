@@ -11,7 +11,8 @@
 - ✅ **v3.0 Sharp Analysis** — Phases 31-35 (shipped 2026-03-05)
 - ✅ **v4.0 Atlantis Partnership Outreach** — Phases 36-39 (shipped 2026-03-07)
 - ✅ **v5.0 Atlantis Intelligence** — Phases 42-45 (shipped 2026-03-08)
-- 🚧 **v6.0 Outreach Simplification** — Phases 46-47 (in progress)
+- ✅ **v6.0 Outreach Simplification** — Phases 46-47 (shipped 2026-03-08)
+- 🚧 **v7.0 Atlantis Discover Pipeline Rebuild** — Phases TBD (in progress)
 
 ## Phases
 
@@ -111,75 +112,90 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 </details>
 
-### v6.0 Outreach Simplification (In Progress)
+<details>
+<summary>✅ v6.0 Outreach Simplification (Phases 46-47) — SHIPPED 2026-03-08</summary>
 
-**Milestone Goal:** Remove manual multi-touch task management, automate cadence follow-ups, and replace paid SerpAPI with free alternatives where possible. The outreach page drops from 4 tabs to 3 by killing Multi-touch Tasks. Evidence pipeline stops burning SERP credits for Google News and Reviews.
+- Phase 46: Automated Cadence + Backend Cleanup (2/2 plans) — AI follow-up drafts, reminder auto-creation, queueTouchTask removed
+- Phase 47: Outreach UI Simplification (2/2 plans) — Multi-touch Tasks tab killed, inline reminders in Drafts Queue
+- Phase 48: SERP API Replacement — Deferred (folded into future work)
 
-- [x] **Phase 46: Automated Cadence + Backend Cleanup** - Cadence engine auto-generates follow-up drafts and reminders, manual task endpoints removed (completed 2026-03-08)
-- [ ] **Phase 47: Outreach UI Simplification** - Multi-touch Tasks tab killed, reminders shown inline in Drafts Queue
-- [ ] **Phase 48: SERP API Replacement** - Google News via RSS, Google Reviews via Scrapling, SERP dependency isolated to LinkedIn Jobs only
+</details>
+
+### v7.0 Atlantis Discover Pipeline Rebuild (In Progress)
+
+**Milestone Goal:** Rebuild the entire pipeline from evidence collection to discover page rendering. The evidence scrapers are good (83 items for Nedri), but everything after — intent extraction, RAG retrieval, master prompt, and discover UI — produces low-quality output. Eliminate the lossy intent extraction middle-layer, feed evidence + RAG directly to a master prompt that generates flowing narrative content, and redesign the discover page as a boardroom-ready document with NDA-driven CTA.
+
+- [ ] **Phase 49: RAG Query Rebuild** — Better query construction from evidence context, passage ranking by prospect-relevance, source attribution
+- [ ] **Phase 50: Master Prompt Rebuild** — Raw evidence + RAG passages directly to master prompt, flowing narrative generation, cross-prospect connections
+- [ ] **Phase 51: Discover Page Redesign** — Flowing boardroom document, NDA-driven CTA, prospect-specific hooks
+- [ ] **Phase 52: E2E Validation** — Nedri gold standard comparison, multi-prospect quality check, regression
 
 ## Phase Details
 
-### Phase 46: Automated Cadence + Backend Cleanup
+### Phase 49: RAG Query Rebuild
 
-**Goal**: Cadence engine owns all follow-up scheduling -- auto-generating email drafts for the approval queue and lightweight reminders for non-email channels -- while the old manual task creation backend is removed
-**Depends on**: Phase 45 (v5.0 complete)
-**Requirements**: CADNC-01, CADNC-02, CADNC-03, BKCL-01, BKCL-02, BKCL-03
+**Goal**: RAG queries are constructed from prospect evidence context (industry, pains, signals) and return relevant, attributed passages — not keyword-stuffed queries returning generic results
+**Depends on**: None (first phase)
+**Requirements**: RAG-01, RAG-02, RAG-03
 **Success Criteria** (what must be TRUE):
 
-1. After an initial email is sent, the cadence engine automatically generates a personalized follow-up email draft that appears in the Drafts Queue for admin approval
-2. After an initial email is sent, the cadence engine automatically creates call/LinkedIn/WhatsApp reminders without any manual task creation by the admin
-3. The cron sweep promotes due cadence steps directly to draft or reminder state -- there is no touch_open intermediary status in the flow
-4. The queueTouchTask endpoint no longer exists -- calling it returns 404
-5. The completeTouchTask and skipTouchTask endpoints handle reminder dismissal (mark done / skip) instead of the old touch_open/touch_done/touch_skipped flow
-   **Plans**: 2 plans
+1. RAG queries are built from analyzed prospect evidence (sector, pain signals, ESG indicators) rather than raw keyword fragments
+2. Retrieved passages include source document name and SPV context
+3. Steel manufacturer prospects get groenstaal/spoor passages, not generic hydrogen/wind results
 
+**Plans:** 2 plans
 Plans:
 
-- [ ] 46-01-PLAN.md — Upgrade cadence engine: auto-generate email drafts and non-email reminders
-- [ ] 46-02-PLAN.md — Backend cleanup: remove queueTouchTask, refactor complete/skip for reminders
+- [ ] 49-01-PLAN.md — AI-driven query generation from prospect evidence (Gemini Flash)
+- [ ] 49-02-PLAN.md — Evidence-aware passage ranking + source attribution
 
-### Phase 47: Outreach UI Simplification
+### Phase 50: Master Prompt Rebuild
 
-**Goal**: Admin sees a clean 3-tab outreach page (Drafts, Replies, Sent History) with non-email reminders shown as a lightweight section in the Drafts Queue
-**Depends on**: Phase 46
-**Requirements**: UICL-01, UICL-02, UICL-03
+**Goal**: Master prompt receives ALL raw evidence items + relevant RAG passages and generates flowing boardroom narrative — no lossy intent extraction middle-layer
+**Depends on**: Phase 49 (needs good RAG passages)
+**Requirements**: PIPE-01, PIPE-02, PIPE-03, PIPE-04, PIPE-05
 **Success Criteria** (what must be TRUE):
 
-1. The outreach page shows exactly 3 tabs: Drafts Queue, Replies, and Sent History -- Multi-touch Tasks tab is gone
-2. There is no manual touch task creation form or related UI anywhere in the application
-3. Non-email reminders (call, LinkedIn, WhatsApp) appear as a lightweight section within the Drafts Queue tab, visually distinct from email drafts
-   **Plans**: 2 plans
+1. Master prompt input includes all prospect evidence items (not compressed intent summaries)
+2. Master prompt input includes RAG passages with source attribution
+3. Output is flowing narrative in boardroom Dutch with natural evidence citations
+4. Cross-prospect connections are surfaced when both companies are in the system
+5. Output persists to DB as structured sections renderable without further AI calls
 
-Plans:
+**Plans**: TBD
 
-- [ ] 47-01-PLAN.md — Remove Multi-touch Tasks tab and TouchTaskQueue component (4 tabs to 3)
-- [ ] 47-02-PLAN.md — Add inline reminders section to Drafts Queue, rename endpoint
+### Phase 51: Discover Page Redesign
 
-### Phase 48: SERP API Replacement
-
-**Goal**: Replace paid SerpAPI calls with free alternatives (RSS, Scrapling, Places API) for Google News, Google Reviews, and deep URL discovery — isolating LinkedIn Jobs as the only remaining SERP dependency
-**Depends on**: Phase 46 (no UI dependency, but sequential for focus)
-**Requirements**: SERP-01, SERP-02, SERP-03, SERP-04
+**Goal**: Discover page renders as a flowing boardroom document with prospect-specific hooks, natural evidence weaving, and NDA-driven CTA — not a rigid wizard template
+**Depends on**: Phase 50 (needs new narrative output format)
+**Requirements**: DISC-01, DISC-02, DISC-03, DISC-04, DISC-05
 **Success Criteria** (what must be TRUE):
 
-1. Google News enrichment fetches articles from Google News RSS feed without any SerpAPI call
-2. Google Reviews enrichment uses Scrapling DynamicFetcher to scrape Google Maps reviews and/or Google Places API free tier — no SerpAPI call
-3. Deep URL discovery (serp.ts discoverSerpUrls) uses Scrapling-based Google search scraping instead of SerpAPI getJson
-4. LinkedIn Jobs enrichment is the only module that imports from 'serpapi' — all other serpapi imports are removed
-5. Research pipeline produces equivalent or better evidence quality with the free alternatives
-   **Plans**: TBD
+1. Page reads as a flowing document, not a card-based wizard
+2. Opening hook demonstrates understanding of the prospect's specific business
+3. Evidence (dates, numbers, project names) woven naturally into narrative
+4. CTA positioned as NDA gateway to confidential dossier
+5. Visual design is clean, confident, boardroom-appropriate
 
-Plans:
+**Plans**: TBD
 
-- [ ] 48-01: TBD
-- [ ] 48-02: TBD
+### Phase 52: E2E Validation
+
+**Goal**: Verify rebuilt pipeline produces gold-standard quality across multiple prospects and doesn't break existing Klarifai flows
+**Depends on**: Phase 51 (needs all pipeline changes in place)
+**Requirements**: VALD-01, VALD-02, VALD-03
+**Success Criteria** (what must be TRUE):
+
+1. Nedri discover page quality matches or exceeds the hand-written gold standard
+2. At least one other Atlantis prospect produces comparable quality
+3. Klarifai (non-Atlantis) prospects remain unaffected
+
+**Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 46 → 47 → 48
+Phases execute in numeric order: 49 → 50 → 51 → 52
 
 | Phase                                   | Milestone | Plans Complete | Status      | Completed  |
 | --------------------------------------- | --------- | -------------- | ----------- | ---------- |
@@ -225,6 +241,10 @@ Phases execute in numeric order: 46 → 47 → 48
 | 43. AI Master Analysis                  | v5.0      | 2/2            | Complete    | 2026-03-07 |
 | 44. Discover Rendering                  | v5.0      | 2/2            | Complete    | 2026-03-08 |
 | 45. End-to-End Validation               | v5.0      | —              | Complete    | 2026-03-08 |
-| 46. Automated Cadence + Backend Cleanup | 2/2       | Complete       | 2026-03-08  | -          |
-| 47. Outreach UI Simplification          | 1/2       | In Progress    |             | -          |
-| 48. SERP API Replacement                | v6.0      | 0/?            | Not started | -          |
+| 46. Automated Cadence + Backend Cleanup | v6.0      | 2/2            | Complete    | 2026-03-08 |
+| 47. Outreach UI Simplification          | v6.0      | 2/2            | Complete    | 2026-03-08 |
+| 48. SERP API Replacement                | v6.0      | 0/?            | Deferred    | -          |
+| 49. RAG Query Rebuild                   | v7.0      | 0/?            | Not started | -          |
+| 50. Master Prompt Rebuild               | v7.0      | 0/?            | Not started | -          |
+| 51. Discover Page Redesign              | v7.0      | 0/?            | Not started | -          |
+| 52. E2E Validation                      | v7.0      | 0/?            | Not started | -          |
