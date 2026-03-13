@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** v7.0 Atlantis Discover Pipeline Rebuild — RAG Query Rebuild (Phase 49)
+**Current focus:** v7.0 Atlantis Discover Pipeline Rebuild — Master Prompt Rebuild (Phase 50)
 
 ## Current Position
 
-Phase: 49-rag-query-rebuild
-Plan: 02 of 3 complete
-Status: Executing — plan 49-02 done
-Last activity: 2026-03-13 — 49-02 (Evidence-aware RAG passage ranking + sourceLabel) complete
+Phase: 50-master-prompt-rebuild
+Plan: 01 of 2 complete
+Status: Executing — plan 50-01 done
+Last activity: 2026-03-13 — 50-01 (analysis-v2 types + narrative master prompt) complete
 
-Progress: [████░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 16% (2 plans complete, 49-03 next)
+Progress: [█████░░░░░░░░░░░░░░░░░░░░░░░░░░░] 19% (3 plans complete in v7.0, 50-02 next)
 
 ## Milestones Shipped
 
@@ -47,6 +47,8 @@ Recent decisions affecting v7.0:
 - [Phase 49-rag-query-rebuild]: Use Gemini Flash for AI RAG query generation with three-level fallback: AI → intent → keyword
 - [49-02]: Extract rankRagPassagesForProspect to ranker.ts (file was 707 lines); re-export from retriever.ts to preserve callers
 - [49-02]: Evidence scoring is additive (+25 max) on top of profile overlap (+20) and focus lens (+18) — steel manufacturers boost groenstaal passages
+- [50-01]: MasterAnalysisInput.intentVars typed as `any` to keep types.ts self-contained (avoids circular import from extraction/types)
+- [50-01]: buildMasterPrompt dispatches on isNarrativeInput() type guard — v2 narrative path feeds raw evidence + sourceLabel-attributed RAG passages
 
 ### Pending Todos
 
@@ -59,5 +61,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-13
-Stopped at: Completed 49-02-PLAN.md (Evidence-aware RAG passage ranking)
-Resume command: `/gsd:execute-phase 49` (continue with 49-03: master prompt update)
+Stopped at: Completed 50-01-PLAN.md (analysis-v2 types + narrative master prompt rebuild)
+Resume command: `/gsd:execute-phase 50` (continue with 50-02: research-executor wiring)

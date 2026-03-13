@@ -9,10 +9,10 @@ Rebuild the pipeline from evidence to discover page. Evidence scrapers are good 
 
 ### Pipeline (PIPE) — Evidence → Master Prompt
 
-- [ ] **PIPE-01**: Master prompt receives raw evidence items directly (not lossy intent variable summaries) — all 83+ evidence items for a prospect are available to the LLM
-- [ ] **PIPE-02**: Master prompt receives relevant RAG passages with source attribution — passages are selected by semantic relevance, not keyword-stuffed queries
-- [ ] **PIPE-03**: Master prompt generates flowing narrative content in boardroom Dutch — prospect-specific hooks, real numbers from evidence, natural citations ("U publiceerde uw EPD in oktober 2024")
-- [ ] **PIPE-04**: Generated narrative persists to DB as structured sections renderable without further AI calls
+- [x] **PIPE-01**: Master prompt receives raw evidence items directly (not lossy intent variable summaries) — all 83+ evidence items for a prospect are available to the LLM
+- [x] **PIPE-02**: Master prompt receives relevant RAG passages with source attribution — passages are selected by semantic relevance, not keyword-stuffed queries
+- [x] **PIPE-03**: Master prompt generates flowing narrative content in boardroom Dutch — prospect-specific hooks, real numbers from evidence, natural citations ("U publiceerde uw EPD in oktober 2024")
+- [x] **PIPE-04**: Generated narrative persists to DB as structured sections renderable without further AI calls
 - [ ] **PIPE-05**: Cross-prospect connections are surfaced when available (e.g., "Nedri werkt samen met Heijmans" when both are prospects)
 
 ### RAG Retrieval (RAG) — Query Quality
@@ -94,10 +94,10 @@ Rebuild the pipeline from evidence to discover page. Evidence scrapers are good 
 
 | Requirement | Phase | Status   |
 | ----------- | ----- | -------- |
-| PIPE-01     | 50    | Pending  |
-| PIPE-02     | 50    | Pending  |
-| PIPE-03     | 50    | Pending  |
-| PIPE-04     | 50    | Pending  |
+| PIPE-01     | 50    | Complete |
+| PIPE-02     | 50    | Complete |
+| PIPE-03     | 50    | Complete |
+| PIPE-04     | 50    | Complete |
 | PIPE-05     | 50    | Pending  |
 | RAG-01      | 49    | Complete |
 | RAG-02      | 49    | Complete |

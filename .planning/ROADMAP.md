@@ -162,7 +162,7 @@ Plans:
 4. Cross-prospect connections are surfaced when both companies are in the system
 5. Output persists to DB as structured sections renderable without further AI calls
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
 
 - [ ] 50-01-PLAN.md — Rebuild types + master prompt for narrative output with raw evidence input
@@ -249,6 +249,6 @@ Phases execute in numeric order: 49 → 50 → 51 → 52
 | 47. Outreach UI Simplification          | v6.0      | 2/2            | Complete    | 2026-03-08 |
 | 48. SERP API Replacement                | v6.0      | 0/?            | Deferred    | -          |
 | 49. RAG Query Rebuild                   | 2/2       | Complete       | 2026-03-13  | -          |
-| 50. Master Prompt Rebuild               | v7.0      | 0/?            | Not started | -          |
+| 50. Master Prompt Rebuild               | 1/2       | In Progress    |             | -          |
 | 51. Discover Page Redesign              | v7.0      | 0/?            | Not started | -          |
 | 52. E2E Validation                      | v7.0      | 0/?            | Not started | -          |
