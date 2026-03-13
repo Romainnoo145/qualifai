@@ -13,6 +13,7 @@ import {
   buildRagQueryInputsFromIntent,
   rankRagPassagesForProspect,
 } from '@/lib/rag/retriever';
+import { buildEvidenceAwareQueries } from '@/lib/rag/query-builder';
 import { generateDualEvidenceOpportunityDrafts } from '@/lib/rag/opportunity-generator';
 import { generatePartnershipAssessment } from '@/lib/partnership/trigger-generator';
 import { ingestReviewEvidenceDrafts } from '@/lib/review-adapters';
@@ -1382,42 +1383,64 @@ export async function executeResearchRun(
 
   if (prospect.project.projectType === 'ATLANTIS') {
     try {
-      // Intent-driven RAG queries when extraction succeeded with >= 2 categories
-      const useIntentQueries =
-        intentVars !== null && intentVars.populatedCount >= 2;
-      const queryInputs = useIntentQueries
-        ? buildRagQueryInputsFromIntent(intentVars!, {
+      // AI-driven RAG queries: primary strategy uses Gemini Flash to analyze
+      // actual prospect evidence and generate semantically targeted queries.
+      // Falls back to intent-driven queries if available, then keyword queries.
+      const nonRagEvidence = evidenceRecords
+        .filter((item) => item.sourceType !== 'RAG_DOCUMENT')
+        .map((item) => ({
+          sourceType: item.sourceType,
+          workflowTag: item.workflowTag,
+          snippet: item.snippet,
+          confidenceScore: item.confidenceScore,
+          title: item.title ?? null,
+        }));
+
+      const aiQueryInputs = await buildEvidenceAwareQueries({
+        companyName: prospect.companyName ?? prospect.domain,
+        industry: prospect.industry,
+        description: prospect.description,
+        spvName: prospect.spv?.name ?? null,
+        evidence: nonRagEvidence,
+      });
+
+      let queryInputs: { query: string; workflowTag: string }[];
+      let strategyMessage: string;
+
+      if (aiQueryInputs.length > 0) {
+        queryInputs = aiQueryInputs;
+        strategyMessage = `AI-driven RAG queries (${aiQueryInputs.length} queries).`;
+      } else if (intentVars !== null && intentVars.populatedCount >= 2) {
+        // Fallback: intent-driven queries when extraction yielded >= 2 categories
+        queryInputs = buildRagQueryInputsFromIntent(intentVars, {
+          companyName: prospect.companyName ?? prospect.domain,
+          industry: prospect.industry,
+          spvName: prospect.spv?.name ?? null,
+        });
+        strategyMessage = `Fallback: intent-driven RAG queries (${intentVars.populatedCount} categories, ${queryInputs.length} queries).`;
+      } else {
+        // Fallback: keyword queries from profile + sector packs
+        queryInputs = buildRagQueryInputs(
+          {
             companyName: prospect.companyName ?? prospect.domain,
             industry: prospect.industry,
+            description: prospect.description,
+            specialties: prospect.specialties,
+            technologies: prospect.technologies,
+            country: prospect.country ?? null,
+            campaignNiche: campaign?.nicheKey ?? null,
             spvName: prospect.spv?.name ?? null,
-          })
-        : buildRagQueryInputs(
-            {
-              companyName: prospect.companyName ?? prospect.domain,
-              industry: prospect.industry,
-              description: prospect.description,
-              specialties: prospect.specialties,
-              technologies: prospect.technologies,
-              country: prospect.country ?? null,
-              campaignNiche: campaign?.nicheKey ?? null,
-              spvName: prospect.spv?.name ?? null,
-              evidence: evidenceRecords
-                .filter((item) => item.sourceType !== 'RAG_DOCUMENT')
-                .map((item) => ({
-                  workflowTag: item.workflowTag,
-                  snippet: item.snippet,
-                  confidenceScore: item.confidenceScore,
-                  sourceType: item.sourceType,
-                })),
-            },
-            6,
-          );
+            evidence: nonRagEvidence,
+          },
+          6,
+        );
+        strategyMessage = `Fallback: keyword RAG queries (${queryInputs.length} queries).`;
+      }
+
       diagnostics.push({
         source: 'rag_query_strategy',
         status: 'ok',
-        message: useIntentQueries
-          ? `Intent-driven RAG queries (${intentVars!.populatedCount} categories, ${queryInputs.length} queries).`
-          : `Keyword-fallback RAG queries (${queryInputs.length} queries).`,
+        message: strategyMessage,
       });
 
       const primaryRagPassages = await retrieveRagPassages(db, {
