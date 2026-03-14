@@ -25,6 +25,10 @@ import {
   getProjectUiProfile,
   type AppProjectType,
 } from '@/lib/project-ui-profile';
+import type {
+  NarrativeAnalysis,
+  KlarifaiNarrativeAnalysis,
+} from '@/lib/analysis/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,6 +74,19 @@ interface TrustSnapshot {
   diagnosticsWarningCount: number;
 }
 
+interface AtlantisDashboardContext {
+  triggerCount?: number;
+  readinessScore?: number;
+  bridgeCount?: number;
+  topReason?: string | null;
+  spvName?: string | null;
+  contextBadge?: string | null;
+  contextHeadline?: string | null;
+  contextSubtitle?: string | null;
+  executiveHook?: string | null;
+  kpis?: Array<{ value: string; label: string }> | null;
+}
+
 interface DashboardClientProps {
   prospectSlug: string;
   companyName: string;
@@ -89,15 +106,26 @@ interface DashboardClientProps {
   trustSnapshot?: TrustSnapshot;
   projectType?: AppProjectType;
   projectBrandName?: string | null;
+  atlantisContext?: AtlantisDashboardContext | null;
+  narrativeAnalysis?: NarrativeAnalysis | null;
+  klarifaiNarrativeAnalysis?: KlarifaiNarrativeAnalysis | null;
+  analysisDate?: string | null;
 }
 
 // ─── Step configuration ───────────────────────────────────────────────────────
 
-const STEPS = [
+const DEFAULT_STEPS = [
   { id: 0, label: 'Welkom', icon: Sparkles },
   { id: 1, label: 'Pijnpunten', icon: AlertCircle },
   { id: 2, label: 'Oplossingen', icon: Lightbulb },
   { id: 3, label: 'Contact', icon: Phone },
+];
+
+const ATLANTIS_STEPS = [
+  { id: 0, label: 'Context', icon: Sparkles },
+  { id: 1, label: 'Kansen', icon: AlertCircle },
+  { id: 2, label: 'Waarde', icon: Lightbulb },
+  { id: 3, label: 'Intake', icon: Phone },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -119,6 +147,10 @@ export function DashboardClient({
   successStories,
   projectType,
   projectBrandName,
+  atlantisContext,
+  narrativeAnalysis,
+  klarifaiNarrativeAnalysis,
+  analysisDate,
 }: DashboardClientProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -126,6 +158,13 @@ export function DashboardClient({
   const [quoteRequested, setQuoteRequested] = useState(false);
   const stepTimesRef = useRef<Record<string, number>>({});
   const stepStartRef = useRef<number>(Date.now());
+  const isAtlantis = projectType === 'ATLANTIS';
+  const hasNarrative =
+    (isAtlantis && !!narrativeAnalysis) ||
+    (!isAtlantis && !!klarifaiNarrativeAnalysis);
+  const activeNarrative =
+    narrativeAnalysis ?? klarifaiNarrativeAnalysis ?? null;
+  const steps = isAtlantis ? ATLANTIS_STEPS : DEFAULT_STEPS;
   const uiProfile = getProjectUiProfile(projectType);
   const normalizedBrandName = projectBrandName?.trim();
   const brandName =
@@ -305,6 +344,47 @@ export function DashboardClient({
   const uniqueUseCases = allUseCases.filter(
     (uc, idx, arr) => arr.findIndex((u) => u.id === uc.id) === idx,
   );
+  const atlantisBadgeLabel =
+    atlantisContext?.contextBadge?.trim() &&
+    atlantisContext.contextBadge.trim().length > 0
+      ? atlantisContext.contextBadge.trim()
+      : 'Voorstel op maat';
+  const atlantisHeadline =
+    atlantisContext?.contextHeadline?.trim() &&
+    atlantisContext.contextHeadline.trim().length > 0
+      ? atlantisContext.contextHeadline.trim()
+      : `${companyName} × Atlantis`;
+  const atlantisSubheadline =
+    atlantisContext?.contextSubtitle?.trim() &&
+    atlantisContext.contextSubtitle.trim().length > 0
+      ? atlantisContext.contextSubtitle.trim()
+      : atlantisContext?.spvName
+        ? `Atlantis verbindt ${companyName} met concrete groeikansen binnen ${atlantisContext.spvName}.`
+        : `Atlantis verbindt ${companyName} met concrete groeikansen en uitvoerbare samenwerking.`;
+  const atlantisKpis =
+    Array.isArray(atlantisContext?.kpis) && atlantisContext.kpis.length > 0
+      ? atlantisContext.kpis.slice(0, 3)
+      : [
+          {
+            value: `${Math.max(1, hypotheses.length)}`,
+            label: 'Concrete kansen',
+          },
+          {
+            value: `${Math.min(3, Math.max(1, hypotheses.length))} stappen`,
+            label: 'Voorstel plan',
+          },
+          { value: 'Kernkans', label: 'Hoofdinzicht' },
+        ];
+  const atlantisInsight =
+    atlantisContext?.executiveHook?.trim() &&
+    atlantisContext.executiveHook.trim().length > 0
+      ? atlantisContext.executiveHook.trim()
+      : atlantisContext?.topReason?.trim() &&
+          atlantisContext.topReason.trim().length > 0
+        ? atlantisContext.topReason.trim()
+        : industry
+          ? `${companyName} opereert in ${industry}; focus ligt op partnership-fit en uitvoerbare brugkansen.`
+          : null;
 
   // Fallback content from old JSON fields
   const heroSource =
@@ -340,6 +420,12 @@ export function DashboardClient({
   const stories = storiesSource as {
     stories?: Array<{ companyName: string; solution: string; quote: string }>;
   };
+  const insightText = isAtlantis
+    ? atlantisInsight
+    : (hero.industryInsight ??
+      (industry
+        ? `Bedrijven in ${industry} besparen gemiddeld significant op handmatige workflows door slimme automatisering.`
+        : null));
 
   // ─── Animation variants ─────────────────────────────────────────────────────
 
@@ -373,7 +459,7 @@ export function DashboardClient({
 
           {/* Step indicators */}
           <nav className="hidden md:flex items-center gap-1">
-            {STEPS.map((step) => (
+            {steps.map((step) => (
               <button
                 key={step.id}
                 onClick={() => goToStep(step.id)}
@@ -393,14 +479,14 @@ export function DashboardClient({
 
           {/* Mobile step indicator */}
           <div className="md:hidden text-xs text-slate-500">
-            {currentStep + 1} / {STEPS.length}
+            {currentStep + 1} / {steps.length}
           </div>
         </div>
         {/* Progress bar */}
         <div className="h-0.5 bg-slate-100">
           <div
             className="h-full bg-gradient-to-r from-klarifai-yellow to-klarifai-cyan transition-all duration-500"
-            style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
+            style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
           />
         </div>
       </header>
@@ -417,7 +503,7 @@ export function DashboardClient({
             exit="exit"
             transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
           >
-            {/* ── Step 0: Welkom ──────────────────────────────────────────── */}
+            {/* ── Step 0: Welkom / Context ─────────────────────────────── */}
             {currentStep === 0 && (
               <div className="space-y-12 text-center max-w-4xl mx-auto py-12">
                 <div className="space-y-8">
@@ -429,101 +515,227 @@ export function DashboardClient({
                   >
                     <Sparkles className="w-4 h-4 text-[#EBCB4B]" />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#040026]">
-                      Workflow Analyse
+                      {hasNarrative
+                        ? isAtlantis
+                          ? 'Vertrouwelijk voorstel'
+                          : 'Workflow Analyse'
+                        : isAtlantis
+                          ? atlantisBadgeLabel
+                          : 'Workflow Analyse'}
                     </span>
                   </motion.div>
 
                   <h1 className="text-5xl md:text-7xl font-black text-[#040026] leading-[0.9] tracking-tighter">
-                    {hero.headline ?? `Workflow kansen voor ${companyName}`}
+                    {hasNarrative
+                      ? isAtlantis
+                        ? `Partnership analyse — ${companyName}`
+                        : `Workflow analyse — ${companyName}`
+                      : isAtlantis
+                        ? atlantisHeadline
+                        : (hero.headline ??
+                          `Workflow kansen voor ${companyName}`)}
                   </h1>
 
                   <p className="text-xl font-bold text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                    {hero.subheadline ??
-                      'Op basis van bewijs uit jouw sector laten we zien waar automatisering directe impact maakt.'}
+                    {hasNarrative
+                      ? activeNarrative!.openingHook
+                      : isAtlantis
+                        ? atlantisSubheadline
+                        : (hero.subheadline ??
+                          'Op basis van bewijs uit jouw sector laten we zien waar automatisering directe impact maakt.')}
                   </p>
+
+                  {hasNarrative && analysisDate && (
+                    <p className="text-xs text-slate-400">
+                      Opgesteld {analysisDate}
+                    </p>
+                  )}
                 </div>
 
-                {/* Summary stats */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Executive summary (narrative v2) or summary stats */}
+                {hasNarrative ? (
                   <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="glass-card p-6"
+                    className="glass-card p-8 text-left border border-[#EBCB4B]/35 bg-gradient-to-r from-[#FFFDF2] to-[#F5FAFF]"
                   >
-                    <AlertCircle className="w-5 h-5 text-klarifai-blue mx-auto mb-2" />
-                    <div className="text-2xl font-bold font-heading text-slate-900">
-                      {hypotheses.length}
-                    </div>
-                    <div className="text-xs text-slate-500 mt-1">
-                      Bewezen pijnpunten
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="glass-card p-6"
-                  >
-                    <Clock className="w-5 h-5 text-klarifai-blue mx-auto mb-2" />
-                    <div className="text-2xl font-bold font-heading text-slate-900">
-                      {totalHoursSaved > 0 ? `${totalHoursSaved}u` : '—'}
-                    </div>
-                    <div className="text-xs text-slate-500 mt-1">
-                      Uur bespaard per week
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                    className="glass-card p-6"
-                  >
-                    <CheckCircle2 className="w-5 h-5 text-klarifai-blue mx-auto mb-2" />
-                    <div className="text-2xl font-bold font-heading text-slate-900">
-                      {uniqueUseCases.length}
-                    </div>
-                    <div className="text-xs text-slate-500 mt-1">
-                      Bewezen oplossingen
-                    </div>
-                  </motion.div>
-                </div>
-
-                {/* Industry insight */}
-                {(hero.industryInsight ?? industry) && (
-                  <div className="glass-card p-6 text-left">
-                    <p className="text-sm text-slate-600 italic">
-                      &ldquo;
-                      {hero.industryInsight ??
-                        `Bedrijven in ${industry} besparen gemiddeld significant op handmatige workflows door slimme automatisering.`}
-                      &rdquo;
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">
+                      Samenvatting
                     </p>
-                  </div>
-                )}
+                    <p className="text-base text-[#1E1E4A] leading-relaxed font-medium">
+                      {activeNarrative!.executiveSummary}
+                    </p>
+                  </motion.div>
+                ) : isAtlantis ? (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {atlantisKpis.map((kpi, index) => (
+                        <motion.div
+                          key={`${kpi.label}-${index}`}
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ delay: 0.2 + index * 0.1 }}
+                          className={`glass-card p-6 border ${
+                            index === 0
+                              ? 'border-[#87C8FF]/45 bg-[#EFF7FF]'
+                              : index === 1
+                                ? 'border-[#EBCB4B]/45 bg-[#FFFBEA]'
+                                : 'border-[#8FE3B8]/45 bg-[#EFFAF4]'
+                          }`}
+                        >
+                          {index === 0 ? (
+                            <AlertCircle className="w-5 h-5 text-[#2D7FF9] mx-auto mb-2" />
+                          ) : index === 1 ? (
+                            <Clock className="w-5 h-5 text-[#C28700] mx-auto mb-2" />
+                          ) : (
+                            <CheckCircle2 className="w-5 h-5 text-[#1B8A5A] mx-auto mb-2" />
+                          )}
+                          <div className="text-2xl font-bold font-heading text-slate-900">
+                            {kpi.value}
+                          </div>
+                          <div className="text-xs text-slate-500 mt-1">
+                            {kpi.label}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                    {insightText && (
+                      <div className="glass-card p-7 text-left border border-[#EBCB4B]/35 bg-gradient-to-r from-[#FFFDF2] to-[#F5FAFF]">
+                        <p className="text-base text-[#1E1E4A] leading-relaxed font-medium">
+                          {insightText}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="glass-card p-6"
+                      >
+                        <AlertCircle className="w-5 h-5 text-klarifai-blue mx-auto mb-2" />
+                        <div className="text-2xl font-bold font-heading text-slate-900">
+                          {hypotheses.length}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          Bewezen pijnpunten
+                        </div>
+                      </motion.div>
 
-                {/* Powered by Klarifai */}
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="glass-card p-6"
+                      >
+                        <Clock className="w-5 h-5 text-klarifai-blue mx-auto mb-2" />
+                        <div className="text-2xl font-bold font-heading text-slate-900">
+                          {totalHoursSaved > 0 ? `${totalHoursSaved}u` : '—'}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          Uur bespaard per week
+                        </div>
+                      </motion.div>
+
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.4 }}
+                        className="glass-card p-6"
+                      >
+                        <CheckCircle2 className="w-5 h-5 text-klarifai-blue mx-auto mb-2" />
+                        <div className="text-2xl font-bold font-heading text-slate-900">
+                          {uniqueUseCases.length}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          Bewezen oplossingen
+                        </div>
+                      </motion.div>
+                    </div>
+
+                    {insightText && (
+                      <div className="glass-card p-6 text-left">
+                        <p className="text-sm text-slate-600 italic">
+                          &ldquo;{insightText}&rdquo;
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
 
-            {/* ── Step 1: Pijnpunten ──────────────────────────────────────── */}
+            {/* ── Step 1: Kansen / Pijnpunten ────────────────────────────── */}
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div className="text-center mb-8">
                   <h2 className="text-3xl font-heading font-bold text-slate-900">
-                    Bewezen Pijnpunten
+                    {hasNarrative
+                      ? isAtlantis
+                        ? 'Strategische Kansen'
+                        : 'Geidentificeerde Pijnpunten'
+                      : isAtlantis
+                        ? 'Jouw Kansen'
+                        : 'Bewezen Pijnpunten'}
                   </h2>
                   <p className="text-slate-500 mt-2">
-                    {hypotheses.length > 0
-                      ? `${hypotheses.length} bottlenecks geïdentificeerd op basis van bewijs uit jouw sector`
-                      : 'Jouw analyse wordt nog verfijnd door ons team'}
+                    {hasNarrative
+                      ? `${activeNarrative!.sections.length} thema's geïdentificeerd op basis van marktanalyse`
+                      : hypotheses.length > 0
+                        ? isAtlantis
+                          ? `${hypotheses.length} concrete kansen voor samenwerking in beeld`
+                          : `${hypotheses.length} bottlenecks geïdentificeerd op basis van bewijs uit jouw sector`
+                        : 'Jouw analyse wordt nog verfijnd door ons team'}
                   </p>
                 </div>
 
-                {hypotheses.length > 0 ? (
+                {/* Narrative sections from analysis-v2 */}
+                {hasNarrative ? (
+                  <div className="space-y-6">
+                    {activeNarrative!.sections.map((section, i) => (
+                      <motion.div
+                        key={section.id}
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: i * 0.1 }}
+                        className="glass-card glass-card-hover p-6 text-left"
+                      >
+                        <h3 className="font-semibold text-slate-900 mb-3">
+                          {section.title}
+                        </h3>
+                        <div className="space-y-3">
+                          {section.body.split('\n\n').map((paragraph, j) => (
+                            <p
+                              key={j}
+                              className="text-sm text-slate-600 leading-relaxed"
+                            >
+                              {paragraph}
+                            </p>
+                          ))}
+                        </div>
+                        {section.citations && section.citations.length > 0 && (
+                          <div className="pt-3 mt-3 border-t border-slate-100">
+                            <p className="text-xs text-slate-400 italic">
+                              {section.citations.join(' · ')}
+                            </p>
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : hypotheses.length > 0 ? (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div
+                      className={
+                        isAtlantis
+                          ? 'grid grid-cols-1 md:grid-cols-3 gap-4'
+                          : 'grid grid-cols-1 md:grid-cols-2 gap-4'
+                      }
+                    >
                       {hypotheses.map((hypothesis, i) => (
                         <motion.div
                           key={hypothesis.id}
@@ -691,7 +903,9 @@ export function DashboardClient({
                 ) : (
                   /* Fallback: old JSON data opportunities */
                   <div className="space-y-6">
-                    {data.opportunities && data.opportunities.length > 0 ? (
+                    {!isAtlantis &&
+                    data.opportunities &&
+                    data.opportunities.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {data.opportunities.map((opp, i) => (
                           <motion.div
@@ -726,8 +940,9 @@ export function DashboardClient({
                       <div className="glass-card p-12 text-center">
                         <Sparkles className="w-10 h-10 text-slate-300 mx-auto mb-4" />
                         <p className="text-slate-500">
-                          Jouw analyse wordt nog verfijnd door ons team. Neem
-                          gerust alvast contact op.
+                          {isAtlantis
+                            ? 'Deze analyse wordt momenteel afgerond. Plan een intake om de eerste kansen direct te verkennen.'
+                            : 'Jouw analyse wordt nog verfijnd door ons team. Neem gerust alvast contact op.'}
                         </p>
                         <button
                           onClick={() => goToStep(3)}
@@ -742,21 +957,160 @@ export function DashboardClient({
               </div>
             )}
 
-            {/* ── Step 2: Oplossingen ─────────────────────────────────────── */}
+            {/* ── Step 2: Waarde / Oplossingen ─────────────────────────────── */}
             {currentStep === 2 && (
               <div className="space-y-6">
                 <div className="text-center mb-8">
                   <h2 className="text-3xl font-heading font-bold text-slate-900">
-                    Bewezen Oplossingen
+                    {hasNarrative
+                      ? isAtlantis
+                        ? 'Samenwerkingsroutes'
+                        : 'Bewezen Oplossingen'
+                      : isAtlantis
+                        ? 'Samenwerkingsrichtingen'
+                        : 'Bewezen Oplossingen'}
                   </h2>
                   <p className="text-slate-500 mt-2">
-                    {uniqueUseCases.length > 0
-                      ? `${uniqueUseCases.length} bewezen ${uiProfile.discoverEvidencePluralLabel} die direct toepasbaar zijn voor ${companyName}`
-                      : `Oplossingen voor ${companyName}`}
+                    {hasNarrative
+                      ? isAtlantis && narrativeAnalysis
+                        ? `${narrativeAnalysis.spvRecommendations.length} concrete samenwerkingsroutes voor ${companyName}`
+                        : klarifaiNarrativeAnalysis
+                          ? `${klarifaiNarrativeAnalysis.useCaseRecommendations.length} bewezen oplossingen voor ${companyName}`
+                          : `Oplossingen voor ${companyName}`
+                      : uniqueUseCases.length > 0
+                        ? isAtlantis
+                          ? `${uniqueUseCases.length} bewezen ${uiProfile.discoverEvidencePluralLabel} als onderbouwing voor partnership-hypotheses`
+                          : `${uniqueUseCases.length} bewezen ${uiProfile.discoverEvidencePluralLabel} die direct toepasbaar zijn voor ${companyName}`
+                        : isAtlantis
+                          ? `Samenwerkingsopties voor ${companyName}`
+                          : `Oplossingen voor ${companyName}`}
                   </p>
                 </div>
 
-                {uniqueUseCases.length > 0 ? (
+                {/* SPV recommendations from analysis-v2 (Atlantis) */}
+                {isAtlantis && narrativeAnalysis ? (
+                  narrativeAnalysis.spvRecommendations.length > 0 ? (
+                    <div className="space-y-4">
+                      {narrativeAnalysis.spvRecommendations.map((rec, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ x: 40, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: i * 0.1 }}
+                          className="glass-card glass-card-hover p-6"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-[#040026]/5 flex items-center justify-center shrink-0">
+                              <Lightbulb className="w-6 h-6 text-[#040026]" />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-slate-900 mb-2">
+                                {rec.spvName}
+                              </h3>
+                              <p className="text-sm text-slate-500 mb-3">
+                                {rec.relevanceNarrative}
+                              </p>
+                              {rec.strategicTags &&
+                                rec.strategicTags.length > 0 && (
+                                  <div className="flex flex-wrap gap-2">
+                                    {rec.strategicTags.map((tag, j) => (
+                                      <span
+                                        key={j}
+                                        className="inline-flex items-center gap-1 text-xs bg-slate-50 text-slate-600 px-2 py-1 rounded-lg"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="glass-card p-12 text-center">
+                      <Sparkles className="w-10 h-10 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500">
+                        Samenwerkingsroutes worden samengesteld. Plan een intake
+                        om prioriteiten te bepalen.
+                      </p>
+                      <button
+                        onClick={() => goToStep(3)}
+                        className="mt-6 px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#1E1E4A] transition-all shadow-xl"
+                      >
+                        Plan intake
+                      </button>
+                    </div>
+                  )
+                ) : !isAtlantis && klarifaiNarrativeAnalysis ? (
+                  /* Use Case recommendations from analysis-v2 (Klarifai) */
+                  klarifaiNarrativeAnalysis.useCaseRecommendations.length >
+                  0 ? (
+                    <div className="space-y-4">
+                      {klarifaiNarrativeAnalysis.useCaseRecommendations.map(
+                        (rec, i) => (
+                          <motion.div
+                            key={i}
+                            initial={{ x: 40, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: i * 0.1 }}
+                            className="glass-card glass-card-hover p-6"
+                          >
+                            <div className="flex items-start gap-4">
+                              <div className="w-12 h-12 rounded-xl bg-[#040026]/5 flex items-center justify-center shrink-0">
+                                <Lightbulb className="w-6 h-6 text-[#040026]" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between mb-1 gap-2">
+                                  <h3 className="font-semibold text-slate-900">
+                                    {rec.useCaseTitle}
+                                  </h3>
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 shrink-0">
+                                    {rec.category}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-slate-500 mb-3">
+                                  {rec.relevanceNarrative}
+                                </p>
+                                {rec.applicableOutcomes &&
+                                  rec.applicableOutcomes.length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                      {rec.applicableOutcomes
+                                        .slice(0, 3)
+                                        .map((outcome, j) => (
+                                          <span
+                                            key={j}
+                                            className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-lg"
+                                          >
+                                            <CheckCircle2 className="w-3 h-3" />
+                                            {outcome}
+                                          </span>
+                                        ))}
+                                    </div>
+                                  )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        ),
+                      )}
+                    </div>
+                  ) : (
+                    <div className="glass-card p-12 text-center">
+                      <Sparkles className="w-10 h-10 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500">
+                        Oplossingen worden samengesteld. Neem contact op om de
+                        mogelijkheden te bespreken.
+                      </p>
+                      <button
+                        onClick={() => goToStep(3)}
+                        className="mt-6 px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#1E1E4A] transition-all shadow-xl"
+                      >
+                        Neem contact op
+                      </button>
+                    </div>
+                  )
+                ) : uniqueUseCases.length > 0 ? (
                   <div className="space-y-4">
                     {uniqueUseCases.map((uc, i) => (
                       <motion.div
@@ -830,7 +1184,22 @@ export function DashboardClient({
                 ) : (
                   /* No hypotheses at all — fallback to agents/stories */
                   <div className="space-y-4">
-                    {agents.agents && agents.agents.length > 0 ? (
+                    {isAtlantis ? (
+                      <div className="glass-card p-12 text-center">
+                        <Sparkles className="w-10 h-10 text-slate-300 mx-auto mb-4" />
+                        <p className="text-slate-500">
+                          Samenwerkingsrichtingen worden nu samengesteld uit
+                          nieuwe evidence. Plan een intake om prioriteiten te
+                          bepalen.
+                        </p>
+                        <button
+                          onClick={() => goToStep(3)}
+                          className="mt-6 px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#1E1E4A] transition-all shadow-xl"
+                        >
+                          Plan intake
+                        </button>
+                      </div>
+                    ) : agents.agents && agents.agents.length > 0 ? (
                       agents.agents.map((agent, i) => (
                         <motion.div
                           key={i}
@@ -902,10 +1271,14 @@ export function DashboardClient({
               <div className="space-y-8 max-w-2xl mx-auto">
                 <div className="text-center">
                   <h2 className="text-3xl font-heading font-bold text-slate-900">
-                    Klaar om te starten?
+                    {isAtlantis
+                      ? 'Klaar voor partnership intake?'
+                      : 'Klaar om te starten?'}
                   </h2>
                   <p className="text-slate-500 mt-2">
-                    Kies hoe je contact wilt opnemen met ons team
+                    {isAtlantis
+                      ? 'Kies hoe je het partnershipgesprek wilt starten'
+                      : 'Kies hoe je contact wilt opnemen met ons team'}
                   </p>
                 </div>
 
@@ -922,11 +1295,15 @@ export function DashboardClient({
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-black text-[#040026] tracking-tight">
-                          Download Rapport
+                          {isAtlantis
+                            ? 'Download Context Pack'
+                            : 'Download Rapport'}
                         </p>
                         <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                           {canDownloadReport
-                            ? 'Alle kansen en aanbevelingen als PDF'
+                            ? isAtlantis
+                              ? 'Partnership samenvatting en evidence als PDF'
+                              : 'Alle kansen en aanbevelingen als PDF'
                             : 'Nog niet beschikbaar'}
                         </p>
                       </div>
@@ -944,7 +1321,7 @@ export function DashboardClient({
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-black text-white tracking-tight">
-                          Plan een Gesprek
+                          {isAtlantis ? 'Plan Intake Call' : 'Plan een Gesprek'}
                         </p>
                         <p className="text-xs text-white/50 mt-1 leading-relaxed">
                           {canBookCall
@@ -985,7 +1362,11 @@ export function DashboardClient({
                       )}
                       {contactEmail && (
                         <a
-                          href={`mailto:${contactEmail}?subject=${encodeURIComponent(`Offerte aanvraag - ${companyName}`)}`}
+                          href={`mailto:${contactEmail}?subject=${encodeURIComponent(
+                            isAtlantis
+                              ? `Partnership intake - ${companyName}`
+                              : `Offerte aanvraag - ${companyName}`,
+                          )}`}
                           className="flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border border-slate-100"
                         >
                           <Mail className="w-4 h-4" />
@@ -1001,7 +1382,9 @@ export function DashboardClient({
                   <MessageSquare className="w-8 h-8 text-[#EBCB4B] mx-auto" />
                   <div>
                     <p className="text-lg font-black text-[#040026] tracking-tight">
-                      Offerte Aanvragen
+                      {isAtlantis
+                        ? 'Partnership Intake Aanvragen'
+                        : 'Offerte Aanvragen'}
                     </p>
                     <p className="text-sm text-slate-500 mt-1">
                       Wij nemen binnen 1 werkdag contact met je op
@@ -1028,7 +1411,9 @@ export function DashboardClient({
                       ) : (
                         <>
                           <ArrowRight className="w-4 h-4" />
-                          Ja, ik wil een offerte
+                          {isAtlantis
+                            ? 'Ja, start partnership intake'
+                            : 'Ja, ik wil een offerte'}
                         </>
                       )}
                     </button>
@@ -1056,7 +1441,7 @@ export function DashboardClient({
 
           {/* Mobile step dots */}
           <div className="flex items-center gap-3 md:hidden">
-            {STEPS.map((step) => (
+            {steps.map((step) => (
               <div
                 key={step.id}
                 className={`w-2 h-2 rounded-full transition-all duration-300 ${

@@ -1,6 +1,8 @@
-import { AtlantisDiscoverClient } from '@/components/public/atlantis-discover-client';
 import { DashboardClient } from '@/components/public/prospect-dashboard-client';
-import type { NarrativeAnalysis } from '@/lib/analysis/types';
+import type {
+  NarrativeAnalysis,
+  KlarifaiNarrativeAnalysis,
+} from '@/lib/analysis/types';
 import prisma from '@/lib/prisma';
 import {
   buildDiscoverSlug,
@@ -113,6 +115,19 @@ function parseNarrativeAnalysis(content: unknown): NarrativeAnalysis | null {
   if (!Array.isArray(obj.sections) || obj.sections.length === 0) return null;
   if (!Array.isArray(obj.spvRecommendations)) return null;
   return obj as unknown as NarrativeAnalysis;
+}
+
+function parseKlarifaiNarrativeAnalysis(
+  content: unknown,
+): KlarifaiNarrativeAnalysis | null {
+  const obj = asRecord(content);
+  if (!obj) return null;
+  if (obj.version !== 'analysis-v2') return null;
+  if (typeof obj.openingHook !== 'string') return null;
+  if (typeof obj.executiveSummary !== 'string') return null;
+  if (!Array.isArray(obj.sections) || obj.sections.length === 0) return null;
+  if (!Array.isArray(obj.useCaseRecommendations)) return null;
+  return obj as unknown as KlarifaiNarrativeAnalysis;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -266,19 +281,21 @@ export default async function DiscoverPage({ params }: Props) {
     notFound();
   }
 
-  // Fetch latest AI master analysis for ATLANTIS prospects
-  const prospectAnalysis =
-    prospect.project.projectType === 'ATLANTIS'
-      ? await prisma.prospectAnalysis.findFirst({
-          where: { prospectId: prospect.id },
-          orderBy: { createdAt: 'desc' },
-          select: { content: true, createdAt: true },
-        })
-      : null;
+  // Fetch latest AI master analysis for all project types
+  const prospectAnalysis = await prisma.prospectAnalysis.findFirst({
+    where: { prospectId: prospect.id },
+    orderBy: { createdAt: 'desc' },
+    select: { content: true, createdAt: true },
+  });
 
   const narrativeAnalysis = prospectAnalysis
     ? parseNarrativeAnalysis(prospectAnalysis.content)
     : null;
+
+  const klarifaiNarrativeAnalysis =
+    prospect.project.projectType !== 'ATLANTIS' && prospectAnalysis
+      ? parseKlarifaiNarrativeAnalysis(prospectAnalysis.content)
+      : null;
 
   const canonicalSlug = buildDiscoverSlug({
     slug: prospect.slug,
@@ -368,26 +385,23 @@ export default async function DiscoverPage({ params }: Props) {
     projectBrandName: prospect.project.brandName ?? prospect.project.name,
   };
 
-  if (prospect.project.projectType === 'ATLANTIS' && narrativeAnalysis) {
-    const analysisDate = new Intl.DateTimeFormat('nl-NL', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'Europe/Amsterdam',
-    }).format(prospectAnalysis!.createdAt);
+  const hasAnyAnalysis = narrativeAnalysis ?? klarifaiNarrativeAnalysis;
+  const analysisDateLabel =
+    hasAnyAnalysis && prospectAnalysis
+      ? new Intl.DateTimeFormat('nl-NL', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'Europe/Amsterdam',
+        }).format(prospectAnalysis.createdAt)
+      : null;
 
+  if (prospect.project.projectType === 'ATLANTIS' && narrativeAnalysis) {
     return (
-      <AtlantisDiscoverClient
-        companyName={dashboardProps.companyName}
-        industry={dashboardProps.industry}
-        prospectSlug={dashboardProps.prospectSlug}
-        analysis={narrativeAnalysis}
-        projectBrandName={dashboardProps.projectBrandName}
-        bookingUrl={dashboardProps.bookingUrl}
-        whatsappNumber={dashboardProps.whatsappNumber}
-        phoneNumber={dashboardProps.phoneNumber}
-        contactEmail={dashboardProps.contactEmail}
-        analysisDate={analysisDate}
+      <DashboardClient
+        {...dashboardProps}
+        narrativeAnalysis={narrativeAnalysis}
+        analysisDate={analysisDateLabel}
       />
     );
   }
@@ -451,5 +465,11 @@ export default async function DiscoverPage({ params }: Props) {
     );
   }
 
-  return <DashboardClient {...dashboardProps} />;
+  return (
+    <DashboardClient
+      {...dashboardProps}
+      klarifaiNarrativeAnalysis={klarifaiNarrativeAnalysis}
+      analysisDate={analysisDateLabel}
+    />
+  );
 }
