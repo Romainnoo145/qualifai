@@ -63,6 +63,13 @@ Rebuild the pipeline from evidence to discover page. Evidence scrapers are good 
 
 </details>
 
+### Klarifai Narrative (KNAR) — Phase 53
+
+- [ ] **KNAR-01**: Klarifai narrative prompt uses Use Cases (title, summary, category, outcomes) as domain knowledge source instead of RAG passages — prompt framed for workflow automation, not partnership
+- [ ] **KNAR-02**: Research executor generates analysis-v2 narrative for Klarifai (non-ATLANTIS) prospects during research run — same generateNarrativeAnalysis call, different input shape
+- [ ] **KNAR-03**: Discover page renders narrative analysis for Klarifai prospects — opening hook, executive summary, sections, use case recommendations visible on /discover/[slug]
+- [ ] **KNAR-04**: Use Case recommendations replace SPV recommendations in Klarifai narrative output — matched by evidence relevance, rendered with category and outcomes
+
 ## Future Requirements (Deferred)
 
 ### NDA Pipeline
@@ -110,11 +117,15 @@ Rebuild the pipeline from evidence to discover page. Evidence scrapers are good 
 | VALD-01     | 52    | Pending  |
 | VALD-02     | 52    | Pending  |
 | VALD-03     | 52    | Pending  |
+| KNAR-01     | 53    | Pending  |
+| KNAR-02     | 53    | Pending  |
+| KNAR-03     | 53    | Pending  |
+| KNAR-04     | 53    | Pending  |
 
 **Coverage:**
 
-- v7.0 requirements: 16 total
-- Mapped to phases: 16
+- v7.0 requirements: 20 total
+- Mapped to phases: 20
 - Unmapped: 0
 
 ---

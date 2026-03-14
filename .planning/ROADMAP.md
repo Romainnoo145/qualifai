@@ -129,6 +129,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 - [x] **Phase 50: Master Prompt Rebuild** — Raw evidence + RAG passages directly to master prompt, flowing narrative generation, cross-prospect connections (completed 2026-03-13)
 - [x] **Phase 51: Discover Page Redesign** — Flowing boardroom document, NDA-driven CTA, prospect-specific hooks (completed 2026-03-13)
 - [ ] **Phase 52: E2E Validation** — Nedri gold standard comparison, multi-prospect quality check, regression
+- [ ] **Phase 53: Klarifai Narrative Pipeline** — analysis-v2 for Klarifai prospects using Use Cases as knowledge source
 
 ## Phase Details
 
@@ -257,3 +258,16 @@ Phases execute in numeric order: 49 → 50 → 51 → 52
 | 50. Master Prompt Rebuild               | 2/2       | Complete       | 2026-03-13  | -          |
 | 51. Discover Page Redesign              | 3/3       | Complete       | 2026-03-13  | -          |
 | 52. E2E Validation                      | v7.0      | 0/?            | Not started | -          |
+| 53. Klarifai Narrative Pipeline         | v7.0      | 0/?            | Not started | -          |
+
+### Phase 53: Klarifai Narrative Pipeline
+
+**Goal:** Bring the analysis-v2 narrative engine to Klarifai (non-ATLANTIS) prospects. Same pattern as Atlantis — evidence + domain knowledge → flowing narrative — but using Use Cases (title, summary, category, outcomes) as knowledge source instead of RAG documents. Klarifai prospects get the same quality narrative output on the discover page.
+**Depends on:** Phase 52
+**Requirements:** KNAR-01, KNAR-02, KNAR-03, KNAR-04
+**Plans:** 2 plans
+
+Plans:
+
+- [ ] 53-01-PLAN.md — Klarifai narrative types, prompt builder, and analyzer
+- [ ] 53-02-PLAN.md — Research executor wiring and discover page rendering
