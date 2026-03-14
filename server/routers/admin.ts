@@ -966,6 +966,157 @@ export const adminRouter = router({
     };
   }),
 
+  getDashboardFeed: projectAdminProcedure.query(async ({ ctx }) => {
+    const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+
+    const [completedRuns, analyses, visits, sends] = await Promise.all([
+      // 1. Completed research runs
+      ctx.db.researchRun.findMany({
+        where: {
+          completedAt: { gte: fourteenDaysAgo },
+          status: 'COMPLETED',
+          prospect: { projectId: ctx.projectId },
+        },
+        orderBy: { completedAt: 'desc' },
+        take: 20,
+        select: {
+          id: true,
+          completedAt: true,
+          prospect: {
+            select: { id: true, companyName: true, domain: true },
+          },
+          _count: { select: { evidenceItems: true } },
+        },
+      }),
+
+      // 2. Narrative analyses
+      ctx.db.prospectAnalysis.findMany({
+        where: {
+          createdAt: { gte: fourteenDaysAgo },
+          version: 'analysis-v2',
+          prospect: { projectId: ctx.projectId },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: {
+          id: true,
+          createdAt: true,
+          modelUsed: true,
+          prospect: {
+            select: { id: true, companyName: true, domain: true },
+          },
+        },
+      }),
+
+      // 3. Discover page visits
+      ctx.db.wizardSession.findMany({
+        where: {
+          createdAt: { gte: fourteenDaysAgo },
+          prospect: { projectId: ctx.projectId },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: {
+          id: true,
+          createdAt: true,
+          maxStepReached: true,
+          pdfDownloaded: true,
+          callBooked: true,
+          quoteRequested: true,
+          prospect: {
+            select: { id: true, companyName: true, domain: true },
+          },
+        },
+      }),
+
+      // 4. Sent outreach
+      ctx.db.outreachLog.findMany({
+        where: {
+          status: 'sent',
+          sentAt: { gte: fourteenDaysAgo },
+          contact: { prospect: { projectId: ctx.projectId } },
+        },
+        orderBy: { sentAt: 'desc' },
+        take: 20,
+        select: {
+          id: true,
+          sentAt: true,
+          channel: true,
+          subject: true,
+          contact: {
+            select: {
+              prospect: {
+                select: { id: true, companyName: true, domain: true },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    // Map to unified feed items
+    type FeedItem = {
+      id: string;
+      type:
+        | 'research_complete'
+        | 'analysis_generated'
+        | 'discover_visit'
+        | 'outreach_sent';
+      timestamp: Date;
+      prospectId: string;
+      prospectName: string;
+      detail: string;
+    };
+
+    const feedItems: FeedItem[] = [
+      ...completedRuns.map((run) => ({
+        id: run.id,
+        type: 'research_complete' as const,
+        timestamp: run.completedAt!,
+        prospectId: run.prospect.id,
+        prospectName: run.prospect.companyName ?? run.prospect.domain,
+        detail: `${run._count.evidenceItems} evidence items collected`,
+      })),
+      ...analyses.map((a) => ({
+        id: a.id,
+        type: 'analysis_generated' as const,
+        timestamp: a.createdAt,
+        prospectId: a.prospect.id,
+        prospectName: a.prospect.companyName ?? a.prospect.domain,
+        detail: `Narrative analysis generated${a.modelUsed ? ` (${a.modelUsed})` : ''}`,
+      })),
+      ...visits.map((v) => ({
+        id: v.id,
+        type: 'discover_visit' as const,
+        timestamp: v.createdAt,
+        prospectId: v.prospect.id,
+        prospectName: v.prospect.companyName ?? v.prospect.domain,
+        detail: [
+          `Step ${v.maxStepReached + 1} reached`,
+          v.pdfDownloaded && 'PDF downloaded',
+          v.callBooked && 'call booked',
+          v.quoteRequested && 'quote requested',
+        ]
+          .filter(Boolean)
+          .join(' · '),
+      })),
+      ...sends.map((s) => ({
+        id: s.id,
+        type: 'outreach_sent' as const,
+        timestamp: s.sentAt!,
+        prospectId: s.contact.prospect.id,
+        prospectName:
+          s.contact.prospect.companyName ?? s.contact.prospect.domain,
+        detail: s.subject ?? `${s.channel} outreach sent`,
+      })),
+    ];
+
+    // Sort by recency
+    feedItems.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    return { items: feedItems.slice(0, 30) };
+  }),
+
   getDashboardStats: projectAdminProcedure.query(async ({ ctx }) => {
     const [projectProspects, projectContacts] = await Promise.all([
       ctx.db.prospect.findMany({
