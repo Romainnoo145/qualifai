@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-13)
 ## Current Position
 
 Phase: 53-klarifai-narrative-pipeline
-Plan: 01 of 2 complete
-Status: Plan 01 complete — types, prompt builder, and analyzer extension done
-Last activity: 2026-03-14 — 53-01 (Klarifai narrative types + prompt builder + analyzer) complete
+Plan: 02 of 2 complete
+Status: Phase 53 complete — Klarifai narrative pipeline fully wired end-to-end
+Last activity: 2026-03-14 — 53-02 (executor wiring + discover page rendering) complete
 
-Progress: [█████████░░░░░░░░░░░░░░░░░░░░░░░] 34% (8 plans complete in v7.0)
+Progress: [█████████░░░░░░░░░░░░░░░░░░░░░░░] 36% (9 plans complete in v7.0)
 
 ## Milestones Shipped
 
@@ -55,6 +55,7 @@ Recent decisions affecting v7.0:
 - [51-02]: CTA ternary: canBookCall → Cal.com booking button; quoteRequested → geheimhouding confirmation; else → quote request button. Secondary contact channels (WhatsApp/phone/email) demoted to understated links below the NDA gateway card.
 - [51-03]: discoverDescription for ATLANTIS updated to "Strategische partnership analyse voor {companyName}" — matches boardroom document framing. Routing chain was already clean from Plan 01; no additional routing code changes needed.
 - [53-01]: KlarifaiNarrativeInput uses useCases (UseCaseInput[]) not passages as domain knowledge; isKlarifaiInput checked before isNarrativeInput in buildMasterPrompt dispatch; useCaseRecommendations allows 1-6 items
+- [53-02]: Removed redundant `!== ATLANTIS` guard in else-branch (TypeScript already narrows type); hasNarrative/activeNarrative unify Atlantis and Klarifai render paths in DashboardClient; three-way dispatch in Step 2 for spvRecommendations/useCaseRecommendations/legacy
 
 ### Roadmap Evolution
 
@@ -71,5 +72,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-14
-Stopped at: Completed 53-01-PLAN.md (Klarifai narrative types + prompt builder + analyzer extension)
-Resume command: `/gsd:execute-phase 53` (Phase 53 Plan 02: wire up Use Cases from DB into research executor)
+Stopped at: Completed 53-02-PLAN.md (Klarifai narrative executor wiring + discover page rendering)
+Resume command: Phase 53 complete. Next: run E2E validation on a Klarifai prospect research run.
