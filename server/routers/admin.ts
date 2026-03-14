@@ -966,6 +966,125 @@ export const adminRouter = router({
     };
   }),
 
+  getDashboardActions: projectAdminProcedure.query(async ({ ctx }) => {
+    const [drafts, replies, readyProspects] = await Promise.all([
+      // 1. Drafts awaiting approval
+      ctx.db.outreachLog.findMany({
+        where: {
+          status: 'draft',
+          contact: { prospect: { projectId: ctx.projectId } },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 20,
+        select: {
+          id: true,
+          subject: true,
+          bodyText: true,
+          createdAt: true,
+          contact: {
+            select: {
+              firstName: true,
+              lastName: true,
+              prospect: {
+                select: { id: true, companyName: true, domain: true },
+              },
+            },
+          },
+        },
+      }),
+
+      // 2. Inbound replies needing response
+      ctx.db.outreachLog.findMany({
+        where: {
+          type: 'FOLLOW_UP',
+          status: 'received',
+          contact: { prospect: { projectId: ctx.projectId } },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 20,
+        select: {
+          id: true,
+          subject: true,
+          bodyText: true,
+          createdAt: true,
+          contact: {
+            select: {
+              firstName: true,
+              lastName: true,
+              prospect: {
+                select: { id: true, companyName: true, domain: true },
+              },
+            },
+          },
+        },
+      }),
+
+      // 3. Prospects ready for first outreach (have research, no outreach yet)
+      ctx.db.prospect.findMany({
+        where: {
+          projectId: ctx.projectId,
+          status: { in: ['READY', 'ENRICHED'] },
+          researchRuns: { some: { status: 'COMPLETED' } },
+          contacts: {
+            none: {
+              outreachLogs: { some: {} },
+            },
+          },
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 10,
+        select: {
+          id: true,
+          companyName: true,
+          domain: true,
+          industry: true,
+          updatedAt: true,
+          _count: { select: { contacts: true } },
+        },
+      }),
+    ]);
+
+    return {
+      drafts: drafts.map((d) => ({
+        id: d.id,
+        prospectId: d.contact.prospect.id,
+        prospectName:
+          d.contact.prospect.companyName ?? d.contact.prospect.domain,
+        contactName: [d.contact.firstName, d.contact.lastName]
+          .filter(Boolean)
+          .join(' '),
+        subject: d.subject ?? 'Untitled draft',
+        preview: d.bodyText?.slice(0, 160) ?? '',
+        createdAt: d.createdAt,
+      })),
+      replies: replies.map((r) => ({
+        id: r.id,
+        prospectId: r.contact.prospect.id,
+        prospectName:
+          r.contact.prospect.companyName ?? r.contact.prospect.domain,
+        contactName: [r.contact.firstName, r.contact.lastName]
+          .filter(Boolean)
+          .join(' '),
+        subject: r.subject ?? 'Inbound reply',
+        preview: r.bodyText?.slice(0, 160) ?? '',
+        createdAt: r.createdAt,
+      })),
+      readyProspects: readyProspects.map((p) => ({
+        id: p.id,
+        companyName: p.companyName ?? p.domain,
+        industry: p.industry,
+        contactCount: p._count.contacts,
+        updatedAt: p.updatedAt,
+      })),
+      counts: {
+        drafts: drafts.length,
+        replies: replies.length,
+        readyProspects: readyProspects.length,
+        total: drafts.length + replies.length + readyProspects.length,
+      },
+    };
+  }),
+
   getDashboardFeed: projectAdminProcedure.query(async ({ ctx }) => {
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
