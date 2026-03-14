@@ -853,7 +853,6 @@ function OutreachSettings() {
   const [toneId, setToneId] = useState('machiavelli');
   const [companyPitch, setCompanyPitch] = useState('');
   const [signatureHtml, setSignatureHtml] = useState('');
-  const [signatureText, setSignatureText] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [expandedInfo, setExpandedInfo] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -871,7 +870,6 @@ function OutreachSettings() {
     setToneId(matched?.id ?? 'machiavelli');
     setCompanyPitch(d.companyPitch ?? '');
     setSignatureHtml(d.signatureHtml ?? '');
-    setSignatureText(d.signatureText ?? '');
     setInitialized(true);
   }
 
@@ -886,6 +884,15 @@ function OutreachSettings() {
 
   const handleSave = () => {
     const selectedStyle = OUTREACH_STYLES.find((s) => s.id === toneId);
+    // Auto-derive plaintext from HTML
+    const autoPlaintext = signatureHtml
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .trim();
     update.mutate({
       fromName,
       fromEmail,
@@ -894,7 +901,7 @@ function OutreachSettings() {
       tone: selectedStyle?.tone ?? '',
       companyPitch,
       signatureHtml,
-      signatureText,
+      signatureText: autoPlaintext,
     });
   };
 
@@ -1048,32 +1055,18 @@ function OutreachSettings() {
             />
           </div>
         ) : (
-          <>
-            <div>
-              <label className="text-xs font-bold text-slate-500 mb-1 block">
-                HTML handtekening
-              </label>
-              <textarea
-                value={signatureHtml}
-                onChange={(e) => setSignatureHtml(e.target.value)}
-                rows={6}
-                placeholder='<p style="margin-top:24px;">Met vriendelijke groet,</p>...'
-                className="w-full px-4 py-2.5 input-minimal text-xs font-mono resize-none"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500 mb-1 block">
-                Plaintext handtekening
-              </label>
-              <textarea
-                value={signatureText}
-                onChange={(e) => setSignatureText(e.target.value)}
-                rows={4}
-                placeholder="Met vriendelijke groet,&#10;&#10;Romano Kanters&#10;Klarifai"
-                className="w-full px-4 py-2.5 input-minimal text-xs font-mono resize-none"
-              />
-            </div>
-          </>
+          <div>
+            <label className="text-xs font-bold text-slate-500 mb-1 block">
+              HTML handtekening
+            </label>
+            <textarea
+              value={signatureHtml}
+              onChange={(e) => setSignatureHtml(e.target.value)}
+              rows={6}
+              placeholder='<p style="margin-top:24px;">Met vriendelijke groet,</p>...'
+              className="w-full px-4 py-2.5 input-minimal text-xs font-mono resize-none"
+            />
+          </div>
         )}
       </div>
 
