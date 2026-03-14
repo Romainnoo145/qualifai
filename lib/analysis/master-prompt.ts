@@ -3,13 +3,18 @@
  * evidence items + RAG passages + SPV data + prospect profile into a structured
  * JSON generation request.
  *
- * Supports two input shapes:
- *   - NarrativeAnalysisInput (analysis-v2): raw evidence + RAG passages (new)
+ * Supports three input shapes:
+ *   - KlarifaiNarrativeInput (analysis-v2): raw evidence + Use Cases (new)
+ *   - NarrativeAnalysisInput (analysis-v2): raw evidence + RAG passages (Atlantis)
  *   - MasterAnalysisInput (analysis-v1): intent variables + RAG passages (legacy)
  */
 
 import type { IntentCategory } from '@/lib/extraction/types';
-import type { MasterAnalysisInput, NarrativeAnalysisInput } from './types';
+import type {
+  KlarifaiNarrativeInput,
+  MasterAnalysisInput,
+  NarrativeAnalysisInput,
+} from './types';
 
 const SYSTEM_PREAMBLE = `Je bent een senior strategisch adviseur die boardroom-ready partnership analyses schrijft voor Europe's Gate. Toon: zakelijk-visionair Nederlands — clean business language, geen anglicismen, confident maar niet stijf. Schrijf alsof het een McKinsey board-presentatie is.`;
 
@@ -25,13 +30,19 @@ KRITISCHE TOONREGELS:
 `.trim();
 
 // ---------------------------------------------------------------------------
-// Type guard to detect which input shape was passed
+// Type guards to detect which input shape was passed
 // ---------------------------------------------------------------------------
 
+function isKlarifaiInput(
+  input: NarrativeAnalysisInput | MasterAnalysisInput | KlarifaiNarrativeInput,
+): input is KlarifaiNarrativeInput {
+  return 'useCases' in input;
+}
+
 function isNarrativeInput(
-  input: NarrativeAnalysisInput | MasterAnalysisInput,
+  input: NarrativeAnalysisInput | MasterAnalysisInput | KlarifaiNarrativeInput,
 ): input is NarrativeAnalysisInput {
-  return 'evidence' in input;
+  return 'evidence' in input && !('useCases' in input);
 }
 
 // ---------------------------------------------------------------------------
@@ -211,6 +222,171 @@ function buildNarrativePrompt(input: NarrativeAnalysisInput): string {
   );
 
   return sections.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Klarifai narrative prompt builder (analysis-v2, Use Cases as knowledge source)
+// ---------------------------------------------------------------------------
+
+const KLARIFAI_SYSTEM_PREAMBLE = `Je bent een senior workflow-consultant die bedrijven adviseert over procesautomatisering en AI-integratie. Toon: helder, direct, data-gedreven Nederlands — concreet over pijnpunten, specifiek over oplossingen. Schrijf alsof het een executive briefing is voor een ondernemer die zijn tijd bewaakt.`;
+
+function buildKlarifaiNarrativePrompt(input: KlarifaiNarrativeInput): string {
+  const { evidence, useCases, prospect, crossConnections } = input;
+
+  const parts: string[] = [];
+
+  // --- System context ---
+  parts.push(KLARIFAI_SYSTEM_PREAMBLE);
+  parts.push('');
+  parts.push(TONE_RULES);
+
+  // --- Prospect profile ---
+  parts.push('');
+  parts.push('=== PROSPECT PROFIEL ===');
+  parts.push(`Bedrijfsnaam: ${prospect.companyName}`);
+  if (prospect.industry) parts.push(`Sector: ${prospect.industry}`);
+  if (prospect.description) parts.push(`Omschrijving: ${prospect.description}`);
+  if (prospect.specialties.length > 0)
+    parts.push(`Specialismen: ${prospect.specialties.join(', ')}`);
+  if (prospect.country) parts.push(`Land: ${prospect.country}`);
+  if (prospect.city) parts.push(`Stad: ${prospect.city}`);
+  if (prospect.employeeRange)
+    parts.push(`Medewerkers: ${prospect.employeeRange}`);
+  if (prospect.revenueRange) parts.push(`Omzet: ${prospect.revenueRange}`);
+
+  // --- Raw evidence items ---
+  parts.push('');
+  parts.push(`=== BEWIJS UIT EXTERN ONDERZOEK (${evidence.length} items) ===`);
+  parts.push(
+    'Dit zijn de ruwe bewijsitems uit extern onderzoek, gesorteerd op betrouwbaarheid. Gebruik ze direct in het narratief — citeer specifieke datapunten, namen en feiten.',
+  );
+
+  const sortedEvidence = [...evidence]
+    .sort((a, b) => b.confidenceScore - a.confidenceScore)
+    .slice(0, 60);
+
+  for (let i = 0; i < sortedEvidence.length; i++) {
+    const item = sortedEvidence[i]!;
+    const conf = Math.round(item.confidenceScore * 100);
+    const titlePart = item.title ? ` | ${item.title}` : '';
+    parts.push(
+      `\n[${i + 1}] ${item.sourceType}${titlePart} | confidence: ${conf}%`,
+    );
+    parts.push(`    ${item.snippet.slice(0, 300)}`);
+    if (item.sourceUrl) parts.push(`    Bron: ${item.sourceUrl}`);
+  }
+
+  // --- Use Cases (replaces RAG passages) ---
+  parts.push('');
+  parts.push('=== BEWEZEN DIENSTEN (Klarifai) ===');
+  parts.push(
+    'Gebruik deze diensten als basis voor aanbevelingen. Match diensten aan pijnpunten uit het bewijs.',
+  );
+
+  if (useCases.length === 0) {
+    parts.push(
+      'Geen diensten beschikbaar — schrijf vanuit algemeen procesautomatisering perspectief.',
+    );
+  } else {
+    for (let i = 0; i < useCases.length; i++) {
+      const uc = useCases[i]!;
+      parts.push(`\n[${i + 1}] ${uc.title} | Categorie: ${uc.category}`);
+      parts.push(`    ${uc.summary}`);
+      parts.push(`    Resultaten: ${uc.outcomes.join(', ')}`);
+    }
+  }
+
+  // --- Cross-prospect connections ---
+  if (crossConnections.length > 0) {
+    parts.push('');
+    parts.push('=== KRUISVERBANDEN MET ANDERE PROSPECTS ===');
+    parts.push(
+      'Verwerk deze verbanden naturel in het narratief waar relevant — geen apart hoofdstuk, maar geïntegreerd.',
+    );
+    for (const conn of crossConnections) {
+      parts.push(
+        `- ${conn.companyName}: ${conn.relationship} — "${conn.evidenceSnippet}"`,
+      );
+    }
+  }
+
+  // --- Adaptive instructions ---
+  parts.push('');
+  parts.push('=== ADAPTIEVE INSTRUCTIES ===');
+
+  if (evidence.length < 5) {
+    parts.push(
+      'LET OP: Er is weinig extern bewijs beschikbaar. Gebruik visionaire framing boven data-first benadering. Schrijf overtuigend vanuit strategisch perspectief.',
+    );
+  }
+
+  if (useCases.length < 3) {
+    parts.push(
+      'LET OP: Er zijn weinig diensten beschikbaar. Schrijf kwalitatieve narratieven met directioneel bewijs.',
+    );
+  }
+
+  if (useCases.length >= 5) {
+    parts.push(
+      'De dienstencatalogus is rijkelijk gevuld. Selecteer de meest relevante diensten en prioriteer concrete resultaten.',
+    );
+  }
+
+  // --- Output format specification (analysis-v2, useCaseRecommendations) ---
+  parts.push('');
+  parts.push('=== OPDRACHT ===');
+  parts.push(
+    `Genereer een executive briefing voor ${prospect.companyName} in exact het volgende JSON-formaat (analysis-v2).`,
+  );
+  parts.push('');
+  parts.push(
+    'Schrijf 3-5 narratieve secties. Elke sectie heeft een vloeiend verhaal dat bewijsmateriaal natuurlijk citeert.',
+  );
+  parts.push(
+    'Suggereer secties als: Operationele Bottlenecks, Handmatige Processen, Data & Rapportage, Groeibelemmeringen — maar kies secties die passen bij het beschikbare bewijs.',
+  );
+  parts.push(
+    'Liever 3 sterke secties dan 5 dunne. Niet elk sjabloon hoeft gevuld.',
+  );
+  parts.push('');
+  parts.push('Retourneer UITSLUITEND valide JSON in dit formaat:');
+  parts.push('```json');
+  parts.push('{');
+  parts.push('  "version": "analysis-v2",');
+  parts.push('  "openingHook": "2-3 zinnen prospect-specifieke hook...",');
+  parts.push('  "executiveSummary": "1 alinea executive summary...",');
+  parts.push('  "sections": [');
+  parts.push('    {');
+  parts.push('      "id": "slug-identifier",');
+  parts.push('      "title": "Sectietitel in het Nederlands",');
+  parts.push(
+    '      "body": "Vloeiend narratief dat bewijsmateriaal citeert...",',
+  );
+  parts.push(
+    '      "citations": ["Bron: REVIEWS — ...", "Bron: WEBSITE — ..."]',
+  );
+  parts.push('    }');
+  parts.push('  ],');
+  parts.push('  "useCaseRecommendations": [');
+  parts.push('    {');
+  parts.push('      "useCaseTitle": "...",');
+  parts.push('      "category": "...",');
+  parts.push(
+    '      "relevanceNarrative": "waarom deze dienst past bij dit bedrijf...",',
+  );
+  parts.push(
+    '      "applicableOutcomes": ["specifiek resultaat relevant voor dit bedrijf"]',
+  );
+  parts.push('    }');
+  parts.push('  ]');
+  parts.push('}');
+  parts.push('```');
+  parts.push('');
+  parts.push(
+    'BELANGRIJK: Retourneer ALLEEN de JSON, geen markdown-formatting, geen uitleg, geen prefix/suffix.',
+  );
+
+  return parts.join('\n');
 }
 
 // ---------------------------------------------------------------------------
@@ -440,12 +616,17 @@ function buildLegacyPrompt(input: MasterAnalysisInput): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Build the master prompt. Accepts both NarrativeAnalysisInput (analysis-v2)
- * and MasterAnalysisInput (analysis-v1 legacy) and dispatches accordingly.
+ * Build the master prompt. Accepts three input shapes and dispatches accordingly:
+ *   - KlarifaiNarrativeInput (analysis-v2, Use Cases): Klarifai prospects
+ *   - NarrativeAnalysisInput (analysis-v2, RAG passages): Atlantis prospects
+ *   - MasterAnalysisInput (analysis-v1, intent vars): legacy
  */
 export function buildMasterPrompt(
-  input: NarrativeAnalysisInput | MasterAnalysisInput,
+  input: NarrativeAnalysisInput | MasterAnalysisInput | KlarifaiNarrativeInput,
 ): string {
+  if (isKlarifaiInput(input)) {
+    return buildKlarifaiNarrativePrompt(input);
+  }
   if (isNarrativeInput(input)) {
     return buildNarrativePrompt(input);
   }

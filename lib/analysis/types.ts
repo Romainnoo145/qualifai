@@ -77,6 +77,46 @@ export type NarrativeAnalysisInput = {
 };
 
 // ---------------------------------------------------------------------------
+// Klarifai narrative types (analysis-v2 for Klarifai prospects)
+// ---------------------------------------------------------------------------
+
+/** A Klarifai Use Case passed as domain knowledge (replaces RAG passages) */
+export type UseCaseInput = {
+  id: string;
+  title: string;
+  summary: string;
+  category: string;
+  outcomes: string[];
+};
+
+/** Use Case recommendation with narrative relevance */
+export type UseCaseRecommendation = {
+  useCaseTitle: string;
+  category: string;
+  relevanceNarrative: string; // why this use case matches the prospect's pain points
+  applicableOutcomes: string[]; // subset of outcomes relevant to this prospect
+};
+
+/** The complete Klarifai narrative analysis output — version analysis-v2 */
+export type KlarifaiNarrativeAnalysis = {
+  version: 'analysis-v2';
+  openingHook: string;
+  executiveSummary: string;
+  sections: NarrativeSection[]; // reuse same section type
+  useCaseRecommendations: UseCaseRecommendation[];
+  generatedAt: string;
+  modelUsed: string;
+};
+
+/** Complete input for the Klarifai narrative analysis engine */
+export type KlarifaiNarrativeInput = {
+  evidence: EvidenceItem[]; // same raw evidence items
+  useCases: UseCaseInput[]; // Use Cases as domain knowledge (replaces RAG passages)
+  prospect: AnalysisProspectProfile; // reuse existing profile type
+  crossConnections: CrossProspectConnection[]; // reuse existing type
+};
+
+// ---------------------------------------------------------------------------
 // Shared input types (used by both v1 and v2)
 // ---------------------------------------------------------------------------
 
