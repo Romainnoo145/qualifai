@@ -285,7 +285,7 @@ Plans:
 3. Dashboard does NOT duplicate pipeline strip or prospect table from Companies page
 4. Draft Send button works with existing approveDraft mutation and idempotency guard
 
-**Plans:** 2/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 
