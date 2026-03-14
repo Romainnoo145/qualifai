@@ -23,6 +23,9 @@ import type {
   AnalysisTrack,
   AnalysisKPI,
   TriggerCategory,
+  KlarifaiNarrativeInput,
+  KlarifaiNarrativeAnalysis,
+  UseCaseRecommendation,
 } from './types';
 
 // Lazy init — same pattern as intent-extractor.ts
@@ -393,6 +396,159 @@ export async function generateNarrativeAnalysis(
   const durationMs = Date.now() - startMs;
   throw new Error(
     `[master-analyzer] Failed to generate valid NarrativeAnalysis for ${input.prospect.companyName} after 2 attempts (${durationMs}ms). Last response: ${lastRawText.slice(0, 500)}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Klarifai narrative validation and generation
+// ---------------------------------------------------------------------------
+
+function validateUseCaseRecommendation(
+  raw: unknown,
+): UseCaseRecommendation | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const obj = raw as Record<string, unknown>;
+  if (
+    !isNonEmptyString(obj.useCaseTitle) ||
+    !isNonEmptyString(obj.category) ||
+    !isNonEmptyString(obj.relevanceNarrative)
+  ) {
+    return null;
+  }
+  if (!isStringArray(obj.applicableOutcomes)) return null;
+  return {
+    useCaseTitle: obj.useCaseTitle,
+    category: obj.category,
+    relevanceNarrative: obj.relevanceNarrative,
+    applicableOutcomes: obj.applicableOutcomes,
+  };
+}
+
+/**
+ * Validate a raw parsed object against the KlarifaiNarrativeAnalysis shape (analysis-v2).
+ * Returns null on any structural or content violation.
+ */
+export function validateKlarifaiNarrativeAnalysis(
+  raw: unknown,
+): KlarifaiNarrativeAnalysis | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const obj = raw as Record<string, unknown>;
+
+  if (obj.version !== 'analysis-v2') return null;
+  if (!isNonEmptyString(obj.openingHook)) return null;
+  if (!isNonEmptyString(obj.executiveSummary)) return null;
+
+  // sections: array of 2-7 items
+  if (!Array.isArray(obj.sections)) return null;
+  if (obj.sections.length < 2 || obj.sections.length > 7) return null;
+  const sections: NarrativeSection[] = [];
+  for (const sectionRaw of obj.sections) {
+    const section = validateNarrativeSection(sectionRaw);
+    if (!section) return null;
+    sections.push(section);
+  }
+
+  // useCaseRecommendations: array of 1-6 items
+  if (!Array.isArray(obj.useCaseRecommendations)) return null;
+  if (
+    obj.useCaseRecommendations.length < 1 ||
+    obj.useCaseRecommendations.length > 6
+  ) {
+    return null;
+  }
+  const useCaseRecommendations: UseCaseRecommendation[] = [];
+  for (const recRaw of obj.useCaseRecommendations) {
+    const rec = validateUseCaseRecommendation(recRaw);
+    if (!rec) return null;
+    useCaseRecommendations.push(rec);
+  }
+
+  return {
+    version: 'analysis-v2',
+    openingHook: obj.openingHook,
+    executiveSummary: obj.executiveSummary,
+    sections,
+    useCaseRecommendations,
+    generatedAt: '', // filled by caller
+    modelUsed: '', // filled by caller
+  };
+}
+
+/**
+ * Generate a KlarifaiNarrativeAnalysis (analysis-v2) by calling Gemini 2.5 Pro
+ * with raw evidence items and Use Cases as domain knowledge. Validates the response
+ * and retries once on parse/validation failure.
+ */
+export async function generateKlarifaiNarrativeAnalysis(
+  input: KlarifaiNarrativeInput,
+): Promise<KlarifaiNarrativeAnalysis> {
+  const genai = getGenAI();
+  const prompt = buildMasterPrompt(input);
+  const model = GEMINI_MODEL_PRO;
+
+  const startMs = Date.now();
+  console.log(
+    `[master-analyzer] Generating Klarifai narrative analysis for ${input.prospect.companyName} using ${model}...`,
+  );
+
+  let lastRawText = '';
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const geminiModel = genai.getGenerativeModel({ model });
+
+    let response;
+    if (attempt === 0) {
+      response = await geminiModel.generateContent(prompt);
+    } else {
+      const chat = geminiModel.startChat({
+        history: [
+          { role: 'user', parts: [{ text: prompt }] },
+          { role: 'model', parts: [{ text: lastRawText }] },
+        ],
+      });
+      response = await chat.sendMessage(
+        'De JSON was ongeldig of voldeed niet aan het schema. Corrigeer het en retourneer ALLEEN valide JSON in exact het gevraagde analysis-v2 formaat. Zorg voor: version "analysis-v2", niet-lege openingHook en executiveSummary, 2-7 sections met id/title/body/citations, en 1-6 useCaseRecommendations met useCaseTitle/category/relevanceNarrative/applicableOutcomes.',
+      );
+    }
+
+    const text = response.response.text();
+    if (!text) {
+      lastRawText = '[no text in response]';
+      continue;
+    }
+
+    lastRawText = text;
+    const parsed = extractJSON(lastRawText);
+    if (!parsed) {
+      console.warn(
+        `[master-analyzer] Attempt ${attempt + 1}: failed to extract JSON`,
+      );
+      continue;
+    }
+
+    const validated = validateKlarifaiNarrativeAnalysis(parsed);
+    if (!validated) {
+      console.warn(
+        `[master-analyzer] Attempt ${attempt + 1}: JSON did not match KlarifaiNarrativeAnalysis schema`,
+      );
+      continue;
+    }
+
+    const durationMs = Date.now() - startMs;
+    console.log(
+      `[master-analyzer] Klarifai narrative analysis generated in ${durationMs}ms (attempt ${attempt + 1})`,
+    );
+
+    return {
+      ...validated,
+      generatedAt: new Date().toISOString(),
+      modelUsed: model,
+    };
+  }
+
+  const durationMs = Date.now() - startMs;
+  throw new Error(
+    `[master-analyzer] Failed to generate valid KlarifaiNarrativeAnalysis for ${input.prospect.companyName} after 2 attempts (${durationMs}ms). Last response: ${lastRawText.slice(0, 500)}`,
   );
 }
 
