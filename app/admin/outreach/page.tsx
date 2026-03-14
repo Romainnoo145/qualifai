@@ -960,18 +960,7 @@ function OutreachSettings() {
               </button>
             </div>
           </div>
-          <div>
-            <label className="text-xs font-bold text-slate-500 mb-1 block">
-              Bedrijfspitch
-            </label>
-            <textarea
-              value={companyPitch}
-              onChange={(e) => setCompanyPitch(e.target.value)}
-              rows={2}
-              placeholder="Wat doet jullie bedrijf in 1-2 zinnen?"
-              className="w-full px-4 py-2.5 input-minimal text-sm resize-none"
-            />
-          </div>
+          <div />
         </div>
       </div>
 
@@ -982,11 +971,16 @@ function OutreachSettings() {
         </h3>
         <div className="grid grid-cols-2 gap-3">
           {OUTREACH_STYLES.map((style) => (
-            <button
+            <div
               key={style.id}
+              role="button"
+              tabIndex={0}
               onClick={() => setToneId(style.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') setToneId(style.id);
+              }}
               className={cn(
-                'ui-tap relative text-left rounded-xl border p-4 transition-all',
+                'ui-tap relative text-left rounded-xl border p-4 transition-all cursor-pointer',
                 toneId === style.id
                   ? 'border-[#EBCB4B] bg-[#EBCB4B]/5 ring-1 ring-[#EBCB4B]'
                   : 'border-slate-100 bg-white hover:border-slate-200',
@@ -1020,7 +1014,7 @@ function OutreachSettings() {
                   </p>
                 </div>
               )}
-            </button>
+            </div>
           ))}
         </div>
       </div>
