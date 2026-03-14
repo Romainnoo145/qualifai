@@ -259,6 +259,7 @@ Phases execute in numeric order: 49 → 50 → 51 → 52
 | 51. Discover Page Redesign              | 3/3       | Complete       | 2026-03-13  | -          |
 | 52. E2E Validation                      | v7.0      | 0/?            | Not started | -          |
 | 53. Klarifai Narrative Pipeline         | 2/2       | Complete       | 2026-03-14  | -          |
+| 54. Admin Dashboard Redesign            | v7.0      | 0/2            | Not started | -          |
 
 ### Phase 53: Klarifai Narrative Pipeline
 
@@ -271,3 +272,22 @@ Plans:
 
 - [ ] 53-01-PLAN.md — Klarifai narrative types, prompt builder, and analyzer
 - [ ] 53-02-PLAN.md — Research executor wiring and discover page rendering
+
+### Phase 54: Admin Dashboard Redesign
+
+**Goal:** Replace the outdated hypothesis-queue dashboard with a useful overview. Two sections: (1) Activity feed — recent research completions, narrative analyses generated, discover page visits, outreach activity. (2) Action block — drafts to approve, replies to handle, prospects ready for outreach. No duplication of pipeline strip or prospect table (already in Companies page).
+**Depends on:** Phase 53
+**Requirements:** DASH-01, DASH-02, DASH-03, DASH-04, DASH-05
+**Success Criteria** (what must be TRUE):
+
+1. Activity feed shows 4 event types (research completions, analyses, discover visits, outreach sends) in chronological order
+2. Action block shows 3 actionable categories (drafts, replies, ready prospects) with direct action affordances
+3. Dashboard does NOT duplicate pipeline strip or prospect table from Companies page
+4. Draft Send button works with existing approveDraft mutation and idempotency guard
+
+**Plans:** 2 plans
+
+Plans:
+
+- [ ] 54-01-PLAN.md — Backend endpoints (getDashboardFeed + getDashboardActions)
+- [ ] 54-02-PLAN.md — Frontend dashboard rewrite (Activity Feed + Action Block)

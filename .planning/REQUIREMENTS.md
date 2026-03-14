@@ -70,6 +70,14 @@ Rebuild the pipeline from evidence to discover page. Evidence scrapers are good 
 - [x] **KNAR-03**: Discover page renders narrative analysis for Klarifai prospects — opening hook, executive summary, sections, use case recommendations visible on /discover/[slug]
 - [x] **KNAR-04**: Use Case recommendations replace SPV recommendations in Klarifai narrative output — matched by evidence relevance, rendered with category and outcomes
 
+### Admin Dashboard (DASH) — Phase 54
+
+- [ ] **DASH-01**: Dashboard activity feed shows recent research completions, narrative analyses generated, discover page visits, and outreach sends — ordered chronologically, scoped to active project
+- [ ] **DASH-02**: Dashboard action block shows drafts to approve, replies to handle, and prospects ready for first outreach — structured for quick decision-making
+- [ ] **DASH-03**: Dashboard renders Action Block above Activity Feed — actions need attention first, feed is passive awareness
+- [ ] **DASH-04**: Draft items in action block have inline Send button with idempotency guard (same approve mutation)
+- [ ] **DASH-05**: Dashboard does NOT duplicate pipeline strip or prospect table (those live in Companies page)
+
 ## Future Requirements (Deferred)
 
 ### NDA Pipeline
@@ -121,11 +129,16 @@ Rebuild the pipeline from evidence to discover page. Evidence scrapers are good 
 | KNAR-02     | 53    | Complete |
 | KNAR-03     | 53    | Complete |
 | KNAR-04     | 53    | Complete |
+| DASH-01     | 54    | Pending  |
+| DASH-02     | 54    | Pending  |
+| DASH-03     | 54    | Pending  |
+| DASH-04     | 54    | Pending  |
+| DASH-05     | 54    | Pending  |
 
 **Coverage:**
 
-- v7.0 requirements: 20 total
-- Mapped to phases: 20
+- v7.0 requirements: 25 total
+- Mapped to phases: 25
 - Unmapped: 0
 
 ---
