@@ -56,12 +56,16 @@ import { triggerProspectSiteCatalogSync } from '@/lib/site-catalog';
 import { fetchKvkData, kvkDataToEvidenceDraft } from '@/lib/enrichment/kvk';
 import { extractIntentVariables } from '@/lib/extraction/intent-extractor';
 import type { IntentVariables } from '@/lib/extraction/types';
-import { generateNarrativeAnalysis } from '@/lib/analysis/master-analyzer';
+import {
+  generateNarrativeAnalysis,
+  generateKlarifaiNarrativeAnalysis,
+} from '@/lib/analysis/master-analyzer';
 import type {
   NarrativeAnalysisInput,
   EvidenceItem,
   RagPassageInput,
   CrossProspectConnection,
+  KlarifaiNarrativeInput,
 } from '@/lib/analysis/types';
 import type { Prisma, PrismaClient } from '@prisma/client';
 
@@ -1708,6 +1712,137 @@ export async function executeResearchRun(
       status: 'skipped',
       message: 'RAG retrieval skipped (projectType is not ATLANTIS).',
     });
+
+    // Phase 53: Klarifai narrative analysis — uses Use Cases as domain knowledge
+    // (This else-branch is already non-ATLANTIS; condition kept for clarity)
+    {
+      try {
+        // Fetch active Use Cases for this project
+        const useCases = await db.useCase.findMany({
+          where: {
+            projectId: prospect.project.id,
+            isActive: true,
+            isShipped: true,
+          },
+          select: {
+            id: true,
+            title: true,
+            summary: true,
+            category: true,
+            outcomes: true,
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: 20, // Cap at 20 use cases to control prompt size
+        });
+
+        if (useCases.length === 0) {
+          diagnostics.push({
+            source: 'master_analysis',
+            status: 'skipped',
+            message:
+              'Klarifai narrative analysis skipped: no active use cases found.',
+          });
+        } else {
+          // Map evidence records to EvidenceItem (same as Atlantis)
+          const evidenceItems: EvidenceItem[] = evidenceRecords
+            .filter((item) => item.sourceType !== 'RAG_DOCUMENT')
+            .sort((a, b) => b.confidenceScore - a.confidenceScore)
+            .slice(0, 60)
+            .map((item) => ({
+              sourceType: item.sourceType,
+              sourceUrl: item.sourceUrl,
+              title: item.title,
+              snippet: item.snippet,
+              confidenceScore: item.confidenceScore,
+              workflowTag: item.workflowTag,
+            }));
+
+          // Cross-prospect connection detection (same logic as Atlantis)
+          const klarifaiCrossConnections: CrossProspectConnection[] = [];
+          try {
+            const otherProspects = await db.prospect.findMany({
+              where: {
+                projectId: prospect.project.id,
+                id: { not: input.prospectId },
+              },
+              select: { id: true, companyName: true, domain: true },
+            });
+            const prospectNames = otherProspects
+              .map((p) => ({ id: p.id, name: p.companyName ?? p.domain }))
+              .filter((p) => p.name.length >= 3);
+            for (const other of prospectNames) {
+              const nameLower = other.name.toLowerCase();
+              const mentioningEvidence = evidenceRecords.find(
+                (e) =>
+                  e.snippet.toLowerCase().includes(nameLower) ||
+                  (e.title?.toLowerCase().includes(nameLower) ?? false),
+              );
+              if (mentioningEvidence) {
+                klarifaiCrossConnections.push({
+                  companyName: other.name,
+                  relationship: 'prospect',
+                  evidenceSnippet: mentioningEvidence.snippet.slice(0, 200),
+                });
+              }
+            }
+          } catch {
+            // Non-critical
+          }
+
+          const klarifaiInput: KlarifaiNarrativeInput = {
+            evidence: evidenceItems,
+            useCases: useCases.map((uc) => ({
+              id: uc.id,
+              title: uc.title,
+              summary: uc.summary,
+              category: uc.category,
+              outcomes: uc.outcomes as string[],
+            })),
+            prospect: {
+              companyName: prospect.companyName ?? prospect.domain,
+              industry: prospect.industry ?? null,
+              description: prospect.description ?? null,
+              specialties: prospect.specialties ?? [],
+              country: prospect.country ?? null,
+              city: prospect.city ?? null,
+              employeeRange: prospect.employeeRange ?? null,
+              revenueRange: prospect.revenueRange ?? null,
+            },
+            crossConnections: klarifaiCrossConnections,
+          };
+
+          const analysisResult =
+            await generateKlarifaiNarrativeAnalysis(klarifaiInput);
+
+          await db.prospectAnalysis.create({
+            data: {
+              researchRunId: run.id,
+              prospectId: input.prospectId,
+              version: 'analysis-v2',
+              content: toJson(analysisResult),
+              modelUsed: analysisResult.modelUsed,
+              inputSnapshot: toJson({
+                evidenceCount: evidenceItems.length,
+                useCaseCount: useCases.length,
+                crossConnectionCount: klarifaiCrossConnections.length,
+              }),
+            },
+          });
+
+          diagnostics.push({
+            source: 'master_analysis',
+            status: 'ok',
+            message: `Klarifai narrative analysis generated: ${analysisResult.sections.length} sections, ${analysisResult.useCaseRecommendations.length} use case recommendations`,
+          });
+        }
+      } catch (analysisErr) {
+        diagnostics.push({
+          source: 'master_analysis',
+          status: 'warning',
+          message: `Klarifai narrative analysis failed: ${analysisErr instanceof Error ? analysisErr.message : 'Unknown error'}`,
+        });
+      }
+    }
   }
 
   const gate = evaluateQualityGate(
