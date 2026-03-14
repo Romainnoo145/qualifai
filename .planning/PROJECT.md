@@ -93,7 +93,7 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - **Email delivery:** Resend API with idempotency guards, DKIM/SPF/DMARC verified for klarifai.nl
 - **Scheduling:** Cal.com with HMAC-signed webhook → automatic call prep generation
 - **Current codebase:** ~34,658 LOC TypeScript
-- **Shipped:** v1.0 (Feb 20) → v1.1 (Feb 21) → v1.2 (Feb 22) → v2.0 (Feb 23) → v2.1 (Mar 2) → v2.2 (Mar 2) → v3.0 (Mar 5)
+- **Shipped:** v1.0 (Feb 20) → v1.1 (Feb 21) → v1.2 (Feb 22) → v2.0 (Feb 23) → v2.1 (Mar 2) → v2.2 (Mar 2) → v3.0 (Mar 5) → v4.0 (Mar 7) → v5.0 (Mar 8) → v6.0 (Mar 8)
 - **Prospects in DB:** 7+ real companies, all passing quality gate after AI scoring overhaul
 
 ## Constraints
@@ -134,26 +134,32 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ---
 
-## Current Milestone: v6.0 Outreach Simplification
+## Current Milestone: v7.0 Atlantis Discover Pipeline Rebuild
 
-**Goal:** Remove manual multi-touch task management and let the cadence engine handle follow-ups automatically. The outreach page goes from 4 tabs to 3 by killing Multi-touch Tasks. Admin workflow becomes: approve drafts → triage replies → review sent history. No manual task creation, no channel selection, no due dates — the system handles cadence across channels.
+**Goal:** Rebuild the entire pipeline from evidence collection to discover page rendering. The evidence scrapers work well (83 items for Nedri), but everything after — intent extraction, RAG retrieval, master prompt, and discover UI — produces low-quality output compared to what the raw evidence can support. When the same evidence is fed directly to an LLM, the results are dramatically better.
 
 **Target features:**
 
-- Kill Multi-touch Tasks tab and all manual task creation UI
-- Automate multi-channel follow-up cadence (system schedules call/LinkedIn/WhatsApp/email follow-ups)
-- 3-tab outreach: Drafts Queue (approve/reject, unchanged) → Replies (triage, unchanged) → Sent History (log, unchanged)
-- Remove touch_open/touch_done/touch_skipped status flow and related backend code
+- Eliminate lossy intent extraction middle-layer (currently compresses 83 evidence items into ~10 signals)
+- Feed raw evidence + RAG passages directly to master prompt
+- Master prompt generates flowing narrative content, not rigid JSON categories
+- Discover page becomes a boardroom-ready flowing document, not a 4-step wizard
+- CTA drives NDA signing, not generic "intake"
+- Cross-prospect connections (e.g., Nedri works with Heijmans, who is also a prospect)
+- Evidence cited naturally in narrative ("U publiceerde uw EPD in oktober 2024")
+- Prospect-specific opening hooks, real numbers from RAG docs
 
-**Architecture principle:** The cadence engine already exists — it just needs to own the follow-up scheduling instead of creating manual tasks for the admin.
+**Architecture principle:** Don't compress evidence through lossy middle layers. Give the LLM the raw materials and let it write compelling narrative directly. The hand-written Nedri example is the gold standard.
+
+**Key insight:** The evidence collection pipeline (scrapers, 83 items) is GOOD — don't touch it. The problem is everything AFTER evidence collection.
 
 ## Current State
 
-**Latest shipped:** v5.0 Atlantis Intelligence & NDA Pipeline (in progress) — extraction matrix, AI master analysis, boardroom discover rendering.
+**Latest shipped:** v6.0 Outreach Simplification (2026-03-08) — automated cadence follow-ups, 3-tab outreach page, inline reminders.
 
-**Previous milestone:** v4.0 Atlantis Partnership Outreach (2026-03-07) — multi-project schema, RAG ingestion, retrieval + dual evidence, partnership discover template.
+**Previous milestone:** v5.0 Atlantis Intelligence (2026-03-08) — extraction matrix, AI master analysis, boardroom discover rendering.
 
-**Active milestone:** v6.0 Outreach Simplification
+**Active milestone:** v7.0 Atlantis Discover Pipeline Rebuild
 
 ---
 
