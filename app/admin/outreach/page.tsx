@@ -906,7 +906,7 @@ function OutreachSettings() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6">
       {/* Email Identity */}
       <div className="glass-card p-6 space-y-4">
         <h3 className="text-sm font-black text-[#040026] uppercase tracking-widest">
