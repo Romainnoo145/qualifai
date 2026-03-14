@@ -4,16 +4,10 @@ import { api } from '@/components/providers';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
-import {
-  ArrowLeft,
-  Building2,
-  Plus,
-  X,
-  Loader2,
-  Search,
-} from 'lucide-react';
+import { ArrowLeft, Building2, Plus, X, Loader2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { deepAnalysisStatus } from '@/lib/deep-analysis';
+import { PageLoader } from '@/components/ui/page-loader';
 
 type FunnelStage =
   | 'imported'
@@ -143,14 +137,14 @@ function ProspectRow({
     'booked',
   ].includes(prospect.funnelStage);
   const canStartDeepResearch =
-    hasCompletedResearch &&
-    deepStatus !== 'completed';
+    hasCompletedResearch && deepStatus !== 'completed';
   const deepSubtitle =
-    (startResearch.isPending && startMode === 'deep') || deepStatus === 'running'
+    (startResearch.isPending && startMode === 'deep') ||
+    deepStatus === 'running'
       ? 'Running now...'
       : deepStatus === 'failed'
-          ? 'Failed · retry'
-          : 'Not run yet';
+        ? 'Failed · retry'
+        : 'Not run yet';
   const deepStatusToneClass =
     deepStatus === 'completed'
       ? 'text-emerald-600'
@@ -240,7 +234,9 @@ function ProspectRow({
               <span className="text-[9px] font-black uppercase tracking-widest">
                 Deep Analysis
               </span>
-              <span className={cn('text-[10px] font-semibold', deepStatusToneClass)}>
+              <span
+                className={cn('text-[10px] font-semibold', deepStatusToneClass)}
+              >
                 {deepSubtitle}
               </span>
             </span>
@@ -348,19 +344,10 @@ export default function CampaignDetailPage() {
 
   if (query.isLoading) {
     return (
-      <div className="space-y-8">
-        <div className="h-10 bg-slate-100 rounded-2xl animate-pulse w-64" />
-        <div className="glass-card p-6 rounded-[2.5rem] animate-pulse h-32" />
-        <div className="glass-card p-6 rounded-[2.5rem] animate-pulse h-48" />
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="glass-card p-5 animate-pulse h-16 rounded-2xl"
-            />
-          ))}
-        </div>
-      </div>
+      <PageLoader
+        label="Loading campaign"
+        description="Preparing campaign performance."
+      />
     );
   }
 

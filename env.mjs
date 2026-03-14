@@ -66,6 +66,8 @@ export const env = createEnv({
     NEXT_PUBLIC_WHATSAPP_NUMBER: z.string().optional(),
     NEXT_PUBLIC_PHONE_NUMBER: z.string().optional(),
     NEXT_PUBLIC_CONTACT_EMAIL: z.string().email().optional(),
+    NEXT_PUBLIC_ADMIN_SECRET: z.string().optional(),
+    NEXT_PUBLIC_ATLANTIS_ADMIN_SECRET: z.string().optional(),
   },
 
   runtimeEnv: {
@@ -121,6 +123,8 @@ export const env = createEnv({
     NEXT_PUBLIC_WHATSAPP_NUMBER: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER,
     NEXT_PUBLIC_PHONE_NUMBER: process.env.NEXT_PUBLIC_PHONE_NUMBER,
     NEXT_PUBLIC_CONTACT_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL,
+    NEXT_PUBLIC_ADMIN_SECRET: process.env.NEXT_PUBLIC_ADMIN_SECRET,
+    NEXT_PUBLIC_ATLANTIS_ADMIN_SECRET: process.env.NEXT_PUBLIC_ATLANTIS_ADMIN_SECRET,
   },
 
   // Skip validation during build (Vercel injects at runtime)

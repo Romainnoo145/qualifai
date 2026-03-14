@@ -2,7 +2,8 @@
 
 import { api } from '@/components/providers';
 import Link from 'next/link';
-import { FolderKanban, Plus, ChevronRight, Loader2 } from 'lucide-react';
+import { FolderKanban, Plus, ChevronRight } from 'lucide-react';
+import { PageLoader } from '@/components/ui/page-loader';
 
 export default function CampaignsPage() {
   const campaigns = api.campaigns.list.useQuery();
@@ -13,20 +14,13 @@ export default function CampaignsPage() {
         <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
           Campaigns
         </h1>
-        <Link
-          href="/admin/campaigns/new"
-          className="admin-btn-primary"
-        >
+        <Link href="/admin/campaigns/new" className="admin-btn-primary">
           <Plus className="w-4 h-4" /> Create Campaign
         </Link>
       </div>
 
       <div className="space-y-3">
-        {campaigns.isLoading && (
-          <div className="flex items-center justify-center py-16 text-slate-400">
-            <Loader2 className="w-6 h-6 animate-spin" />
-          </div>
-        )}
+        {campaigns.isLoading && <PageLoader label="Loading campaigns" />}
 
         {!campaigns.isLoading && (campaigns.data ?? []).length === 0 && (
           <div className="glass-card p-12 text-center">
@@ -37,10 +31,7 @@ export default function CampaignsPage() {
             <p className="admin-meta-text mb-4">
               Start met de campaign setup wizard.
             </p>
-            <Link
-              href="/admin/campaigns/new"
-              className="admin-btn-primary"
-            >
+            <Link href="/admin/campaigns/new" className="admin-btn-primary">
               <Plus className="w-3.5 h-3.5" />
               Start Wizard
             </Link>

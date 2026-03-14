@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Zap, Building2, Users, Check, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { PageLoader } from '@/components/ui/page-loader';
 
 const signalTypeColors: Record<string, string> = {
   JOB_CHANGE: 'admin-state-info',
@@ -77,20 +78,10 @@ export default function SignalsPage() {
 
       {/* Signal feed */}
       {signals.isLoading ? (
-        <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="glass-card p-8 animate-pulse rounded-[2.5rem]"
-            >
-              <div className="space-y-4">
-                <div className="h-3 bg-slate-50 rounded w-1/6" />
-                <div className="h-5 bg-slate-50 rounded w-3/4" />
-                <div className="h-3 bg-slate-50 rounded w-1/2" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <PageLoader
+          label="Loading signals"
+          description="Pulling the latest buying signals."
+        />
       ) : signals.data?.signals.length === 0 ? (
         <div className="glass-card p-20 text-center rounded-[2.5rem]">
           <Zap className="w-16 h-16 text-slate-100 mx-auto mb-6" />

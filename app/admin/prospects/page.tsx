@@ -23,6 +23,7 @@ import { PipelineChip } from '@/components/features/prospects/pipeline-chip';
 import { computePipelineStage, type PipelineStage } from '@/lib/pipeline-stage';
 import { buildDiscoverPath } from '@/lib/prospect-url';
 import { deepAnalysisStatus } from '@/lib/deep-analysis';
+import { PageLoader } from '@/components/ui/page-loader';
 
 type View = 'all' | 'search-companies' | 'search-contacts';
 type SearchGuardrail = {
@@ -79,10 +80,7 @@ export default function ProspectList() {
         <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
           Prospects
         </h1>
-        <Link
-          href="/admin/prospects/new"
-          className="admin-btn-primary"
-        >
+        <Link href="/admin/prospects/new" className="admin-btn-primary">
           + New Prospect
         </Link>
       </div>
@@ -213,13 +211,10 @@ function AllCompanies() {
 
   if (prospects.isLoading) {
     return (
-      <div className="space-y-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="glass-card p-6 animate-pulse">
-            <div className="h-5 bg-slate-200 rounded-xl w-48" />
-          </div>
-        ))}
-      </div>
+      <PageLoader
+        label="Loading companies"
+        description="Fetching the latest prospect list."
+      />
     );
   }
 
@@ -233,10 +228,7 @@ function AllCompanies() {
         <p className="admin-meta-text mb-4">
           Start met zoeken en importeer je eerste relevante company.
         </p>
-        <Link
-          href="/admin/prospects/new"
-          className="admin-btn-primary"
-        >
+        <Link href="/admin/prospects/new" className="admin-btn-primary">
           <Plus className="w-3.5 h-3.5" />
           Create your first prospect
         </Link>
@@ -259,9 +251,7 @@ function AllCompanies() {
               )}
             >
               <span>{filter.label}</span>
-              <span className="admin-toggle-count">
-                {count}
-              </span>
+              <span className="admin-toggle-count">{count}</span>
             </button>
           );
         })}
@@ -270,7 +260,8 @@ function AllCompanies() {
       {}
       {visibleProspects.map(({ prospect, stage }) => {
         const deepStatus = deepAnalysisStatus(prospect.latestDeepResearchRun);
-        const hasCompletedResearch = (prospect.researchStats?.completedRuns ?? 0) > 0;
+        const hasCompletedResearch =
+          (prospect.researchStats?.completedRuns ?? 0) > 0;
         const hasActiveResearch = (prospect.researchStats?.activeRuns ?? 0) > 0;
         const canStartResearch =
           !hasCompletedResearch &&
@@ -281,14 +272,15 @@ function AllCompanies() {
           !hasActiveResearch &&
           deepStatus !== 'completed';
         const isStarting =
-          startResearchMutation.isPending && startingResearch?.id === prospect.id;
+          startResearchMutation.isPending &&
+          startingResearch?.id === prospect.id;
         const isStartingDeep = isStarting && startingResearch?.mode === 'deep';
         const deepSubtitle =
           isStartingDeep || deepStatus === 'running'
             ? 'Running now...'
             : deepStatus === 'failed'
-                ? 'Failed · retry'
-                : 'Not run yet';
+              ? 'Failed · retry'
+              : 'Not run yet';
         const deepStatusToneClass =
           deepStatus === 'completed'
             ? 'text-emerald-600'
@@ -413,7 +405,12 @@ function AllCompanies() {
                     <span className="text-[10px] font-black uppercase tracking-widest">
                       Deep Analysis
                     </span>
-                    <span className={cn('text-[10px] font-semibold', deepStatusToneClass)}>
+                    <span
+                      className={cn(
+                        'text-[10px] font-semibold',
+                        deepStatusToneClass,
+                      )}
+                    >
                       {deepSubtitle}
                     </span>
                   </span>
@@ -544,9 +541,7 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">
-              Company Name
-            </label>
+            <label className="admin-eyebrow ml-1">Company Name</label>
             <input
               type="text"
               value={name}
@@ -556,9 +551,7 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
             />
           </div>
           <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">
-              Domain
-            </label>
+            <label className="admin-eyebrow ml-1">Domain</label>
             <input
               type="text"
               value={domain}
@@ -568,9 +561,7 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
             />
           </div>
           <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">
-              Sector
-            </label>
+            <label className="admin-eyebrow ml-1">Sector</label>
             <input
               type="text"
               value={industry}
@@ -580,9 +571,7 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
             />
           </div>
           <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">
-              Land
-            </label>
+            <label className="admin-eyebrow ml-1">Land</label>
             <input
               type="text"
               value={country}
@@ -592,9 +581,7 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <label className="admin-eyebrow ml-1">
-              Locatie
-            </label>
+            <label className="admin-eyebrow ml-1">Locatie</label>
             <input
               type="text"
               value={city}
@@ -643,9 +630,7 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
               </div>
             </div>
           )}
-          <p className="admin-eyebrow ml-2">
-            {results.length} results
-          </p>
+          <p className="admin-eyebrow ml-2">{results.length} results</p>
 
           {results.length > 0 && (
             <div className="flex items-center justify-between gap-4 p-4 glass-card rounded-2xl">
@@ -809,9 +794,7 @@ function ContactSearch() {
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">
-              Job Title
-            </label>
+            <label className="admin-eyebrow ml-1">Job Title</label>
             <input
               type="text"
               value={jobTitle}
@@ -821,9 +804,7 @@ function ContactSearch() {
             />
           </div>
           <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">
-              Seniority
-            </label>
+            <label className="admin-eyebrow ml-1">Seniority</label>
             <select
               value={seniority}
               onChange={(e) => setSeniority(e.target.value)}
@@ -838,9 +819,7 @@ function ContactSearch() {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">
-              Department
-            </label>
+            <label className="admin-eyebrow ml-1">Department</label>
             <input
               type="text"
               value={department}
@@ -850,9 +829,7 @@ function ContactSearch() {
             />
           </div>
           <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">
-              Company Domain
-            </label>
+            <label className="admin-eyebrow ml-1">Company Domain</label>
             <input
               type="text"
               value={companyDomain}
@@ -901,9 +878,7 @@ function ContactSearch() {
               </div>
             </div>
           )}
-          <p className="admin-eyebrow ml-2">
-            {results.length} results
-          </p>
+          <p className="admin-eyebrow ml-2">{results.length} results</p>
           {results.length === 0 ? (
             <div className="glass-card p-20 text-center rounded-[2.5rem]">
               <Users className="w-16 h-16 text-slate-100 mx-auto mb-6" />

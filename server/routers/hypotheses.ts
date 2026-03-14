@@ -95,7 +95,10 @@ export const hypothesesRouter = router({
             },
           }),
           ctx.db.researchRun.findFirst({
-            where: { prospectId: input.prospectId },
+            where: {
+              prospectId: input.prospectId,
+              status: 'COMPLETED',
+            },
             orderBy: { createdAt: 'desc' },
             select: {
               id: true,

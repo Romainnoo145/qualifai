@@ -468,7 +468,12 @@ Klarifai`;
             contact: {
               include: {
                 prospect: {
-                  select: { id: true, companyName: true, domain: true },
+                  select: {
+                    id: true,
+                    companyName: true,
+                    domain: true,
+                    logoUrl: true,
+                  },
                 },
               },
             },
@@ -485,7 +490,12 @@ Klarifai`;
           take: 320,
           include: {
             prospect: {
-              select: { id: true, companyName: true, domain: true },
+              select: {
+                id: true,
+                companyName: true,
+                domain: true,
+                logoUrl: true,
+              },
             },
           },
         }),

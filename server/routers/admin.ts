@@ -986,7 +986,12 @@ export const adminRouter = router({
               firstName: true,
               lastName: true,
               prospect: {
-                select: { id: true, companyName: true, domain: true },
+                select: {
+                  id: true,
+                  companyName: true,
+                  domain: true,
+                  logoUrl: true,
+                },
               },
             },
           },
@@ -1012,7 +1017,12 @@ export const adminRouter = router({
               firstName: true,
               lastName: true,
               prospect: {
-                select: { id: true, companyName: true, domain: true },
+                select: {
+                  id: true,
+                  companyName: true,
+                  domain: true,
+                  logoUrl: true,
+                },
               },
             },
           },
@@ -1037,6 +1047,7 @@ export const adminRouter = router({
           id: true,
           companyName: true,
           domain: true,
+          logoUrl: true,
           industry: true,
           updatedAt: true,
           _count: { select: { contacts: true } },
@@ -1050,6 +1061,8 @@ export const adminRouter = router({
         prospectId: d.contact.prospect.id,
         prospectName:
           d.contact.prospect.companyName ?? d.contact.prospect.domain,
+        domain: d.contact.prospect.domain,
+        logoUrl: d.contact.prospect.logoUrl,
         contactName: [d.contact.firstName, d.contact.lastName]
           .filter(Boolean)
           .join(' '),
@@ -1062,6 +1075,8 @@ export const adminRouter = router({
         prospectId: r.contact.prospect.id,
         prospectName:
           r.contact.prospect.companyName ?? r.contact.prospect.domain,
+        domain: r.contact.prospect.domain,
+        logoUrl: r.contact.prospect.logoUrl,
         contactName: [r.contact.firstName, r.contact.lastName]
           .filter(Boolean)
           .join(' '),
@@ -1072,6 +1087,8 @@ export const adminRouter = router({
       readyProspects: readyProspects.map((p) => ({
         id: p.id,
         companyName: p.companyName ?? p.domain,
+        domain: p.domain,
+        logoUrl: p.logoUrl,
         industry: p.industry,
         contactCount: p._count.contacts,
         updatedAt: p.updatedAt,
@@ -1102,7 +1119,12 @@ export const adminRouter = router({
           id: true,
           completedAt: true,
           prospect: {
-            select: { id: true, companyName: true, domain: true },
+            select: {
+              id: true,
+              companyName: true,
+              domain: true,
+              logoUrl: true,
+            },
           },
           _count: { select: { evidenceItems: true } },
         },
@@ -1122,7 +1144,12 @@ export const adminRouter = router({
           createdAt: true,
           modelUsed: true,
           prospect: {
-            select: { id: true, companyName: true, domain: true },
+            select: {
+              id: true,
+              companyName: true,
+              domain: true,
+              logoUrl: true,
+            },
           },
         },
       }),
@@ -1143,7 +1170,12 @@ export const adminRouter = router({
           callBooked: true,
           quoteRequested: true,
           prospect: {
-            select: { id: true, companyName: true, domain: true },
+            select: {
+              id: true,
+              companyName: true,
+              domain: true,
+              logoUrl: true,
+            },
           },
         },
       }),
@@ -1165,7 +1197,12 @@ export const adminRouter = router({
           contact: {
             select: {
               prospect: {
-                select: { id: true, companyName: true, domain: true },
+                select: {
+                  id: true,
+                  companyName: true,
+                  domain: true,
+                  logoUrl: true,
+                },
               },
             },
           },
@@ -1184,6 +1221,7 @@ export const adminRouter = router({
       timestamp: Date;
       prospectId: string;
       prospectName: string;
+      logoUrl: string | null;
       detail: string;
     };
 
@@ -1194,6 +1232,7 @@ export const adminRouter = router({
         timestamp: run.completedAt!,
         prospectId: run.prospect.id,
         prospectName: run.prospect.companyName ?? run.prospect.domain,
+        logoUrl: run.prospect.logoUrl,
         detail: `${run._count.evidenceItems} evidence items collected`,
       })),
       ...analyses.map((a) => ({
@@ -1202,6 +1241,7 @@ export const adminRouter = router({
         timestamp: a.createdAt,
         prospectId: a.prospect.id,
         prospectName: a.prospect.companyName ?? a.prospect.domain,
+        logoUrl: a.prospect.logoUrl,
         detail: `Narrative analysis generated${a.modelUsed ? ` (${a.modelUsed})` : ''}`,
       })),
       ...visits.map((v) => ({
@@ -1210,6 +1250,7 @@ export const adminRouter = router({
         timestamp: v.createdAt,
         prospectId: v.prospect.id,
         prospectName: v.prospect.companyName ?? v.prospect.domain,
+        logoUrl: v.prospect.logoUrl,
         detail: [
           `Step ${v.maxStepReached + 1} reached`,
           v.pdfDownloaded && 'PDF downloaded',
@@ -1226,6 +1267,7 @@ export const adminRouter = router({
         prospectId: s.contact.prospect.id,
         prospectName:
           s.contact.prospect.companyName ?? s.contact.prospect.domain,
+        logoUrl: s.contact.prospect.logoUrl,
         detail: s.subject ?? `${s.channel} outreach sent`,
       })),
     ];

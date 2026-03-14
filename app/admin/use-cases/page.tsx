@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Info,
 } from 'lucide-react';
+import { PageLoader } from '@/components/ui/page-loader';
 
 type UseCase = {
   id: string;
@@ -347,9 +348,10 @@ export default function UseCasesPage() {
 
       {/* Loading state */}
       {useCases.isLoading && (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-slate-300" />
-        </div>
+        <PageLoader
+          label="Loading use cases"
+          description="Preparing the use case library."
+        />
       )}
 
       {/* Empty state */}
@@ -657,10 +659,7 @@ function UseCaseForm({
             `Save ${itemLabel}`
           )}
         </button>
-        <button
-          onClick={onCancel}
-          className="admin-btn-secondary"
-        >
+        <button onClick={onCancel} className="admin-btn-secondary">
           Cancel
         </button>
       </div>

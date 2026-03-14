@@ -15,6 +15,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PageLoader } from '@/components/ui/page-loader';
 
 // TERM-02: OutreachType enum values mapped to plain-language labels
 const OUTREACH_TYPE_LABELS: Record<string, string> = {
@@ -68,13 +69,10 @@ export default function ContactDetail() {
 
   if (contact.isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="h-8 bg-slate-200 rounded w-48 animate-pulse" />
-        <div className="glass-card p-8 animate-pulse">
-          <div className="h-6 bg-slate-200 rounded w-64 mb-4" />
-          <div className="h-4 bg-slate-200 rounded w-full" />
-        </div>
-      </div>
+      <PageLoader
+        label="Loading contact"
+        description="Preparing contact details."
+      />
     );
   }
 

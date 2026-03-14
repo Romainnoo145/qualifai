@@ -15,10 +15,12 @@ import {
   X,
   ShieldCheck,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { api } from '@/components/providers';
-import { ADMIN_TOKEN_STORAGE_KEY, normalizeAdminToken } from '@/lib/admin-token';
+import {
+  ADMIN_TOKEN_STORAGE_KEY,
+  normalizeAdminToken,
+} from '@/lib/admin-token';
 
 type NavItem = {
   href: string;
@@ -74,38 +76,8 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
     getAdminTokenSnapshot,
     () => null,
   );
-  const [input, setInput] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isVerifying) return;
-
-    const normalizedToken = normalizeAdminToken(input);
-    if (!normalizedToken) {
-      setLoginError('Gebruik een geldig token.');
-      return;
-    }
-
-    setIsVerifying(true);
-    try {
-      const isValid = await verifyAdminToken(normalizedToken);
-      if (!isValid) {
-        setLoginError('Token ongeldig voor dit account.');
-        return;
-      }
-
-      localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, normalizedToken);
-      setInput('');
-      setLoginError(null);
-      dispatchTokenChanged();
-    } catch {
-      setLoginError('Kon token niet verifiëren. Probeer opnieuw.');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
 
   const handleLogout = () => {
     localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
@@ -168,36 +140,75 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
                 </p>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-5">
-                <div className="space-y-2">
-                  <label className="ml-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Secure Token
-                  </label>
-                  <input
-                    type="password"
-                    value={input}
-                    onChange={(e) => {
-                      setInput(e.target.value);
-                      if (loginError) setLoginError(null);
-                    }}
-                    placeholder="••••••••••••••"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-[#040026] focus:outline-none focus:ring-2 focus:ring-[#040026]/10"
-                    autoFocus
-                    disabled={isVerifying}
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={isVerifying}
-                  className="h-12 w-full rounded-xl bg-[#040026] text-sm font-bold tracking-wide text-white hover:opacity-90"
-                >
-                  {isVerifying ? 'Verifying...' : 'Sign In'}
-                </Button>
-                {loginError ? (
-                  <p className="text-xs font-bold text-red-500">{loginError}</p>
-                ) : null}
-              </form>
+              <div className="space-y-3">
+                {[
+                  {
+                    label: 'Klarifai',
+                    slug: 'klarifai',
+                    initials: 'KL',
+                    token: process.env.NEXT_PUBLIC_ADMIN_SECRET,
+                  },
+                  {
+                    label: "Atlantis (Europe's Gate)",
+                    slug: 'europes-gate',
+                    initials: 'AT',
+                    token: process.env.NEXT_PUBLIC_ATLANTIS_ADMIN_SECRET,
+                  },
+                ]
+                  .filter((a) => a.token)
+                  .map((account) => (
+                    <button
+                      key={account.slug}
+                      onClick={async () => {
+                        if (isVerifying || !account.token) return;
+                        setIsVerifying(true);
+                        try {
+                          const isValid = await verifyAdminToken(account.token);
+                          if (!isValid) {
+                            setLoginError(
+                              `Token ongeldig voor ${account.label}.`,
+                            );
+                            return;
+                          }
+                          localStorage.setItem(
+                            ADMIN_TOKEN_STORAGE_KEY,
+                            account.token,
+                          );
+                          setLoginError(null);
+                          dispatchTokenChanged();
+                        } catch {
+                          setLoginError(
+                            'Kon token niet verifiëren. Probeer opnieuw.',
+                          );
+                        } finally {
+                          setIsVerifying(false);
+                        }
+                      }}
+                      disabled={isVerifying}
+                      className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-all hover:border-[#040026]/30 hover:bg-white hover:shadow-md disabled:opacity-50"
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#040026] shadow-sm">
+                        <span className="text-xs font-black text-[#EBCB4B]">
+                          {account.initials}
+                        </span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-[#040026]">
+                          {account.label}
+                        </p>
+                        <p className="text-[10px] font-bold text-slate-400">
+                          {account.slug}
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold text-slate-300">
+                        →
+                      </span>
+                    </button>
+                  ))}
+              </div>
+              {loginError ? (
+                <p className="text-xs font-bold text-red-500">{loginError}</p>
+              ) : null}
             </div>
           </section>
         </div>

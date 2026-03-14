@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Users, Mail, Briefcase, Building2, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { PageLoader } from '@/components/ui/page-loader';
 
 const outreachColors: Record<string, string> = {
   NONE: 'bg-slate-100 text-slate-500',
@@ -61,22 +62,10 @@ export default function ContactsPage() {
 
       {/* Contact list */}
       {contacts.isLoading ? (
-        <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="glass-card p-8 animate-pulse rounded-[2.5rem]"
-            >
-              <div className="flex items-center gap-6">
-                <div className="w-14 h-14 rounded-2xl bg-slate-50" />
-                <div className="space-y-3 flex-1">
-                  <div className="h-4 bg-slate-50 rounded w-1/4" />
-                  <div className="h-3 bg-slate-50 rounded w-1/3" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <PageLoader
+          label="Loading contacts"
+          description="Pulling the latest contact list."
+        />
       ) : contacts.data?.contacts.length === 0 ? (
         <div className="glass-card p-20 text-center rounded-[2.5rem]">
           <Users className="w-16 h-16 text-slate-100 mx-auto mb-6" />

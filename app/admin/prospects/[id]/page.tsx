@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { PipelineChip } from '@/components/features/prospects/pipeline-chip';
 import { computePipelineStage } from '@/lib/pipeline-stage';
 import { EvidenceSection } from '@/components/features/prospects/evidence-section';
+import { PageLoader } from '@/components/ui/page-loader';
 import { SourceSetSection } from '@/components/features/prospects/source-set-section';
 import { AnalysisSection } from '@/components/features/prospects/analysis-section';
 import { OutreachPreviewSection } from '@/components/features/prospects/outreach-preview-section';
@@ -138,13 +139,10 @@ export default function ProspectDetail() {
 
   if (prospect.isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="h-8 bg-slate-200 rounded-2xl w-48 animate-pulse" />
-        <div className="glass-card p-8 rounded-[2.5rem] animate-pulse">
-          <div className="h-6 bg-slate-200 rounded-xl w-64 mb-4" />
-          <div className="h-4 bg-slate-200 rounded-xl w-full" />
-        </div>
-      </div>
+      <PageLoader
+        label="Loading company"
+        description="Preparing the company workspace."
+      />
     );
   }
 

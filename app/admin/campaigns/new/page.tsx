@@ -16,6 +16,7 @@ import {
   Shield,
   WandSparkles,
 } from 'lucide-react';
+import { PageLoader } from '@/components/ui/page-loader';
 
 type WizardStepId = 0 | 1 | 2 | 3;
 
@@ -236,7 +237,12 @@ const ATLANTIS_SPV_CAMPAIGN_PRESETS: Record<string, SpvCampaignPreset> = {
       'civil engineering',
       'utilities',
     ],
-    includeTerms: ['infrastructure', 'construction', 'engineering', 'utilities'],
+    includeTerms: [
+      'infrastructure',
+      'construction',
+      'engineering',
+      'utilities',
+    ],
   },
   energyco: {
     label: 'EnergyCo',
@@ -276,7 +282,13 @@ const ATLANTIS_SPV_CAMPAIGN_PRESETS: Record<string, SpvCampaignPreset> = {
     companySizeId: '51-100',
     personaId: 'commercial-lead',
     apolloIndustryKeywords: ['data infrastructure', 'software', 'cloud'],
-    includeTerms: ['data', 'cloud', 'software', 'saas', 'digital infrastructure'],
+    includeTerms: [
+      'data',
+      'cloud',
+      'software',
+      'saas',
+      'digital infrastructure',
+    ],
   },
   mobilityco: {
     label: 'MobilityCo',
@@ -414,8 +426,11 @@ type CampaignPresetCandidate = {
   nicheKey?: string | null;
 };
 
-function inferAtlantisSpvSlug(campaign: CampaignPresetCandidate): string | null {
-  const source = `${campaign.slug ?? ''} ${campaign.nicheKey ?? ''}`.toLowerCase();
+function inferAtlantisSpvSlug(
+  campaign: CampaignPresetCandidate,
+): string | null {
+  const source =
+    `${campaign.slug ?? ''} ${campaign.nicheKey ?? ''}`.toLowerCase();
   const keys = Object.keys(ATLANTIS_SPV_CAMPAIGN_PRESETS).sort(
     (a, b) => b.length - a.length,
   );
@@ -431,7 +446,8 @@ function getAtlantisCampaignPreset(campaign: CampaignPresetCandidate) {
   if (!spvSlug) return null;
   const normalized = spvSlug.replace(/-/g, '');
   const mapped = ATLANTIS_SPV_CAMPAIGN_PRESETS[normalized];
-  const countryToken = campaign.name?.split('|')?.[2]?.trim().toUpperCase() ?? '';
+  const countryToken =
+    campaign.name?.split('|')?.[2]?.trim().toUpperCase() ?? '';
   const countryFromName =
     countryToken in COUNTRY_CODE_TO_VALUE
       ? COUNTRY_CODE_TO_VALUE[
@@ -510,7 +526,10 @@ function filterCompaniesByPresetRelevance(
     return includeTerms.some((term) => haystack.includes(term));
   });
 
-  if (filtered.length >= 4 || filtered.length >= Math.ceil(companies.length * 0.4)) {
+  if (
+    filtered.length >= 4 ||
+    filtered.length >= Math.ceil(companies.length * 0.4)
+  ) {
     return { results: filtered, dropped: companies.length - filtered.length };
   }
 
@@ -524,7 +543,10 @@ function filterCompaniesByPresetRelevance(
     return !excludeTerms.some((term) => haystack.includes(term));
   });
 
-  return { results: excludeOnly, dropped: companies.length - excludeOnly.length };
+  return {
+    results: excludeOnly,
+    dropped: companies.length - excludeOnly.length,
+  };
 }
 
 export default function NewCampaignWizardPage() {
@@ -707,6 +729,7 @@ export default function NewCampaignWizardPage() {
     selectedPersona.label,
   ]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- one-time init from loaded campaign data */
   useEffect(() => {
     if (
       !isExistingCampaignMode ||
@@ -731,6 +754,7 @@ export default function NewCampaignWizardPage() {
 
     presetAppliedRef.current = true;
   }, [isExistingCampaignMode, existingCampaignQuery.data, atlantisPreset]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const visibleResults = useMemo(() => {
     const filtered = showOnlyPersonaMatches
@@ -882,6 +906,7 @@ export default function NewCampaignWizardPage() {
     }
   };
 
+  /* eslint-disable react-hooks/set-state-in-effect -- one-time auto-search trigger on campaign load */
   useEffect(() => {
     if (
       !isExistingCampaignMode ||
@@ -906,6 +931,7 @@ export default function NewCampaignWizardPage() {
     isSearching,
     handleSearch,
   ]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const toggleCompany = (domain: string, companyName: string) => {
     setSelectedDomains((current) => {
@@ -1000,9 +1026,10 @@ export default function NewCampaignWizardPage() {
 
   if (isExistingCampaignMode && existingCampaignQuery.isLoading) {
     return (
-      <div className="flex items-center justify-center py-20 text-slate-400">
-        <Loader2 className="w-6 h-6 animate-spin" />
-      </div>
+      <PageLoader
+        label="Loading campaign"
+        description="Opening the selected campaign."
+      />
     );
   }
 
@@ -1041,8 +1068,8 @@ export default function NewCampaignWizardPage() {
           </p>
           {isExistingCampaignMode && atlantisPreset && (
             <p className="text-xs font-bold text-slate-500 mt-1">
-              SPV preset geladen: {atlantisPreset.label} • {atlantisPreset.sector}{' '}
-              • {atlantisPreset.countryValue}
+              SPV preset geladen: {atlantisPreset.label} •{' '}
+              {atlantisPreset.sector} • {atlantisPreset.countryValue}
             </p>
           )}
         </div>

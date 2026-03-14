@@ -11,16 +11,15 @@ import {
   Loader2,
   Send,
   History,
-  ShieldCheck,
   MessageSquare,
   WandSparkles,
   Sparkles,
-  AlertTriangle,
   Phone,
   Linkedin,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { PageLoader } from '@/components/ui/page-loader';
 
 type View = 'queue' | 'replies' | 'sent';
 
@@ -262,24 +261,23 @@ function ReminderSection() {
 function DraftQueue() {
   const queue = api.outreach.getDecisionInbox.useQuery({ limit: 150 });
   const utils = api.useUtils();
-  const [overrideReasons, setOverrideReasons] = useState<
-    Record<string, string>
-  >({});
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const approve = (api.outreach.approveDraft as any).useMutation({
     onSuccess: () => {
       utils.outreach.getDecisionInbox.invalidate();
       utils.outreach.getHistory.invalidate();
+      utils.admin.getDashboardActions.invalidate();
     },
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const approveQuality = (api.research.approveQuality as any).useMutation();
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const reject = (api.outreach.rejectDraft as any).useMutation({
-    onSuccess: () => utils.outreach.getDecisionInbox.invalidate(),
+    onSuccess: () => {
+      utils.outreach.getDecisionInbox.invalidate();
+      utils.admin.getDashboardActions.invalidate();
+    },
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -287,282 +285,199 @@ function DraftQueue() {
     onSuccess: () => {
       utils.outreach.getDecisionInbox.invalidate();
       utils.outreach.getHistory.invalidate();
+      utils.admin.getDashboardActions.invalidate();
     },
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleApproveDraft = async (draft: any) => {
-    const unconfirmedPainTags: string[] = draft.unconfirmedPainTags ?? [];
-    const overrideReason = overrideReasons[draft.id] ?? '';
-    const needsApproveQuality =
-      unconfirmedPainTags.length > 0 && draft.qualityApproved !== true;
-
-    if (needsApproveQuality && draft.latestRunId) {
-      await approveQuality.mutateAsync({
-        runId: draft.latestRunId,
-        approved: true,
-        notes: overrideReason,
-      });
-    }
-    approve.mutate({ id: draft.id });
-  };
-
   if (queue.isLoading) {
     return (
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="glass-card p-6 animate-pulse">
-            <div className="h-5 bg-slate-200 rounded-xl w-64" />
-          </div>
-        ))}
-      </div>
+      <PageLoader
+        label="Loading outreach"
+        description="Collecting drafts and replies."
+      />
     );
   }
 
   const queueData = queue.data;
   if (!queueData) return null;
 
-  const hasManualReviewLeads = (queueData.manualReviewLeads?.length ?? 0) > 0;
-  if (!queueData.drafts?.length && !hasManualReviewLeads) {
+  if (!queueData.drafts?.length) {
     return (
       <div className="glass-card p-12 text-center">
         <Mail className="w-12 h-12 text-slate-300 mx-auto mb-4" />
         <p className="text-sm font-black text-[#040026] uppercase tracking-widest mb-2">
-          No drafts in queue
+          Inbox leeg
         </p>
-        <p className="admin-meta-text">
-          Generate emails from contact pages or process signals to create drafts
-        </p>
+        <p className="admin-meta-text">Geen concepten om te beoordelen.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="glass-card p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
-          <span>
-            Total drafts: <strong>{queueData.summary.total}</strong>
-          </span>
-          <span className="text-klarifai-emerald">
-            Low-risk: <strong>{queueData.summary.lowRisk}</strong>
-          </span>
-          <span className="text-klarifai-yellow-dark">
-            Needs review: <strong>{queueData.summary.needsReview}</strong>
-          </span>
-          <span className="text-red-600">
-            Blocked: <strong>{queueData.summary.blocked}</strong>
-          </span>
-          <span className="text-amber-700">
-            Manual lead review:{' '}
-            <strong>{queueData.summary.manualReviewLeads ?? 0}</strong>
-          </span>
-        </div>
+    <div className="space-y-3">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between px-2">
+        <span className="text-xs font-bold text-slate-400">
+          {queueData.summary.total} concept
+          {queueData.summary.total !== 1 ? 'en' : ''}
+        </span>
         <button
           onClick={() => bulkApprove.mutate({ limit: 25 })}
           disabled={bulkApprove.isPending || queueData.summary.lowRisk === 0}
-          className="ui-focus inline-flex items-center gap-2 px-4 py-2 btn-pill-yellow text-xs disabled:opacity-50"
+          className="ui-tap inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] border border-[#EBCB4B] hover:bg-[#D4B43B] transition-all disabled:opacity-50"
         >
           {bulkApprove.isPending ? (
-            <>
-              <Loader2 className="w-3 h-3 animate-spin" /> Sending...
-            </>
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
           ) : (
-            <>
-              <ShieldCheck className="w-3 h-3" /> Approve Low-Risk (25)
-            </>
+            <Send className="w-3.5 h-3.5" />
           )}
+          Verstuur alle ({queueData.summary.lowRisk})
         </button>
       </div>
 
       <ReminderSection />
 
-      {(queueData.manualReviewLeads?.length ?? 0) > 0 && (
-        <div className="glass-card p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <h3 className="text-sm font-black text-[#040026] tracking-tight">
-              Lead Data Review Queue
-            </h3>
-          </div>
-          <p className="text-xs text-slate-500">
-            Deze leads missen cruciale data (of e-mailkwaliteit) en moeten eerst
-            worden aangevuld.
-          </p>
-          <div className="space-y-2">
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {(queueData.manualReviewLeads as any[])
-              .slice(0, 8)
-              .map((lead: any) => (
-                <Link
-                  key={lead.id}
-                  href={`/admin/contacts/${lead.id}`}
-                  className="block rounded-xl border border-amber-100 bg-amber-50/40 px-4 py-3 hover:bg-amber-50/70 transition-all"
-                >
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-xs font-black text-[#040026]">
-                        {lead.firstName} {lead.lastName}{' '}
-                        <span className="admin-meta-text ml-1">
-                          ({lead.priorityTier}, score {lead.priorityScore})
-                        </span>
-                      </p>
-                      <p className="admin-meta-text-strong text-[11px]">
-                        {lead.prospect?.companyName ?? lead.prospect?.domain}
-                      </p>
-                    </div>
-                    <p className="admin-eyebrow text-amber-700">
-                      {(lead.manualReviewReasons?.[0] as string) ??
-                        'Missing data'}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-          </div>
-        </div>
-      )}
+      {/* Gmail-style inbox */}
+      <div className="glass-card rounded-2xl overflow-hidden divide-y divide-slate-100">
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {(queueData.drafts as any[]).map((draft: any) => {
+          const isExpanded = expandedId === draft.id;
+          const toName = [draft.contact.firstName, draft.contact.lastName]
+            .filter(Boolean)
+            .join(' ');
+          const toEmail =
+            draft.contact.primaryEmail ?? draft.contact.emails?.[0] ?? '';
+          const companyName =
+            draft.contact.prospect?.companyName ??
+            draft.contact.prospect?.domain ??
+            '';
+          const previewText =
+            draft.bodyText?.slice(0, 120)?.replace(/\n/g, ' ') ?? '';
 
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      {(queueData.drafts as any[]).map((draft: any) => {
-        const confirmedPainTags: string[] = draft.confirmedPainTags ?? [];
-        const unconfirmedPainTags: string[] = draft.unconfirmedPainTags ?? [];
-        const hasPainTags =
-          confirmedPainTags.length + unconfirmedPainTags.length > 0;
-        const needsOverrideReason =
-          unconfirmedPainTags.length > 0 && draft.qualityApproved !== true;
-        const overrideReason = overrideReasons[draft.id] ?? '';
-        const approveDisabled =
-          approve.isPending ||
-          approveQuality.isPending ||
-          draft.riskLevel === 'blocked' ||
-          (needsOverrideReason && overrideReason.trim().length < 12);
-
-        return (
-          <div key={draft.id} className="glass-card card-interactive p-8">
-            <div className="mb-4 flex items-center gap-3">
-              <span
+          return (
+            <div key={draft.id}>
+              {/* Inbox row — click to expand */}
+              <button
+                onClick={() => setExpandedId(isExpanded ? null : draft.id)}
                 className={cn(
-                  'admin-state-pill',
-                  draft.riskLevel === 'low'
-                    ? 'admin-state-success'
-                    : draft.riskLevel === 'blocked'
-                      ? 'admin-state-danger'
-                      : 'admin-state-warning',
+                  'w-full text-left px-6 py-4 flex items-center gap-4 hover:bg-slate-50/80 transition-colors',
+                  isExpanded && 'bg-slate-50/60',
                 )}
               >
-                Risk: {draft.riskLevel}
-              </span>
-              <span className="admin-state-pill admin-state-neutral">
-                {draft.priorityTier} • Score {draft.priorityScore}
-              </span>
-              <span className="admin-eyebrow text-slate-500">
-                {draft.riskReason}
-              </span>
-            </div>
-
-            {/* Pain tag chips */}
-            {hasPainTags && (
-              <div className="flex flex-wrap gap-1.5 mt-2 mb-4">
-                {confirmedPainTags.map((tag: string) => (
-                  <span
-                    key={tag}
-                    className="admin-state-pill admin-state-success"
-                  >
-                    <ShieldCheck className="w-3 h-3" />
-                    {tag}
-                  </span>
-                ))}
-                {unconfirmedPainTags.map((tag: string) => (
-                  <span
-                    key={tag}
-                    className="admin-state-pill admin-state-warning"
-                  >
-                    <AlertTriangle className="w-3 h-3" />
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Override reason textarea — shown when unconfirmed tags exist and not yet approved */}
-            {needsOverrideReason && (
-              <div className="mb-4">
-                <textarea
-                  className="input-minimal w-full mt-3 text-xs resize-none"
-                  placeholder="Reden voor doorgaan ondanks onbevestigde pijn..."
-                  rows={2}
-                  value={overrideReason}
-                  onChange={(e) =>
-                    setOverrideReasons((prev) => ({
-                      ...prev,
-                      [draft.id]: e.target.value,
-                    }))
-                  }
-                />
-                <span className="admin-meta-text">
-                  {overrideReason.length}/12 min
-                </span>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-              <div>
-                <div className="flex flex-wrap items-center gap-4 mb-2">
-                  <span className="admin-state-pill admin-state-neutral rounded-lg">
-                    {draft.type.replace(/_/g, ' ')}
-                  </span>
-                  <span className="admin-meta-text flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5" />
-                    {new Date(draft.createdAt).toLocaleString()}
-                  </span>
+                {/* Company logo */}
+                <div className="w-10 h-10 rounded-xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden shrink-0">
+                  {draft.contact.prospect?.logoUrl ? (
+                    <img
+                      src={draft.contact.prospect.logoUrl}
+                      alt=""
+                      className="w-5 h-5 object-contain"
+                    />
+                  ) : (
+                    <Building2 className="w-4 h-4 text-slate-200" />
+                  )}
                 </div>
-                <Link
-                  href={`/admin/contacts/${draft.contact.id}`}
-                  className="text-lg font-black text-[#040026] hover:text-[#007AFF] transition-all tracking-tight"
-                >
-                  {draft.contact.firstName} {draft.contact.lastName}
-                </Link>
-                {draft.contact.prospect && (
-                  <span className="admin-meta-text ml-3 inline-flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5" />
-                    {draft.contact.prospect.companyName ??
-                      draft.contact.prospect.domain}
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => handleApproveDraft(draft)}
-                  disabled={approveDisabled}
-                  className="ui-focus ui-tap flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#1E1E4A] transition-all disabled:opacity-50"
-                >
-                  <Check className="w-3.5 h-3.5" /> Approve & Send
-                </button>
-                <button
-                  onClick={() => reject.mutate({ id: draft.id })}
-                  disabled={reject.isPending}
-                  className="ui-focus ui-tap flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all disabled:opacity-50"
-                >
-                  <X className="w-3.5 h-3.5" /> Reject
-                </button>
-              </div>
-            </div>
 
-            {/* Email preview */}
-            <div className="bg-[#FCFCFD] rounded-2xl p-6 border border-slate-100">
-              <p className="text-sm font-black text-[#040026] mb-4 flex items-center gap-2">
-                <Mail className="w-4 h-4 text-slate-300" />
-                <span className="admin-eyebrow mr-2">Subject</span>
-                {draft.subject}
-              </p>
-              <div
-                className="text-sm text-slate-600 prose prose-sm max-w-none font-medium leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: draft.bodyHtml ?? '' }}
-              />
+                {/* From / Company */}
+                <div className="w-44 shrink-0 min-w-0">
+                  <p className="text-sm font-black text-[#040026] truncate tracking-tight">
+                    {companyName}
+                  </p>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    {toName}
+                  </p>
+                </div>
+
+                {/* Subject + preview */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-[#040026] truncate">
+                    {draft.subject}
+                  </p>
+                  <p className="text-sm text-slate-400 truncate">
+                    {previewText}
+                  </p>
+                </div>
+
+                {/* Timestamp */}
+                <span className="text-[11px] font-bold text-slate-400 tabular-nums shrink-0">
+                  {new Date(draft.createdAt).toLocaleDateString('nl-NL', {
+                    day: 'numeric',
+                    month: 'short',
+                  })}
+                </span>
+              </button>
+
+              {/* Expanded email view */}
+              {isExpanded && (
+                <div className="bg-white border-t border-slate-100 px-6 py-6">
+                  {/* Email header */}
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span className="font-bold text-slate-400">Van</span>
+                        <span className="font-semibold text-[#040026]">
+                          Romano Kanters &lt;info@klarifai.nl&gt;
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span className="font-bold text-slate-400">Aan</span>
+                        <span className="font-semibold text-[#040026]">
+                          {toName}
+                          {toEmail ? ` <${toEmail}>` : ''}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span className="font-bold text-slate-400">
+                          Onderwerp
+                        </span>
+                        <span className="font-semibold text-[#040026]">
+                          {draft.subject}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => approve.mutate({ id: draft.id })}
+                        disabled={approve.isPending}
+                        className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] border border-[#EBCB4B] hover:bg-[#D4B43B] transition-all disabled:opacity-50"
+                      >
+                        {approve.isPending ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Send className="w-3.5 h-3.5" />
+                        )}
+                        Verstuur
+                      </button>
+                      <button
+                        onClick={() => reject.mutate({ id: draft.id })}
+                        disabled={reject.isPending}
+                        className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white text-slate-500 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all disabled:opacity-50"
+                      >
+                        <X className="w-3.5 h-3.5" /> Verwijder
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Email body */}
+                  <div className="bg-[#FCFCFD] rounded-2xl p-6 border border-slate-100">
+                    {draft.bodyHtml ? (
+                      <div
+                        className="text-sm text-slate-700 prose prose-sm max-w-none font-medium leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: draft.bodyHtml }}
+                      />
+                    ) : (
+                      <pre className="text-sm text-slate-700 font-medium leading-relaxed whitespace-pre-wrap font-[inherit]">
+                        {draft.bodyText}
+                      </pre>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
