@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** v7.0 Atlantis Discover Pipeline Rebuild — Discover Page Redesign (Phase 51)
+**Current focus:** v7.0 Klarifai Narrative Pipeline (Phase 53)
 
 ## Current Position
 
-Phase: 51-discover-page-redesign
-Plan: 03 of 3 complete
-Status: Phase complete — all 3 plans done, phase 51 finished
-Last activity: 2026-03-13 — 51-03 (routing cleanup + metadata update) complete
+Phase: 53-klarifai-narrative-pipeline
+Plan: 01 of 2 complete
+Status: Plan 01 complete — types, prompt builder, and analyzer extension done
+Last activity: 2026-03-14 — 53-01 (Klarifai narrative types + prompt builder + analyzer) complete
 
-Progress: [█████████░░░░░░░░░░░░░░░░░░░░░░░] 34% (7 plans complete in v7.0, phase 52 next)
+Progress: [█████████░░░░░░░░░░░░░░░░░░░░░░░] 34% (8 plans complete in v7.0)
 
 ## Milestones Shipped
 
@@ -54,6 +54,11 @@ Recent decisions affecting v7.0:
 - [51-01]: AtlantisDiscoverClient exclusively renders NarrativeAnalysis (analysis-v2) — legacy parseMasterAnalysis removed; no-v2 prospects fall through to "analyse wordt voorbereid" waiting state
 - [51-02]: CTA ternary: canBookCall → Cal.com booking button; quoteRequested → geheimhouding confirmation; else → quote request button. Secondary contact channels (WhatsApp/phone/email) demoted to understated links below the NDA gateway card.
 - [51-03]: discoverDescription for ATLANTIS updated to "Strategische partnership analyse voor {companyName}" — matches boardroom document framing. Routing chain was already clean from Plan 01; no additional routing code changes needed.
+- [53-01]: KlarifaiNarrativeInput uses useCases (UseCaseInput[]) not passages as domain knowledge; isKlarifaiInput checked before isNarrativeInput in buildMasterPrompt dispatch; useCaseRecommendations allows 1-6 items
+
+### Roadmap Evolution
+
+- Phase 53 added: Klarifai Narrative Pipeline — analysis-v2 for Klarifai prospects using Use Cases as knowledge source
 
 ### Pending Todos
 
@@ -65,6 +70,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-13
-Stopped at: Completed 51-03-PLAN.md (routing cleanup + metadata update — Phase 51 complete)
-Resume command: `/gsd:execute-phase 52` (Phase 52: E2E Validation — next phase)
+Last session: 2026-03-14
+Stopped at: Completed 53-01-PLAN.md (Klarifai narrative types + prompt builder + analyzer extension)
+Resume command: `/gsd:execute-phase 53` (Phase 53 Plan 02: wire up Use Cases from DB into research executor)
