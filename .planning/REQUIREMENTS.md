@@ -72,11 +72,11 @@ Rebuild the pipeline from evidence to discover page. Evidence scrapers are good 
 
 ### Admin Dashboard (DASH) — Phase 54
 
-- [ ] **DASH-01**: Dashboard activity feed shows recent research completions, narrative analyses generated, discover page visits, and outreach sends — ordered chronologically, scoped to active project
-- [ ] **DASH-02**: Dashboard action block shows drafts to approve, replies to handle, and prospects ready for first outreach — structured for quick decision-making
-- [ ] **DASH-03**: Dashboard renders Action Block above Activity Feed — actions need attention first, feed is passive awareness
-- [ ] **DASH-04**: Draft items in action block have inline Send button with idempotency guard (same approve mutation)
-- [ ] **DASH-05**: Dashboard does NOT duplicate pipeline strip or prospect table (those live in Companies page)
+- [x] **DASH-01**: Dashboard activity feed shows recent research completions, narrative analyses generated, discover page visits, and outreach sends — ordered chronologically, scoped to active project
+- [x] **DASH-02**: Dashboard action block shows drafts to approve, replies to handle, and prospects ready for first outreach — structured for quick decision-making
+- [x] **DASH-03**: Dashboard renders Action Block above Activity Feed — actions need attention first, feed is passive awareness
+- [x] **DASH-04**: Draft items in action block have inline Send button with idempotency guard (same approve mutation)
+- [x] **DASH-05**: Dashboard does NOT duplicate pipeline strip or prospect table (those live in Companies page)
 
 ## Future Requirements (Deferred)
 
@@ -129,11 +129,11 @@ Rebuild the pipeline from evidence to discover page. Evidence scrapers are good 
 | KNAR-02     | 53    | Complete |
 | KNAR-03     | 53    | Complete |
 | KNAR-04     | 53    | Complete |
-| DASH-01     | 54    | Pending  |
-| DASH-02     | 54    | Pending  |
-| DASH-03     | 54    | Pending  |
-| DASH-04     | 54    | Pending  |
-| DASH-05     | 54    | Pending  |
+| DASH-01     | 54    | Complete |
+| DASH-02     | 54    | Complete |
+| DASH-03     | 54    | Complete |
+| DASH-04     | 54    | Complete |
+| DASH-05     | 54    | Complete |
 
 **Coverage:**
 
