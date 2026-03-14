@@ -37,8 +37,8 @@ function withComplianceFooter(
   bodyText: string,
   unsubscribeUrl: string,
 ): { bodyHtml: string; bodyText: string } {
-  const htmlFooter = `<p style="margin-top:24px;font-size:12px;color:#667085;">If you prefer no further outreach emails, you can <a href="${unsubscribeUrl}">unsubscribe instantly</a>.</p>`;
-  const textFooter = `\n\nIf you prefer no further outreach emails, unsubscribe instantly: ${unsubscribeUrl}`;
+  const htmlFooter = `<p style="margin-top:24px;font-size:12px;color:#667085;">Geen verdere emails ontvangen? <a href="${unsubscribeUrl}">Direct uitschrijven</a>.</p>`;
+  const textFooter = `\n\nGeen verdere emails ontvangen? Direct uitschrijven: ${unsubscribeUrl}`;
 
   return {
     bodyHtml: `${bodyHtml}${htmlFooter}`,

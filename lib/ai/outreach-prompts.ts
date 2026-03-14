@@ -1,3 +1,13 @@
+export interface OutreachSender {
+  fromName: string;
+  company: string;
+  language: 'nl' | 'en';
+  tone: string;
+  companyPitch: string;
+  signatureHtml: string;
+  signatureText: string;
+}
+
 export interface OutreachContext {
   contact: {
     firstName: string;
@@ -19,123 +29,213 @@ export interface OutreachContext {
     title: string;
     description: string | null;
   };
+  sender?: OutreachSender;
 }
+
+// ── Defaults (Klarifai) ──────────────────────────────────────────────
+
+const DEFAULT_SENDER: OutreachSender = {
+  fromName: 'Romano Kanters',
+  company: 'Klarifai',
+  language: 'nl',
+  tone: 'Zakelijk, strategisch, beheerst — geen smalltalk, geen uitroeptekens, feiten als wapen',
+  companyPitch:
+    'Klarifai helpt bedrijven met AI-gedreven oplossingen voor procesoptimalisatie en groei.',
+  signatureHtml: `<p style="margin-top:24px;">Met vriendelijke groet,</p>
+<p><strong>Romano Kanters</strong><br>Klarifai<br>
+<a href="https://klarifai.nl" style="color:#007AFF;text-decoration:none;">klarifai.nl</a></p>`,
+  signatureText: `\nMet vriendelijke groet,\n\nRomano Kanters\nKlarifai\nklarifai.nl`,
+};
+
+export function getSender(ctx: OutreachContext): OutreachSender {
+  return ctx.sender ?? DEFAULT_SENDER;
+}
+
+export function getSignatureHtml(ctx: OutreachContext): string {
+  return getSender(ctx).signatureHtml;
+}
+
+export function getSignatureText(ctx: OutreachContext): string {
+  return getSender(ctx).signatureText;
+}
+
+// ── Shared prompt blocks ─────────────────────────────────────────────
+
+function toneInstructions(s: OutreachSender): string {
+  const langLine =
+    s.language === 'nl' ? '- Schrijf in het NEDERLANDS' : '- Write in ENGLISH';
+  const signOffLine =
+    s.language === 'nl'
+      ? '- Onderteken NIET zelf — de handtekening wordt automatisch toegevoegd'
+      : '- Do NOT sign off — the signature is added automatically';
+  return `TONE & STYLE:
+${langLine}
+- ${s.tone}
+- ${s.language === 'nl' ? 'Elke zin heeft een doel. Als een zin geen informatie of waarde toevoegt, verwijder hem' : 'Every sentence must serve a purpose. Remove filler.'}
+- ${s.language === 'nl' ? 'Gebruik feiten als wapen: verwijs naar concrete data, projecten, cijfers' : 'Use facts as leverage: reference concrete data, projects, numbers'}
+- ${s.language === 'nl' ? 'GEEN opvulzinnen zoals "Ik hoop dat het goed met u gaat"' : 'NO filler phrases like "I hope this finds you well"'}
+${signOffLine}`;
+}
+
+const HTML_INSTRUCTIONS = `HTML FORMAT:
+- Use <p style="margin-bottom:12px;"> for every paragraph (NOT bare <p>)
+- Use <strong> for emphasis
+- Use <br> only within a paragraph
+- Do NOT include a signature in bodyHtml — it is appended automatically`;
+
+// ── Intro Email ──────────────────────────────────────────────────────
 
 export function buildIntroEmailPrompt(ctx: OutreachContext): string {
-  return `You are writing a personalized cold outreach email from Romano at Klarifai (a European AI consultancy) to a potential client.
+  const s = getSender(ctx);
+  const isNl = s.language === 'nl';
 
-RECIPIENT:
-- Name: ${ctx.contact.firstName} ${ctx.contact.lastName}
-- Title: ${ctx.contact.jobTitle ?? 'Unknown'}
-- Seniority: ${ctx.contact.seniority ?? 'Unknown'}
-- Department: ${ctx.contact.department ?? 'Unknown'}
+  return `${isNl ? `Je schrijft een gepersonaliseerde koude outreach email van ${s.fromName} bij ${s.company} naar een potentiële klant.` : `You are writing a personalized cold outreach email from ${s.fromName} at ${s.company} to a potential client.`}
 
-THEIR COMPANY:
-- Name: ${ctx.company.companyName}
-- Domain: ${ctx.company.domain}
-- Industry: ${ctx.company.industry ?? 'General'}
-- Size: ${ctx.company.employeeRange ?? 'Unknown'}
-- Technologies: ${ctx.company.technologies.length > 0 ? ctx.company.technologies.join(', ') : 'Unknown'}
-- Description: ${ctx.company.description ?? 'Not available'}
+${isNl ? 'OVER ONS' : 'ABOUT US'}:
+${s.companyPitch}
 
-${ctx.signal ? `TRIGGER SIGNAL:\n- Type: ${ctx.signal.signalType}\n- ${ctx.signal.title}\n- ${ctx.signal.description ?? ''}\n` : ''}
+${isNl ? 'ONTVANGER' : 'RECIPIENT'}:
+- ${isNl ? 'Naam' : 'Name'}: ${ctx.contact.firstName} ${ctx.contact.lastName}
+- ${isNl ? 'Functie' : 'Title'}: ${ctx.contact.jobTitle ?? (isNl ? 'Onbekend' : 'Unknown')}
+- ${isNl ? 'Senioriteit' : 'Seniority'}: ${ctx.contact.seniority ?? (isNl ? 'Onbekend' : 'Unknown')}
+- ${isNl ? 'Afdeling' : 'Department'}: ${ctx.contact.department ?? (isNl ? 'Onbekend' : 'Unknown')}
 
-RULES:
-- Keep it under 150 words
-- Open with something specific about their company or role — never generic
-- Reference how AI/data could help their specific industry or department
-- End with a clear, low-commitment CTA (e.g., "Would a 15-minute call make sense?")
-- Tone: Professional but warm, European sensibility, not salesy
-- Sign off as "Romano Kanters, Klarifai"
-- Do NOT use exclamation marks excessively
+${isNl ? 'HUN BEDRIJF' : 'THEIR COMPANY'}:
+- ${isNl ? 'Naam' : 'Name'}: ${ctx.company.companyName}
+- ${isNl ? 'Domein' : 'Domain'}: ${ctx.company.domain}
+- ${isNl ? 'Industrie' : 'Industry'}: ${ctx.company.industry ?? (isNl ? 'Algemeen' : 'General')}
+- ${isNl ? 'Omvang' : 'Size'}: ${ctx.company.employeeRange ?? (isNl ? 'Onbekend' : 'Unknown')}
+- ${isNl ? 'Technologieën' : 'Technologies'}: ${ctx.company.technologies.length > 0 ? ctx.company.technologies.join(', ') : isNl ? 'Onbekend' : 'Unknown'}
+- ${isNl ? 'Beschrijving' : 'Description'}: ${ctx.company.description ?? (isNl ? 'Niet beschikbaar' : 'Not available')}
 
-Respond with JSON:
+${ctx.signal ? `${isNl ? 'TRIGGER SIGNAAL' : 'TRIGGER SIGNAL'}:\n- Type: ${ctx.signal.signalType}\n- ${ctx.signal.title}\n- ${ctx.signal.description ?? ''}\n` : ''}
+
+${toneInstructions(s)}
+
+${isNl ? 'REGELS' : 'RULES'}:
+- ${isNl ? 'Maximaal 150 woorden' : 'Maximum 150 words'}
+- ${isNl ? 'Open met iets specifieks over hun bedrijf — nooit generiek' : 'Open with something specific about their company — never generic'}
+- ${isNl ? 'Eindig met een concrete, laagdrempelige CTA' : 'End with a clear, low-commitment CTA'}
+- ${isNl ? 'Gebruik u/uw (formeel)' : 'Use formal tone'}
+
+${HTML_INSTRUCTIONS}
+
+${isNl ? 'Antwoord' : 'Respond'} with JSON:
 {
-  "subject": "Short, compelling subject line (no emojis)",
-  "bodyHtml": "Full email in HTML (use <p> tags, <br> for line breaks, <strong> for emphasis)",
-  "bodyText": "Plain text version of the same email",
-  "personalizedOpener": "The opening line that hooks them",
-  "callToAction": "The specific CTA used"
+  "subject": "${isNl ? "Kort, pakkend onderwerp (geen emoji's)" : 'Short, compelling subject (no emojis)'}",
+  "bodyHtml": "${isNl ? 'Volledige email in HTML met paragraph spacing' : 'Full email in HTML with paragraph spacing'}",
+  "bodyText": "${isNl ? 'Platte tekst versie' : 'Plain text version'}",
+  "personalizedOpener": "${isNl ? 'De openingszin' : 'The opening line'}",
+  "callToAction": "${isNl ? 'De gebruikte CTA' : 'The CTA used'}"
 }`;
 }
+
+// ── Follow-Up ────────────────────────────────────────────────────────
 
 export function buildFollowUpPrompt(
   ctx: OutreachContext,
   previousSubject: string,
 ): string {
-  return `You are writing a follow-up email from Romano at Klarifai. The recipient hasn't replied to the first email.
+  const s = getSender(ctx);
+  const isNl = s.language === 'nl';
 
-RECIPIENT:
-- Name: ${ctx.contact.firstName} ${ctx.contact.lastName}
-- Title: ${ctx.contact.jobTitle ?? 'Unknown'}
+  return `${isNl ? `Je schrijft een follow-up email van ${s.fromName} bij ${s.company}. De ontvanger heeft niet gereageerd.` : `You are writing a follow-up email from ${s.fromName} at ${s.company}. The recipient hasn't replied.`}
 
-THEIR COMPANY:
-- Name: ${ctx.company.companyName}
-- Industry: ${ctx.company.industry ?? 'General'}
+${isNl ? 'OVER ONS' : 'ABOUT US'}:
+${s.companyPitch}
 
-PREVIOUS EMAIL SUBJECT: "${previousSubject}"
+${isNl ? 'ONTVANGER' : 'RECIPIENT'}:
+- ${isNl ? 'Naam' : 'Name'}: ${ctx.contact.firstName} ${ctx.contact.lastName}
+- ${isNl ? 'Functie' : 'Title'}: ${ctx.contact.jobTitle ?? (isNl ? 'Onbekend' : 'Unknown')}
 
-RULES:
-- Under 100 words
-- Reference the previous email briefly
-- Add ONE new value angle (case study result, industry insight, or relevant data point)
-- Different CTA than the original (e.g., share a resource, quick audit, etc.)
-- Don't be apologetic or pushy
-- Sign off as "Romano, Klarifai"
+${isNl ? 'HUN BEDRIJF' : 'THEIR COMPANY'}:
+- ${isNl ? 'Naam' : 'Name'}: ${ctx.company.companyName}
+- ${isNl ? 'Industrie' : 'Industry'}: ${ctx.company.industry ?? (isNl ? 'Algemeen' : 'General')}
+- ${isNl ? 'Beschrijving' : 'Description'}: ${ctx.company.description ?? (isNl ? 'Niet beschikbaar' : 'Not available')}
 
-Respond with JSON:
+${isNl ? 'VORIG ONDERWERP' : 'PREVIOUS SUBJECT'}: "${previousSubject}"
+
+${toneInstructions(s)}
+
+${isNl ? 'REGELS' : 'RULES'}:
+- ${isNl ? 'Maximaal 100 woorden' : 'Maximum 100 words'}
+- ${isNl ? 'Verwijs kort naar de vorige email' : 'Briefly reference the previous email'}
+- ${isNl ? 'Voeg ÉÉN nieuwe invalshoek toe' : 'Add ONE new value angle'}
+- ${isNl ? 'Andere CTA dan de originele' : 'Different CTA than the original'}
+
+${HTML_INSTRUCTIONS}
+
+${isNl ? 'Antwoord' : 'Respond'} with JSON:
 {
   "subject": "Re: ${previousSubject}",
-  "bodyHtml": "Full email in HTML",
-  "bodyText": "Plain text version",
-  "personalizedOpener": "Opening line",
-  "callToAction": "The CTA"
+  "bodyHtml": "${isNl ? 'Volledige email in HTML' : 'Full email in HTML'}",
+  "bodyText": "${isNl ? 'Platte tekst versie' : 'Plain text version'}",
+  "personalizedOpener": "${isNl ? 'Openingszin' : 'Opening line'}",
+  "callToAction": "${isNl ? 'De CTA' : 'The CTA'}"
 }`;
 }
 
+// ── Signal-Triggered ─────────────────────────────────────────────────
+
 export function buildSignalTriggeredPrompt(ctx: OutreachContext): string {
   if (!ctx.signal) throw new Error('Signal context required');
+  const s = getSender(ctx);
+  const isNl = s.language === 'nl';
 
-  const signalMessages: Record<string, string> = {
-    JOB_CHANGE: `${ctx.contact.firstName} recently changed roles. Congratulate them and introduce Klarifai as a resource for their new position.`,
-    PROMOTION: `${ctx.contact.firstName} was promoted. Congratulate them and suggest how AI could help in their expanded role.`,
-    FUNDING_EVENT: `${ctx.company.companyName} received funding. Suggest how AI/data solutions could help them scale with their new resources.`,
-    HEADCOUNT_GROWTH: `${ctx.company.companyName} is growing their team. Suggest how AI automation could help them scale efficiently.`,
-    TECHNOLOGY_ADOPTION: `${ctx.company.companyName} adopted new technology. Connect this to AI/data opportunities.`,
+  const signalMessagesNl: Record<string, string> = {
+    JOB_CHANGE: `${ctx.contact.firstName} is recent van functie gewisseld. Feliciteer en introduceer ${s.company}.`,
+    PROMOTION: `${ctx.contact.firstName} is gepromoveerd. Feliciteer en suggereer hoe ${s.company} kan helpen.`,
+    FUNDING_EVENT: `${ctx.company.companyName} heeft funding ontvangen. Suggereer hoe ${s.company} kan helpen bij opschaling.`,
+    HEADCOUNT_GROWTH: `${ctx.company.companyName} groeit in personeel. Suggereer hoe ${s.company} kan helpen.`,
+    TECHNOLOGY_ADOPTION: `${ctx.company.companyName} heeft nieuwe technologie geadopteerd. Verbind aan ${s.company}.`,
   };
 
-  const context =
-    signalMessages[ctx.signal.signalType] ??
-    `A relevant buying signal was detected. Use it to personalize the outreach.`;
+  const signalMessagesEn: Record<string, string> = {
+    JOB_CHANGE: `${ctx.contact.firstName} recently changed roles. Congratulate and introduce ${s.company}.`,
+    PROMOTION: `${ctx.contact.firstName} was promoted. Congratulate and suggest how ${s.company} can help.`,
+    FUNDING_EVENT: `${ctx.company.companyName} received funding. Suggest how ${s.company} can help them scale.`,
+    HEADCOUNT_GROWTH: `${ctx.company.companyName} is growing. Suggest how ${s.company} can help scale efficiently.`,
+    TECHNOLOGY_ADOPTION: `${ctx.company.companyName} adopted new technology. Connect to ${s.company}.`,
+  };
 
-  return `You are writing a signal-triggered outreach email from Romano at Klarifai.
+  const messages = isNl ? signalMessagesNl : signalMessagesEn;
+  const context =
+    messages[ctx.signal.signalType] ??
+    (isNl
+      ? `Er is een relevant koopsignaal gedetecteerd. Personaliseer de outreach.`
+      : `A relevant buying signal was detected. Personalize the outreach.`);
+
+  return `${isNl ? `Je schrijft een signaal-getriggerde outreach email van ${s.fromName} bij ${s.company}.` : `You are writing a signal-triggered outreach email from ${s.fromName} at ${s.company}.`}
 
 ${context}
 
-SIGNAL: ${ctx.signal.title}
+${isNl ? 'SIGNAAL' : 'SIGNAL'}: ${ctx.signal.title}
 ${ctx.signal.description ? `Details: ${ctx.signal.description}` : ''}
 
-RECIPIENT:
-- Name: ${ctx.contact.firstName} ${ctx.contact.lastName}
-- Title: ${ctx.contact.jobTitle ?? 'Unknown'}
+${isNl ? 'ONTVANGER' : 'RECIPIENT'}:
+- ${isNl ? 'Naam' : 'Name'}: ${ctx.contact.firstName} ${ctx.contact.lastName}
+- ${isNl ? 'Functie' : 'Title'}: ${ctx.contact.jobTitle ?? (isNl ? 'Onbekend' : 'Unknown')}
 
-THEIR COMPANY:
-- Name: ${ctx.company.companyName}
-- Industry: ${ctx.company.industry ?? 'General'}
+${isNl ? 'HUN BEDRIJF' : 'THEIR COMPANY'}:
+- ${isNl ? 'Naam' : 'Name'}: ${ctx.company.companyName}
+- ${isNl ? 'Industrie' : 'Industry'}: ${ctx.company.industry ?? (isNl ? 'Algemeen' : 'General')}
 
-RULES:
-- Under 120 words
-- Lead with the signal (congratulations, observation, etc.)
-- Naturally transition to how Klarifai could help
-- Low-pressure CTA
-- Sign off as "Romano, Klarifai"
+${toneInstructions(s)}
 
-Respond with JSON:
+${isNl ? 'REGELS' : 'RULES'}:
+- ${isNl ? 'Maximaal 120 woorden' : 'Maximum 120 words'}
+- ${isNl ? 'Open met het signaal' : 'Lead with the signal'}
+- ${isNl ? 'Natuurlijke overgang naar hoe ' + s.company + ' kan helpen' : 'Natural transition to how ' + s.company + ' can help'}
+- ${isNl ? 'Laagdrempelige CTA' : 'Low-pressure CTA'}
+
+${HTML_INSTRUCTIONS}
+
+${isNl ? 'Antwoord' : 'Respond'} with JSON:
 {
-  "subject": "Compelling subject referencing the signal (no emojis)",
-  "bodyHtml": "Full email in HTML",
-  "bodyText": "Plain text version",
-  "personalizedOpener": "Opening line referencing the signal",
-  "callToAction": "The CTA"
+  "subject": "${isNl ? 'Pakkend onderwerp' : 'Compelling subject'} (${isNl ? "geen emoji's" : 'no emojis'})",
+  "bodyHtml": "${isNl ? 'Volledige email in HTML' : 'Full email in HTML'}",
+  "bodyText": "${isNl ? 'Platte tekst versie' : 'Plain text version'}",
+  "personalizedOpener": "${isNl ? 'Openingszin' : 'Opening line'}",
+  "callToAction": "${isNl ? 'De CTA' : 'The CTA'}"
 }`;
 }

@@ -1427,4 +1427,58 @@ export const adminRouter = router({
       recentSessions,
     };
   }),
+
+  // ── Outreach Settings ──────────────────────────────────────────────
+
+  getOutreachSettings: projectAdminProcedure.query(async ({ ctx }) => {
+    const project = await ctx.db.project.findUniqueOrThrow({
+      where: { slug: ctx.allowedProjectSlug },
+      select: { metadata: true, brandName: true },
+    });
+    const meta = (project.metadata ?? {}) as Record<string, unknown>;
+    const outreach = (meta.outreach ?? {}) as Record<string, string>;
+    return {
+      fromName: outreach.fromName ?? '',
+      fromEmail: outreach.fromEmail ?? '',
+      replyTo: outreach.replyTo ?? '',
+      language: outreach.language ?? 'nl',
+      tone: outreach.tone ?? '',
+      companyPitch: outreach.companyPitch ?? '',
+      signatureHtml: outreach.signatureHtml ?? '',
+      signatureText: outreach.signatureText ?? '',
+    };
+  }),
+
+  updateOutreachSettings: projectAdminProcedure
+    .input(
+      z.object({
+        fromName: z.string().min(1).max(100).optional(),
+        fromEmail: z.string().email().optional(),
+        replyTo: z.string().email().optional(),
+        language: z.enum(['nl', 'en']).optional(),
+        tone: z.string().max(500).optional(),
+        companyPitch: z.string().max(1000).optional(),
+        signatureHtml: z.string().max(5000).optional(),
+        signatureText: z.string().max(2000).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const project = await ctx.db.project.findUniqueOrThrow({
+        where: { slug: ctx.allowedProjectSlug },
+        select: { metadata: true },
+      });
+      const meta = (project.metadata ?? {}) as Record<string, unknown>;
+      const current = (meta.outreach ?? {}) as Record<string, string>;
+      const updated = { ...current };
+      for (const [key, value] of Object.entries(input)) {
+        if (value !== undefined) updated[key] = value;
+      }
+      await ctx.db.project.update({
+        where: { slug: ctx.allowedProjectSlug },
+        data: {
+          metadata: toJson({ ...meta, outreach: updated }),
+        },
+      });
+      return updated;
+    }),
 });
