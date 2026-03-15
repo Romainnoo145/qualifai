@@ -156,7 +156,7 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 1. loadProjectSender is called from one shared module — no duplicated implementations across files
 2. generateIntroEmail and generateFollowUp accept optional evidence and hypothesis data without breaking existing callers
 3. When evidence is provided, the AI-generated email references specific prospect pain points (not generic copy)
-   **Plans**: TBD
+   **Plans**: 1 plan
 
 Plans:
 
