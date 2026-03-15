@@ -206,26 +206,78 @@
 
 ---
 
-## v4.0 — Atlantis Partnership Outreach (In Progress)
+## v4.0 — Atlantis Partnership Outreach (Completed)
 
 **Started:** 2026-03-05
-**Phase range:** 36–41
+**Shipped:** 2026-03-07
+**Phases:** 36–39 (40-41 deferred)
 
-### Progress so far:
+### What shipped:
 
-- Phase 36 shipped: multi-project schema/seed foundations with Atlantis project + 8 SPVs
-- Auth scope moved server-side by login token (no client project selector)
-- Atlantis-specific discover branching + Atlantis use-case import path integrated
-- Phase 37-01 shipped: markdown chunker with tests and table-preserving behavior
-- Phase 37-02 completed: live embedding ingestion validated (35 docs, 2326 chunks) and idempotent rerun confirmed (35 skipped)
-- Phase 38 completed: Atlantis-only RAG retrieval with project/SPV scope filters, similarity thresholding, `RAG_DOCUMENT` persistence, and dual-evidence opportunity generation (2-4 cards)
-- Phase 39 completed: Atlantis discover partnership narrative shipped (readiness score, top triggers, why-now bullets, evidence attribution, CTA profile routing)
-- Phase 40-01 implemented and rolled back the same day: SPV assignment/filtering created UI clutter for current Atlantis workflow
+- Multi-project schema/seed foundations with Atlantis project + 8 SPVs (Phase 36)
+- RAG ingestion pipeline: markdown chunker, embeddings, 35 docs / 2326 chunks (Phase 37)
+- Atlantis-only RAG retrieval with SPV scope filters, dual-evidence cards (Phase 38)
+- Partnership discover narrative: readiness score, triggers, CTA routing (Phase 39)
 
-### Current blocker:
+### Key learnings:
 
-- Scope discipline: avoid adding new admin controls before discover quality/validation proves need
+- SPV assignment UI (Phase 40) created clutter — rolled back same day, deferred
+- Scope discipline: don't add admin controls before discover quality proves need
 
-### Next checkpoint:
+---
 
-- Continue discover quality improvements + Atlantis validation (Phase 41 track)
+## v5.0 — Atlantis Intelligence (Completed)
+
+**Started:** 2026-03-07
+**Shipped:** 2026-03-08
+**Phases:** 42–45
+
+### What shipped:
+
+- Extraction matrix: intent variable types, extraction module, RAG query builder (Phase 42)
+- AI master analysis: prompt builder, AI generation, pipeline integration (Phase 43)
+- Discover rendering: server-side routing, AtlantisDiscoverClient sections (Phase 44)
+- End-to-end validation: real prospect flow verified (Phase 45)
+
+---
+
+## v6.0 — Outreach Simplification (Completed)
+
+**Started:** 2026-03-08
+**Shipped:** 2026-03-08
+**Phases:** 46–47 (Phase 48 deferred)
+
+### What shipped:
+
+- Automated cadence + backend cleanup: AI follow-up drafts, reminder auto-creation (Phase 46)
+- Outreach UI simplification: multi-touch tasks tab killed, inline reminders (Phase 47)
+
+### Key learnings:
+
+- Phase 48 (SERP API Replacement) deferred — current SerpAPI usage sufficient
+
+---
+
+## v7.0 — Atlantis Discover Pipeline Rebuild (Completed)
+
+**Started:** 2026-03-08
+**Shipped:** 2026-03-15
+**Phases:** 49–54 (Phase 52 skipped — validation done implicitly)
+
+### What shipped:
+
+- RAG query rebuild: AI-driven query generation from evidence context, evidence-aware passage ranking (Phase 49)
+- Master prompt rebuild: raw evidence + RAG directly to Gemini 2.5 Pro, flowing narrative output (Phase 50)
+- Discover page redesign: boardroom document, NDA-driven CTA, prospect-specific hooks (Phase 51)
+- Klarifai narrative pipeline: analysis-v2 for non-Atlantis prospects using Use Cases (Phase 53)
+- Admin dashboard redesign: activity feed + action block replacing hypothesis queue (Phase 54)
+- Research refresh cron: automated 14-day re-runs via crontab (infrastructure)
+- Nedri full pipeline re-run: 90 evidence items, analysis-v2 confirmed
+
+### Key learnings:
+
+- analysis-v1 (generateMasterAnalysis) has zero callers — safe to remove
+- Two disconnected email systems discovered: template-based (WorkflowLossMap) vs AI-driven (generateIntroEmail) — needs unification
+- Signal table never populated despite schema + processor existing — research refresh creates opportunity for signal detection
+- Evidence scrapers remain strong (90 items for Nedri) — post-evidence pipeline is where quality lives
+- Gemini 2.5 Pro free tier sufficient for boardroom Dutch narrative quality
