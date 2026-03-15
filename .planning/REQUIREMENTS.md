@@ -1,146 +1,96 @@
-# Requirements: Qualifai v7.0 Atlantis Discover Pipeline Rebuild
+# Requirements: Qualifai v8.0 Unified Outreach Pipeline
 
-**Defined:** 2026-03-13
+**Defined:** 2026-03-16
 **Core Value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
 
-## v7.0 Requirements
+## v8.0 Requirements
 
-Rebuild the pipeline from evidence to discover page. Evidence scrapers are good — everything after (intent extraction, RAG retrieval, master prompt, discover rendering) needs rebuilding to produce boardroom-quality narrative output.
+### Unified Email Pipeline
 
-### Pipeline (PIPE) — Evidence → Master Prompt
+- [ ] **PIPE-01**: Prospect detail "Generate Email" uses AI engine (generateIntroEmail) instead of template-based WorkflowLossMap
+- [ ] **PIPE-02**: All drafts (intro, follow-up, signal-triggered) appear in one unified draft queue on outreach page
+- [ ] **PIPE-03**: Draft queue groups drafts by scheduled send date with date section headers ("Vandaag", "Morgen", "Woensdag 18 mrt")
+- [ ] **PIPE-04**: Prospect detail shows outreach status and links to related drafts in the queue
+- [ ] **PIPE-05**: OutreachLog gains prospectId denormalization for direct prospect-to-draft queries
 
-- [x] **PIPE-01**: Master prompt receives raw evidence items directly (not lossy intent variable summaries) — all 83+ evidence items for a prospect are available to the LLM
-- [x] **PIPE-02**: Master prompt receives relevant RAG passages with source attribution — passages are selected by semantic relevance, not keyword-stuffed queries
-- [x] **PIPE-03**: Master prompt generates flowing narrative content in boardroom Dutch — prospect-specific hooks, real numbers from evidence, natural citations ("U publiceerde uw EPD in oktober 2024")
-- [x] **PIPE-04**: Generated narrative persists to DB as structured sections renderable without further AI calls
-- [x] **PIPE-05**: Cross-prospect connections are surfaced when available (e.g., "Nedri werkt samen met Heijmans" when both are prospects)
+### Signal Detection
 
-### RAG Retrieval (RAG) — Query Quality
+- [ ] **SGNL-01**: After each research run, evidence items are compared with the previous run to detect changes (new job listings, headcount growth, funding events, technology changes)
+- [ ] **SGNL-02**: Detected changes create Signal records with appropriate SignalType and link to prospect/contact
+- [ ] **SGNL-03**: Signal detection includes lookback dedup — same unchanged conditions don't re-trigger signals every 14 days
+- [ ] **SGNL-04**: Signal detection is wired into research refresh cron (runs automatically after each refresh)
+- [ ] **SGNL-05**: Existing automation rules (AUTOMATION_RULES) trigger AI-generated drafts from detected signals
+- [ ] **SGNL-06**: processSignal uses atomic claim (updateMany status guard) to prevent duplicate drafts from concurrent runs
 
-- [x] **RAG-01**: RAG queries are constructed from prospect evidence context (industry, pains, signals) — not from keyword-stuffed profile fragments
-- [x] **RAG-02**: Retrieved passages include source document attribution (which Atlantis volume, which SPV context)
-- [x] **RAG-03**: Passage ranking prioritizes prospect-relevance over generic similarity — steel manufacturer gets groenstaal passages, not generic waterstof
+### AI Cadence Follow-ups
 
-### Discover Rendering (DISC) — Page Design
+- [ ] **CDNC-01**: Cadence follow-ups are generated via AI with actual email body text (not empty placeholders)
+- [ ] **CDNC-02**: Follow-ups use evidence from ProspectAnalysis narrative and recent signals for evidence-enriched content
+- [ ] **CDNC-03**: Follow-ups appear in the unified draft queue for review before sending
+- [ ] **CDNC-04**: Cadence automatically pauses when prospect replies (existing behavior preserved)
 
-- [x] **DISC-01**: Discover page renders as a flowing boardroom document — not a rigid 3-section wizard with cards
-- [x] **DISC-02**: Opening section has a prospect-specific hook that demonstrates understanding of their business ("Uw grootste kostenpost wordt uw grootste concurrentievoordeel")
-- [x] **DISC-03**: Body content weaves evidence naturally — specific numbers, dates, project names from both scraper evidence and RAG docs
-- [x] **DISC-04**: CTA drives NDA signing (not generic "intake gesprek") — positioned as gateway to confidential dossier
-- [x] **DISC-05**: Visual design matches boardroom tone — clean, confident, data-rich, no template feel
+### Code Consolidation
 
-### Validation (VALD)
+- [ ] **CNSL-01**: loadProjectSender consolidated into single shared module (currently duplicated in 3 files)
+- [ ] **CNSL-02**: OutreachContext extended with optional evidence fields (non-breaking, enriches all email generation)
+- [ ] **CNSL-03**: WorkflowLossMap template engine removed (createWorkflowLossMapDraft, assets.generate, assets.queueOutreachDraft)
+- [ ] **CNSL-04**: generateMasterAnalysis v1 function removed from master-analyzer.ts
+- [ ] **CNSL-05**: classifyDraftRisk updated to work with AI-generated drafts (not require workflowLossMapId)
 
-- [ ] **VALD-01**: Nedri Spanstaal discover page quality matches or exceeds the hand-written gold standard example
-- [ ] **VALD-02**: Pipeline produces comparable quality for other prospects with sufficient evidence
-- [ ] **VALD-03**: Existing Klarifai (non-Atlantis) prospects remain unaffected
+## v8.1 Requirements (Deferred)
 
-## Previous Milestone Requirements
+### Advanced Signal Detection
 
-<details>
-<summary>v6.0 Outreach Simplification (Complete)</summary>
+- **SGNL-07**: TECHNOLOGY_ADOPTION signal detection from website tech stack changes
+- **SGNL-08**: Signal detection also runs on manually-triggered research runs (not just cron)
+- **SGNL-09**: Signal-triggered drafts show distinct visual indicator in queue vs manual intro drafts
 
-- [x] CADNC-01: Cadence engine auto-generates personalized follow-up email drafts
-- [x] CADNC-02: Non-email follow-ups auto-created as lightweight reminders
-- [x] CADNC-03: Cron sweep promotes due cadence steps directly to draft/reminder state
-- [x] UICL-01: Multi-touch Tasks tab removed (4 → 3 tabs)
-- [x] UICL-02: Manual touch task creation form removed
-- [x] UICL-03: Non-email reminders displayed inline in Drafts Queue
-- [x] BKCL-01: queueTouchTask endpoint removed
-- [x] BKCL-02: touch_open/touch_done/touch_skipped status values removed
-- [x] BKCL-03: completeTouchTask/skipTouchTask refactored for reminders
-- SERP-01 through SERP-04: Deferred
+### Outreach Analytics
 
-</details>
-
-<details>
-<summary>v5.0 Atlantis Intelligence (Complete)</summary>
-
-- [x] EXTR-01 through EXTR-03: Intent extraction pipeline
-- [x] ANLS-01 through ANLS-06: AI master analysis generation
-- [x] DISC-01 through DISC-05: Discover rendering
-- [x] VALD-01, VALD-02: E2E validation
-
-</details>
-
-### Klarifai Narrative (KNAR) — Phase 53
-
-- [x] **KNAR-01**: Klarifai narrative prompt uses Use Cases (title, summary, category, outcomes) as domain knowledge source instead of RAG passages — prompt framed for workflow automation, not partnership
-- [x] **KNAR-02**: Research executor generates analysis-v2 narrative for Klarifai (non-ATLANTIS) prospects during research run — same generateNarrativeAnalysis call, different input shape
-- [x] **KNAR-03**: Discover page renders narrative analysis for Klarifai prospects — opening hook, executive summary, sections, use case recommendations visible on /discover/[slug]
-- [x] **KNAR-04**: Use Case recommendations replace SPV recommendations in Klarifai narrative output — matched by evidence relevance, rendered with category and outcomes
-
-### Admin Dashboard (DASH) — Phase 54
-
-- [x] **DASH-01**: Dashboard activity feed shows recent research completions, narrative analyses generated, discover page visits, and outreach sends — ordered chronologically, scoped to active project
-- [x] **DASH-02**: Dashboard action block shows drafts to approve, replies to handle, and prospects ready for first outreach — structured for quick decision-making
-- [x] **DASH-03**: Dashboard renders Action Block above Activity Feed — actions need attention first, feed is passive awareness
-- [x] **DASH-04**: Draft items in action block have inline Send button with idempotency guard (same approve mutation)
-- [x] **DASH-05**: Dashboard does NOT duplicate pipeline strip or prospect table (those live in Companies page)
-
-## Future Requirements (Deferred)
-
-### NDA Pipeline
-
-- **NDA-01**: Digital NDA e-sign flow built into discover dashboard
-- **NDA-02**: Signed NDA stored in DB with timestamp and prospect linkage
-- **NDA-03**: Post-NDA content unlock — additional dossier sections visible after signing
-- **NDA-04**: Admin notification on NDA signing with prospect details
-
-### SERP API Replacement (Carried from v6.0)
-
-- **SERP-01**: Google News via free RSS feed
-- **SERP-02**: Google Reviews via Scrapling/Places API
-- **SERP-03**: Deep URL discovery via Scrapling Google search
-- **SERP-04**: Isolate LinkedIn Jobs as only SERP dependency
+- **ANLYT-01**: Open/click/reply rates per prospect visible in admin
+- **ANLYT-02**: Conversion funnel per campaign
 
 ## Out of Scope
 
-| Feature                    | Reason                                                  |
-| -------------------------- | ------------------------------------------------------- |
-| Evidence scraper changes   | Scrapers work well (83 items for Nedri) — don't touch   |
-| NDA e-sign flow            | Deferred — pipeline quality is the priority             |
-| Admin SPV assignment UI    | Deferred from v4.0 — no operational need proven         |
-| Auto-send without approval | Trust not calibrated, GDPR risk                         |
-| LinkedIn API automation    | ToS risk                                                |
-| SERP API replacement       | Deferred from v6.0 — not blocking pipeline quality work |
+| Feature                        | Reason                                                             |
+| ------------------------------ | ------------------------------------------------------------------ |
+| JOB_CHANGE / PROMOTION signals | Requires periodic LinkedIn profile monitoring — rate limiting risk |
+| INTENT_TOPIC signals           | Requires paid intent data providers (Bombora/G2) — no free source  |
+| Auto-send without review       | Trust not yet calibrated at 100+ scale, GDPR risk                  |
+| Real-time signal detection     | Overkill — 14-day batch is sufficient for B2B sales cycles         |
+| External signal providers      | No cost budget — all detection from existing evidence data         |
 
 ## Traceability
 
-| Requirement | Phase | Status   |
-| ----------- | ----- | -------- |
-| PIPE-01     | 50    | Complete |
-| PIPE-02     | 50    | Complete |
-| PIPE-03     | 50    | Complete |
-| PIPE-04     | 50    | Complete |
-| PIPE-05     | 50    | Complete |
-| RAG-01      | 49    | Complete |
-| RAG-02      | 49    | Complete |
-| RAG-03      | 49    | Complete |
-| DISC-01     | 51    | Complete |
-| DISC-02     | 51    | Complete |
-| DISC-03     | 51    | Complete |
-| DISC-04     | 51    | Complete |
-| DISC-05     | 51    | Complete |
-| VALD-01     | 52    | Pending  |
-| VALD-02     | 52    | Pending  |
-| VALD-03     | 52    | Pending  |
-| KNAR-01     | 53    | Complete |
-| KNAR-02     | 53    | Complete |
-| KNAR-03     | 53    | Complete |
-| KNAR-04     | 53    | Complete |
-| DASH-01     | 54    | Complete |
-| DASH-02     | 54    | Complete |
-| DASH-03     | 54    | Complete |
-| DASH-04     | 54    | Complete |
-| DASH-05     | 54    | Complete |
+| Requirement | Phase | Status  |
+| ----------- | ----- | ------- |
+| PIPE-01     | TBD   | Pending |
+| PIPE-02     | TBD   | Pending |
+| PIPE-03     | TBD   | Pending |
+| PIPE-04     | TBD   | Pending |
+| PIPE-05     | TBD   | Pending |
+| SGNL-01     | TBD   | Pending |
+| SGNL-02     | TBD   | Pending |
+| SGNL-03     | TBD   | Pending |
+| SGNL-04     | TBD   | Pending |
+| SGNL-05     | TBD   | Pending |
+| SGNL-06     | TBD   | Pending |
+| CDNC-01     | TBD   | Pending |
+| CDNC-02     | TBD   | Pending |
+| CDNC-03     | TBD   | Pending |
+| CDNC-04     | TBD   | Pending |
+| CNSL-01     | TBD   | Pending |
+| CNSL-02     | TBD   | Pending |
+| CNSL-03     | TBD   | Pending |
+| CNSL-04     | TBD   | Pending |
+| CNSL-05     | TBD   | Pending |
 
 **Coverage:**
 
-- v7.0 requirements: 25 total
-- Mapped to phases: 25
-- Unmapped: 0
+- v8.0 requirements: 20 total
+- Mapped to phases: 0 (pending roadmap creation)
+- Unmapped: 20
 
 ---
 
-_Requirements defined: 2026-03-13_
+_Requirements defined: 2026-03-16_
