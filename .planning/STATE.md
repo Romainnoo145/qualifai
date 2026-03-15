@@ -2,17 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-15)
+See: .planning/PROJECT.md (updated 2026-03-16)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** v8.0 Unified Outreach Pipeline
+**Current focus:** Phase 55 — Evidence-Enriched AI Context
 
 ## Current Position
 
-Phase: Not started (requirements defined, roadmap pending)
-Plan: —
-Status: Requirements committed, roadmap creation next
-Last activity: 2026-03-16 — v8.0 requirements defined (20 reqs across 4 categories)
+Phase: 55 (1 of 5 in v8.0) — Evidence-Enriched AI Context
+Plan: 0 of 1 in current phase
+Status: Ready to plan
+Last activity: 2026-03-16 — Roadmap created for v8.0 (5 phases, 20 requirements)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Milestones Shipped
 
@@ -35,19 +37,11 @@ Last activity: 2026-03-16 — v8.0 requirements defined (20 reqs across 4 catego
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting v8.0:
 
-- Two email systems exist: template-based (WorkflowLossMap via assets.generate) and AI-driven (generateIntroEmail via outreach page). Must be unified.
-- Signal table exists but was never populated — now has data source via 14-day research refresh cron
-- Signal detection = diff-detection on evidence between research runs (free, no external APIs)
-- WorkflowLossMap template engine is dead code — replace with AI pipeline
-- generateMasterAnalysis (v1) has no callers — safe to remove
-- OutreachSequence + OutreachStep cadence infra stays — multi-step follow-ups needed at 100+ prospects
-- Research refresh cron active: 1st + 15th of month, script at scripts/cron-research-refresh.ts
-- Nedri pipeline re-run 2026-03-15: 90 evidence items, analysis-v2 confirmed
-
-### Roadmap Evolution
-
-- v7.0 closed with Phase 52 (E2E Validation) skipped — validation done implicitly via Nedri/Heijmans reruns
-- Phase 53 (Klarifai Narrative) and Phase 54 (Admin Dashboard Redesign) completed in v7.0
+- Two email systems (template + AI) must be unified into one AI pipeline
+- Signal table empty — research refresh cron provides data source for diff detection
+- Signal detection = evidence diff between research runs (no external APIs)
+- WorkflowLossMap template engine + generateMasterAnalysis v1 = dead code to remove
+- OutreachLog needs prospectId denormalization for direct prospect-to-draft queries
 
 ### Pending Todos
 
@@ -60,5 +54,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-16
-Stopped at: Requirements committed (20 reqs, 4 categories). Research complete (STACK/FEATURES/ARCHITECTURE/PITFALLS/SUMMARY). Roadmap creation is next step.
-Resume command: `/gsd:new-milestone` then spawn roadmapper — requirements and research are done, skip to Step 10 (Create Roadmap). Last phase was 54, so v8.0 starts at phase 55. Suggested 5 phases from research: (1) Context consolidation + OutreachContext extension, (2) Unified AI draft creator + prospect detail rewrite, (3) Signal diff detector, (4) Research refresh hook + automation wiring, (5) Unified draft queue UI + bidirectional linking + dead code cleanup.
+Stopped at: Roadmap created for v8.0 Unified Outreach Pipeline. 5 phases (55-59), 20 requirements mapped.
+Resume command: `/gsd:plan-phase 55`

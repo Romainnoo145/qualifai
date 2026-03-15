@@ -64,33 +64,34 @@
 
 | Requirement | Phase | Status  |
 | ----------- | ----- | ------- |
-| PIPE-01     | TBD   | Pending |
-| PIPE-02     | TBD   | Pending |
-| PIPE-03     | TBD   | Pending |
-| PIPE-04     | TBD   | Pending |
-| PIPE-05     | TBD   | Pending |
-| SGNL-01     | TBD   | Pending |
-| SGNL-02     | TBD   | Pending |
-| SGNL-03     | TBD   | Pending |
-| SGNL-04     | TBD   | Pending |
-| SGNL-05     | TBD   | Pending |
-| SGNL-06     | TBD   | Pending |
-| CDNC-01     | TBD   | Pending |
-| CDNC-02     | TBD   | Pending |
-| CDNC-03     | TBD   | Pending |
-| CDNC-04     | TBD   | Pending |
-| CNSL-01     | TBD   | Pending |
-| CNSL-02     | TBD   | Pending |
-| CNSL-03     | TBD   | Pending |
-| CNSL-04     | TBD   | Pending |
-| CNSL-05     | TBD   | Pending |
+| CNSL-01     | 55    | Pending |
+| CNSL-02     | 55    | Pending |
+| PIPE-01     | 56    | Pending |
+| PIPE-05     | 56    | Pending |
+| CNSL-03     | 56    | Pending |
+| CNSL-04     | 56    | Pending |
+| CNSL-05     | 56    | Pending |
+| SGNL-01     | 57    | Pending |
+| SGNL-02     | 57    | Pending |
+| SGNL-03     | 57    | Pending |
+| SGNL-06     | 57    | Pending |
+| SGNL-04     | 58    | Pending |
+| SGNL-05     | 58    | Pending |
+| PIPE-02     | 59    | Pending |
+| PIPE-03     | 59    | Pending |
+| PIPE-04     | 59    | Pending |
+| CDNC-01     | 59    | Pending |
+| CDNC-02     | 59    | Pending |
+| CDNC-03     | 59    | Pending |
+| CDNC-04     | 59    | Pending |
 
 **Coverage:**
 
 - v8.0 requirements: 20 total
-- Mapped to phases: 0 (pending roadmap creation)
-- Unmapped: 20
+- Mapped to phases: 20/20
+- Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-03-16_
+_Traceability updated: 2026-03-16_

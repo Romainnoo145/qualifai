@@ -12,7 +12,8 @@
 - ✅ **v4.0 Atlantis Partnership Outreach** — Phases 36-39 (shipped 2026-03-07)
 - ✅ **v5.0 Atlantis Intelligence** — Phases 42-45 (shipped 2026-03-08)
 - ✅ **v6.0 Outreach Simplification** — Phases 46-47 (shipped 2026-03-08)
-- 🚧 **v7.0 Atlantis Discover Pipeline Rebuild** — Phases TBD (in progress)
+- ✅ **v7.0 Atlantis Discover Pipeline Rebuild** — Phases 49-54 (shipped 2026-03-15)
+- 🚧 **v8.0 Unified Outreach Pipeline** — Phases 55-59 (in progress)
 
 ## Phases
 
@@ -121,91 +122,122 @@ Phases 1-5 delivered the foundational sales engine: Apollo enrichment + contact 
 
 </details>
 
-### v7.0 Atlantis Discover Pipeline Rebuild (In Progress)
+<details>
+<summary>✅ v7.0 Atlantis Discover Pipeline Rebuild (Phases 49-54) — SHIPPED 2026-03-15</summary>
 
-**Milestone Goal:** Rebuild the entire pipeline from evidence collection to discover page rendering. The evidence scrapers are good (83 items for Nedri), but everything after — intent extraction, RAG retrieval, master prompt, and discover UI — produces low-quality output. Eliminate the lossy intent extraction middle-layer, feed evidence + RAG directly to a master prompt that generates flowing narrative content, and redesign the discover page as a boardroom-ready document with NDA-driven CTA.
+- Phase 49: RAG Query Rebuild (2/2 plans) — AI-driven query generation, evidence-aware passage ranking
+- Phase 50: Master Prompt Rebuild (2/2 plans) — Raw evidence + RAG to master prompt, narrative output
+- Phase 51: Discover Page Redesign (3/3 plans) — Boardroom document, NDA-driven CTA, prospect hooks
+- Phase 52: E2E Validation — Skipped (validated implicitly via Nedri/Heijmans reruns)
+- Phase 53: Klarifai Narrative Pipeline (2/2 plans) — analysis-v2 for non-Atlantis using Use Cases
+- Phase 54: Admin Dashboard Redesign (2/2 plans) — Activity feed + action block
 
-- [x] **Phase 49: RAG Query Rebuild** — Better query construction from evidence context, passage ranking by prospect-relevance, source attribution (completed 2026-03-13)
-- [x] **Phase 50: Master Prompt Rebuild** — Raw evidence + RAG passages directly to master prompt, flowing narrative generation, cross-prospect connections (completed 2026-03-13)
-- [x] **Phase 51: Discover Page Redesign** — Flowing boardroom document, NDA-driven CTA, prospect-specific hooks (completed 2026-03-13)
-- [ ] **Phase 52: E2E Validation** — Nedri gold standard comparison, multi-prospect quality check, regression
-- [x] **Phase 53: Klarifai Narrative Pipeline** — analysis-v2 for Klarifai prospects using Use Cases as knowledge source (completed 2026-03-14)
+</details>
+
+### v8.0 Unified Outreach Pipeline (In Progress)
+
+**Milestone Goal:** Merge two disconnected email generation systems into one AI-driven pipeline. All outreach (intro, follow-up, signal-triggered) flows through one AI engine, one draft queue, and links back to prospect detail. Research refresh cycle feeds signal detection for automated follow-up triggers.
+
+- [ ] **Phase 55: Evidence-Enriched AI Context** — Consolidate shared modules and extend OutreachContext with evidence data
+- [ ] **Phase 56: Unified AI Intro Draft Creator** — Replace template-based email path with single AI pipeline, clean up dead code
+- [ ] **Phase 57: Signal Diff Detector** — Detect changes between research runs and create Signal records with dedup
+- [ ] **Phase 58: Signal-to-Draft Pipeline** — Wire signal detection into research refresh cron with automation rules
+- [ ] **Phase 59: Unified Draft Queue + Cadence** — Single queue UI for all draft types, bidirectional prospect linking, AI cadence follow-ups
 
 ## Phase Details
 
-### Phase 49: RAG Query Rebuild
+### Phase 55: Evidence-Enriched AI Context
 
-**Goal**: RAG queries are constructed from prospect evidence context (industry, pains, signals) and return relevant, attributed passages — not keyword-stuffed queries returning generic results
-**Depends on**: None (first phase)
-**Requirements**: RAG-01, RAG-02, RAG-03
+**Goal**: All AI email generation can access prospect evidence and hypotheses through a shared context layer — non-breaking foundation that enriches every downstream consumer
+**Depends on**: Nothing (first phase)
+**Requirements**: CNSL-01, CNSL-02
 **Success Criteria** (what must be TRUE):
 
-1. RAG queries are built from analyzed prospect evidence (sector, pain signals, ESG indicators) rather than raw keyword fragments
-2. Retrieved passages include source document name and SPV context
-3. Steel manufacturer prospects get groenstaal/spoor passages, not generic hydrogen/wind results
+1. loadProjectSender is called from one shared module — no duplicated implementations across files
+2. generateIntroEmail and generateFollowUp accept optional evidence and hypothesis data without breaking existing callers
+3. When evidence is provided, the AI-generated email references specific prospect pain points (not generic copy)
+   **Plans**: TBD
 
-**Plans:** 2/2 plans complete
 Plans:
 
-- [ ] 49-01-PLAN.md — AI-driven query generation from prospect evidence (Gemini Flash)
-- [ ] 49-02-PLAN.md — Evidence-aware passage ranking + source attribution
+- [ ] 55-01: Consolidate loadProjectSender + extend OutreachContext interface
 
-### Phase 50: Master Prompt Rebuild
+### Phase 56: Unified AI Intro Draft Creator
 
-**Goal**: Master prompt receives ALL raw evidence items + relevant RAG passages and generates flowing boardroom narrative — no lossy intent extraction middle-layer
-**Depends on**: Phase 49 (needs good RAG passages)
-**Requirements**: PIPE-01, PIPE-02, PIPE-03, PIPE-04, PIPE-05
+**Goal**: Prospect detail uses the same AI engine as the outreach page — one path to generate intro emails, one path to create drafts, template engine removed
+**Depends on**: Phase 55
+**Requirements**: PIPE-01, PIPE-05, CNSL-03, CNSL-04, CNSL-05
 **Success Criteria** (what must be TRUE):
 
-1. Master prompt input includes all prospect evidence items (not compressed intent summaries)
-2. Master prompt input includes RAG passages with source attribution
-3. Output is flowing narrative in boardroom Dutch with natural evidence citations
-4. Cross-prospect connections are surfaced when both companies are in the system
-5. Output persists to DB as structured sections renderable without further AI calls
+1. "Generate Email" on prospect detail creates an AI-generated intro draft (not a WorkflowLossMap template)
+2. OutreachLog records link directly to their prospect via prospectId
+3. classifyDraftRisk works for AI-generated drafts without requiring a workflowLossMapId
+4. WorkflowLossMap template creation code (createWorkflowLossMapDraft, assets.generate template path) is deleted
+5. generateMasterAnalysis v1 function is deleted from master-analyzer.ts
+   **Plans**: TBD
 
-**Plans:** 2/2 plans complete
 Plans:
 
-- [ ] 50-01-PLAN.md — Rebuild types + master prompt for narrative output with raw evidence input
-- [ ] 50-02-PLAN.md — Wire narrative analysis into research executor with cross-prospect detection
+- [ ] 56-01: Rewire assets.generate to AI pipeline + add OutreachLog.prospectId
+- [ ] 56-02: Rewrite outreach-preview-section.tsx + delete template engine + v1 dead code
 
-### Phase 51: Discover Page Redesign
+### Phase 57: Signal Diff Detector
 
-**Goal**: Discover page renders as a flowing boardroom document with prospect-specific hooks, natural evidence weaving, and NDA-driven CTA — not a rigid wizard template
-**Depends on**: Phase 50 (needs new narrative output format)
-**Requirements**: DISC-01, DISC-02, DISC-03, DISC-04, DISC-05
+**Goal**: Research runs produce Signal records by detecting meaningful changes in evidence data — the missing upstream that unblocks all automation
+**Depends on**: Phase 55
+**Requirements**: SGNL-01, SGNL-02, SGNL-03, SGNL-06
 **Success Criteria** (what must be TRUE):
 
-1. Page reads as a flowing document, not a card-based wizard
-2. Opening hook demonstrates understanding of the prospect's specific business
-3. Evidence (dates, numbers, project names) woven naturally into narrative
-4. CTA positioned as NDA gateway to confidential dossier
-5. Visual design is clean, confident, boardroom-appropriate
+1. After a research run completes, new job listings and headcount changes that were not in the previous run create Signal records
+2. Each Signal has the correct SignalType and links to the prospect
+3. Re-running research on unchanged data does not create duplicate signals (lookback dedup)
+4. Concurrent signal processing cannot create duplicate drafts (atomic claim guard)
+   **Plans**: TBD
 
-**Plans:** 3/3 plans complete
 Plans:
 
-- [ ] 51-01-PLAN.md — Rewrite AtlantisDiscoverClient as flowing boardroom document
-- [ ] 51-02-PLAN.md — NDA-driven CTA section
-- [ ] 51-03-PLAN.md — Clean up routing and remove dead code
+- [ ] 57-01: lib/signals/detect.ts — diff algorithm + aggregation guard + dedup lookback
+- [ ] 57-02: Signal creation integration + atomic processSignal guard
 
-### Phase 52: E2E Validation
+### Phase 58: Signal-to-Draft Pipeline
 
-**Goal**: Verify rebuilt pipeline produces gold-standard quality across multiple prospects and doesn't break existing Klarifai flows
-**Depends on**: Phase 51 (needs all pipeline changes in place)
-**Requirements**: VALD-01, VALD-02, VALD-03
+**Goal**: Research refresh cron automatically detects signals and triggers AI-generated drafts — the full automation loop is closed
+**Depends on**: Phase 57
+**Requirements**: SGNL-04, SGNL-05
 **Success Criteria** (what must be TRUE):
 
-1. Nedri discover page quality matches or exceeds the hand-written gold standard
-2. At least one other Atlantis prospect produces comparable quality
-3. Klarifai (non-Atlantis) prospects remain unaffected
+1. After a scheduled research refresh completes, signal detection runs automatically (no manual trigger needed)
+2. A NEW_JOB_LISTING signal for a prospect with an active outreach sequence triggers an AI-generated follow-up draft in the queue
+   **Plans**: TBD
 
-**Plans**: TBD
+Plans:
+
+- [ ] 58-01: Wire detectSignals into research-refresh.ts + add automation rule for NEW_JOB_LISTING
+
+### Phase 59: Unified Draft Queue + Cadence
+
+**Goal**: Admin reviews all outreach from one queue — intros, follow-ups, and signal-triggered drafts — with prospect links and AI-generated cadence content
+**Depends on**: Phase 56, Phase 58
+**Requirements**: PIPE-02, PIPE-03, PIPE-04, CDNC-01, CDNC-02, CDNC-03, CDNC-04
+**Success Criteria** (what must be TRUE):
+
+1. All draft types (intro, cadence follow-up, signal-triggered) appear in one unified queue on the outreach page
+2. Draft queue groups drafts by scheduled send date with Dutch date headers (Vandaag, Morgen, Woensdag 18 mrt)
+3. Each draft card links to its prospect detail; prospect detail shows current outreach status with link to related drafts
+4. Cadence follow-ups have AI-generated email body text using evidence from ProspectAnalysis narrative and recent signals
+5. Cadence automatically pauses when prospect replies (existing behavior preserved)
+   **Plans**: TBD
+
+Plans:
+
+- [ ] 59-01: AI cadence follow-up generation with evidence context
+- [ ] 59-02: Unified queue UI with date grouping + bidirectional prospect linking
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 49 → 50 → 51 → 52
+Phases execute in numeric order: 55 → 56 → 57 → 58 → 59
+Note: Phase 57 depends on Phase 55 (not 56), so 56 and 57 could theoretically run in parallel but are sequenced for simplicity.
 
 | Phase                                   | Milestone | Plans Complete | Status      | Completed  |
 | --------------------------------------- | --------- | -------------- | ----------- | ---------- |
@@ -254,40 +286,14 @@ Phases execute in numeric order: 49 → 50 → 51 → 52
 | 46. Automated Cadence + Backend Cleanup | v6.0      | 2/2            | Complete    | 2026-03-08 |
 | 47. Outreach UI Simplification          | v6.0      | 2/2            | Complete    | 2026-03-08 |
 | 48. SERP API Replacement                | v6.0      | 0/?            | Deferred    | -          |
-| 49. RAG Query Rebuild                   | 2/2       | Complete       | 2026-03-13  | -          |
-| 50. Master Prompt Rebuild               | 2/2       | Complete       | 2026-03-13  | -          |
-| 51. Discover Page Redesign              | 3/3       | Complete       | 2026-03-13  | -          |
-| 52. E2E Validation                      | v7.0      | 0/?            | Not started | -          |
-| 53. Klarifai Narrative Pipeline         | 2/2       | Complete       | 2026-03-14  | -          |
-| 54. Admin Dashboard Redesign            | 2/2       | Complete       | 2026-03-14  | -          |
-
-### Phase 53: Klarifai Narrative Pipeline
-
-**Goal:** Bring the analysis-v2 narrative engine to Klarifai (non-ATLANTIS) prospects. Same pattern as Atlantis — evidence + domain knowledge → flowing narrative — but using Use Cases (title, summary, category, outcomes) as knowledge source instead of RAG documents. Klarifai prospects get the same quality narrative output on the discover page.
-**Depends on:** Phase 52
-**Requirements:** KNAR-01, KNAR-02, KNAR-03, KNAR-04
-**Plans:** 2/2 plans complete
-
-Plans:
-
-- [ ] 53-01-PLAN.md — Klarifai narrative types, prompt builder, and analyzer
-- [ ] 53-02-PLAN.md — Research executor wiring and discover page rendering
-
-### Phase 54: Admin Dashboard Redesign
-
-**Goal:** Replace the outdated hypothesis-queue dashboard with a useful overview. Two sections: (1) Activity feed — recent research completions, narrative analyses generated, discover page visits, outreach activity. (2) Action block — drafts to approve, replies to handle, prospects ready for outreach. No duplication of pipeline strip or prospect table (already in Companies page).
-**Depends on:** Phase 53
-**Requirements:** DASH-01, DASH-02, DASH-03, DASH-04, DASH-05
-**Success Criteria** (what must be TRUE):
-
-1. Activity feed shows 4 event types (research completions, analyses, discover visits, outreach sends) in chronological order
-2. Action block shows 3 actionable categories (drafts, replies, ready prospects) with direct action affordances
-3. Dashboard does NOT duplicate pipeline strip or prospect table from Companies page
-4. Draft Send button works with existing approveDraft mutation and idempotency guard
-
-**Plans:** 2/2 plans complete
-
-Plans:
-
-- [x] 54-01-PLAN.md — Backend endpoints (getDashboardFeed + getDashboardActions)
-- [x] 54-02-PLAN.md — Frontend dashboard rewrite (Activity Feed + Action Block)
+| 49. RAG Query Rebuild                   | v7.0      | 2/2            | Complete    | 2026-03-13 |
+| 50. Master Prompt Rebuild               | v7.0      | 2/2            | Complete    | 2026-03-13 |
+| 51. Discover Page Redesign              | v7.0      | 3/3            | Complete    | 2026-03-13 |
+| 52. E2E Validation                      | v7.0      | —              | Skipped     | -          |
+| 53. Klarifai Narrative Pipeline         | v7.0      | 2/2            | Complete    | 2026-03-14 |
+| 54. Admin Dashboard Redesign            | v7.0      | 2/2            | Complete    | 2026-03-14 |
+| 55. Evidence-Enriched AI Context        | v8.0      | 0/1            | Not started | -          |
+| 56. Unified AI Intro Draft Creator      | v8.0      | 0/2            | Not started | -          |
+| 57. Signal Diff Detector                | v8.0      | 0/2            | Not started | -          |
+| 58. Signal-to-Draft Pipeline            | v8.0      | 0/1            | Not started | -          |
+| 59. Unified Draft Queue + Cadence       | v8.0      | 0/2            | Not started | -          |
