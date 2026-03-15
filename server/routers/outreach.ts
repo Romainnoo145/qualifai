@@ -6,7 +6,10 @@ import {
   generateFollowUp,
   generateSignalEmail,
 } from '@/lib/ai/generate-outreach';
-import type { OutreachContext } from '@/lib/ai/outreach-prompts';
+import type {
+  OutreachContext,
+  OutreachSender,
+} from '@/lib/ai/outreach-prompts';
 import { sendOutreachEmail } from '@/lib/outreach/send-email';
 import { processUnprocessedSignals } from '@/lib/automation/processor';
 import {
@@ -182,6 +185,28 @@ async function markSequenceStepAfterSend(
   evaluateCadence(db, sequenceId, DEFAULT_CADENCE_CONFIG).catch(console.error);
 }
 
+async function loadProjectSender(
+  db: PrismaClient,
+  projectId: string,
+  languageOverride?: 'nl' | 'en',
+): Promise<OutreachSender> {
+  const project = await db.project.findFirst({
+    where: { id: projectId },
+    select: { metadata: true, brandName: true },
+  });
+  const meta = (project?.metadata ?? {}) as Record<string, unknown>;
+  const o = (meta.outreach ?? {}) as Record<string, string>;
+  return {
+    fromName: o.fromName || 'Romano Kanters',
+    company: (project?.brandName as string) || 'Klarifai',
+    language: languageOverride ?? (o.language as 'nl' | 'en') ?? 'nl',
+    tone: o.tone || '',
+    companyPitch: o.companyPitch || '',
+    signatureHtml: o.signatureHtml || '',
+    signatureText: o.signatureText || '',
+  };
+}
+
 function buildOutreachContext(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   contact: any,
@@ -189,6 +214,7 @@ function buildOutreachContext(
   prospect: any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   signal?: any,
+  discoverUrl?: string,
 ): OutreachContext {
   return {
     contact: {
@@ -213,6 +239,7 @@ function buildOutreachContext(
           description: signal.description,
         }
       : undefined,
+    discoverUrl,
   };
 }
 
@@ -239,11 +266,20 @@ export const outreachRouter = router({
         });
       }
 
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
+      const discoverUrl = buildDiscoverUrl(appUrl, contact.prospect);
+      const sender = await loadProjectSender(
+        ctx.db,
+        contact.prospect.projectId,
+      );
       const outreachCtx = buildOutreachContext(
         contact,
         contact.prospect,
         signal,
+        discoverUrl,
       );
+      outreachCtx.sender = sender;
 
       let email;
       if (input.type === 'followup' && input.previousSubject) {
@@ -253,6 +289,57 @@ export const outreachRouter = router({
       } else {
         email = await generateIntroEmail(outreachCtx);
       }
+
+      return email;
+    }),
+
+  regenerateDraft: adminProcedure
+    .input(
+      z.object({
+        draftId: z.string(),
+        language: z.enum(['nl', 'en']).default('nl'),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const draft = await ctx.db.outreachLog.findUniqueOrThrow({
+        where: { id: input.draftId },
+        include: {
+          contact: { include: { prospect: true } },
+        },
+      });
+
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
+      const discoverUrl = buildDiscoverUrl(appUrl, draft.contact.prospect);
+      const sender = await loadProjectSender(
+        ctx.db,
+        draft.contact.prospect.projectId,
+        input.language,
+      );
+
+      const outreachCtx = buildOutreachContext(
+        draft.contact,
+        draft.contact.prospect,
+        undefined,
+        discoverUrl,
+      );
+      outreachCtx.sender = sender;
+
+      const email = await generateIntroEmail(outreachCtx);
+
+      await ctx.db.outreachLog.update({
+        where: { id: input.draftId },
+        data: {
+          subject: email.subject,
+          bodyHtml: email.bodyHtml,
+          bodyText: email.bodyText,
+          metadata: {
+            ...(draft.metadata as Record<string, unknown> | null),
+            language: input.language,
+            regeneratedAt: new Date().toISOString(),
+          },
+        },
+      });
 
       return email;
     }),

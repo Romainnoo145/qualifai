@@ -30,6 +30,8 @@ export interface OutreachContext {
     description: string | null;
   };
   sender?: OutreachSender;
+  /** Full URL to the prospect's discover page, appended as CTA button */
+  discoverUrl?: string;
 }
 
 // ── Defaults (Klarifai) ──────────────────────────────────────────────
@@ -57,6 +59,28 @@ export function getSignatureHtml(ctx: OutreachContext): string {
 
 export function getSignatureText(ctx: OutreachContext): string {
   return getSender(ctx).signatureText;
+}
+
+// ── Discover CTA block ──────────────────────────────────────────────
+
+export function getDiscoverCtaHtml(ctx: OutreachContext): string {
+  if (!ctx.discoverUrl) return '';
+  const s = getSender(ctx);
+  const label =
+    s.language === 'nl'
+      ? 'Bekijk uw persoonlijke analyse'
+      : 'View your personalized analysis';
+  return `<p style="margin-top:20px;margin-bottom:12px;"><a href="${ctx.discoverUrl}" style="display:inline-block;padding:10px 22px;background:#0A0A23;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">${label}</a></p>`;
+}
+
+export function getDiscoverCtaText(ctx: OutreachContext): string {
+  if (!ctx.discoverUrl) return '';
+  const s = getSender(ctx);
+  const label =
+    s.language === 'nl'
+      ? 'Bekijk uw persoonlijke analyse'
+      : 'View your personalized analysis';
+  return `\n\n${label}: ${ctx.discoverUrl}`;
 }
 
 // ── Shared prompt blocks ─────────────────────────────────────────────
@@ -114,8 +138,9 @@ ${toneInstructions(s)}
 
 ${isNl ? 'REGELS' : 'RULES'}:
 - ${isNl ? 'Maximaal 150 woorden' : 'Maximum 150 words'}
+- ${isNl ? 'Begin met een aanhef: "Geachte heer/mevrouw [Achternaam],"' : 'Start with a salutation: "Dear Mr./Ms. [LastName],"'}
 - ${isNl ? 'Open met iets specifieks over hun bedrijf — nooit generiek' : 'Open with something specific about their company — never generic'}
-- ${isNl ? 'Eindig met een concrete, laagdrempelige CTA' : 'End with a clear, low-commitment CTA'}
+- ${isNl ? 'Eindig met een concrete, laagdrempelige CTA' : 'End with a clear, low-commitment CTA'}${ctx.discoverUrl ? `\n- ${isNl ? 'Er wordt automatisch een link naar hun persoonlijke analyse-pagina toegevoegd onder de email — verwijs hier subtiel naar in je CTA (bijv. "Ik heb een korte analyse gemaakt")' : 'A link to their personalized analysis page is automatically appended below the email — subtly reference it in your CTA (e.g. "I prepared a brief analysis")'}` : ''}
 - ${isNl ? 'Gebruik u/uw (formeel)' : 'Use formal tone'}
 
 ${HTML_INSTRUCTIONS}
@@ -161,7 +186,7 @@ ${isNl ? 'REGELS' : 'RULES'}:
 - ${isNl ? 'Maximaal 100 woorden' : 'Maximum 100 words'}
 - ${isNl ? 'Verwijs kort naar de vorige email' : 'Briefly reference the previous email'}
 - ${isNl ? 'Voeg ÉÉN nieuwe invalshoek toe' : 'Add ONE new value angle'}
-- ${isNl ? 'Andere CTA dan de originele' : 'Different CTA than the original'}
+- ${isNl ? 'Andere CTA dan de originele' : 'Different CTA than the original'}${ctx.discoverUrl ? `\n- ${isNl ? 'Er wordt automatisch een link naar hun persoonlijke analyse-pagina toegevoegd — verwijs hier subtiel naar' : 'A link to their personalized analysis page is automatically appended — subtly reference it'}` : ''}
 
 ${HTML_INSTRUCTIONS}
 
@@ -226,7 +251,7 @@ ${isNl ? 'REGELS' : 'RULES'}:
 - ${isNl ? 'Maximaal 120 woorden' : 'Maximum 120 words'}
 - ${isNl ? 'Open met het signaal' : 'Lead with the signal'}
 - ${isNl ? 'Natuurlijke overgang naar hoe ' + s.company + ' kan helpen' : 'Natural transition to how ' + s.company + ' can help'}
-- ${isNl ? 'Laagdrempelige CTA' : 'Low-pressure CTA'}
+- ${isNl ? 'Laagdrempelige CTA' : 'Low-pressure CTA'}${ctx.discoverUrl ? `\n- ${isNl ? 'Er wordt automatisch een link naar hun persoonlijke analyse-pagina toegevoegd — verwijs hier subtiel naar' : 'A link to their personalized analysis page is automatically appended — subtly reference it'}` : ''}
 
 ${HTML_INSTRUCTIONS}
 

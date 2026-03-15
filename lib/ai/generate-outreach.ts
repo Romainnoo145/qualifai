@@ -7,6 +7,8 @@ import {
   buildSignalTriggeredPrompt,
   getSignatureHtml,
   getSignatureText,
+  getDiscoverCtaHtml,
+  getDiscoverCtaText,
   getSender,
   type OutreachContext,
 } from './outreach-prompts';
@@ -67,8 +69,8 @@ function withSignature(
 ): OutreachEmail {
   return {
     ...email,
-    bodyHtml: `${stripTrailingSignature(email.bodyHtml)}${getSignatureHtml(ctx)}`,
-    bodyText: `${stripTrailingSignature(email.bodyText)}${getSignatureText(ctx)}`,
+    bodyHtml: `${stripTrailingSignature(email.bodyHtml)}${getDiscoverCtaHtml(ctx)}${getSignatureHtml(ctx)}`,
+    bodyText: `${stripTrailingSignature(email.bodyText)}${getDiscoverCtaText(ctx)}${getSignatureText(ctx)}`,
   };
 }
 

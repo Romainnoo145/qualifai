@@ -6,14 +6,11 @@ import {
   Mail,
   Check,
   X,
-  Clock,
   Building2,
   Loader2,
   Send,
   History,
   MessageSquare,
-  WandSparkles,
-  Sparkles,
   Phone,
   Linkedin,
   Settings,
@@ -26,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { PageLoader } from '@/components/ui/page-loader';
 
-type View = 'queue' | 'replies' | 'sent' | 'settings';
+type View = 'queue' | 'sent' | 'settings';
 
 export default function OutreachPage() {
   const [view, setView] = useState<View>('queue');
@@ -53,15 +50,6 @@ export default function OutreachPage() {
             <Mail className="w-4 h-4" /> Drafts Queue
           </button>
           <button
-            onClick={() => setView('replies')}
-            className={cn(
-              'ui-tap ui-focus admin-toggle-btn',
-              view === 'replies' && 'admin-toggle-btn-active',
-            )}
-          >
-            <MessageSquare className="w-4 h-4" /> Replies
-          </button>
-          <button
             onClick={() => setView('sent')}
             className={cn(
               'ui-tap ui-focus admin-toggle-btn',
@@ -84,8 +72,6 @@ export default function OutreachPage() {
 
       {view === 'queue' ? (
         <DraftQueue />
-      ) : view === 'replies' ? (
-        <ReplyInbox />
       ) : view === 'sent' ? (
         <SentHistory />
       ) : (
@@ -278,6 +264,16 @@ function DraftQueue() {
   const queue = api.outreach.getDecisionInbox.useQuery({ limit: 150 });
   const utils = api.useUtils();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const regenerate = (api.outreach.regenerateDraft as any).useMutation({
+    onSuccess: () => {
+      utils.outreach.getDecisionInbox.invalidate();
+      setRegeneratingId(null);
+    },
+    onError: () => setRegeneratingId(null),
+  });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const approve = (api.outreach.approveDraft as any).useMutation({
@@ -454,6 +450,31 @@ function DraftQueue() {
                     {/* Actions */}
                     <div className="flex items-center gap-2 shrink-0">
                       <button
+                        onClick={() => {
+                          const isEn =
+                            (draft.metadata as Record<string, unknown>)
+                              ?.language === 'en';
+                          setRegeneratingId(draft.id);
+                          regenerate.mutate({
+                            draftId: draft.id,
+                            language: isEn ? 'nl' : 'en',
+                          });
+                        }}
+                        disabled={regeneratingId === draft.id}
+                        className={cn(
+                          'ui-tap inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all disabled:opacity-50',
+                          (draft.metadata as Record<string, unknown>)
+                            ?.language === 'en'
+                            ? 'bg-[#040026] text-white border-[#040026]'
+                            : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300',
+                        )}
+                      >
+                        {regeneratingId === draft.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : null}
+                        EN
+                      </button>
+                      <button
                         onClick={() => approve.mutate({ id: draft.id })}
                         disabled={approve.isPending}
                         className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] border border-[#EBCB4B] hover:bg-[#D4B43B] transition-all disabled:opacity-50"
@@ -494,237 +515,6 @@ function DraftQueue() {
           );
         })}
       </div>
-    </div>
-  );
-}
-
-function ReplyInbox() {
-  const [contactId, setContactId] = useState('');
-  const [replySubject, setReplySubject] = useState('');
-  const [replyBody, setReplyBody] = useState('');
-  const utils = api.useUtils();
-  const replies = api.outreach.getReplyInbox.useQuery({
-    limit: 100,
-    status: 'pending',
-  });
-  const contacts = api.contacts.list.useQuery({ limit: 100 });
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const captureReply = (api.outreach.captureReply as any).useMutation({
-    onSuccess: () => {
-      setReplySubject('');
-      setReplyBody('');
-      utils.outreach.getReplyInbox.invalidate();
-    },
-  });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const triageReply = (api.outreach.triageReply as any).useMutation({
-    onSuccess: () => {
-      utils.outreach.getReplyInbox.invalidate();
-      utils.contacts.list.invalidate();
-    },
-  });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const runSweep = (api.outreach.runReplyTriageSweep as any).useMutation({
-    onSuccess: () => {
-      utils.outreach.getReplyInbox.invalidate();
-      utils.contacts.list.invalidate();
-    },
-  });
-
-  const contactOptions = (contacts.data?.contacts ?? []) as Array<any>;
-  const replyItems = (replies.data?.replies ?? []) as Array<any>;
-
-  return (
-    <div className="space-y-4">
-      <div className="glass-card p-5 space-y-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-black text-[#040026] tracking-tight">
-            Reply Triage
-          </h2>
-          <button
-            onClick={() => runSweep.mutate({ limit: 50 })}
-            disabled={
-              runSweep.isPending || (replies.data?.summary.pending ?? 0) === 0
-            }
-            className="ui-focus inline-flex items-center gap-2 px-4 py-2 btn-pill-yellow text-xs disabled:opacity-50"
-          >
-            {runSweep.isPending ? (
-              <>
-                <Clock className="w-3 h-3 animate-spin" /> Running...
-              </>
-            ) : (
-              <>
-                <WandSparkles className="w-3 h-3" /> Auto-triage pending
-              </>
-            )}
-          </button>
-        </div>
-        <div className="text-xs text-slate-500">
-          Pending replies: <strong>{replies.data?.summary.pending ?? 0}</strong>
-        </div>
-      </div>
-
-      <div className="glass-card p-6 space-y-4">
-        <h3 className="text-lg font-black text-[#040026] tracking-tight">
-          Simulate Inbound Reply
-        </h3>
-        <select
-          value={contactId}
-          onChange={(e) => setContactId(e.target.value)}
-          className="w-full px-4 py-2.5 input-minimal text-sm focus:outline-none focus:ring-2 focus:ring-[#EBCB4B]/40"
-        >
-          <option value="">Select contact</option>
-          {contactOptions.map((contact) => (
-            <option key={contact.id} value={contact.id}>
-              {contact.firstName} {contact.lastName} -{' '}
-              {contact.prospect.companyName ?? contact.prospect.domain}
-            </option>
-          ))}
-        </select>
-        <input
-          value={replySubject}
-          onChange={(e) => setReplySubject(e.target.value)}
-          placeholder="Subject (optional)"
-          className="w-full px-4 py-2.5 input-minimal text-sm focus:outline-none focus:ring-2 focus:ring-[#EBCB4B]/40"
-        />
-        <textarea
-          value={replyBody}
-          onChange={(e) => setReplyBody(e.target.value)}
-          rows={4}
-          placeholder="Paste incoming reply text"
-          className="w-full px-4 py-2.5 input-minimal text-sm focus:outline-none focus:ring-2 focus:ring-[#EBCB4B]/40 resize-none"
-        />
-        <button
-          onClick={() => {
-            if (!contactId || replyBody.trim().length < 2) return;
-            captureReply.mutate({
-              contactId,
-              subject: replySubject || undefined,
-              bodyText: replyBody,
-              source: 'manual-test',
-            });
-          }}
-          disabled={
-            captureReply.isPending || !contactId || replyBody.trim().length < 2
-          }
-          className="ui-focus inline-flex items-center gap-2 px-4 py-2 btn-pill-secondary text-xs disabled:opacity-50"
-        >
-          {captureReply.isPending ? (
-            <>
-              <Clock className="w-3 h-3 animate-spin" /> Capturing...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-3 h-3" /> Add Test Reply
-            </>
-          )}
-        </button>
-      </div>
-
-      {replyItems.length === 0 ? (
-        <div className="glass-card p-10 text-center">
-          <MessageSquare className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm font-black text-[#040026] uppercase tracking-widest mb-2">
-            No pending replies
-          </p>
-          <p className="admin-meta-text">
-            Inkomende reacties worden hier automatisch geparkeerd.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {replyItems.map((reply: any) => (
-            <div
-              key={reply.id}
-              className="glass-card card-interactive p-5 space-y-3"
-            >
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-black text-[#040026]">
-                    {reply.contact.firstName} {reply.contact.lastName}
-                  </p>
-                  <p className="admin-meta-text mt-0.5">
-                    {reply.contact.prospect.companyName ??
-                      reply.contact.prospect.domain}
-                  </p>
-                </div>
-                <span className="admin-meta-text">
-                  {new Date(reply.createdAt).toLocaleString()}
-                </span>
-              </div>
-              <div className="admin-meta-text">
-                Suggestion:{' '}
-                <span className="font-bold text-[#040026]">
-                  {reply.suggestion.intent}
-                </span>{' '}
-                ({(reply.suggestion.confidence * 100).toFixed(0)}%)
-              </div>
-              <p className="admin-meta-text-strong whitespace-pre-wrap bg-slate-50 rounded-lg p-3">
-                {reply.bodyText ?? '(no body)'}
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => triageReply.mutate({ replyLogId: reply.id })}
-                  disabled={triageReply.isPending}
-                  className="ui-focus ui-tap px-3 py-1.5 rounded-full text-xs font-semibold bg-[#040026] text-white disabled:opacity-50"
-                >
-                  Auto
-                </button>
-                <button
-                  onClick={() =>
-                    triageReply.mutate({
-                      replyLogId: reply.id,
-                      categoryOverride: 'interested',
-                    })
-                  }
-                  disabled={triageReply.isPending}
-                  className="ui-focus ui-tap px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 disabled:opacity-50"
-                >
-                  Interested
-                </button>
-                <button
-                  onClick={() =>
-                    triageReply.mutate({
-                      replyLogId: reply.id,
-                      categoryOverride: 'later',
-                    })
-                  }
-                  disabled={triageReply.isPending}
-                  className="ui-focus ui-tap px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 disabled:opacity-50"
-                >
-                  Later
-                </button>
-                <button
-                  onClick={() =>
-                    triageReply.mutate({
-                      replyLogId: reply.id,
-                      categoryOverride: 'not_fit',
-                    })
-                  }
-                  disabled={triageReply.isPending}
-                  className="ui-focus ui-tap px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 disabled:opacity-50"
-                >
-                  Not fit
-                </button>
-                <button
-                  onClick={() =>
-                    triageReply.mutate({
-                      replyLogId: reply.id,
-                      categoryOverride: 'stop',
-                    })
-                  }
-                  disabled={triageReply.isPending}
-                  className="ui-focus ui-tap px-3 py-1.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 disabled:opacity-50"
-                >
-                  Stop
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -849,7 +639,6 @@ function OutreachSettings() {
 
   const [fromName, setFromName] = useState('');
   const [fromEmail, setFromEmail] = useState('');
-  const [language, setLanguage] = useState<'nl' | 'en'>('nl');
   const [toneId, setToneId] = useState('machiavelli');
   const [companyPitch, setCompanyPitch] = useState('');
   const [signatureHtml, setSignatureHtml] = useState('');
@@ -863,7 +652,6 @@ function OutreachSettings() {
     const d = settings.data as Record<string, string>;
     setFromName(d.fromName ?? '');
     setFromEmail(d.fromEmail ?? '');
-    setLanguage((d.language as 'nl' | 'en') ?? 'nl');
     // Match saved tone text to a style ID, default to machiavelli
     const savedTone = d.tone ?? '';
     const matched = OUTREACH_STYLES.find((s) => s.tone === savedTone);
@@ -897,7 +685,6 @@ function OutreachSettings() {
       fromName,
       fromEmail,
       replyTo: fromEmail,
-      language,
       tone: selectedStyle?.tone ?? '',
       companyPitch,
       signatureHtml,
@@ -906,7 +693,7 @@ function OutreachSettings() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Email Identity */}
       <div className="glass-card p-6 space-y-4">
         <h3 className="text-sm font-black text-[#040026] uppercase tracking-widest">
@@ -935,32 +722,6 @@ function OutreachSettings() {
               className="w-full px-4 py-2.5 input-minimal text-sm"
             />
           </div>
-          <div>
-            <label className="text-xs font-bold text-slate-500 mb-1 block">
-              Taal
-            </label>
-            <div className="admin-toggle-group w-max">
-              <button
-                onClick={() => setLanguage('nl')}
-                className={cn(
-                  'ui-tap admin-toggle-btn text-xs',
-                  language === 'nl' && 'admin-toggle-btn-active',
-                )}
-              >
-                NL
-              </button>
-              <button
-                onClick={() => setLanguage('en')}
-                className={cn(
-                  'ui-tap admin-toggle-btn text-xs',
-                  language === 'en' && 'admin-toggle-btn-active',
-                )}
-              >
-                EN
-              </button>
-            </div>
-          </div>
-          <div />
         </div>
       </div>
 
@@ -969,7 +730,7 @@ function OutreachSettings() {
         <h3 className="text-sm font-black text-[#040026] uppercase tracking-widest">
           Outreach Stijl
         </h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           {OUTREACH_STYLES.map((style) => (
             <div
               key={style.id}
@@ -1056,7 +817,7 @@ function OutreachSettings() {
             <textarea
               value={signatureHtml}
               onChange={(e) => setSignatureHtml(e.target.value)}
-              rows={6}
+              rows={10}
               placeholder='<p style="margin-top:24px;">Met vriendelijke groet,</p>...'
               className="w-full px-4 py-2.5 input-minimal text-xs font-mono resize-none"
             />

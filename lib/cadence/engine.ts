@@ -14,7 +14,11 @@
 
 import type { PrismaClient } from '@prisma/client';
 import { generateFollowUp } from '@/lib/ai/generate-outreach';
-import type { OutreachContext } from '@/lib/ai/outreach-prompts';
+import type {
+  OutreachContext,
+  OutreachSender,
+} from '@/lib/ai/outreach-prompts';
+import { buildDiscoverUrl } from '@/lib/prospect-url';
 
 // =============================================================================
 // Reminder statuses — used for non-email cadence channels
@@ -313,6 +317,8 @@ function buildCadenceOutreachContext(
     technologies: string[];
     description: string | null;
   },
+  discoverUrl?: string,
+  sender?: OutreachSender,
 ): OutreachContext {
   return {
     contact: {
@@ -330,6 +336,8 @@ function buildCadenceOutreachContext(
       technologies: prospect.technologies ?? [],
       description: prospect.description ?? null,
     },
+    discoverUrl,
+    sender,
   };
 }
 
@@ -397,6 +405,28 @@ export async function processDueCadenceSteps(db: PrismaClient): Promise<{
 
       if (contact) {
         try {
+          const appUrl =
+            process.env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
+          const discoverUrl = buildDiscoverUrl(appUrl, step.sequence.prospect);
+          // Load project sender settings
+          const senderProject = await db.project.findFirst({
+            where: { id: step.sequence.prospect.projectId },
+            select: { metadata: true, brandName: true },
+          });
+          const sMeta = (senderProject?.metadata ?? {}) as Record<
+            string,
+            unknown
+          >;
+          const sOutreach = (sMeta.outreach ?? {}) as Record<string, string>;
+          const sender: OutreachSender = {
+            fromName: sOutreach.fromName || 'Romano Kanters',
+            company: (senderProject?.brandName as string) || 'Klarifai',
+            language: (sOutreach.language as 'nl' | 'en') ?? 'nl',
+            tone: sOutreach.tone || '',
+            companyPitch: sOutreach.companyPitch || '',
+            signatureHtml: sOutreach.signatureHtml || '',
+            signatureText: sOutreach.signatureText || '',
+          };
           const outreachCtx = buildCadenceOutreachContext(
             contact as {
               firstName: string;
@@ -413,6 +443,8 @@ export async function processDueCadenceSteps(db: PrismaClient): Promise<{
               technologies: string[];
               description: string | null;
             },
+            discoverUrl,
+            sender,
           );
           const generated = await generateFollowUp(
             outreachCtx,
