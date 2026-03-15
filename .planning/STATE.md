@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Not started (requirements defined, roadmap pending)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-15 — Milestone v8.0 started
+Status: Requirements committed, roadmap creation next
+Last activity: 2026-03-16 — v8.0 requirements defined (20 reqs across 4 categories)
 
 ## Milestones Shipped
 
@@ -59,6 +59,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-15
-Stopped at: Milestone v8.0 initialized, defining requirements
-Resume command: Continue with requirements definition for v8.0
+Last session: 2026-03-16
+Stopped at: Requirements committed (20 reqs, 4 categories). Research complete (STACK/FEATURES/ARCHITECTURE/PITFALLS/SUMMARY). Roadmap creation is next step.
+Resume command: `/gsd:new-milestone` then spawn roadmapper — requirements and research are done, skip to Step 10 (Create Roadmap). Last phase was 54, so v8.0 starts at phase 55. Suggested 5 phases from research: (1) Context consolidation + OutreachContext extension, (2) Unified AI draft creator + prospect detail rewrite, (3) Signal diff detector, (4) Research refresh hook + automation wiring, (5) Unified draft queue UI + bidirectional linking + dead code cleanup.
