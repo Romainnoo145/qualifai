@@ -3,30 +3,10 @@ import { nanoid } from 'nanoid';
 import { projectAdminProcedure, router } from '../trpc';
 import { executeResearchRun } from '@/lib/research-executor';
 import { buildDefaultReviewSeedUrls } from '@/lib/research-refresh';
-import {
-  buildCalBookingUrl,
-  createOutreachSequenceSteps,
-  createWorkflowLossMapDraft,
-  matchProofs,
-  validateTwoStepCta,
-  CTA_STEP_1,
-  CTA_STEP_2,
-} from '@/lib/workflow-engine';
-import { persistWorkflowLossMapPdf } from '@/lib/pdf-storage';
-import { env } from '@/env.mjs';
-import type { Prisma } from '@prisma/client';
+import { matchProofs } from '@/lib/workflow-engine';
 import { scoreContactForOutreach } from '@/lib/outreach/quality';
-import { buildDiscoverUrl } from '@/lib/prospect-url';
 import { TRPCError } from '@trpc/server';
-
-function toJson(value: unknown): Prisma.InputJsonValue {
-  return value as Prisma.InputJsonValue;
-}
-
-function metadataObject(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
-  return value as Record<string, unknown>;
-}
+import { generateIntroDraft } from '@/lib/outreach/generate-intro';
 
 function countrySortPriorityFromCampaignName(name: string): number {
   const countryCode = name.split('|')[2]?.trim().toUpperCase();
@@ -530,7 +510,6 @@ export const campaignsRouter = router({
           | 'no_contact'
           | 'error';
         runId?: string;
-        lossMapId?: string;
         sequenceId?: string;
         detail?: string;
       }> = [];
@@ -685,98 +664,8 @@ export const campaignsRouter = router({
             continue;
           }
 
-          const proofMatches = await ctx.db.proofMatch.findMany({
-            where: {
-              OR: [
-                {
-                  workflowHypothesisId: {
-                    in: selectedHypotheses.map((h) => h.id),
-                  },
-                },
-                {
-                  automationOpportunityId: {
-                    in: selectedOpportunities.map((o) => o.id),
-                  },
-                },
-              ],
-            },
-            orderBy: { score: 'desc' },
-            take: 10,
-          });
-          const proofTitles = proofMatches.map((item) => item.proofTitle);
-
-          const prospectFull = await ctx.db.prospect.findUniqueOrThrow({
-            where: { id: prospect.id },
-            select: {
-              id: true,
-              domain: true,
-              companyName: true,
-              industry: true,
-              employeeRange: true,
-              description: true,
-              technologies: true,
-              specialties: true,
-            },
-          });
-          const bookingUrl = buildCalBookingUrl(
-            env.NEXT_PUBLIC_CALCOM_BOOKING_URL,
-            {
-              company: company,
-            },
-          );
-          const draft = createWorkflowLossMapDraft(
-            prospectFull,
-            selectedHypotheses,
-            selectedOpportunities,
-            proofTitles,
-            bookingUrl,
-          );
-          if (
-            !validateTwoStepCta(draft.markdown) ||
-            !validateTwoStepCta(draft.emailBodyText) ||
-            !validateTwoStepCta(draft.emailBodyHtml)
-          ) {
-            throw new Error('Generated asset did not pass CTA validation');
-          }
-
-          const version =
-            (await ctx.db.workflowLossMap.count({
-              where: { prospectId: prospect.id },
-            })) + 1;
-          const lossMap = await ctx.db.workflowLossMap.create({
-            data: {
-              prospectId: prospect.id,
-              researchRunId: research.run.id,
-              campaignId: campaign.id,
-              version,
-              language: 'nl',
-              title: draft.title,
-              markdown: draft.markdown,
-              html: draft.html,
-              metrics: toJson(draft.metrics),
-              emailSubject: draft.emailSubject,
-              emailBodyText: draft.emailBodyText,
-              emailBodyHtml: draft.emailBodyHtml,
-              demoScript: draft.demoScript,
-              ctaStep1: CTA_STEP_1,
-              ctaStep2: CTA_STEP_2,
-            },
-          });
-
-          const pdf = await persistWorkflowLossMapPdf({
-            lossMapId: lossMap.id,
-            version: lossMap.version,
-            companyName: company,
-            markdown: draft.markdown,
-          });
-          const savedLossMap = pdf.pdfUrl
-            ? await ctx.db.workflowLossMap.update({
-                where: { id: lossMap.id },
-                data: { pdfUrl: pdf.pdfUrl },
-              })
-            : lossMap;
-
           let sequenceId: string | undefined;
+
           if (input.queueDrafts) {
             const candidateContacts = await ctx.db.contact.findMany({
               where: {
@@ -797,151 +686,40 @@ export const campaignsRouter = router({
             const bestReady = scoredContacts.find(
               (item) => item.priority.status === 'ready',
             );
-            const contact = bestReady?.contact;
-            const contactPriority = bestReady?.priority;
+            const bestContact = bestReady?.contact;
 
-            if (!contact) {
+            if (!bestContact) {
               results.push({
                 prospectId: prospect.id,
                 company,
                 status: 'no_contact',
                 runId: research.run.id,
-                lossMapId: savedLossMap.id,
                 detail:
-                  'Loss map generated but no outreach-ready contact found (email/data quality gate)',
+                  'No outreach-ready contact found (email/data quality gate)',
               });
               continue;
             }
 
-            const appUrl =
-              process.env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
-            const lossMapUrl = buildDiscoverUrl(appUrl, {
-              slug: prospect.slug,
-              readableSlug: prospect.readableSlug,
-              companyName: prospect.companyName,
-              domain: prospect.domain,
-            });
-            const calBookingUrl = buildCalBookingUrl(
-              env.NEXT_PUBLIC_CALCOM_BOOKING_URL,
-              {
-                name: `${contact.firstName} ${contact.lastName}`.trim(),
-                email: contact.primaryEmail ?? undefined,
-                company,
-              },
-            );
-            const steps = createOutreachSequenceSteps(
-              contact.firstName,
-              company,
-              lossMapUrl,
-              calBookingUrl,
-            );
-            const firstStep = steps[0];
-
-            const existingDraft = await ctx.db.outreachLog.findFirst({
-              where: {
-                contactId: contact.id,
-                status: 'draft',
-              },
-              orderBy: { createdAt: 'desc' },
-            });
-            const existingMetadata = metadataObject(existingDraft?.metadata);
-            const existingLossMapId = existingMetadata.workflowLossMapId;
-            if (
-              existingDraft &&
-              typeof existingLossMapId === 'string' &&
-              existingLossMapId === savedLossMap.id
-            ) {
+            try {
+              const result = await generateIntroDraft({
+                prospectId: prospect.id,
+                contactId: bestContact.id,
+                runId: research.run.id,
+                db: ctx.db,
+              });
+              sequenceId = result.sequenceId;
+            } catch (draftError) {
               results.push({
                 prospectId: prospect.id,
                 company,
-                status: 'completed',
+                status: 'error',
                 runId: research.run.id,
-                lossMapId: savedLossMap.id,
                 detail:
-                  'Skipped draft queue (already exists for this loss map)',
+                  draftError instanceof Error
+                    ? draftError.message
+                    : 'Draft generation failed',
               });
               continue;
-            }
-
-            const sequence = await ctx.db.outreachSequence.create({
-              data: {
-                prospectId: prospect.id,
-                contactId: contact.id,
-                campaignId: campaign.id,
-                researchRunId: research.run.id,
-                workflowLossMapId: savedLossMap.id,
-                templateKey: 'Sprint_2Step_Intro',
-                status: 'DRAFTED',
-                isEvidenceBacked: true,
-                metadata: toJson({
-                  workflowOffer: 'Workflow Optimization Sprint',
-                  ctaStep1: savedLossMap.ctaStep1,
-                  ctaStep2: savedLossMap.ctaStep2,
-                  calBookingUrl,
-                  calEventTypeId: env.CALCOM_EVENT_TYPE_ID ?? null,
-                  contactPriorityScore: contactPriority?.score ?? null,
-                  contactPriorityTier: contactPriority?.tier ?? null,
-                  contactQualityStatus: contactPriority?.status ?? null,
-                  manualReviewReasons: contactPriority?.reasons ?? [],
-                }),
-              },
-            });
-            sequenceId = sequence.id;
-
-            if (!firstStep) {
-              throw new Error('Sequence template generated no steps');
-            }
-
-            await ctx.db.outreachStep.create({
-              data: {
-                sequenceId: sequence.id,
-                stepOrder: firstStep.order,
-                subject: firstStep.subject,
-                bodyText: firstStep.bodyText,
-                bodyHtml: firstStep.bodyHtml,
-                status: 'DRAFTED',
-                metadata: toJson({ channel: 'email', seeded: true }),
-              },
-            });
-
-            const outreachDraft = await ctx.db.outreachLog.create({
-              data: {
-                contactId: contact.id,
-                type: 'INTRO_EMAIL',
-                channel: 'email',
-                status: 'draft',
-                subject: firstStep.subject,
-                bodyText: firstStep.bodyText,
-                bodyHtml: firstStep.bodyHtml,
-                metadata: toJson({
-                  outreachSequenceId: sequence.id,
-                  workflowLossMapId: savedLossMap.id,
-                  evidenceBacked: true,
-                  ctaStep1: savedLossMap.ctaStep1,
-                  ctaStep2: savedLossMap.ctaStep2,
-                  calBookingUrl,
-                  calEventTypeId: env.CALCOM_EVENT_TYPE_ID ?? null,
-                }),
-              },
-            });
-            await ctx.db.outreachStep.update({
-              where: {
-                sequenceId_stepOrder: {
-                  sequenceId: sequence.id,
-                  stepOrder: 1,
-                },
-              },
-              data: {
-                outreachLogId: outreachDraft.id,
-                status: 'QUEUED',
-              },
-            });
-
-            if (contact.outreachStatus === 'NONE') {
-              await ctx.db.contact.update({
-                where: { id: contact.id },
-                data: { outreachStatus: 'QUEUED' },
-              });
             }
           }
 
@@ -950,7 +728,6 @@ export const campaignsRouter = router({
             company,
             status: 'completed',
             runId: research.run.id,
-            lossMapId: savedLossMap.id,
             sequenceId,
           });
         } catch (error) {

@@ -13,7 +13,6 @@ import { GEMINI_MODEL_PRO } from '@/lib/ai/constants';
 import { buildMasterPrompt } from './master-prompt';
 import type {
   MasterAnalysis,
-  MasterAnalysisInput,
   NarrativeAnalysis,
   NarrativeAnalysisInput,
   NarrativeSection,
@@ -552,85 +551,4 @@ export async function generateKlarifaiNarrativeAnalysis(
   );
 }
 
-// ---------------------------------------------------------------------------
-// analysis-v1 generation (legacy)
-// ---------------------------------------------------------------------------
-
-/**
- * Generate a MasterAnalysis (analysis-v1) by calling Gemini 2.5 Pro.
- * Validates the response and retries once on parse/validation failure.
- *
- * @deprecated Use generateNarrativeAnalysis (analysis-v2) for new callers.
- */
-export async function generateMasterAnalysis(
-  input: MasterAnalysisInput,
-): Promise<MasterAnalysis> {
-  const genai = getGenAI();
-  const prompt = buildMasterPrompt(input);
-  const model = GEMINI_MODEL_PRO;
-
-  const startMs = Date.now();
-  console.log(
-    `[master-analyzer] Generating analysis for ${input.prospect.companyName} using ${model}...`,
-  );
-
-  let lastRawText = '';
-
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const geminiModel = genai.getGenerativeModel({ model });
-
-    let response;
-    if (attempt === 0) {
-      response = await geminiModel.generateContent(prompt);
-    } else {
-      const chat = geminiModel.startChat({
-        history: [
-          { role: 'user', parts: [{ text: prompt }] },
-          { role: 'model', parts: [{ text: lastRawText }] },
-        ],
-      });
-      response = await chat.sendMessage(
-        'De JSON was ongeldig of voldeed niet aan het schema. Corrigeer het en retourneer ALLEEN valide JSON in exact het gevraagde formaat. Zorg voor: exact 3 KPIs, exact 3 triggers (market, compliance_esg, capital_derisking), 2-3 tracks, en alle string-velden niet-leeg.',
-      );
-    }
-
-    const text = response.response.text();
-    if (!text) {
-      lastRawText = '[no text in response]';
-      continue;
-    }
-
-    lastRawText = text;
-    const parsed = extractJSON(lastRawText);
-    if (!parsed) {
-      console.warn(
-        `[master-analyzer] Attempt ${attempt + 1}: failed to extract JSON`,
-      );
-      continue;
-    }
-
-    const validated = validateMasterAnalysis(parsed);
-    if (!validated) {
-      console.warn(
-        `[master-analyzer] Attempt ${attempt + 1}: JSON did not match MasterAnalysis schema`,
-      );
-      continue;
-    }
-
-    const durationMs = Date.now() - startMs;
-    console.log(
-      `[master-analyzer] Analysis generated in ${durationMs}ms (attempt ${attempt + 1})`,
-    );
-
-    return {
-      ...validated,
-      generatedAt: new Date().toISOString(),
-      modelUsed: model,
-    };
-  }
-
-  const durationMs = Date.now() - startMs;
-  throw new Error(
-    `[master-analyzer] Failed to generate valid MasterAnalysis for ${input.prospect.companyName} after 2 attempts (${durationMs}ms). Last response: ${lastRawText.slice(0, 500)}`,
-  );
-}
+// generateMasterAnalysis (analysis-v1) deleted in 56-02 — use generateNarrativeAnalysis (analysis-v2)

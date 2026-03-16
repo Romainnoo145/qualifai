@@ -1,5 +1,4 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import type { AutomationOpportunity, WorkflowHypothesis } from '@prisma/client';
 
 vi.mock('@/env.mjs', () => ({
   env: {
@@ -45,7 +44,6 @@ import {
   computePainTagConfirmation,
   CTA_STEP_1,
   CTA_STEP_2,
-  createWorkflowLossMapDraft,
   evaluateQualityGate,
   generateEvidenceDrafts,
   generateHypothesisDrafts,
@@ -53,47 +51,6 @@ import {
   matchProofs,
   validateTwoStepCta,
 } from '@/lib/workflow-engine';
-
-const prospect = {
-  id: 'prospect-1',
-  domain: 'example.com',
-  companyName: 'Example BV',
-  industry: 'construction',
-  employeeRange: '11-50',
-  description: 'Example BV delivers field services with manual planning.',
-  technologies: ['google-workspace'],
-  specialties: ['service planning'],
-};
-
-const hypotheses = [
-  {
-    title: 'Planning bottleneck',
-    problemStatement: 'Manual planning delays execution.',
-    hoursSavedWeekMid: 10,
-    handoffSpeedGainPct: 30,
-    errorReductionPct: 20,
-    revenueLeakageRecoveredMid: 1200,
-  },
-  {
-    title: 'Handoff bottleneck',
-    problemStatement: 'Context loss between office and field creates rework.',
-    hoursSavedWeekMid: 8,
-    handoffSpeedGainPct: 34,
-    errorReductionPct: 18,
-    revenueLeakageRecoveredMid: 900,
-  },
-] as unknown as WorkflowHypothesis[];
-
-const opportunities = [
-  {
-    title: 'Intake copilot',
-    description: 'Automated intake classification and routing.',
-  },
-  {
-    title: 'Invoice readiness automation',
-    description: 'Automated completion checks before invoice creation.',
-  },
-] as unknown as AutomationOpportunity[];
 
 describe('workflow-engine', () => {
   it('passes quality gate when evidence is sufficient', () => {
@@ -233,22 +190,6 @@ describe('workflow-engine', () => {
           draft.sourceType === 'REVIEWS',
       ),
     ).toBe(true);
-  });
-
-  it('generates loss map with business outcomes and exact 2-step CTA', () => {
-    const draft = createWorkflowLossMapDraft(
-      prospect,
-      hypotheses,
-      opportunities,
-      ['Planning automation shipped'],
-    );
-
-    expect(draft.metrics.hoursSavedWeek).toBeGreaterThan(0);
-    expect(draft.metrics.handoffSpeedGainPct).toBeGreaterThan(0);
-    expect(validateTwoStepCta(draft.markdown)).toBe(true);
-    expect(validateTwoStepCta(draft.emailBodyText)).toBe(true);
-    expect(draft.markdown).toContain(CTA_STEP_1);
-    expect(draft.markdown).toContain(CTA_STEP_2);
   });
 
   it('returns custom build plan when proof catalog has no strong match', async () => {
