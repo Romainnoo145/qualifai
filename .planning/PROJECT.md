@@ -59,9 +59,15 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - ✓ **Pain confirmation gate** (cross-source pain tag confirmation, advisory-only, send queue signals) — v2.2
 - ✓ **Override audit trail** (GateOverrideAudit model, mandatory reason, Bypassed badge, Override History panel) — v2.2
 
-### Active
+- ✓ **Unified AI email engine** (single generateIntroEmail pipeline replaces template-based WorkflowLossMap) — v8.0
+- ✓ **Signal diff detection** (evidence changes between research runs → Signal records with dedup) — v8.0
+- ✓ **Signal-to-draft automation** (research refresh cron → signal detection → AI draft creation) — v8.0
+- ✓ **Unified draft queue** (all draft types in one queue with Dutch date grouping, prospect links, kind chips) — v8.0
+- ✓ **AI cadence follow-ups** (evidence-enriched follow-up generation from ProspectAnalysis + signals) — v8.0
+- ✓ **OutreachLog.prospectId denormalization** (all draft types carry prospect link for queue queries) — v8.0
+- ✓ **Dead code cleanup** (template engine, generateMasterAnalysis v1, ~970 lines removed) — v8.0
 
-<!-- v5.0 Atlantis Intelligence & NDA Pipeline -->
+### Active
 
 (Requirements being defined — see REQUIREMENTS.md)
 
@@ -93,7 +99,7 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 - **Email delivery:** Resend API with idempotency guards, DKIM/SPF/DMARC verified for klarifai.nl
 - **Scheduling:** Cal.com with HMAC-signed webhook → automatic call prep generation
 - **Current codebase:** ~34,658 LOC TypeScript
-- **Shipped:** v1.0 (Feb 20) → v1.1 (Feb 21) → v1.2 (Feb 22) → v2.0 (Feb 23) → v2.1 (Mar 2) → v2.2 (Mar 2) → v3.0 (Mar 5) → v4.0 (Mar 7) → v5.0 (Mar 8) → v6.0 (Mar 8) → v7.0 (Mar 15)
+- **Shipped:** v1.0 (Feb 20) → v1.1 (Feb 21) → v1.2 (Feb 22) → v2.0 (Feb 23) → v2.1 (Mar 2) → v2.2 (Mar 2) → v3.0 (Mar 5) → v4.0 (Mar 7) → v5.0 (Mar 8) → v6.0 (Mar 8) → v7.0 (Mar 15) → v8.0 (Mar 16)
 - **Prospects in DB:** 7+ real companies, all passing quality gate after AI scoring overhaul
 
 ## Constraints
@@ -134,30 +140,14 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ---
 
-## Current Milestone: v8.0 Unified Outreach Pipeline
-
-**Goal:** Merge two disconnected email generation systems into one AI-driven pipeline with multi-step cadence and signal detection. All outreach flows through one AI engine, one draft queue, and links back to prospect detail. Research refresh cycle (every 14 days) feeds signal detection for automated follow-up triggers.
-
-**Target features:**
-
-- Unified AI email engine: prospect detail + draft queue use same `generateIntroEmail()` pipeline (replace template-based WorkflowLossMap)
-- Single draft queue: all drafts (intro, follow-up, signal-triggered) appear on outreach page
-- Multi-step cadence: AI-generated follow-ups after send, appearing in draft queue for review
-- Signal detection: diff-detection after research runs (job listings, headcount, funding, tech changes) from existing evidence data
-- Signals → drafts: automation rules trigger AI drafts from detected signals
-- Bidirectional linking: prospect detail shows outreach status, draft queue links to prospect
-- Dead code cleanup: WorkflowLossMap templates, generateMasterAnalysis v1, template engine, old Signal processing code
-
-**Architecture principle:** One AI engine (Gemini Flash) generates all outreach. One queue for review. Signals detected from evidence diffs feed back into the pipeline automatically. User manages by reviewing, not by clicking generate buttons in different places.
-
 ## Current State
 
-**Latest shipped:** v7.0 Atlantis Discover Pipeline Rebuild (2026-03-15) — narrative analysis v2, boardroom discover page, Klarifai narrative pipeline, admin dashboard redesign, research refresh cron.
+**Latest shipped:** v8.0 Unified Outreach Pipeline (2026-03-16) — unified AI email engine, signal diff detection, automated signal-to-draft pipeline, date-grouped draft queue with prospect linking, AI cadence follow-ups with evidence enrichment, ~970 lines dead code removed.
 
-**Previous milestone:** v6.0 Outreach Simplification (2026-03-08) — automated cadence follow-ups, 3-tab outreach page, inline reminders.
+**Previous milestones:** v7.0 Atlantis Discover Pipeline Rebuild (Mar 15) → v6.0 Outreach Simplification (Mar 8) → v5.0 Atlantis Intelligence (Mar 8)
 
-**Active milestone:** v8.0 Unified Outreach Pipeline
+**12 milestones, 59 phases shipped**
 
 ---
 
-_Last updated: 2026-03-08 after v6.0 milestone start_
+_Last updated: 2026-03-16 after v8.0 milestone completion_

@@ -1,5 +1,15 @@
 # Milestones: Qualifai
 
+## v8.0 Unified Outreach Pipeline (Shipped: 2026-03-16)
+
+**Phases completed:** 5 phases, 8 plans, 4 tasks
+
+**Key accomplishments:**
+
+- (none recorded)
+
+---
+
 ## v1.0 — MVP Sales Engine (Completed)
 
 **Shipped:** 2026-02-20
