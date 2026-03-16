@@ -8,6 +8,17 @@ export interface OutreachSender {
   signatureText: string;
 }
 
+export interface EvidenceContext {
+  sourceType: string;
+  snippet: string;
+  title: string | null;
+}
+
+export interface HypothesisContext {
+  title: string;
+  problemStatement: string;
+}
+
 export interface OutreachContext {
   contact: {
     firstName: string;
@@ -32,6 +43,10 @@ export interface OutreachContext {
   sender?: OutreachSender;
   /** Full URL to the prospect's discover page, appended as CTA button */
   discoverUrl?: string;
+  /** Optional: top evidence items from most recent ResearchRun (cap at 8) */
+  evidence?: EvidenceContext[];
+  /** Optional: confirmed hypotheses (title + problem) for this prospect */
+  hypotheses?: HypothesisContext[];
 }
 
 // ── Defaults (Klarifai) ──────────────────────────────────────────────
@@ -133,7 +148,27 @@ ${isNl ? 'HUN BEDRIJF' : 'THEIR COMPANY'}:
 - ${isNl ? 'Beschrijving' : 'Description'}: ${ctx.company.description ?? (isNl ? 'Niet beschikbaar' : 'Not available')}
 
 ${ctx.signal ? `${isNl ? 'TRIGGER SIGNAAL' : 'TRIGGER SIGNAL'}:\n- Type: ${ctx.signal.signalType}\n- ${ctx.signal.title}\n- ${ctx.signal.description ?? ''}\n` : ''}
-
+${
+  ctx.evidence && ctx.evidence.length > 0
+    ? `
+${isNl ? 'BEWIJS UIT PROSPECT-ONDERZOEK' : 'EVIDENCE FROM PROSPECT RESEARCH'}:
+${ctx.evidence
+  .slice(0, 8)
+  .map(
+    (e) =>
+      `- [${e.sourceType}] ${e.title ? e.title + ': ' : ''}${e.snippet.slice(0, 200)}`,
+  )
+  .join('\n')}
+`
+    : ''
+}${
+    ctx.hypotheses && ctx.hypotheses.length > 0
+      ? `
+${isNl ? 'PIJNPUNTEN (GEVALIDEERDE HYPOTHESEN)' : 'PAIN POINTS (VALIDATED HYPOTHESES)'}:
+${ctx.hypotheses.map((h) => `- ${h.title}: ${h.problemStatement}`).join('\n')}
+`
+      : ''
+  }
 ${toneInstructions(s)}
 
 ${isNl ? 'REGELS' : 'RULES'}:
@@ -180,6 +215,27 @@ ${isNl ? 'HUN BEDRIJF' : 'THEIR COMPANY'}:
 
 ${isNl ? 'VORIG ONDERWERP' : 'PREVIOUS SUBJECT'}: "${previousSubject}"
 
+${
+  ctx.evidence && ctx.evidence.length > 0
+    ? `
+${isNl ? 'BEWIJS UIT PROSPECT-ONDERZOEK' : 'EVIDENCE FROM PROSPECT RESEARCH'}:
+${ctx.evidence
+  .slice(0, 8)
+  .map(
+    (e) =>
+      `- [${e.sourceType}] ${e.title ? e.title + ': ' : ''}${e.snippet.slice(0, 200)}`,
+  )
+  .join('\n')}
+`
+    : ''
+}${
+    ctx.hypotheses && ctx.hypotheses.length > 0
+      ? `
+${isNl ? 'PIJNPUNTEN (GEVALIDEERDE HYPOTHESEN)' : 'PAIN POINTS (VALIDATED HYPOTHESES)'}:
+${ctx.hypotheses.map((h) => `- ${h.title}: ${h.problemStatement}`).join('\n')}
+`
+      : ''
+  }
 ${toneInstructions(s)}
 
 ${isNl ? 'REGELS' : 'RULES'}:
