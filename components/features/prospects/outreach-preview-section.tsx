@@ -1,7 +1,13 @@
 'use client';
 
 import { api } from '@/components/providers';
-import { Mail, ExternalLink, FileText, Loader2, Download } from 'lucide-react';
+import {
+  Mail,
+  ExternalLink,
+  FileText,
+  Loader2,
+  CheckCircle,
+} from 'lucide-react';
 import { buildDiscoverPath } from '@/lib/prospect-url';
 
 type PlanItem = {
@@ -67,18 +73,16 @@ export function OutreachPreviewSection({
 }) {
   const utils = api.useUtils();
 
-  const latestAsset = api.assets.getLatest.useQuery({ prospectId });
+  const draftsForProspect = api.outreach.getDraftsForProspect.useQuery(
+    { prospectId },
+    { enabled: Boolean(prospectId) },
+  );
   const callPrep = api.callPrep.getLatest.useQuery({ prospectId });
   const sequences = api.sequences.list.useQuery({ prospectId });
 
-  const generateReport = api.assets.generate.useMutation({
+  const generateDraft = api.outreach.generateIntroDraft.useMutation({
     onSuccess: () => {
-      void utils.assets.getLatest.invalidate({ prospectId });
-    },
-  });
-
-  const queueOutreach = api.assets.queueOutreachDraft.useMutation({
-    onSuccess: () => {
+      void utils.outreach.getDraftsForProspect.invalidate({ prospectId });
       void utils.sequences.list.invalidate({ prospectId });
     },
   });
@@ -89,7 +93,9 @@ export function OutreachPreviewSection({
     },
   });
 
-  const lossMap = latestAsset.data;
+  // TODO: tRPC v11 inference
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const existingDraft = (draftsForProspect.data as any)?.[0] ?? null;
   const plan = callPrep.data;
   const seqList = sequences.data ?? [];
   const firstContact = prospect?.contacts?.[0];
@@ -105,7 +111,7 @@ export function OutreachPreviewSection({
   const dashboardLabel = 'Preview Discovery';
 
   const isLoading =
-    latestAsset.isLoading || callPrep.isLoading || sequences.isLoading;
+    draftsForProspect.isLoading || callPrep.isLoading || sequences.isLoading;
 
   if (isLoading) {
     return (
@@ -153,93 +159,56 @@ export function OutreachPreviewSection({
         )}
       </div>
 
-      {/* 2. Email Content */}
+      {/* 2. Email Draft */}
       <div className="glass-card p-6 rounded-[1.6rem] space-y-4 mt-1">
         <div className="flex items-center justify-between">
           <h4 className="text-lg font-black text-[#040026] tracking-tight flex items-center gap-2">
-            <Mail className="w-5 h-5 text-[#EBCB4B]" /> Email Content
+            <Mail className="w-5 h-5 text-[#EBCB4B]" /> Email Draft
           </h4>
-          <div className="flex items-center gap-2">
-            {lossMap?.pdfUrl && (
-              <a
-                href={lossMap.pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ui-tap flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-[#EBCB4B] hover:border-[#D4B43B] transition-all border border-slate-100"
-              >
-                <Download className="w-3 h-3" /> PDF
-              </a>
-            )}
-            <button
-              onClick={() => {
-                if (!latestRunId) return;
-                generateReport.mutate({ runId: latestRunId });
-              }}
-              disabled={!latestRunId || generateReport.isPending}
-              className="ui-tap flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-[#EBCB4B] hover:border-[#D4B43B] transition-all border border-slate-100 disabled:opacity-40"
-            >
-              {generateReport.isPending ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : null}
-              {lossMap ? 'Regenerate' : 'Generate Email'}
-            </button>
-            {lossMap && firstContact && (
-              <button
-                onClick={() =>
-                  queueOutreach.mutate({
-                    workflowLossMapId: lossMap.id,
-                    contactId: firstContact.id,
-                  })
-                }
-                disabled={queueOutreach.isPending}
-                className="ui-tap flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-[#040026] text-white hover:bg-[#040026]/90 transition-all disabled:opacity-40"
-              >
-                {queueOutreach.isPending ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : null}
-                Queue Draft
-              </button>
-            )}
-          </div>
+          <button
+            onClick={() => {
+              if (!latestRunId || !firstContact) return;
+              generateDraft.mutate({
+                runId: latestRunId,
+                contactId: firstContact.id,
+              });
+            }}
+            disabled={!latestRunId || !firstContact || generateDraft.isPending}
+            className="ui-tap flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-[#040026] hover:bg-[#EBCB4B] hover:border-[#D4B43B] transition-all border border-slate-100 disabled:opacity-40"
+          >
+            {generateDraft.isPending ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : null}
+            Generate Draft
+          </button>
         </div>
 
-        {lossMap ? (
-          <div className="space-y-4">
-            <p className="text-base font-bold text-[#040026]">
-              {lossMap.emailSubject}
-            </p>
-            <div className="font-mono text-[12px] text-slate-600 whitespace-pre-wrap leading-relaxed max-w-3xl">
-              {lossMap.emailBodyText}
+        {existingDraft ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs text-emerald-600">
+              <CheckCircle className="w-3.5 h-3.5" />
+              Draft queued — visible in outreach inbox
             </div>
-            {(lossMap.ctaStep1 || lossMap.ctaStep2) && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                {lossMap.ctaStep1 && (
-                  <div className="pl-4 border-l-2 border-[#EBCB4B] space-y-1.5">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      Step 1
-                    </p>
-                    <p className="text-sm font-medium text-slate-700 leading-snug">
-                      {lossMap.ctaStep1}
-                    </p>
-                  </div>
-                )}
-                {lossMap.ctaStep2 && (
-                  <div className="pl-4 border-l-2 border-[#EBCB4B] space-y-1.5">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      Step 2
-                    </p>
-                    <p className="text-sm font-medium text-slate-700 leading-snug">
-                      {lossMap.ctaStep2}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+            <p className="text-base font-bold text-[#040026]">
+              {existingDraft.subject}
+            </p>
+            <div className="font-mono text-[12px] text-slate-600 whitespace-pre-wrap leading-relaxed max-w-3xl line-clamp-6">
+              {existingDraft.bodyText}
+            </div>
+            <a
+              href="/admin/outreach"
+              className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#040026]/60 hover:text-[#040026] transition-colors"
+            >
+              View in Queue <ExternalLink className="w-3 h-3" />
+            </a>
           </div>
         ) : (
           <p className="text-sm text-slate-400">
-            No outreach email generated yet.{' '}
+            No draft generated yet.{' '}
             {!latestRunId && 'Run research first to enable generation.'}
+            {latestRunId &&
+              !firstContact &&
+              'No contact found for this prospect.'}
           </p>
         )}
       </div>

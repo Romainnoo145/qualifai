@@ -50,22 +50,7 @@ const OUTREACH_STATUS_LABELS: Record<string, string> = {
 export default function ContactDetail() {
   const params = useParams();
   const id = params.id as string;
-  const utils = api.useUtils();
-
   const contact = api.contacts.get.useQuery({ id });
-  const latestLossMap = api.assets.getLatest.useQuery(
-    { prospectId: contact.data?.prospect?.id ?? '' },
-    { enabled: Boolean(contact.data?.prospect?.id) },
-  );
-  const queueOutreachDraft = api.assets.queueOutreachDraft.useMutation({
-    onSuccess: async () => {
-      await Promise.all([
-        utils.contacts.get.invalidate({ id }),
-        utils.outreach.getQueue.invalidate(),
-        utils.sequences.list.invalidate(),
-      ]);
-    },
-  });
 
   if (contact.isLoading) {
     return (
@@ -140,23 +125,12 @@ export default function ContactDetail() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => {
-                if (!latestLossMap.data) return;
-                queueOutreachDraft.mutate({
-                  workflowLossMapId: latestLossMap.data.id,
-                  contactId: id,
-                });
-              }}
-              disabled={queueOutreachDraft.isPending || !latestLossMap.data}
-              className="ui-tap px-8 py-3 btn-pill-primary text-xs disabled:opacity-50"
+            <a
+              href={`/admin/prospects/${c.prospect?.id}`}
+              className="ui-tap px-8 py-3 btn-pill-primary text-xs"
             >
-              {queueOutreachDraft.isPending
-                ? 'Initializing...'
-                : latestLossMap.data
-                  ? 'Initialize Outreach'
-                  : 'No Report Yet'}
-            </button>
+              View Prospect
+            </a>
             {/* Queue Call / Queue LinkedIn buttons removed in 46-02 — cadence handles follow-ups */}
           </div>
         </div>

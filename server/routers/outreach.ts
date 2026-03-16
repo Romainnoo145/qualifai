@@ -353,6 +353,25 @@ export const outreachRouter = router({
       });
     }),
 
+  getDraftsForProspect: adminProcedure
+    .input(z.object({ prospectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.outreachLog.findMany({
+        where: { prospectId: input.prospectId, status: 'draft' },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          subject: true,
+          bodyText: true,
+          bodyHtml: true,
+          status: true,
+          createdAt: true,
+          metadata: true,
+        },
+      });
+    }),
+
   sendEmail: adminProcedure
     .input(
       z.object({
