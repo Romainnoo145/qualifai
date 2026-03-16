@@ -7,11 +7,11 @@
 
 ### Unified Email Pipeline
 
-- [ ] **PIPE-01**: Prospect detail "Generate Email" uses AI engine (generateIntroEmail) instead of template-based WorkflowLossMap
+- [x] **PIPE-01**: Prospect detail "Generate Email" uses AI engine (generateIntroEmail) instead of template-based WorkflowLossMap
 - [ ] **PIPE-02**: All drafts (intro, follow-up, signal-triggered) appear in one unified draft queue on outreach page
 - [ ] **PIPE-03**: Draft queue groups drafts by scheduled send date with date section headers ("Vandaag", "Morgen", "Woensdag 18 mrt")
 - [ ] **PIPE-04**: Prospect detail shows outreach status and links to related drafts in the queue
-- [ ] **PIPE-05**: OutreachLog gains prospectId denormalization for direct prospect-to-draft queries
+- [x] **PIPE-05**: OutreachLog gains prospectId denormalization for direct prospect-to-draft queries
 
 ### Signal Detection
 
@@ -35,7 +35,7 @@
 - [x] **CNSL-02**: OutreachContext extended with optional evidence fields (non-breaking, enriches all email generation)
 - [ ] **CNSL-03**: WorkflowLossMap template engine removed (createWorkflowLossMapDraft, assets.generate, assets.queueOutreachDraft)
 - [ ] **CNSL-04**: generateMasterAnalysis v1 function removed from master-analyzer.ts
-- [ ] **CNSL-05**: classifyDraftRisk updated to work with AI-generated drafts (not require workflowLossMapId)
+- [x] **CNSL-05**: classifyDraftRisk updated to work with AI-generated drafts (not require workflowLossMapId)
 
 ## v8.1 Requirements (Deferred)
 
@@ -66,11 +66,11 @@
 | ----------- | ----- | -------- |
 | CNSL-01     | 55    | Complete |
 | CNSL-02     | 55    | Complete |
-| PIPE-01     | 56    | Pending  |
-| PIPE-05     | 56    | Pending  |
+| PIPE-01     | 56    | Complete |
+| PIPE-05     | 56    | Complete |
 | CNSL-03     | 56    | Pending  |
 | CNSL-04     | 56    | Pending  |
-| CNSL-05     | 56    | Pending  |
+| CNSL-05     | 56    | Complete |
 | SGNL-01     | 57    | Pending  |
 | SGNL-02     | 57    | Pending  |
 | SGNL-03     | 57    | Pending  |

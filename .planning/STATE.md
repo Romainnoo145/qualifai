@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-16)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** Phase 55 — Evidence-Enriched AI Context
+**Current focus:** Phase 56 — Unified AI Intro Draft Creator
 
 ## Current Position
 
-Phase: 55 (1 of 5 in v8.0) — Evidence-Enriched AI Context
-Plan: 1 of 1 in current phase
-Status: Phase complete
-Last activity: 2026-03-16 — Executed 55-01: Shared loadProjectSender + Evidence-Enriched OutreachContext
+Phase: 56 (2 of 5 in v8.0) — Unified AI Intro Draft Creator
+Plan: 1 of 3 in current phase
+Status: Plan 1 complete
+Last activity: 2026-03-16 — Executed 56-01: Atomic AI intro draft creator + OutreachLog.prospectId + classifyDraftRisk AI path
 
-Progress: [██░░░░░░░░] 20%
+Progress: [████░░░░░░] 40%
 
 ## Milestones Shipped
 
@@ -44,6 +44,8 @@ Recent decisions affecting v8.0:
 - OutreachLog needs prospectId denormalization for direct prospect-to-draft queries
 - loadProjectSender consolidated to lib/outreach/sender.ts (single source of truth for all consumers)
 - OutreachContext evidence/hypotheses fields optional — non-breaking, existing callers unaffected
+- isAiGenerated flag in classifyDraftRisk: AI drafts (kind=intro_draft/cadence_draft/signal_draft) reach riskLevel=low with evidenceBacked=true alone, no CTA strings or workflowLossMapId needed
+- Hypothesis gate falls back to prospect-level hypotheses when none exist on specific run
 
 ### Pending Todos
 
@@ -56,5 +58,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-16
-Stopped at: Completed 55-01-PLAN.md — Shared loadProjectSender + Evidence-Enriched OutreachContext
-Resume command: `/gsd:execute-phase 55`
+Stopped at: Completed 56-01-PLAN.md — Atomic AI Intro Draft Creator + OutreachLog.prospectId + classifyDraftRisk AI path
+Resume command: `/gsd:execute-phase 56`
