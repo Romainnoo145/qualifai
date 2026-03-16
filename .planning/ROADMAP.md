@@ -192,7 +192,7 @@ Plans:
 2. Each Signal has the correct SignalType and links to the prospect
 3. Re-running research on unchanged data does not create duplicate signals (lookback dedup)
 4. Concurrent signal processing cannot create duplicate drafts (atomic claim guard)
-   **Plans**: TBD
+   **Plans**: 2 plans
 
 Plans:
 
