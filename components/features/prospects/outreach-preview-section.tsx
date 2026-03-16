@@ -9,6 +9,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { buildDiscoverPath } from '@/lib/prospect-url';
+import Link from 'next/link';
 
 type PlanItem = {
   action: string;
@@ -124,17 +125,33 @@ export function OutreachPreviewSection({
   }
 
   const activeSeq = seqList[0];
+  const pendingDrafts = (draftsForProspect.data as any[])?.length ?? 0;
 
   return (
     <div className="space-y-4">
-      {/* Sequence status indicator */}
-      {activeSeq && (
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <span className="inline-block w-2 h-2 rounded-full bg-[#EBCB4B]" />
-          Outreach sequence: {activeSeq.status.toLowerCase()} &mdash;{' '}
-          {activeSeq.steps?.length ?? 0} steps
-        </div>
-      )}
+      {/* Outreach Status Panel */}
+      <div className="flex flex-wrap items-center gap-2">
+        {activeSeq && (
+          <span className="admin-state-pill admin-state-neutral text-[10px]">
+            Sequence: {activeSeq.status.toLowerCase()} &mdash;{' '}
+            {activeSeq.steps?.length ?? 0} stap
+            {(activeSeq.steps?.length ?? 0) !== 1 ? 'pen' : ''}
+          </span>
+        )}
+        {pendingDrafts > 0 && (
+          <Link href="/admin/outreach">
+            <span className="admin-state-pill bg-amber-50 text-amber-700 text-[10px] cursor-pointer hover:bg-amber-100 transition-colors">
+              {pendingDrafts} concept{pendingDrafts !== 1 ? 'en' : ''} in
+              wachtrij
+            </span>
+          </Link>
+        )}
+        {!activeSeq && pendingDrafts === 0 && (
+          <span className="admin-state-pill admin-state-neutral text-[10px]">
+            Geen actieve outreach
+          </span>
+        )}
+      </div>
 
       {/* 1. Prospect Dashboard */}
       <div className="glass-card p-6 rounded-[1.6rem] space-y-4">
@@ -195,12 +212,12 @@ export function OutreachPreviewSection({
             <div className="font-mono text-[12px] text-slate-600 whitespace-pre-wrap leading-relaxed max-w-3xl line-clamp-6">
               {existingDraft.bodyText}
             </div>
-            <a
+            <Link
               href="/admin/outreach"
               className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#040026]/60 hover:text-[#040026] transition-colors"
             >
               View in Queue <ExternalLink className="w-3 h-3" />
-            </a>
+            </Link>
           </div>
         ) : (
           <p className="text-sm text-slate-400">
