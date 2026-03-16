@@ -15,9 +15,9 @@
 
 ### Signal Detection
 
-- [ ] **SGNL-01**: After each research run, evidence items are compared with the previous run to detect changes (new job listings, headcount growth, funding events, technology changes)
-- [ ] **SGNL-02**: Detected changes create Signal records with appropriate SignalType and link to prospect/contact
-- [ ] **SGNL-03**: Signal detection includes lookback dedup — same unchanged conditions don't re-trigger signals every 14 days
+- [x] **SGNL-01**: After each research run, evidence items are compared with the previous run to detect changes (new job listings, headcount growth, funding events, technology changes)
+- [x] **SGNL-02**: Detected changes create Signal records with appropriate SignalType and link to prospect/contact
+- [x] **SGNL-03**: Signal detection includes lookback dedup — same unchanged conditions don't re-trigger signals every 14 days
 - [ ] **SGNL-04**: Signal detection is wired into research refresh cron (runs automatically after each refresh)
 - [ ] **SGNL-05**: Existing automation rules (AUTOMATION_RULES) trigger AI-generated drafts from detected signals
 - [x] **SGNL-06**: processSignal uses atomic claim (updateMany status guard) to prevent duplicate drafts from concurrent runs
@@ -71,9 +71,9 @@
 | CNSL-03     | 56    | Complete |
 | CNSL-04     | 56    | Complete |
 | CNSL-05     | 56    | Complete |
-| SGNL-01     | 57    | Pending  |
-| SGNL-02     | 57    | Pending  |
-| SGNL-03     | 57    | Pending  |
+| SGNL-01     | 57    | Complete |
+| SGNL-02     | 57    | Complete |
+| SGNL-03     | 57    | Complete |
 | SGNL-06     | 57    | Complete |
 | SGNL-04     | 58    | Pending  |
 | SGNL-05     | 58    | Pending  |

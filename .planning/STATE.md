@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: Unified Outreach Pipeline
 status: completed
-stopped_at: Completed 57-02-PLAN.md — atomic claim guard in processSignal + NEW_JOB_LISTING automation rule
-last_updated: '2026-03-16T06:07:21.427Z'
+stopped_at: Completed 57-01-PLAN.md — signal diff detector with NEW_JOB_LISTING + HEADCOUNT_GROWTH detection and 11 unit tests
+last_updated: '2026-03-16T06:09:40.793Z'
 last_activity: '2026-03-16 — Executed 56-02: UI rewrite + template engine deletion + generateMasterAnalysis v1 removal'
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
   percent: 50
 ---
 
@@ -67,6 +67,8 @@ Recent decisions affecting v8.0:
 - ProofMatch building loop retained in runAutopilot (feeds proof display, generateIntroDraft queries evidence directly)
 - [Phase 57]: Atomic claim at START of processSignal via updateMany — signals marked processed before any draft creation to prevent duplicate drafts under concurrency
 - [Phase 57]: NEW_JOB_LISTING uses SIGNAL_TRIGGERED emailType — job-listing signals reference specific hiring context that generateSignalEmail is designed to use
+- [Phase 57-signal-diff-detector]: detectSignalsFromDiff receives db as parameter (not singleton) for testability — no PrismaClient singleton import
+- [Phase 57-signal-diff-detector]: HEADCOUNT_GROWTH threshold is OR logic: delta>=5 absolute OR percent>=10% — handles both large and small company scales
 
 ### Pending Todos
 
@@ -78,6 +80,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-16T06:07:21.425Z
-Stopped at: Completed 57-02-PLAN.md — atomic claim guard in processSignal + NEW_JOB_LISTING automation rule
+Last session: 2026-03-16T06:09:40.790Z
+Stopped at: Completed 57-01-PLAN.md — signal diff detector with NEW_JOB_LISTING + HEADCOUNT_GROWTH detection and 11 unit tests
 Resume command: `/gsd:execute-phase 56`
