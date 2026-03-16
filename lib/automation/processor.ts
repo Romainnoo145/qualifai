@@ -4,30 +4,10 @@ import {
   generateIntroEmail,
   generateSignalEmail,
 } from '@/lib/ai/generate-outreach';
-import type {
-  OutreachContext,
-  OutreachSender,
-} from '@/lib/ai/outreach-prompts';
+import type { OutreachContext } from '@/lib/ai/outreach-prompts';
+import { loadProjectSender } from '@/lib/outreach/sender';
 import { buildDiscoverUrl } from '@/lib/prospect-url';
 import type { Signal, Contact, Prospect } from '@prisma/client';
-
-async function loadProjectSender(projectId: string): Promise<OutreachSender> {
-  const project = await prisma.project.findFirst({
-    where: { id: projectId },
-    select: { metadata: true, brandName: true },
-  });
-  const meta = (project?.metadata ?? {}) as Record<string, unknown>;
-  const o = (meta.outreach ?? {}) as Record<string, string>;
-  return {
-    fromName: o.fromName || 'Romano Kanters',
-    company: (project?.brandName as string) || 'Klarifai',
-    language: (o.language as 'nl' | 'en') ?? 'nl',
-    tone: o.tone || '',
-    companyPitch: o.companyPitch || '',
-    signatureHtml: o.signatureHtml || '',
-    signatureText: o.signatureText || '',
-  };
-}
 
 type SignalWithRelations = Signal & {
   prospect: Prospect | null;
@@ -55,7 +35,7 @@ export async function processSignal(
       const appUrl =
         process.env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
       const discoverUrl = buildDiscoverUrl(appUrl, prospect);
-      const sender = await loadProjectSender(prospect.projectId);
+      const sender = await loadProjectSender(prisma, prospect.projectId);
 
       const ctx: OutreachContext = {
         contact: {

@@ -6,11 +6,9 @@ import {
   generateFollowUp,
   generateSignalEmail,
 } from '@/lib/ai/generate-outreach';
-import type {
-  OutreachContext,
-  OutreachSender,
-} from '@/lib/ai/outreach-prompts';
+import type { OutreachContext } from '@/lib/ai/outreach-prompts';
 import { sendOutreachEmail } from '@/lib/outreach/send-email';
+import { loadProjectSender } from '@/lib/outreach/sender';
 import { processUnprocessedSignals } from '@/lib/automation/processor';
 import {
   CTA_STEP_1,
@@ -183,28 +181,6 @@ async function markSequenceStepAfterSend(
 
   // Auto-advance cadence after a successful send so multi-touch continues
   evaluateCadence(db, sequenceId, DEFAULT_CADENCE_CONFIG).catch(console.error);
-}
-
-async function loadProjectSender(
-  db: PrismaClient,
-  projectId: string,
-  languageOverride?: 'nl' | 'en',
-): Promise<OutreachSender> {
-  const project = await db.project.findFirst({
-    where: { id: projectId },
-    select: { metadata: true, brandName: true },
-  });
-  const meta = (project?.metadata ?? {}) as Record<string, unknown>;
-  const o = (meta.outreach ?? {}) as Record<string, string>;
-  return {
-    fromName: o.fromName || 'Romano Kanters',
-    company: (project?.brandName as string) || 'Klarifai',
-    language: languageOverride ?? (o.language as 'nl' | 'en') ?? 'nl',
-    tone: o.tone || '',
-    companyPitch: o.companyPitch || '',
-    signatureHtml: o.signatureHtml || '',
-    signatureText: o.signatureText || '',
-  };
 }
 
 function buildOutreachContext(

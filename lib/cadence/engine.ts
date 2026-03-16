@@ -18,6 +18,7 @@ import type {
   OutreachContext,
   OutreachSender,
 } from '@/lib/ai/outreach-prompts';
+import { loadProjectSender } from '@/lib/outreach/sender';
 import { buildDiscoverUrl } from '@/lib/prospect-url';
 
 // =============================================================================
@@ -408,25 +409,10 @@ export async function processDueCadenceSteps(db: PrismaClient): Promise<{
           const appUrl =
             process.env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
           const discoverUrl = buildDiscoverUrl(appUrl, step.sequence.prospect);
-          // Load project sender settings
-          const senderProject = await db.project.findFirst({
-            where: { id: step.sequence.prospect.projectId },
-            select: { metadata: true, brandName: true },
-          });
-          const sMeta = (senderProject?.metadata ?? {}) as Record<
-            string,
-            unknown
-          >;
-          const sOutreach = (sMeta.outreach ?? {}) as Record<string, string>;
-          const sender: OutreachSender = {
-            fromName: sOutreach.fromName || 'Romano Kanters',
-            company: (senderProject?.brandName as string) || 'Klarifai',
-            language: (sOutreach.language as 'nl' | 'en') ?? 'nl',
-            tone: sOutreach.tone || '',
-            companyPitch: sOutreach.companyPitch || '',
-            signatureHtml: sOutreach.signatureHtml || '',
-            signatureText: sOutreach.signatureText || '',
-          };
+          const sender = await loadProjectSender(
+            db,
+            step.sequence.prospect.projectId,
+          );
           const outreachCtx = buildCadenceOutreachContext(
             contact as {
               firstName: string;
