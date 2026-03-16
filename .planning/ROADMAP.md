@@ -174,7 +174,7 @@ Plans:
 3. classifyDraftRisk works for AI-generated drafts without requiring a workflowLossMapId
 4. WorkflowLossMap template creation code (createWorkflowLossMapDraft, assets.generate template path) is deleted
 5. generateMasterAnalysis v1 function is deleted from master-analyzer.ts
-   **Plans**: TBD
+   **Plans**: 2 plans
 
 Plans:
 
@@ -226,7 +226,7 @@ Plans:
 3. Each draft card links to its prospect detail; prospect detail shows current outreach status with link to related drafts
 4. Cadence follow-ups have AI-generated email body text using evidence from ProspectAnalysis narrative and recent signals
 5. Cadence automatically pauses when prospect replies (existing behavior preserved)
-   **Plans**: TBD
+   **Plans**: 2 plans
 
 Plans:
 
