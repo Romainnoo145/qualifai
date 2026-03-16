@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: Unified Outreach Pipeline
 status: completed
-stopped_at: Completed 57-01-PLAN.md — signal diff detector with NEW_JOB_LISTING + HEADCOUNT_GROWTH detection and 11 unit tests
-last_updated: '2026-03-16T06:12:37.332Z'
+stopped_at: Completed 58-01-PLAN.md — signal detection wired into research refresh sweep
+last_updated: '2026-03-16T07:02:23.625Z'
 last_activity: '2026-03-16 — Executed 56-02: UI rewrite + template engine deletion + generateMasterAnalysis v1 removal'
 progress:
   total_phases: 5
-  completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
+  completed_phases: 4
+  total_plans: 6
+  completed_plans: 6
   percent: 50
 ---
 
@@ -69,6 +69,9 @@ Recent decisions affecting v8.0:
 - [Phase 57]: NEW_JOB_LISTING uses SIGNAL_TRIGGERED emailType — job-listing signals reference specific hiring context that generateSignalEmail is designed to use
 - [Phase 57-signal-diff-detector]: detectSignalsFromDiff receives db as parameter (not singleton) for testability — no PrismaClient singleton import
 - [Phase 57-signal-diff-detector]: HEADCOUNT_GROWTH threshold is OR logic: delta>=5 absolute OR percent>=10% — handles both large and small company scales
+- [Phase 58-signal-to-draft-pipeline]: processUnprocessedSignals called once after the sweep loop (not per-prospect) — batch processing, avoids ordering issues
+- [Phase 58-signal-to-draft-pipeline]: Signal detection isolated per-prospect try/catch in research refresh — signal failure never aborts the sweep
+- [Phase 58-signal-to-draft-pipeline]: Dry-run returns signalsDetected=0, draftsCreated=0 — no automation in dry-run mode
 
 ### Pending Todos
 
@@ -80,6 +83,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-16T06:09:40.790Z
-Stopped at: Completed 57-01-PLAN.md — signal diff detector with NEW_JOB_LISTING + HEADCOUNT_GROWTH detection and 11 unit tests
+Last session: 2026-03-16T07:02:14.947Z
+Stopped at: Completed 58-01-PLAN.md — signal detection wired into research refresh sweep
 Resume command: `/gsd:execute-phase 56`
