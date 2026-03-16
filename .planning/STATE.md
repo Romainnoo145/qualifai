@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-16)
 ## Current Position
 
 Phase: 56 (2 of 5 in v8.0) — Unified AI Intro Draft Creator
-Plan: 1 of 3 in current phase
-Status: Plan 1 complete
-Last activity: 2026-03-16 — Executed 56-01: Atomic AI intro draft creator + OutreachLog.prospectId + classifyDraftRisk AI path
+Plan: 2 of 3 in current phase
+Status: Plan 2 complete
+Last activity: 2026-03-16 — Executed 56-02: UI rewrite + template engine deletion + generateMasterAnalysis v1 removal
 
-Progress: [████░░░░░░] 40%
+Progress: [█████░░░░░] 50%
 
 ## Milestones Shipped
 
@@ -46,6 +46,9 @@ Recent decisions affecting v8.0:
 - OutreachContext evidence/hypotheses fields optional — non-breaking, existing callers unaffected
 - isAiGenerated flag in classifyDraftRisk: AI drafts (kind=intro_draft/cadence_draft/signal_draft) reach riskLevel=low with evidenceBacked=true alone, no CTA strings or workflowLossMapId needed
 - Hypothesis gate falls back to prospect-level hypotheses when none exist on specific run
+- generateIntroDraft is now the single path for all intro email generation — template engine deleted
+- Contact detail page no longer triggers outreach directly — links to prospect page where run context exists
+- ProofMatch building loop retained in runAutopilot (feeds proof display, generateIntroDraft queries evidence directly)
 
 ### Pending Todos
 
@@ -58,5 +61,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-16
-Stopped at: Completed 56-01-PLAN.md — Atomic AI Intro Draft Creator + OutreachLog.prospectId + classifyDraftRisk AI path
+Stopped at: Completed 56-02-PLAN.md — UI rewrite + template engine deletion + generateMasterAnalysis v1 removal
 Resume command: `/gsd:execute-phase 56`

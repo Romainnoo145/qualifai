@@ -33,8 +33,8 @@
 
 - [x] **CNSL-01**: loadProjectSender consolidated into single shared module (currently duplicated in 3 files)
 - [x] **CNSL-02**: OutreachContext extended with optional evidence fields (non-breaking, enriches all email generation)
-- [ ] **CNSL-03**: WorkflowLossMap template engine removed (createWorkflowLossMapDraft, assets.generate, assets.queueOutreachDraft)
-- [ ] **CNSL-04**: generateMasterAnalysis v1 function removed from master-analyzer.ts
+- [x] **CNSL-03**: WorkflowLossMap template engine removed (createWorkflowLossMapDraft, assets.generate, assets.queueOutreachDraft)
+- [x] **CNSL-04**: generateMasterAnalysis v1 function removed from master-analyzer.ts
 - [x] **CNSL-05**: classifyDraftRisk updated to work with AI-generated drafts (not require workflowLossMapId)
 
 ## v8.1 Requirements (Deferred)
@@ -68,8 +68,8 @@
 | CNSL-02     | 55    | Complete |
 | PIPE-01     | 56    | Complete |
 | PIPE-05     | 56    | Complete |
-| CNSL-03     | 56    | Pending  |
-| CNSL-04     | 56    | Pending  |
+| CNSL-03     | 56    | Complete |
+| CNSL-04     | 56    | Complete |
 | CNSL-05     | 56    | Complete |
 | SGNL-01     | 57    | Pending  |
 | SGNL-02     | 57    | Pending  |
