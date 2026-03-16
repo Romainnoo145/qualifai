@@ -31,8 +31,8 @@
 
 ### Code Consolidation
 
-- [ ] **CNSL-01**: loadProjectSender consolidated into single shared module (currently duplicated in 3 files)
-- [ ] **CNSL-02**: OutreachContext extended with optional evidence fields (non-breaking, enriches all email generation)
+- [x] **CNSL-01**: loadProjectSender consolidated into single shared module (currently duplicated in 3 files)
+- [x] **CNSL-02**: OutreachContext extended with optional evidence fields (non-breaking, enriches all email generation)
 - [ ] **CNSL-03**: WorkflowLossMap template engine removed (createWorkflowLossMapDraft, assets.generate, assets.queueOutreachDraft)
 - [ ] **CNSL-04**: generateMasterAnalysis v1 function removed from master-analyzer.ts
 - [ ] **CNSL-05**: classifyDraftRisk updated to work with AI-generated drafts (not require workflowLossMapId)
@@ -62,28 +62,28 @@
 
 ## Traceability
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| CNSL-01     | 55    | Pending |
-| CNSL-02     | 55    | Pending |
-| PIPE-01     | 56    | Pending |
-| PIPE-05     | 56    | Pending |
-| CNSL-03     | 56    | Pending |
-| CNSL-04     | 56    | Pending |
-| CNSL-05     | 56    | Pending |
-| SGNL-01     | 57    | Pending |
-| SGNL-02     | 57    | Pending |
-| SGNL-03     | 57    | Pending |
-| SGNL-06     | 57    | Pending |
-| SGNL-04     | 58    | Pending |
-| SGNL-05     | 58    | Pending |
-| PIPE-02     | 59    | Pending |
-| PIPE-03     | 59    | Pending |
-| PIPE-04     | 59    | Pending |
-| CDNC-01     | 59    | Pending |
-| CDNC-02     | 59    | Pending |
-| CDNC-03     | 59    | Pending |
-| CDNC-04     | 59    | Pending |
+| Requirement | Phase | Status   |
+| ----------- | ----- | -------- |
+| CNSL-01     | 55    | Complete |
+| CNSL-02     | 55    | Complete |
+| PIPE-01     | 56    | Pending  |
+| PIPE-05     | 56    | Pending  |
+| CNSL-03     | 56    | Pending  |
+| CNSL-04     | 56    | Pending  |
+| CNSL-05     | 56    | Pending  |
+| SGNL-01     | 57    | Pending  |
+| SGNL-02     | 57    | Pending  |
+| SGNL-03     | 57    | Pending  |
+| SGNL-06     | 57    | Pending  |
+| SGNL-04     | 58    | Pending  |
+| SGNL-05     | 58    | Pending  |
+| PIPE-02     | 59    | Pending  |
+| PIPE-03     | 59    | Pending  |
+| PIPE-04     | 59    | Pending  |
+| CDNC-01     | 59    | Pending  |
+| CDNC-02     | 59    | Pending  |
+| CDNC-03     | 59    | Pending  |
+| CDNC-04     | 59    | Pending  |
 
 **Coverage:**
 
