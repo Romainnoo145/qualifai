@@ -17,6 +17,15 @@ type SignalWithRelations = Signal & {
 export async function processSignal(
   signal: SignalWithRelations,
 ): Promise<{ draftsCreated: number }> {
+  // Atomic claim — prevent concurrent workers from processing same signal
+  const claimed = await prisma.signal.updateMany({
+    where: { id: signal.id, isProcessed: false },
+    data: { isProcessed: true },
+  });
+  if (claimed.count === 0) {
+    return { draftsCreated: 0 }; // already claimed by concurrent worker
+  }
+
   const rules = findMatchingRules(signal.signalType, signal.contact?.seniority);
 
   if (rules.length === 0) return { draftsCreated: 0 };
@@ -100,12 +109,6 @@ export async function processSignal(
       }
     }
   }
-
-  // Mark signal as processed
-  await prisma.signal.update({
-    where: { id: signal.id },
-    data: { isProcessed: true },
-  });
 
   return { draftsCreated };
 }

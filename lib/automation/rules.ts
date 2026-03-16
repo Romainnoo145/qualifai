@@ -59,6 +59,17 @@ export const AUTOMATION_RULES: AutomationRule[] = [
     description:
       'When a company is growing headcount, draft an intro email about AI automation',
   },
+  {
+    id: 'new-job-listing',
+    name: 'New Job Listings',
+    trigger: {
+      signalType: 'NEW_JOB_LISTING',
+    },
+    action: 'DRAFT_EMAIL',
+    emailType: 'SIGNAL_TRIGGERED',
+    description:
+      'When new job listings are detected, draft a signal-triggered email referencing the hiring activity',
+  },
 ];
 
 export function findMatchingRules(
