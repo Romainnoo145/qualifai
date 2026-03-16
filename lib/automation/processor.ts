@@ -80,6 +80,7 @@ export async function processSignal(
         await prisma.outreachLog.create({
           data: {
             contactId: contact.id,
+            prospectId: prospect.id,
             type: 'SIGNAL_TRIGGERED',
             channel: 'email',
             status: 'draft',
@@ -87,6 +88,7 @@ export async function processSignal(
             bodyHtml: email.bodyHtml,
             bodyText: email.bodyText,
             metadata: {
+              kind: 'signal_draft',
               ruleId: rule.id,
               signalId: signal.id,
               personalizedOpener: email.personalizedOpener,
