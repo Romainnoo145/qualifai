@@ -208,11 +208,11 @@ Plans:
 
 1. After a scheduled research refresh completes, signal detection runs automatically (no manual trigger needed)
 2. A NEW_JOB_LISTING signal for a prospect with an active outreach sequence triggers an AI-generated follow-up draft in the queue
-   **Plans**: TBD
+   **Plans**: 1 plan
 
 Plans:
 
-- [ ] 58-01: Wire detectSignals into research-refresh.ts + add automation rule for NEW_JOB_LISTING
+- [ ] 58-01: Wire detectSignalsFromDiff + processUnprocessedSignals into research refresh sweep
 
 ### Phase 59: Unified Draft Queue + Cadence
 
