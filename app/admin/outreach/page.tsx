@@ -260,6 +260,49 @@ function ReminderSection() {
   );
 }
 
+function groupByDate<T extends { createdAt: string | Date }>(
+  items: T[],
+): { label: string; items: T[] }[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+
+  const buckets = new Map<string, T[]>();
+
+  for (const item of items) {
+    const date = new Date(item.createdAt);
+    date.setHours(0, 0, 0, 0);
+    let label: string;
+    if (date.getTime() === today.getTime()) {
+      label = 'Vandaag';
+    } else if (date.getTime() === tomorrow.getTime()) {
+      label = 'Morgen';
+    } else {
+      label = date.toLocaleDateString('nl-NL', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'short',
+      });
+      label = label.charAt(0).toUpperCase() + label.slice(1);
+    }
+    const existing = buckets.get(label) ?? [];
+    existing.push(item);
+    buckets.set(label, existing);
+  }
+
+  return Array.from(buckets.entries()).map(([label, items]) => ({
+    label,
+    items,
+  }));
+}
+
+const KIND_LABELS: Record<string, string> = {
+  intro_draft: 'Intro',
+  cadence_draft: 'Follow-up',
+  signal_draft: 'Signaal',
+};
+
 function DraftQueue() {
   const queue = api.outreach.getDecisionInbox.useQuery({ limit: 150 });
   const utils = api.useUtils();
@@ -352,168 +395,204 @@ function DraftQueue() {
       {/* Gmail-style inbox */}
       <div className="glass-card rounded-2xl overflow-hidden divide-y divide-slate-100">
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-        {(queueData.drafts as any[]).map((draft: any) => {
-          const isExpanded = expandedId === draft.id;
-          const toName = [draft.contact.firstName, draft.contact.lastName]
-            .filter(Boolean)
-            .join(' ');
-          const toEmail =
-            draft.contact.primaryEmail ?? draft.contact.emails?.[0] ?? '';
-          const companyName =
-            draft.contact.prospect?.companyName ??
-            draft.contact.prospect?.domain ??
-            '';
-          const previewText =
-            draft.bodyText?.slice(0, 120)?.replace(/\n/g, ' ') ?? '';
+        {groupByDate(queueData.drafts as any[]).map((group) => (
+          <div key={group.label}>
+            <div className="px-6 py-2 bg-slate-50/80 border-b border-slate-100">
+              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                {group.label}
+              </span>
+            </div>
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            {group.items.map((draft: any) => {
+              const isExpanded = expandedId === draft.id;
+              const toName = [draft.contact.firstName, draft.contact.lastName]
+                .filter(Boolean)
+                .join(' ');
+              const toEmail =
+                draft.contact.primaryEmail ?? draft.contact.emails?.[0] ?? '';
+              const companyName =
+                draft.contact.prospect?.companyName ??
+                draft.contact.prospect?.domain ??
+                '';
+              const previewText =
+                draft.bodyText?.slice(0, 120)?.replace(/\n/g, ' ') ?? '';
+              const kind = (draft.metadata as Record<string, unknown>)?.kind as
+                | string
+                | undefined;
+              const kindLabel = kind ? (KIND_LABELS[kind] ?? 'Email') : 'Email';
 
-          return (
-            <div key={draft.id}>
-              {/* Inbox row — click to expand */}
-              <button
-                onClick={() => setExpandedId(isExpanded ? null : draft.id)}
-                className={cn(
-                  'w-full text-left px-6 py-4 flex items-center gap-4 hover:bg-slate-50/80 transition-colors',
-                  isExpanded && 'bg-slate-50/60',
-                )}
-              >
-                {/* Company logo */}
-                <div className="w-10 h-10 rounded-xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden shrink-0">
-                  {draft.contact.prospect?.logoUrl ? (
-                    <img
-                      src={draft.contact.prospect.logoUrl}
-                      alt=""
-                      className="w-5 h-5 object-contain"
-                    />
-                  ) : (
-                    <Building2 className="w-4 h-4 text-slate-200" />
+              return (
+                <div key={draft.id}>
+                  {/* Inbox row — click to expand */}
+                  <button
+                    onClick={() => setExpandedId(isExpanded ? null : draft.id)}
+                    className={cn(
+                      'w-full text-left px-6 py-4 flex items-center gap-4 hover:bg-slate-50/80 transition-colors',
+                      isExpanded && 'bg-slate-50/60',
+                    )}
+                  >
+                    {/* Company logo */}
+                    <div className="w-10 h-10 rounded-xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden shrink-0">
+                      {draft.contact.prospect?.logoUrl ? (
+                        <img
+                          src={draft.contact.prospect.logoUrl}
+                          alt=""
+                          className="w-5 h-5 object-contain"
+                        />
+                      ) : (
+                        <Building2 className="w-4 h-4 text-slate-200" />
+                      )}
+                    </div>
+
+                    {/* From / Company */}
+                    <div className="w-44 shrink-0 min-w-0">
+                      <Link
+                        href={`/admin/prospects/${draft.contact.prospect?.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-sm font-black text-[#040026] truncate tracking-tight hover:text-[#007AFF] transition-colors"
+                      >
+                        {companyName}
+                      </Link>
+                      <p className="text-[11px] text-slate-400 truncate">
+                        {toName}
+                      </p>
+                    </div>
+
+                    {/* Subject + preview */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-[#040026] truncate">
+                        {draft.subject}
+                      </p>
+                      <p className="text-sm text-slate-400 truncate">
+                        {previewText}
+                      </p>
+                    </div>
+
+                    {/* Kind chip + Timestamp */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={cn(
+                          'text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0',
+                          kind === 'signal_draft'
+                            ? 'bg-purple-50 text-purple-600'
+                            : kind === 'cadence_draft'
+                              ? 'bg-blue-50 text-blue-600'
+                              : 'bg-slate-50 text-slate-400',
+                        )}
+                      >
+                        {kindLabel}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-400 tabular-nums">
+                        {new Date(draft.createdAt).toLocaleDateString('nl-NL', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Expanded email view */}
+                  {isExpanded && (
+                    <div className="bg-white border-t border-slate-100 px-6 py-6">
+                      {/* Email header */}
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <span className="font-bold text-slate-400">
+                              Van
+                            </span>
+                            <span className="font-semibold text-[#040026]">
+                              Romano Kanters &lt;info@klarifai.nl&gt;
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <span className="font-bold text-slate-400">
+                              Aan
+                            </span>
+                            <span className="font-semibold text-[#040026]">
+                              {toName}
+                              {toEmail ? ` <${toEmail}>` : ''}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <span className="font-bold text-slate-400">
+                              Onderwerp
+                            </span>
+                            <span className="font-semibold text-[#040026]">
+                              {draft.subject}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => {
+                              const isEn =
+                                (draft.metadata as Record<string, unknown>)
+                                  ?.language === 'en';
+                              setRegeneratingId(draft.id);
+                              regenerate.mutate({
+                                draftId: draft.id,
+                                language: isEn ? 'nl' : 'en',
+                              });
+                            }}
+                            disabled={regeneratingId === draft.id}
+                            className={cn(
+                              'ui-tap inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all disabled:opacity-50',
+                              (draft.metadata as Record<string, unknown>)
+                                ?.language === 'en'
+                                ? 'bg-[#040026] text-white border-[#040026]'
+                                : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300',
+                            )}
+                          >
+                            {regeneratingId === draft.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : null}
+                            EN
+                          </button>
+                          <button
+                            onClick={() => approve.mutate({ id: draft.id })}
+                            disabled={approve.isPending}
+                            className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] border border-[#EBCB4B] hover:bg-[#D4B43B] transition-all disabled:opacity-50"
+                          >
+                            {approve.isPending ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Send className="w-3.5 h-3.5" />
+                            )}
+                            Verstuur
+                          </button>
+                          <button
+                            onClick={() => reject.mutate({ id: draft.id })}
+                            disabled={reject.isPending}
+                            className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white text-slate-500 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all disabled:opacity-50"
+                          >
+                            <X className="w-3.5 h-3.5" /> Verwijder
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Email body */}
+                      <div className="bg-[#FCFCFD] rounded-2xl p-6 border border-slate-100">
+                        {draft.bodyHtml ? (
+                          <div
+                            className="text-sm text-slate-700 prose prose-sm max-w-none font-medium leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: draft.bodyHtml }}
+                          />
+                        ) : (
+                          <pre className="text-sm text-slate-700 font-medium leading-relaxed whitespace-pre-wrap font-[inherit]">
+                            {draft.bodyText}
+                          </pre>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
-
-                {/* From / Company */}
-                <div className="w-44 shrink-0 min-w-0">
-                  <p className="text-sm font-black text-[#040026] truncate tracking-tight">
-                    {companyName}
-                  </p>
-                  <p className="text-[11px] text-slate-400 truncate">
-                    {toName}
-                  </p>
-                </div>
-
-                {/* Subject + preview */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-[#040026] truncate">
-                    {draft.subject}
-                  </p>
-                  <p className="text-sm text-slate-400 truncate">
-                    {previewText}
-                  </p>
-                </div>
-
-                {/* Timestamp */}
-                <span className="text-[11px] font-bold text-slate-400 tabular-nums shrink-0">
-                  {new Date(draft.createdAt).toLocaleDateString('nl-NL', {
-                    day: 'numeric',
-                    month: 'short',
-                  })}
-                </span>
-              </button>
-
-              {/* Expanded email view */}
-              {isExpanded && (
-                <div className="bg-white border-t border-slate-100 px-6 py-6">
-                  {/* Email header */}
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span className="font-bold text-slate-400">Van</span>
-                        <span className="font-semibold text-[#040026]">
-                          Romano Kanters &lt;info@klarifai.nl&gt;
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span className="font-bold text-slate-400">Aan</span>
-                        <span className="font-semibold text-[#040026]">
-                          {toName}
-                          {toEmail ? ` <${toEmail}>` : ''}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span className="font-bold text-slate-400">
-                          Onderwerp
-                        </span>
-                        <span className="font-semibold text-[#040026]">
-                          {draft.subject}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => {
-                          const isEn =
-                            (draft.metadata as Record<string, unknown>)
-                              ?.language === 'en';
-                          setRegeneratingId(draft.id);
-                          regenerate.mutate({
-                            draftId: draft.id,
-                            language: isEn ? 'nl' : 'en',
-                          });
-                        }}
-                        disabled={regeneratingId === draft.id}
-                        className={cn(
-                          'ui-tap inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all disabled:opacity-50',
-                          (draft.metadata as Record<string, unknown>)
-                            ?.language === 'en'
-                            ? 'bg-[#040026] text-white border-[#040026]'
-                            : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300',
-                        )}
-                      >
-                        {regeneratingId === draft.id ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : null}
-                        EN
-                      </button>
-                      <button
-                        onClick={() => approve.mutate({ id: draft.id })}
-                        disabled={approve.isPending}
-                        className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] border border-[#EBCB4B] hover:bg-[#D4B43B] transition-all disabled:opacity-50"
-                      >
-                        {approve.isPending ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Send className="w-3.5 h-3.5" />
-                        )}
-                        Verstuur
-                      </button>
-                      <button
-                        onClick={() => reject.mutate({ id: draft.id })}
-                        disabled={reject.isPending}
-                        className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white text-slate-500 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all disabled:opacity-50"
-                      >
-                        <X className="w-3.5 h-3.5" /> Verwijder
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Email body */}
-                  <div className="bg-[#FCFCFD] rounded-2xl p-6 border border-slate-100">
-                    {draft.bodyHtml ? (
-                      <div
-                        className="text-sm text-slate-700 prose prose-sm max-w-none font-medium leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: draft.bodyHtml }}
-                      />
-                    ) : (
-                      <pre className="text-sm text-slate-700 font-medium leading-relaxed whitespace-pre-wrap font-[inherit]">
-                        {draft.bodyText}
-                      </pre>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );
