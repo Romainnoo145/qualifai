@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: Unified Outreach Pipeline
 status: completed
-stopped_at: Completed 56-02-PLAN.md — UI rewrite + template engine deletion + generateMasterAnalysis v1 removal
-last_updated: '2026-03-16T05:27:10.302Z'
+stopped_at: Completed 57-02-PLAN.md — atomic claim guard in processSignal + NEW_JOB_LISTING automation rule
+last_updated: '2026-03-16T06:07:21.427Z'
 last_activity: '2026-03-16 — Executed 56-02: UI rewrite + template engine deletion + generateMasterAnalysis v1 removal'
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 5
+  completed_plans: 4
   percent: 50
 ---
 
@@ -65,6 +65,8 @@ Recent decisions affecting v8.0:
 - generateIntroDraft is now the single path for all intro email generation — template engine deleted
 - Contact detail page no longer triggers outreach directly — links to prospect page where run context exists
 - ProofMatch building loop retained in runAutopilot (feeds proof display, generateIntroDraft queries evidence directly)
+- [Phase 57]: Atomic claim at START of processSignal via updateMany — signals marked processed before any draft creation to prevent duplicate drafts under concurrency
+- [Phase 57]: NEW_JOB_LISTING uses SIGNAL_TRIGGERED emailType — job-listing signals reference specific hiring context that generateSignalEmail is designed to use
 
 ### Pending Todos
 
@@ -76,6 +78,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-16
-Stopped at: Completed 56-02-PLAN.md — UI rewrite + template engine deletion + generateMasterAnalysis v1 removal
+Last session: 2026-03-16T06:07:21.425Z
+Stopped at: Completed 57-02-PLAN.md — atomic claim guard in processSignal + NEW_JOB_LISTING automation rule
 Resume command: `/gsd:execute-phase 56`

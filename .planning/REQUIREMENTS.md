@@ -20,7 +20,7 @@
 - [ ] **SGNL-03**: Signal detection includes lookback dedup — same unchanged conditions don't re-trigger signals every 14 days
 - [ ] **SGNL-04**: Signal detection is wired into research refresh cron (runs automatically after each refresh)
 - [ ] **SGNL-05**: Existing automation rules (AUTOMATION_RULES) trigger AI-generated drafts from detected signals
-- [ ] **SGNL-06**: processSignal uses atomic claim (updateMany status guard) to prevent duplicate drafts from concurrent runs
+- [x] **SGNL-06**: processSignal uses atomic claim (updateMany status guard) to prevent duplicate drafts from concurrent runs
 
 ### AI Cadence Follow-ups
 
@@ -74,7 +74,7 @@
 | SGNL-01     | 57    | Pending  |
 | SGNL-02     | 57    | Pending  |
 | SGNL-03     | 57    | Pending  |
-| SGNL-06     | 57    | Pending  |
+| SGNL-06     | 57    | Complete |
 | SGNL-04     | 58    | Pending  |
 | SGNL-05     | 58    | Pending  |
 | PIPE-02     | 59    | Pending  |

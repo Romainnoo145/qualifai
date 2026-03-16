@@ -294,6 +294,6 @@ Note: Phase 57 depends on Phase 55 (not 56), so 56 and 57 could theoretically ru
 | 54. Admin Dashboard Redesign            | v7.0      | 2/2            | Complete    | 2026-03-14 |
 | 55. Evidence-Enriched AI Context        | 1/1       | Complete       | 2026-03-16  | -          |
 | 56. Unified AI Intro Draft Creator      | 2/2       | Complete       | 2026-03-16  | -          |
-| 57. Signal Diff Detector                | v8.0      | 0/2            | Not started | -          |
+| 57. Signal Diff Detector                | 1/2       | In Progress    |             | -          |
 | 58. Signal-to-Draft Pipeline            | v8.0      | 0/1            | Not started | -          |
 | 59. Unified Draft Queue + Cadence       | v8.0      | 0/2            | Not started | -          |
