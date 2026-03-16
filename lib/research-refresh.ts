@@ -1,5 +1,7 @@
 import { env } from '@/env.mjs';
 import { executeResearchRun } from '@/lib/research-executor';
+import { detectSignalsFromDiff } from '@/lib/signals/detect';
+import { processUnprocessedSignals } from '@/lib/automation/processor';
 import type { PrismaClient, ResearchStatus } from '@prisma/client';
 
 const ACTIVE_RUN_STATUSES: ResearchStatus[] = [
@@ -70,6 +72,8 @@ export interface RefreshSweepResult {
     ok: boolean;
     error?: string;
   }>;
+  signalsDetected: number;
+  draftsCreated: number;
 }
 
 export async function collectRefreshCandidates(
@@ -186,6 +190,9 @@ export async function runResearchRefreshSweep(
     });
 
   const executions: RefreshSweepResult['executions'] = [];
+  let totalSignalsDetected = 0;
+  let draftsCreated = 0;
+
   if (!dryRun) {
     for (const candidate of candidates) {
       try {
@@ -200,6 +207,23 @@ export async function runResearchRefreshSweep(
           runId: result.run.id,
           ok: true,
         });
+
+        if (candidate.latestRunId) {
+          try {
+            const signalResult = await detectSignalsFromDiff({
+              previousRunId: candidate.latestRunId,
+              newRunId: result.run.id,
+              prospectId: candidate.prospectId,
+              db,
+            });
+            totalSignalsDetected += signalResult.signalsCreated;
+          } catch (signalError) {
+            console.error(
+              `[research-refresh] signal detection failed for prospect ${candidate.prospectId}:`,
+              signalError instanceof Error ? signalError.message : signalError,
+            );
+          }
+        }
       } catch (error) {
         executions.push({
           prospectId: candidate.prospectId,
@@ -209,6 +233,9 @@ export async function runResearchRefreshSweep(
         });
       }
     }
+
+    const signalProcessingResult = await processUnprocessedSignals();
+    draftsCreated = signalProcessingResult.draftsCreated;
   }
 
   return {
@@ -220,5 +247,7 @@ export async function runResearchRefreshSweep(
     dryRun,
     candidates,
     executions,
+    signalsDetected: totalSignalsDetected,
+    draftsCreated,
   };
 }
