@@ -30,6 +30,7 @@ import {
   REMINDER_STATUS_SKIPPED,
 } from '@/lib/cadence/engine';
 import { buildDiscoverUrl } from '@/lib/prospect-url';
+import { generateIntroDraft } from '@/lib/outreach/generate-intro';
 
 function metadataAsObject(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
@@ -104,13 +105,22 @@ function classifyDraftRisk(draft: {
   const hasLossMap = typeof metadata.workflowLossMapId === 'string';
   const body = `${draft.bodyText ?? ''}\n${draft.bodyHtml ?? ''}`;
   const hasCta = body.includes(CTA_STEP_1) && body.includes(CTA_STEP_2);
-  const isEvidenceReady = evidenceBacked && hasLossMap && hasCta;
+  const isAiGenerated =
+    metadata.kind === 'intro_draft' ||
+    metadata.kind === 'cadence_draft' ||
+    metadata.kind === 'signal_draft';
+  // AI-generated drafts don't need CTA string check or lossMap
+  const isEvidenceReady = isAiGenerated
+    ? evidenceBacked
+    : evidenceBacked && hasLossMap && hasCta;
 
   const manualReviewReasons = [...priority.reasons];
 
   if (!isEvidenceReady) {
     manualReviewReasons.push(
-      'Missing evidence marker, CTA, or linked loss map',
+      isAiGenerated
+        ? 'AI draft missing evidence marker'
+        : 'Missing evidence marker, CTA, or linked loss map',
     );
   }
 
@@ -129,7 +139,9 @@ function classifyDraftRisk(draft: {
   if (priority.status === 'ready' && isEvidenceReady) {
     return {
       riskLevel: 'low' as const,
-      riskReason: 'Evidence-backed draft with valid CTA and loss map',
+      riskReason: isAiGenerated
+        ? 'AI-generated evidence-backed draft'
+        : 'Evidence-backed draft with valid CTA and loss map',
       priorityScore: priority.score,
       priorityTier: priority.tier,
       dataCompleteness: priority.completeness,
@@ -318,6 +330,27 @@ export const outreachRouter = router({
       });
 
       return email;
+    }),
+
+  generateIntroDraft: adminProcedure
+    .input(
+      z.object({
+        runId: z.string(),
+        contactId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const run = await ctx.db.researchRun.findUniqueOrThrow({
+        where: { id: input.runId },
+        select: { prospectId: true },
+      });
+
+      return generateIntroDraft({
+        prospectId: run.prospectId,
+        contactId: input.contactId,
+        runId: input.runId,
+        db: ctx.db,
+      });
     }),
 
   sendEmail: adminProcedure
