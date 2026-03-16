@@ -185,6 +185,7 @@ model Prospect {
   siteCatalogUrls         ProspectSiteUrl[]
   intentExtractions       IntentExtraction[]
   prospectAnalyses        ProspectAnalysis[]
+  outreachLogs            OutreachLog[]
 
   @@index([domain])
   @@index([status])
@@ -269,6 +270,9 @@ model OutreachLog {
   contactId String
   contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
+  prospectId String?
+  prospect   Prospect? @relation(fields: [prospectId], references: [id], onDelete: SetNull)
+
   type    OutreachType
   channel String       @default("email")
   status  String       @default("draft")
@@ -285,6 +289,7 @@ model OutreachLog {
   @@index([contactId])
   @@index([type])
   @@index([status])
+  @@index([prospectId])
 }
 
 model CreditUsage {
