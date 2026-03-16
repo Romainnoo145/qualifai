@@ -24,10 +24,10 @@
 
 ### AI Cadence Follow-ups
 
-- [ ] **CDNC-01**: Cadence follow-ups are generated via AI with actual email body text (not empty placeholders)
-- [ ] **CDNC-02**: Follow-ups use evidence from ProspectAnalysis narrative and recent signals for evidence-enriched content
+- [x] **CDNC-01**: Cadence follow-ups are generated via AI with actual email body text (not empty placeholders)
+- [x] **CDNC-02**: Follow-ups use evidence from ProspectAnalysis narrative and recent signals for evidence-enriched content
 - [ ] **CDNC-03**: Follow-ups appear in the unified draft queue for review before sending
-- [ ] **CDNC-04**: Cadence automatically pauses when prospect replies (existing behavior preserved)
+- [x] **CDNC-04**: Cadence automatically pauses when prospect replies (existing behavior preserved)
 
 ### Code Consolidation
 
@@ -80,10 +80,10 @@
 | PIPE-02     | 59    | Pending  |
 | PIPE-03     | 59    | Pending  |
 | PIPE-04     | 59    | Pending  |
-| CDNC-01     | 59    | Pending  |
-| CDNC-02     | 59    | Pending  |
+| CDNC-01     | 59    | Complete |
+| CDNC-02     | 59    | Complete |
 | CDNC-03     | 59    | Pending  |
-| CDNC-04     | 59    | Pending  |
+| CDNC-04     | 59    | Complete |
 
 **Coverage:**
 

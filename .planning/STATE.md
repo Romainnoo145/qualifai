@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: Unified Outreach Pipeline
 status: completed
-stopped_at: Completed 58-01-PLAN.md — signal detection wired into research refresh sweep
-last_updated: '2026-03-16T07:04:48.420Z'
+stopped_at: Completed 59-01-PLAN.md — cadence evidence enrichment + prospectId denormalization
+last_updated: '2026-03-16T07:45:44.997Z'
 last_activity: '2026-03-16 — Executed 56-02: UI rewrite + template engine deletion + generateMasterAnalysis v1 removal'
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
   percent: 50
 ---
 
@@ -72,6 +72,9 @@ Recent decisions affecting v8.0:
 - [Phase 58-signal-to-draft-pipeline]: processUnprocessedSignals called once after the sweep loop (not per-prospect) — batch processing, avoids ordering issues
 - [Phase 58-signal-to-draft-pipeline]: Signal detection isolated per-prospect try/catch in research refresh — signal failure never aborts the sweep
 - [Phase 58-signal-to-draft-pipeline]: Dry-run returns signalsDetected=0, draftsCreated=0 — no automation in dry-run mode
+- [Phase 59-unified-draft-queue-cadence]: evidence + signal loading is non-fatal in cadence engine — failure never aborts draft creation
+- [Phase 59-unified-draft-queue-cadence]: EvidenceContext sourced from ProspectAnalysis sections (analysis-v2 only) — v1 data skipped
+- [Phase 59-unified-draft-queue-cadence]: kind: 'signal_draft' added to signal OutreachLog metadata for draft queue UI labeling
 
 ### Pending Todos
 
@@ -83,6 +86,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-16T07:02:14.947Z
-Stopped at: Completed 58-01-PLAN.md — signal detection wired into research refresh sweep
+Last session: 2026-03-16T07:45:35.135Z
+Stopped at: Completed 59-01-PLAN.md — cadence evidence enrichment + prospectId denormalization
 Resume command: `/gsd:execute-phase 56`
