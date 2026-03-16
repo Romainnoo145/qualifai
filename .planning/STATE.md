@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v8.0
 milestone_name: Unified Outreach Pipeline
 status: completed
-stopped_at: Completed 59-01-PLAN.md — cadence evidence enrichment + prospectId denormalization
-last_updated: '2026-03-16T07:45:44.997Z'
+stopped_at: Completed 59-02-PLAN.md — date-grouped queue, prospect links, kind chips, outreach status panel
+last_updated: '2026-03-16T07:46:39.563Z'
 last_activity: '2026-03-16 — Executed 56-02: UI rewrite + template engine deletion + generateMasterAnalysis v1 removal'
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
   percent: 50
 ---
 
@@ -75,6 +75,8 @@ Recent decisions affecting v8.0:
 - [Phase 59-unified-draft-queue-cadence]: evidence + signal loading is non-fatal in cadence engine — failure never aborts draft creation
 - [Phase 59-unified-draft-queue-cadence]: EvidenceContext sourced from ProspectAnalysis sections (analysis-v2 only) — v1 data skipped
 - [Phase 59-unified-draft-queue-cadence]: kind: 'signal_draft' added to signal OutreachLog metadata for draft queue UI labeling
+- [Phase 59-02]: groupByDate buckets by midnight-normalised day — avoids false splits on same-day drafts
+- [Phase 59-02]: pendingDrafts computed from existing draftsForProspect query — no extra tRPC call needed
 
 ### Pending Todos
 
@@ -86,6 +88,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-16T07:45:35.135Z
-Stopped at: Completed 59-01-PLAN.md — cadence evidence enrichment + prospectId denormalization
+Last session: 2026-03-16T07:46:33.383Z
+Stopped at: Completed 59-02-PLAN.md — date-grouped queue, prospect links, kind chips, outreach status panel
 Resume command: `/gsd:execute-phase 56`

@@ -8,9 +8,9 @@
 ### Unified Email Pipeline
 
 - [x] **PIPE-01**: Prospect detail "Generate Email" uses AI engine (generateIntroEmail) instead of template-based WorkflowLossMap
-- [ ] **PIPE-02**: All drafts (intro, follow-up, signal-triggered) appear in one unified draft queue on outreach page
-- [ ] **PIPE-03**: Draft queue groups drafts by scheduled send date with date section headers ("Vandaag", "Morgen", "Woensdag 18 mrt")
-- [ ] **PIPE-04**: Prospect detail shows outreach status and links to related drafts in the queue
+- [x] **PIPE-02**: All drafts (intro, follow-up, signal-triggered) appear in one unified draft queue on outreach page
+- [x] **PIPE-03**: Draft queue groups drafts by scheduled send date with date section headers ("Vandaag", "Morgen", "Woensdag 18 mrt")
+- [x] **PIPE-04**: Prospect detail shows outreach status and links to related drafts in the queue
 - [x] **PIPE-05**: OutreachLog gains prospectId denormalization for direct prospect-to-draft queries
 
 ### Signal Detection
@@ -26,7 +26,7 @@
 
 - [x] **CDNC-01**: Cadence follow-ups are generated via AI with actual email body text (not empty placeholders)
 - [x] **CDNC-02**: Follow-ups use evidence from ProspectAnalysis narrative and recent signals for evidence-enriched content
-- [ ] **CDNC-03**: Follow-ups appear in the unified draft queue for review before sending
+- [x] **CDNC-03**: Follow-ups appear in the unified draft queue for review before sending
 - [x] **CDNC-04**: Cadence automatically pauses when prospect replies (existing behavior preserved)
 
 ### Code Consolidation
@@ -77,12 +77,12 @@
 | SGNL-06     | 57    | Complete |
 | SGNL-04     | 58    | Complete |
 | SGNL-05     | 58    | Complete |
-| PIPE-02     | 59    | Pending  |
-| PIPE-03     | 59    | Pending  |
-| PIPE-04     | 59    | Pending  |
+| PIPE-02     | 59    | Complete |
+| PIPE-03     | 59    | Complete |
+| PIPE-04     | 59    | Complete |
 | CDNC-01     | 59    | Complete |
 | CDNC-02     | 59    | Complete |
-| CDNC-03     | 59    | Pending  |
+| CDNC-03     | 59    | Complete |
 | CDNC-04     | 59    | Complete |
 
 **Coverage:**
