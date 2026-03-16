@@ -15,6 +15,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { generateFollowUp } from '@/lib/ai/generate-outreach';
 import type {
+  EvidenceContext,
   OutreachContext,
   OutreachSender,
 } from '@/lib/ai/outreach-prompts';
@@ -320,6 +321,8 @@ function buildCadenceOutreachContext(
   },
   discoverUrl?: string,
   sender?: OutreachSender,
+  evidence?: EvidenceContext[],
+  signal?: { signalType: string; title: string; description: string | null },
 ): OutreachContext {
   return {
     contact: {
@@ -339,6 +342,8 @@ function buildCadenceOutreachContext(
     },
     discoverUrl,
     sender,
+    evidence: evidence && evidence.length > 0 ? evidence : undefined,
+    signal,
   };
 }
 
@@ -404,6 +409,61 @@ export async function processDueCadenceSteps(db: PrismaClient): Promise<{
       let bodyHtml = '';
       let bodyText = '';
 
+      // Load latest ProspectAnalysis for evidence enrichment
+      let evidenceItems: EvidenceContext[] = [];
+      try {
+        const analysis = await db.prospectAnalysis.findFirst({
+          where: { prospectId: step.sequence.prospectId },
+          orderBy: { createdAt: 'desc' },
+          select: { content: true },
+        });
+        const content = analysis?.content as Record<string, unknown> | null;
+        if (content?.version === 'analysis-v2') {
+          const sections =
+            (content.sections as
+              | Array<{ title?: string; body?: string }>
+              | undefined) ?? [];
+          evidenceItems = sections.slice(0, 3).map((s) => ({
+            sourceType: 'ANALYSIS' as const,
+            snippet: s.body?.slice(0, 200) ?? '',
+            title: s.title ?? null,
+          }));
+          if (typeof content.executiveSummary === 'string') {
+            evidenceItems.unshift({
+              sourceType: 'ANALYSIS' as const,
+              snippet: content.executiveSummary.slice(0, 200),
+              title: 'Samenvatting',
+            });
+          }
+        }
+      } catch {
+        // Non-fatal: proceed with empty evidence
+      }
+
+      // Load most recent signal (30-day window) for signal context
+      let signalCtx:
+        | { signalType: string; title: string; description: string | null }
+        | undefined;
+      try {
+        const recentSignal = await db.signal.findFirst({
+          where: {
+            prospectId: step.sequence.prospectId,
+            detectedAt: { gte: new Date(Date.now() - 30 * 86400000) },
+          },
+          orderBy: { detectedAt: 'desc' },
+          select: { signalType: true, title: true, description: true },
+        });
+        if (recentSignal) {
+          signalCtx = {
+            signalType: recentSignal.signalType,
+            title: recentSignal.title,
+            description: recentSignal.description,
+          };
+        }
+      } catch {
+        // Non-fatal: proceed without signal context
+      }
+
       if (contact) {
         try {
           const appUrl =
@@ -431,6 +491,8 @@ export async function processDueCadenceSteps(db: PrismaClient): Promise<{
             },
             discoverUrl,
             sender,
+            evidenceItems,
+            signalCtx,
           );
           const generated = await generateFollowUp(
             outreachCtx,
@@ -451,6 +513,7 @@ export async function processDueCadenceSteps(db: PrismaClient): Promise<{
       newLog = await db.outreachLog.create({
         data: {
           contactId,
+          prospectId: step.sequence.prospectId,
           type: 'FOLLOW_UP',
           channel: 'email',
           status: 'draft',
@@ -472,6 +535,7 @@ export async function processDueCadenceSteps(db: PrismaClient): Promise<{
       newLog = await db.outreachLog.create({
         data: {
           contactId,
+          prospectId: step.sequence.prospectId,
           type: 'FOLLOW_UP',
           channel,
           status: REMINDER_STATUS_OPEN,
