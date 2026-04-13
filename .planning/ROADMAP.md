@@ -264,7 +264,7 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 | Phase                                   | Plans Complete | Status      | Completed |
 | --------------------------------------- | -------------- | ----------- | --------- |
-| 60. Quote Schema Foundation             | 3/5            | In Progress |           |
+| 60. Quote Schema Foundation             | 4/5            | In Progress |           |
 | 61. Admin UI for Quotes                 | 0/TBD          | Not started | -         |
 | 62. Client-Facing Voorstel + PDF Worker | 0/TBD          | Not started | -         |
 | 63. Contract Workflow                   | 0/TBD          | Not started | -         |

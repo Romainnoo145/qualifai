@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
-status: 'Wave 2 in progress — next action is `/gsd:execute-plan 60 04`'
-stopped_at: Completed 60-03-PLAN.md (FOUND-03, FOUND-04, TEST-05)
-last_updated: '2026-04-13T11:32:35.900Z'
-last_activity: 2026-04-13 — Roadmap created for v9.0
+status: executing
+stopped_at: Completed 60-04-PLAN.md (DATA-08, DATA-09, DATA-10, TEST-02, TEST-03)
+last_updated: '2026-04-13T15:16:00.000Z'
+last_activity: 2026-04-13 — Plan 60-04 shipped (DATA-08, DATA-09, DATA-10, TEST-02, TEST-03)
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 ## Current Position
 
 Phase: 60 — Quote Schema Foundation
-Plan: 03 of 5 — Quote Snapshot Schema (complete)
-Status: Wave 2 in progress — next action is `/gsd:execute-plan 60 04` (tRPC quotes router + transitionQuote state machine)
-Last activity: 2026-04-13 — Plan 60-03 shipped (FOUND-03, FOUND-04, TEST-05)
+Plan: 04 of 5 — Quote Router + State Machine (complete)
+Status: Wave 3 complete — next action is `/gsd:execute-plan 60 05` (YAML import script for Marfa quotes)
+Last activity: 2026-04-13 — Plan 60-04 shipped (DATA-08, DATA-09, DATA-10, TEST-02, TEST-03)
 
-**Progress bar:** [██████░░░░] 60% (3/5 plans, 0/4 phases)
+**Progress bar:** [████████░░] 80% (4/5 plans, 0/4 phases)
 
 ## Milestones Shipped
 
@@ -78,6 +78,10 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 60]: Plan 03: QuoteSnapshotSchema is single source of truth feeding both web template and PDF worker (Q14) — schema describes business content only, snapshotHtml/snapshotPdfUrl live on Quote row
 - [Phase 60]: Plan 03: QuoteSnapshotLine.tarief uses z.number().int() with NO .nonnegative() — OFF003 Pakketkorting carries tarief: -800 (Pitfall 5)
 - [Phase 60]: Plan 03: parseSnapshot returns null on failure (defensive read paths use getSnapshotField with fallback); Plan 04 quotes.update will use safeParse + throw TRPCError on the strict write path
+- [Phase 60]: Plan 04: transitionQuote is the ONLY authorised path for mutating Quote.status — router `update` Zod input OMITS status/snapshot\*/replacesId; the runtime invariant is enforced by the state machine helper
+- [Phase 60]: Plan 04: Multi-tenant isolation for Quote uses `prospect: { projectId: ctx.projectId }` relation filter instead of a duplicate projectId column on Quote — Prospect FK IS the tenancy boundary (research decision)
+- [Phase 60]: Plan 04: Snapshot freeze on DRAFT→SENT is transactional — QuoteSnapshotSchema.parse runs BEFORE any Prisma write, inside the same $transaction as the status + Prospect cascade
+- [Phase 60]: Plan 04: Pattern: state-machine + router pair per entity — state machine owns mutation, router is a thin scope-check + delegate (Quote is first entity to follow this pattern)
 
 ### Pending Todos
 
@@ -98,6 +102,6 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-13T11:32:35.898Z
-Stopped at: Completed 60-03-PLAN.md (FOUND-03, FOUND-04, TEST-05)
-Resume command: `/gsd:plan-phase 60`
+Last session: 2026-04-13T15:16:00.000Z
+Stopped at: Completed 60-04-PLAN.md (DATA-08, DATA-09, DATA-10, TEST-02, TEST-03)
+Resume command: `/gsd:execute-plan 60 05`

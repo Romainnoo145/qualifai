@@ -22,9 +22,9 @@ The Prisma schema and tRPC API surface for Quote/QuoteLine. Foundation that ever
 - [x] **DATA-05**: `Quote` model has snapshot fields per decisions.md Q12: `snapshotAt: DateTime?`, `templateVersion: String?`, `snapshotHtml: String? @db.Text`, `snapshotData: Json?`, `snapshotPdfUrl: String?`, `snapshotStatus: SnapshotStatus?`
 - [x] **DATA-06**: `Quote` is linked to `Prospect` via `prospectId` foreign key with cascade rules consistent with existing Prospect relations
 - [x] **DATA-07**: Prisma migration runs cleanly on shadow DB without breaking existing rows; all new columns nullable for backwards compatibility
-- [ ] **DATA-08**: tRPC `quotes` router exists with `create`, `list`, `get`, `update`, `transition` operations using `projectAdminProcedure`
-- [ ] **DATA-09**: `quotes.transition(id, newStatus)` is a transactional helper that handles Quote → Prospect status auto-sync per decisions.md Q13 mapping table
-- [ ] **DATA-10**: All new tRPC endpoints filter by `ctx.projectId` (multi-tenant isolation maintained)
+- [x] **DATA-08**: tRPC `quotes` router exists with `create`, `list`, `get`, `update`, `transition` operations using `projectAdminProcedure`
+- [x] **DATA-09**: `quotes.transition(id, newStatus)` is a transactional helper that handles Quote → Prospect status auto-sync per decisions.md Q13 mapping table
+- [x] **DATA-10**: All new tRPC endpoints filter by `ctx.projectId` (multi-tenant isolation maintained)
 
 ### Foundation Fixes (from codebase audit)
 
@@ -110,8 +110,8 @@ Click-to-sign contract that follows an accepted quote. Per decisions.md Q3 (defa
 Tests die direct uit verification criteria komen, niet als bonus.
 
 - [x] **TEST-01**: State transition tests for `Prospect.updateProspect` covering valid paths and rejected invalid moves
-- [ ] **TEST-02**: State transition tests for `Quote.transition` covering full state machine including Quote → Prospect auto-sync
-- [ ] **TEST-03**: Multi-project isolation test for new `quotes.*` endpoints — admin scoped to Project A cannot see/mutate quotes in Project B
+- [x] **TEST-02**: State transition tests for `Quote.transition` covering full state machine including Quote → Prospect auto-sync
+- [x] **TEST-03**: Multi-project isolation test for new `quotes.*` endpoints — admin scoped to Project A cannot see/mutate quotes in Project B
 - [ ] **TEST-04**: Integration test for YAML import script — imports the 3 Marfa fixtures and verifies record counts + totals
 - [x] **TEST-05**: Snapshot validation test — Zod parsing rejects malformed `snapshotData`, accepts valid
 
@@ -163,9 +163,9 @@ Tests die direct uit verification criteria komen, niet als bonus.
 | DATA-05     | 60    | Complete |
 | DATA-06     | 60    | Complete |
 | DATA-07     | 60    | Complete |
-| DATA-08     | 60    | Pending  |
-| DATA-09     | 60    | Pending  |
-| DATA-10     | 60    | Pending  |
+| DATA-08     | 60    | Complete |
+| DATA-09     | 60    | Complete |
+| DATA-10     | 60    | Complete |
 | FOUND-01    | 60    | Complete |
 | FOUND-02    | 60    | Complete |
 | FOUND-03    | 60    | Complete |
@@ -175,8 +175,8 @@ Tests die direct uit verification criteria komen, niet als bonus.
 | IMPORT-03   | 60    | Pending  |
 | IMPORT-04   | 60    | Pending  |
 | TEST-01     | 60    | Complete |
-| TEST-02     | 60    | Pending  |
-| TEST-03     | 60    | Pending  |
+| TEST-02     | 60    | Complete |
+| TEST-03     | 60    | Complete |
 | TEST-04     | 60    | Pending  |
 | TEST-05     | 60    | Complete |
 | ADMIN-01    | 61    | Pending  |
