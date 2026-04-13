@@ -16,6 +16,14 @@ import type { QuoteStatus } from '@prisma/client';
 import { api } from '@/components/providers';
 import { computeQuoteTotals, formatEuro } from '@/lib/quotes/quote-totals';
 
+// O6 verbatim Dutch copy — grep-enforced, do NOT paraphrase.
+const MODAL_TITLE = 'Offerte versturen';
+const MODAL_BODY_PREFIX =
+  'Je staat op het punt deze offerte te versturen. Na versturen kun je de offerte niet meer aanpassen. Totaal: ';
+const MODAL_BODY_SUFFIX = '. Weet je het zeker?';
+const PRIMARY_LABEL = 'Verstuur definitief';
+const CANCEL_LABEL = 'Annuleren';
+
 interface Props {
   quoteId: string;
   status: QuoteStatus;
@@ -92,12 +100,12 @@ export function QuoteSendConfirm({
               id="quote-send-title"
               className="text-xl font-black text-[#040026]"
             >
-              Offerte versturen
+              {MODAL_TITLE}
             </h2>
             <p className="text-sm text-slate-600">
-              Je staat op het punt deze offerte te versturen. Na versturen kun
-              je de offerte niet meer aanpassen. Totaal:{' '}
-              <strong>{brutoFmt}</strong>. Weet je het zeker?
+              {MODAL_BODY_PREFIX}
+              <strong>{brutoFmt}</strong>
+              {MODAL_BODY_SUFFIX}
             </p>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="flex justify-end gap-3">
@@ -107,7 +115,7 @@ export function QuoteSendConfirm({
                 onClick={() => setOpen(false)}
                 disabled={mutation.isPending}
               >
-                Annuleren
+                {CANCEL_LABEL}
               </button>
               <button
                 type="button"
@@ -116,7 +124,7 @@ export function QuoteSendConfirm({
                 disabled={mutation.isPending}
                 data-testid="quote-send-confirm-button"
               >
-                Verstuur definitief
+                {PRIMARY_LABEL}
               </button>
             </div>
           </div>
