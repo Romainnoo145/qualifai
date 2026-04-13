@@ -57,29 +57,38 @@ Romano can manage quotes from inside the existing Qualifai admin shell.
 - [ ] **ADMIN-07**: Admin can edit a `DRAFT` quote freely; `SENT` and later quotes are read-only (immutable snapshot)
 - [ ] **ADMIN-08**: Admin can archive an existing quote and create a new version that references the archived one via `replacesId`
 
+### Web Voorstel Design Foundation
+
+Design discovery and contract that produces the documented foundation for the modern web proposal experience. Per decisions.md Q14, the web is the primary format and breaks fully with klarifai-core's PDF-first design.
+
+- [ ] **DSGN-01**: `DESIGN.md` exists in the Qualifai repo, produced via `/design-consultation`, defining the aesthetic direction, typography scale, color palette, motion principles, and design system foundations for the web proposal experience. Uses awesome-design-md curated references and modern SaaS proposal pages (Pitch, Tome, Linear, Stripe-style) as inspiration sources, NOT klarifai-core's existing proposal-template.html.
+- [ ] **DSGN-02**: `/design-shotgun` produces 3-5 visual variants of the proposal page; one direction is committed with explicit rationale documented in DESIGN.md.
+- [ ] **DSGN-03**: `UI-SPEC.md` exists (produced via `/gsd:ui-phase`) as the implementation contract — covers layout grid, typography scale, color tokens, component inventory, motion principles, accessibility requirements, and responsive breakpoints. This is what the implementation plan tasks against.
+
 ### Client-Facing Proposal Page
 
-What the prospect sees when they open the personalized URL.
+What the prospect sees when they open the personalized URL. **The web is the primary format**, not a static A4 document in a browser.
 
 - [ ] **CLIENT-01**: Prospect can view proposal at `/discover/[slug]/voorstel` (URL is shareable, slug-based, no auth)
 - [ ] **CLIENT-02**: Page renders the snapshot HTML (frozen at SENT) for quotes in `SENT | VIEWED | ACCEPTED | REJECTED` status; falls back to live render only for `DRAFT` admin previews
-- [ ] **CLIENT-03**: Page visually matches the canonical Klarifai design language from `klarifai-core/docs/design/proposal-template.html` (cover + 4 inner pages: uitdaging, aanpak, investering, scope)
+- [ ] **CLIENT-03**: Page is a **modern, web-native experience** built per the `UI-SPEC.md` produced in DSGN-03 — scroll-driven sections, smooth transitions, motion, hover/interaction states. Visually unmistakably _not_ a static A4 mockup, and visually unmistakably _not_ a port of klarifai-core's existing `proposal-template.html` (which is reference material only, not the design source).
 - [ ] **CLIENT-04**: First view triggers idempotent transition to `VIEWED` status with timestamp
 - [ ] **CLIENT-05**: Prospect can click "Akkoord" to open a confirmation modal asking for explicit consent
 - [ ] **CLIENT-06**: Confirming acceptance triggers `Quote.ACCEPTED` + `Prospect.CONVERTED` in a single transaction
 - [ ] **CLIENT-07**: Admin receives Slack and/or email notification when a quote is accepted, with a deep link to the quote detail page
-- [ ] **CLIENT-08**: Page is responsive (works on phone, tablet, desktop) without breaking the design
+- [ ] **CLIENT-08**: Page is responsive across phone, tablet, and desktop with content priorities adjusted per viewport — not just a shrunken desktop layout
 
 ### PDF Worker (Separate Railway Service)
 
-Per decisions.md Q5: PDF rendering lives outside Qualifai's Next.js process.
+Per decisions.md Q5: PDF rendering lives outside Qualifai's Next.js process. Per decisions.md Q14: PDF is the **secondary** print-friendly format, NOT a 1:1 visual copy of the web experience.
 
 - [ ] **PDF-01**: Separate Railway worker service exists with Puppeteer + Chromium, callable via authenticated HTTP endpoint
-- [ ] **PDF-02**: Worker accepts a snapshot HTML payload (or quote ID + token) and returns/uploads a rendered PDF
+- [ ] **PDF-02**: Worker accepts a quote ID + token (or snapshot data payload) and returns/uploads a rendered PDF
 - [ ] **PDF-03**: Quote acceptance/sending in Qualifai triggers async PDF generation via the worker; UI does not block on PDF readiness
 - [ ] **PDF-04**: Worker writes PDF to persistent storage (S3 or Railway volume) and updates `Quote.snapshotPdfUrl` + `Quote.snapshotStatus` to `READY` via callback
 - [ ] **PDF-05**: Worker handles failures gracefully: retry with backoff, mark `Quote.snapshotStatus = FAILED` after exhausting retries, surface error in admin UI
-- [ ] **PDF-06**: Generated PDF visually matches the live HTML snapshot rendered in the browser (same fonts, margins, page breaks)
+- [ ] **PDF-06**: Generated PDF is a **print-friendly version** of the proposal — preserves all content (narrative, line items, scope, totals, brand identity) in a clean A4 layout, but flattens web-only interactions (animations, motion, hover states, interactive components) into static representations. It is NOT a screen capture of the live web page.
+- [ ] **PDF-07**: Web HTML and PDF render from the **same `Quote.snapshotData` source of truth** — content is identical, presentation differs. The PDF uses a separate print-optimised template (e.g. `templates/pdf-proposal.html`), not the live web component tree.
 
 ### Contract Workflow
 
@@ -145,19 +154,75 @@ Tests die direct uit verification criteria komen, niet als bonus.
 
 ## Traceability
 
-Empty until roadmapper assigns requirements to phases.
-
-| Requirement                 | Phase | Status |
-| --------------------------- | ----- | ------ |
-| _(populated by roadmapper)_ |       |        |
+| Requirement | Phase | Status  |
+| ----------- | ----- | ------- |
+| DATA-01     | 60    | Pending |
+| DATA-02     | 60    | Pending |
+| DATA-03     | 60    | Pending |
+| DATA-04     | 60    | Pending |
+| DATA-05     | 60    | Pending |
+| DATA-06     | 60    | Pending |
+| DATA-07     | 60    | Pending |
+| DATA-08     | 60    | Pending |
+| DATA-09     | 60    | Pending |
+| DATA-10     | 60    | Pending |
+| FOUND-01    | 60    | Pending |
+| FOUND-02    | 60    | Pending |
+| FOUND-03    | 60    | Pending |
+| FOUND-04    | 60    | Pending |
+| IMPORT-01   | 60    | Pending |
+| IMPORT-02   | 60    | Pending |
+| IMPORT-03   | 60    | Pending |
+| IMPORT-04   | 60    | Pending |
+| TEST-01     | 60    | Pending |
+| TEST-02     | 60    | Pending |
+| TEST-03     | 60    | Pending |
+| TEST-04     | 60    | Pending |
+| TEST-05     | 60    | Pending |
+| ADMIN-01    | 61    | Pending |
+| ADMIN-02    | 61    | Pending |
+| ADMIN-03    | 61    | Pending |
+| ADMIN-04    | 61    | Pending |
+| ADMIN-05    | 61    | Pending |
+| ADMIN-06    | 61    | Pending |
+| ADMIN-07    | 61    | Pending |
+| ADMIN-08    | 61    | Pending |
+| DSGN-01     | 62    | Pending |
+| DSGN-02     | 62    | Pending |
+| DSGN-03     | 62    | Pending |
+| CLIENT-01   | 62    | Pending |
+| CLIENT-02   | 62    | Pending |
+| CLIENT-03   | 62    | Pending |
+| CLIENT-04   | 62    | Pending |
+| CLIENT-05   | 62    | Pending |
+| CLIENT-06   | 62    | Pending |
+| CLIENT-07   | 62    | Pending |
+| CLIENT-08   | 62    | Pending |
+| PDF-01      | 62    | Pending |
+| PDF-02      | 62    | Pending |
+| PDF-03      | 62    | Pending |
+| PDF-04      | 62    | Pending |
+| PDF-05      | 62    | Pending |
+| PDF-06      | 62    | Pending |
+| PDF-07      | 62    | Pending |
+| CONT-01     | 63    | Pending |
+| CONT-02     | 63    | Pending |
+| CONT-03     | 63    | Pending |
+| CONT-04     | 63    | Pending |
+| CONT-05     | 63    | Pending |
+| CONT-06     | 63    | Pending |
+| CONT-07     | 63    | Pending |
+| CONT-08     | 63    | Pending |
+| CONT-09     | 63    | Pending |
+| CONT-10     | 63    | Pending |
 
 **Coverage:**
 
-- v9.0 requirements: 47 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 47 ⚠️
+- v9.0 requirements: 59 total (DATA 10 + FOUND 4 + IMPORT 4 + DSGN 3 + ADMIN 8 + CLIENT 8 + PDF 7 + CONT 10 + TEST 5)
+- Mapped to phases: 59
+- Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-04-13_
-_Last updated: 2026-04-13 after milestone v9.0 start_
+_Last updated: 2026-04-13 — Phase 62 scope refined: added DSGN category for design exploration, expanded PDF requirements (PDF-07 added), CLIENT-03/CLIENT-08 reframed for web-native priority per decisions.md Q14_
