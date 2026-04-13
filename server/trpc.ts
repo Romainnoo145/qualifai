@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { type TRPCContext } from './context';
 import { KLARIFAI_PROJECT_SLUG, resolveAdminProjectScope } from './admin-auth';
+import { PUBLIC_VISIBLE_STATUSES } from '@/lib/constants/prospect-statuses';
 
 const t = initTRPC.context<TRPCContext>().create();
 
@@ -69,9 +70,7 @@ export const prospectProcedure = t.procedure.use(
     });
     if (
       !prospect ||
-      !['READY', 'SENT', 'VIEWED', 'ENGAGED', 'CONVERTED'].includes(
-        prospect.status,
-      )
+      !(PUBLIC_VISIBLE_STATUSES as readonly string[]).includes(prospect.status)
     ) {
       throw new TRPCError({
         code: 'NOT_FOUND',

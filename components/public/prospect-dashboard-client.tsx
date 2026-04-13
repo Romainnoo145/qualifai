@@ -25,6 +25,7 @@ import {
   getProjectUiProfile,
   type AppProjectType,
 } from '@/lib/project-ui-profile';
+import { DASHBOARD_VISIBLE_STATUSES } from '@/lib/constants/prospect-statuses';
 import type {
   NarrativeAnalysis,
   KlarifaiNarrativeAnalysis,
@@ -327,9 +328,9 @@ export function DashboardClient({
   // ─── Derived data ───────────────────────────────────────────────────────────
 
   // Show validation section only after first outreach email is sent
-  const showValidation = ['SENT', 'VIEWED', 'ENGAGED', 'CONVERTED'].includes(
-    prospectStatus,
-  );
+  const showValidation = (
+    DASHBOARD_VISIBLE_STATUSES as readonly string[]
+  ).includes(prospectStatus);
 
   // Total hours saved from all hypotheses
   const totalHoursSaved = hypotheses.reduce(

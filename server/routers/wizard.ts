@@ -4,6 +4,10 @@ import { publicProcedure, router } from '../trpc';
 import { notifyAdmin } from '@/lib/notifications';
 import { createEngagementCallTask } from '@/lib/outreach/engagement-triggers';
 import { resolveAdminProjectScope } from '@/server/admin-auth';
+import {
+  PUBLIC_VISIBLE_STATUSES,
+  POST_FIRST_VIEW_STATUSES,
+} from '@/lib/constants/prospect-statuses';
 
 export const wizardRouter = router({
   getWizard: publicProcedure
@@ -29,7 +33,7 @@ export const wizardRouter = router({
 
       if (
         !prospect ||
-        !['READY', 'SENT', 'VIEWED', 'ENGAGED', 'CONVERTED'].includes(
+        !(PUBLIC_VISIBLE_STATUSES as readonly string[]).includes(
           prospect.status,
         )
       ) {
@@ -66,9 +70,9 @@ export const wizardRouter = router({
       });
 
       // Update prospect status on first view
-      const isFirstView = !['VIEWED', 'ENGAGED', 'CONVERTED'].includes(
-        prospect.status,
-      );
+      const isFirstView = !(
+        POST_FIRST_VIEW_STATUSES as readonly string[]
+      ).includes(prospect.status);
       if (isFirstView) {
         await ctx.db.prospect.update({
           where: { id: prospect.id },

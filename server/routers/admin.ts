@@ -14,6 +14,11 @@ import {
 import { executeResearchRun } from '@/lib/research-executor';
 import { matchProofs } from '@/lib/workflow-engine';
 import { TRPCError } from '@trpc/server';
+import { assertValidProspectTransition } from '@/lib/state-machines/prospect';
+import {
+  READY_FOR_OUTREACH_STATUSES,
+  type AllProspectStatus,
+} from '@/lib/constants/prospect-statuses';
 
 // Helper to cast to Prisma-compatible JSON
 function toJson(value: unknown): Prisma.InputJsonValue {
@@ -160,15 +165,17 @@ async function findScopedProspectOrThrow(
       prospect: {
         findFirst: (args: {
           where: { id: string; projectId: string };
-        }) => Promise<{ id: string } | null>;
+          select?: { id: true; status: true };
+        }) => Promise<{ id: string; status: string } | null>;
       };
     };
     projectId: string;
   },
   id: string,
-) {
+): Promise<{ id: string; status: string }> {
   const prospect = await ctx.db.prospect.findFirst({
     where: { id, projectId: ctx.projectId },
+    select: { id: true, status: true },
   });
   if (!prospect) {
     throw new TRPCError({
@@ -176,6 +183,7 @@ async function findScopedProspectOrThrow(
       message: 'Prospect not found in active project scope',
     });
   }
+  return prospect;
 }
 
 export const adminRouter = router({
@@ -670,7 +678,15 @@ export const adminRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await findScopedProspectOrThrow(ctx, input.id);
+      const current = await findScopedProspectOrThrow(ctx, input.id);
+
+      if (input.status !== undefined) {
+        assertValidProspectTransition(
+          current.status as AllProspectStatus,
+          input.status as AllProspectStatus,
+        );
+      }
+
       return ctx.db.prospect.update({
         where: { id: input.id },
         data: {
@@ -1033,7 +1049,7 @@ export const adminRouter = router({
       ctx.db.prospect.findMany({
         where: {
           projectId: ctx.projectId,
-          status: { in: ['READY', 'ENRICHED'] },
+          status: { in: [...READY_FOR_OUTREACH_STATUSES] },
           researchRuns: { some: { status: 'COMPLETED' } },
           contacts: {
             none: {
