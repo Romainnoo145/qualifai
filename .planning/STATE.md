@@ -1,36 +1,34 @@
 ---
 gsd_state_version: 1.0
-milestone: v8.0
-milestone_name: Unified Outreach Pipeline
-status: completed
-stopped_at: Completed 59-02-PLAN.md — date-grouped queue, prospect links, kind chips, outreach status panel
-last_updated: '2026-03-16T16:13:25.854Z'
-last_activity: '2026-03-16 — Executed 56-02: UI rewrite + template engine deletion + generateMasterAnalysis v1 removal'
+milestone: v9.0
+milestone_name: Klant Lifecycle Convergence
+status: defining_requirements
+stopped_at: Milestone v9.0 started — defining requirements
+last_updated: '2026-04-13T08:45:00.000Z'
+last_activity: '2026-04-13 — Started v9.0 (4 phases: Schema → Admin UI → Client voorstel → Contract)'
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 8
-  completed_plans: 8
-  percent: 50
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-16)
+See: .planning/PROJECT.md (updated 2026-04-13)
 
-**Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service the sender actually delivers. No spray-and-pray.
-**Current focus:** Phase 56 — Unified AI Intro Draft Creator
+**Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service Klarifai actually delivers. No spray-and-pray.
+**Current focus:** v9.0 Klant Lifecycle Convergence — Phase 1 (Schema foundation, not yet planned)
 
 ## Current Position
 
-Phase: 56 (2 of 5 in v8.0) — Unified AI Intro Draft Creator
-Plan: 2 of 3 in current phase
-Status: Plan 2 complete
-Last activity: 2026-03-16 — Executed 56-02: UI rewrite + template engine deletion + generateMasterAnalysis v1 removal
-
-Progress: [█████░░░░░] 50%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-13 — Milestone v9.0 started
 
 ## Milestones Shipped
 
@@ -45,38 +43,28 @@ Progress: [█████░░░░░] 50%
 - v5.0 Atlantis Intelligence — 2026-03-08 (Phases 42-45)
 - v6.0 Outreach Simplification — 2026-03-08 (Phases 46-47)
 - v7.0 Atlantis Discover Pipeline Rebuild — 2026-03-15 (Phases 49-54)
+- v8.0 Unified Outreach Pipeline — 2026-03-16 (Phases 55-59)
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting v8.0:
 
-- Two email systems (template + AI) must be unified into one AI pipeline
-- Signal table empty — research refresh cron provides data source for diff detection
-- Signal detection = evidence diff between research runs (no external APIs)
-- WorkflowLossMap template engine + generateMasterAnalysis v1 = dead code to remove
-- OutreachLog needs prospectId denormalization for direct prospect-to-draft queries
-- loadProjectSender consolidated to lib/outreach/sender.ts (single source of truth for all consumers)
-- OutreachContext evidence/hypotheses fields optional — non-breaking, existing callers unaffected
-- isAiGenerated flag in classifyDraftRisk: AI drafts (kind=intro_draft/cadence_draft/signal_draft) reach riskLevel=low with evidenceBacked=true alone, no CTA strings or workflowLossMapId needed
-- Hypothesis gate falls back to prospect-level hypotheses when none exist on specific run
-- generateIntroDraft is now the single path for all intro email generation — template engine deleted
-- Contact detail page no longer triggers outreach directly — links to prospect page where run context exists
-- ProofMatch building loop retained in runAutopilot (feeds proof display, generateIntroDraft queries evidence directly)
-- [Phase 57]: Atomic claim at START of processSignal via updateMany — signals marked processed before any draft creation to prevent duplicate drafts under concurrency
-- [Phase 57]: NEW_JOB_LISTING uses SIGNAL_TRIGGERED emailType — job-listing signals reference specific hiring context that generateSignalEmail is designed to use
-- [Phase 57-signal-diff-detector]: detectSignalsFromDiff receives db as parameter (not singleton) for testability — no PrismaClient singleton import
-- [Phase 57-signal-diff-detector]: HEADCOUNT_GROWTH threshold is OR logic: delta>=5 absolute OR percent>=10% — handles both large and small company scales
-- [Phase 58-signal-to-draft-pipeline]: processUnprocessedSignals called once after the sweep loop (not per-prospect) — batch processing, avoids ordering issues
-- [Phase 58-signal-to-draft-pipeline]: Signal detection isolated per-prospect try/catch in research refresh — signal failure never aborts the sweep
-- [Phase 58-signal-to-draft-pipeline]: Dry-run returns signalsDetected=0, draftsCreated=0 — no automation in dry-run mode
-- [Phase 59-unified-draft-queue-cadence]: evidence + signal loading is non-fatal in cadence engine — failure never aborts draft creation
-- [Phase 59-unified-draft-queue-cadence]: EvidenceContext sourced from ProspectAnalysis sections (analysis-v2 only) — v1 data skipped
-- [Phase 59-unified-draft-queue-cadence]: kind: 'signal_draft' added to signal OutreachLog metadata for draft queue UI labeling
-- [Phase 59-02]: groupByDate buckets by midnight-normalised day — avoids false splits on same-day drafts
-- [Phase 59-02]: pendingDrafts computed from existing draftsForProspect query — no extra tRPC call needed
+Strategy decisions for v9.0 live in `klarifai-core/docs/strategy/decisions.md`:
+
+- **Q5**: PDF rendering via separate Railway worker service, not in-process
+- **Q8**: Existing klarifai-core YAMLs migrated via idempotent import script
+- **Q9**: Snapshot at `QUOTE_SENT` (not live render) — what client sees is frozen
+- **Q12**: Snapshot versioning = `snapshotAt: DateTime` + `templateVersion: String`, no counter
+- **Q13**: Quote and Prospect have separate status enums with auto-sync via state-machine helper. One new ProspectStatus value: `QUOTE_SENT`. Quote.ACCEPTED → Prospect.CONVERTED (transactional).
+
+Codebase concerns informing v9.0 scope (see `.planning/codebase/CONCERNS.md` and `.planning/tech-debt.md`):
+
+- ProspectStatus has scattered hardcoded string checks — Phase 60 must extract typed constants
+- `updateProspect` mutation accepts any state transition without validation — Phase 60 adds state machine
+- Existing snapshot patterns inconsistent across models — Phase 60 sets new standard for Quote
+- `ResearchRun.inputSnapshot` is untyped Json — same pattern Phase 60 fixes for `Quote.snapshotData`
 
 ### Pending Todos
 
@@ -84,10 +72,10 @@ None.
 
 ### Blockers/Concerns
 
-None.
+None — all Phase 60 blockers (Q5/Q8/Q9/Q12/Q13) resolved in `klarifai-core/docs/strategy/decisions.md`.
 
 ## Session Continuity
 
-Last session: 2026-03-16T07:46:33.383Z
-Stopped at: Completed 59-02-PLAN.md — date-grouped queue, prospect links, kind chips, outreach status panel
-Resume command: `/gsd:execute-phase 56`
+Last session: 2026-04-13T08:45:00.000Z
+Stopped at: Milestone v9.0 started — defining requirements
+Resume command: `/gsd:plan-phase 60`

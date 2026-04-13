@@ -69,7 +69,32 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ### Active
 
-(Requirements being defined — see REQUIREMENTS.md)
+## Current Milestone: v9.0 — Klant Lifecycle Convergence
+
+**Goal:** Converge klarifai-core's quote/contract pipeline into Qualifai zodat de volledige klant-lifecycle (prospect → quote → contract → start project) in één systeem leeft, met een gepersonaliseerde URL als primair output-formaat in plaats van losse PDFs.
+
+**Strategie-context:** Zie `klarifai-core/docs/strategy/qualifai-convergence.md` (strategy), `klarifai-core/docs/strategy/HANDOFF.md` (multi-session handoff), en `klarifai-core/docs/strategy/decisions.md` (locked decisions Q5/Q8/Q9/Q12/Q13).
+
+**Target features (4 phases):**
+
+- **Schema foundation** — `Quote`/`QuoteLine` Prisma models, `QuoteStatus` enum, extended `ProspectStatus` (+`QUOTE_SENT`), tRPC `quotes.*` router with state-machine transitions, foundation fixes (typed status constants, state transition validation on `updateProspect`, Zod-validated snapshots), YAML import script for klarifai-core migration.
+- **Admin UI voor quotes** — `/admin/quotes` list view, `/admin/prospects/[id]/quotes/new` form (narrative fields + line items + scope), live preview iframe, status workflow Draft → Sent.
+- **Client-facing voorstel** — `/discover/[slug]/voorstel` route serving the proposal as HTML (single source: snapshot at sent), accept flow with confirmation modal, separate Railway PDF worker for snapshot generation, Slack/email notification to admin on accept.
+- **Contract workflow** — Contract drafting from accepted quote, click-to-sign with IP logging, contract PDF snapshot, status transition to project-active.
+
+**Out of scope for v9.0** (deferred to v10.0+):
+
+- Invoice generation pipeline
+- klarifai-core CLI deprecation/sunset
+- Multi-brand support (single Klarifai brand assumed)
+
+**Dependencies:**
+
+- `decisions.md` Q5: PDF rendering = separate Railway worker service (not in-process)
+- `decisions.md` Q8: Existing klarifai-core YAMLs migrated via idempotent import script
+- `decisions.md` Q9: Snapshot at `QUOTE_SENT` (not live render)
+- `decisions.md` Q12: Snapshot versioning = `snapshotAt: DateTime` + `templateVersion: String` (no counter)
+- `decisions.md` Q13: Quote and Prospect have separate status enums with auto-sync via state-machine helper
 
 ### Out of Scope
 
@@ -150,4 +175,4 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ---
 
-_Last updated: 2026-03-16 after v8.0 milestone completion_
+_Last updated: 2026-04-13 after v9.0 milestone start (Klant Lifecycle Convergence)_
