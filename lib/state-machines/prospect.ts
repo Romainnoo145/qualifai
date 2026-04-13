@@ -10,17 +10,15 @@
  * Pure function: takes (current, next), no DB. Throws TRPCError('PRECONDITION_FAILED')
  * on invalid transitions. Same-state self-transitions are allowed (idempotent).
  *
- * NOTE: Plan 01 ships this file BEFORE the Prisma enum gains QUOTE_SENT (that lands
- * in Plan 02). The map below references QUOTE_SENT as a string literal typed against
- * the Plan 01 constants module, NOT @prisma/client, to avoid a type error pre-migration.
- * Plan 02's executor will swap the type import to @prisma/client once the enum extends.
+ * Plan 02 swapped the type import to `@prisma/client` once the live enum gained
+ * QUOTE_SENT, so the transition map is now compiler-checked against the database.
  */
 import { TRPCError } from '@trpc/server';
-import type { AllProspectStatus } from '@/lib/constants/prospect-statuses';
+import type { ProspectStatus } from '@prisma/client';
 
 export const VALID_PROSPECT_TRANSITIONS: Record<
-  AllProspectStatus,
-  readonly AllProspectStatus[]
+  ProspectStatus,
+  readonly ProspectStatus[]
 > = {
   DRAFT: ['ENRICHED', 'ARCHIVED'],
   ENRICHED: ['GENERATING', 'READY', 'DRAFT', 'ARCHIVED'],
@@ -35,8 +33,8 @@ export const VALID_PROSPECT_TRANSITIONS: Record<
 };
 
 export function assertValidProspectTransition(
-  current: AllProspectStatus,
-  next: AllProspectStatus,
+  current: ProspectStatus,
+  next: ProspectStatus,
 ): void {
   if (current === next) return; // idempotent
   const allowed = VALID_PROSPECT_TRANSITIONS[current];

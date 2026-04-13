@@ -1,12 +1,12 @@
 /**
  * FOUND-01: Single source of truth for ProspectStatus literal arrays.
  *
- * Plan 01 deliberately uses `as const` WITHOUT `satisfies readonly ProspectStatus[]`
- * because Plan 02 has not yet added QUOTE_SENT to the Prisma enum. Plan 02 will
- * re-add the `satisfies` clause once the enum is extended.
- *
- * Do NOT widen these arrays without updating the Prisma enum first.
+ * Each array carries `satisfies readonly ProspectStatus[]` so the compiler
+ * enforces that every literal is a member of the live Prisma enum. Plan 02
+ * extended the enum with QUOTE_SENT; this clause makes future drift
+ * (a typo, a removed enum value) a build error.
  */
+import type { ProspectStatus } from '@prisma/client';
 
 export const ALL_PROSPECT_STATUSES = [
   'DRAFT',
@@ -19,7 +19,7 @@ export const ALL_PROSPECT_STATUSES = [
   'QUOTE_SENT',
   'CONVERTED',
   'ARCHIVED',
-] as const;
+] as const satisfies readonly ProspectStatus[];
 
 /** Statuses where the public /discover/[slug] page is visible. */
 export const PUBLIC_VISIBLE_STATUSES = [
@@ -29,7 +29,7 @@ export const PUBLIC_VISIBLE_STATUSES = [
   'ENGAGED',
   'QUOTE_SENT',
   'CONVERTED',
-] as const;
+] as const satisfies readonly ProspectStatus[];
 
 /** Statuses indicating the prospect has already viewed the discover page. */
 export const POST_FIRST_VIEW_STATUSES = [
@@ -37,10 +37,13 @@ export const POST_FIRST_VIEW_STATUSES = [
   'ENGAGED',
   'QUOTE_SENT',
   'CONVERTED',
-] as const;
+] as const satisfies readonly ProspectStatus[];
 
 /** Statuses where a Quote is allowed to be sent. */
-export const QUOTE_SENDABLE_STATUSES = ['ENGAGED', 'QUOTE_SENT'] as const;
+export const QUOTE_SENDABLE_STATUSES = [
+  'ENGAGED',
+  'QUOTE_SENT',
+] as const satisfies readonly ProspectStatus[];
 
 /**
  * Statuses where the public dashboard validation block is shown.
@@ -52,13 +55,16 @@ export const DASHBOARD_VISIBLE_STATUSES = [
   'ENGAGED',
   'QUOTE_SENT',
   'CONVERTED',
-] as const;
+] as const satisfies readonly ProspectStatus[];
 
 /**
  * Statuses where a prospect is ready to be picked up for first outreach.
  * Used by server/routers/admin.ts (action queue: "ready for first outreach" filter).
  */
-export const READY_FOR_OUTREACH_STATUSES = ['READY', 'ENRICHED'] as const;
+export const READY_FOR_OUTREACH_STATUSES = [
+  'READY',
+  'ENRICHED',
+] as const satisfies readonly ProspectStatus[];
 
 export type AllProspectStatus = (typeof ALL_PROSPECT_STATUSES)[number];
 export type PublicVisibleStatus = (typeof PUBLIC_VISIBLE_STATUSES)[number];
