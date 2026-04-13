@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
-status: '61-02 shipped — QuoteLineRow/List/StatusBadge/Form primitives + /admin/quotes list page + Voorstellen sidebar nav. 15 vitest cases passing including -800 tarief and read-only mode regressions. Next action: Plan 61-03 (quote create/edit pages wiring).'
-stopped_at: Completed 61-02-PLAN.md
-last_updated: '2026-04-13T20:46:29.380Z'
-last_activity: 2026-04-13 — Plan 61-02 shipped (ADMIN-01/02/03/07 React primitives + list page)
+status: '61-03 shipped — prospect-scoped create page, /admin/quotes/[id] detail page with tabs + read-only branching, admin preview route + sandboxed iframe, and QuoteStatusTimeline (ADMIN-04/ADMIN-06 closed). Resumed session: Tasks 1-3 already committed; Task 4 recovered from timed-out executor and committed as-is. Next action: Plan 61-04 (send + version flow into reserved actions slot).'
+stopped_at: Completed 61-03-PLAN.md
+last_updated: '2026-04-13T21:13:00.000Z'
+last_activity: 2026-04-13 — Plan 61-03 shipped (ADMIN-04 preview route + iframe, ADMIN-06 timeline, ADMIN-02/07 page-wiring)
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 ## Current Position
 
 Phase: 61 — Admin UI for Quotes
-Plan: 02 of 4 — Admin Quote UI Primitives + List Page (complete)
-Status: 61-02 shipped — QuoteLineRow/List/StatusBadge/Form primitives + /admin/quotes list page + Voorstellen sidebar nav. 15 vitest cases passing including -800 tarief and read-only mode regressions. Next action: Plan 61-03 (quote create/edit pages wiring).
-Last activity: 2026-04-13 — Plan 61-02 shipped (ADMIN-01/02/03/07 React primitives + list page)
+Plan: 03 of 4 — Admin Quote UI Page Wiring + Preview + Timeline (complete)
+Status: 61-03 shipped — prospect-scoped create page, /admin/quotes/[id] detail page with tabs + read-only branching, admin preview route + sandboxed iframe, QuoteStatusTimeline with 4 vitest cases. ADMIN-04 + ADMIN-06 closed. Task 4 recovered from prior executor timeout and committed as-is after verification. Next action: Plan 61-04 (send + version flow mounting into reserved actions slot).
+Last activity: 2026-04-13 — Plan 61-03 shipped (ADMIN-04 preview route + iframe, ADMIN-06 timeline, ADMIN-02/07 page-wiring)
 
-**Progress bar:** [████████░░] 78% (7/9 plans, 1/4 phases)
+**Progress bar:** [████████░░] 89% (8/9 plans, 1/4 phases)
 
 ## Milestones Shipped
 
@@ -88,6 +88,12 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 61-admin-ui-for-quotes]: Plan 02: Dynamic list form pattern established — pure state helpers (addLine/updateLine/removeLine/moveUp/moveDown) exported alongside the list component and unit-tested directly without React mount
 - [Phase 61-admin-ui-for-quotes]: Plan 02: Read-only form mode is a single isReadOnly prop — disables every input + replaces submit button with Dutch muted message; Q9 immutability mirrored at UI layer
 - [Phase 61-admin-ui-for-quotes]: Plan 02: /admin/quotes list uses stacked sections (Concept/Verstuurd/Gearchiveerd) with native HTML <details> for the archived collapsible — no new disclosure primitive added
+- [Phase 61-admin-ui-for-quotes]: Plan 03: Detail page URL is flat at /admin/quotes/[id] (O4 hybrid — nested under prospect for create, flat for edit) so the reserved actions slot can be mounted without a prospect context
+- [Phase 61-admin-ui-for-quotes]: Plan 03: Tab panels ALWAYS use CSS `hidden` (className={tab===X ? "" : "hidden"}) to keep panels mounted and avoid refetch flash on switch — never conditional unmount, never React.lazy in tabs
+- [Phase 61-admin-ui-for-quotes]: Plan 03: Admin HTML preview route contract: sandboxed iframe + bearer token in querystring → server handler maps scope.allowedProjectSlug → project.id → prospect.projectId filter → renderQuotePreview → text/html with Pitfall 4 headers (no-store + noindex + no-referrer)
+- [Phase 61-admin-ui-for-quotes]: Plan 03: Empty `data-testid="quote-actions-slot"` div on detail page is the 61-04 contract — 61-04 mounts QuoteSendConfirm + QuoteVersionConfirm into the slot without touching the detail page shell
+- [Phase 61-admin-ui-for-quotes]: Plan 03: Next.js 15 route handler params accepted as sync OR Promise via `await Promise.resolve(context.params)` — single-line forward-compat with upcoming Promise<{id}> params shape
+- [Phase 61-admin-ui-for-quotes]: Plan 03: Timeline viewedAt/acceptedAt hardcoded to null in 61-03 (props optional nullables) — Phase 62 adds real columns and swaps the null literals without touching the component API
 
 ### Pending Todos
 
@@ -108,6 +114,6 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-13T20:45:38.954Z
-Stopped at: Completed 61-02-PLAN.md
-Resume command: `/gsd:execute-plan 61 02`
+Last session: 2026-04-13T21:13:00.000Z
+Stopped at: Completed 61-03-PLAN.md
+Resume command: `/gsd:execute-plan 61 04`

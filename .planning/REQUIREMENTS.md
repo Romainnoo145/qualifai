@@ -53,7 +53,7 @@ Romano can manage quotes from inside the existing Qualifai admin shell.
 - [x] **ADMIN-03**: Admin can add, reorder, edit, and remove line items in the create form (each line: fase, omschrijving, oplevering, uren, tarief)
 - [x] **ADMIN-04**: Admin can preview the quote as rendered HTML in an iframe before sending (mirror of `/discover/[slug]/voorstel` for that draft)
 - [x] **ADMIN-05**: Admin can transition quote from `DRAFT → SENT` via a button that triggers snapshot creation and queues PDF rendering
-- [ ] **ADMIN-06**: Admin can see quote status timeline (Created, Sent at, Viewed at, Accepted at) on the quote detail page
+- [x] **ADMIN-06**: Admin can see quote status timeline (Created, Sent at, Viewed at, Accepted at) on the quote detail page
 - [x] **ADMIN-07**: Admin can edit a `DRAFT` quote freely; `SENT` and later quotes are read-only (immutable snapshot)
 - [x] **ADMIN-08**: Admin can archive an existing quote and create a new version that references the archived one via `replacesId`
 
@@ -184,7 +184,7 @@ Tests die direct uit verification criteria komen, niet als bonus.
 | ADMIN-03    | 61    | Complete |
 | ADMIN-04    | 61    | Complete |
 | ADMIN-05    | 61    | Complete |
-| ADMIN-06    | 61    | Pending  |
+| ADMIN-06    | 61    | Complete |
 | ADMIN-07    | 61    | Complete |
 | ADMIN-08    | 61    | Complete |
 | DSGN-01     | 62    | Pending  |
