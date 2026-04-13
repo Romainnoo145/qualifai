@@ -175,8 +175,8 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 **Plans**: 5 plans
 
-- [ ] 60-01-PLAN.md — Foundation: prospect status constants + state machine + admin.updateProspect guard (FOUND-01, FOUND-02, TEST-01)
-- [ ] 60-02-PLAN.md — Prisma schema: Quote/QuoteLine models, QuoteStatus + SnapshotStatus enums, ProspectStatus extension, generated migration (DATA-01..07)
+- [x] 60-01-PLAN.md — Foundation: prospect status constants + state machine + admin.updateProspect guard (FOUND-01, FOUND-02, TEST-01)
+- [x] 60-02-PLAN.md — Prisma schema: Quote/QuoteLine models, QuoteStatus + SnapshotStatus enums, ProspectStatus extension, generated migration (DATA-01..07)
 - [ ] 60-03-PLAN.md — Zod snapshot schema + accessor helpers (FOUND-03, FOUND-04, TEST-05)
 - [ ] 60-04-PLAN.md — quotes tRPC router + transitionQuote state machine + multi-project isolation tests (DATA-08..10, TEST-02, TEST-03)
 - [ ] 60-05-PLAN.md — YAML import script (Marfa OFF001/2/3) + integration tests (IMPORT-01..04, TEST-04)
@@ -264,7 +264,7 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 | Phase                                   | Plans Complete | Status      | Completed |
 | --------------------------------------- | -------------- | ----------- | --------- |
-| 60. Quote Schema Foundation             | 0/5            | Planned     | -         |
+| 60. Quote Schema Foundation             | 2/5            | In Progress |           |
 | 61. Admin UI for Quotes                 | 0/TBD          | Not started | -         |
 | 62. Client-Facing Voorstel + PDF Worker | 0/TBD          | Not started | -         |
 | 63. Contract Workflow                   | 0/TBD          | Not started | -         |

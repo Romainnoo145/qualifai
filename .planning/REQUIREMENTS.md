@@ -15,13 +15,13 @@
 
 The Prisma schema and tRPC API surface for Quote/QuoteLine. Foundation that everything else depends on.
 
-- [ ] **DATA-01**: System has `Quote` Prisma model with narrative fields (`tagline`, `introductie`, `uitdaging`, `aanpak`), `onderwerp`, `nummer`, `datum`, `geldig_tot`, `scope`, `buiten_scope`, and `btw_percentage`
-- [ ] **DATA-02**: System has `QuoteLine` Prisma model with `fase`, `omschrijving`, `oplevering`, `uren`, `tarief`, linked to parent `Quote`
-- [ ] **DATA-03**: System has `QuoteStatus` enum with values `DRAFT | SENT | VIEWED | ACCEPTED | REJECTED | EXPIRED | ARCHIVED`
-- [ ] **DATA-04**: `ProspectStatus` enum is extended with one new value `QUOTE_SENT` (positioned between `ENGAGED` and `CONVERTED`); existing values unchanged
-- [ ] **DATA-05**: `Quote` model has snapshot fields per decisions.md Q12: `snapshotAt: DateTime?`, `templateVersion: String?`, `snapshotHtml: String? @db.Text`, `snapshotData: Json?`, `snapshotPdfUrl: String?`, `snapshotStatus: SnapshotStatus?`
-- [ ] **DATA-06**: `Quote` is linked to `Prospect` via `prospectId` foreign key with cascade rules consistent with existing Prospect relations
-- [ ] **DATA-07**: Prisma migration runs cleanly on shadow DB without breaking existing rows; all new columns nullable for backwards compatibility
+- [x] **DATA-01**: System has `Quote` Prisma model with narrative fields (`tagline`, `introductie`, `uitdaging`, `aanpak`), `onderwerp`, `nummer`, `datum`, `geldig_tot`, `scope`, `buiten_scope`, and `btw_percentage`
+- [x] **DATA-02**: System has `QuoteLine` Prisma model with `fase`, `omschrijving`, `oplevering`, `uren`, `tarief`, linked to parent `Quote`
+- [x] **DATA-03**: System has `QuoteStatus` enum with values `DRAFT | SENT | VIEWED | ACCEPTED | REJECTED | EXPIRED | ARCHIVED`
+- [x] **DATA-04**: `ProspectStatus` enum is extended with one new value `QUOTE_SENT` (positioned between `ENGAGED` and `CONVERTED`); existing values unchanged
+- [x] **DATA-05**: `Quote` model has snapshot fields per decisions.md Q12: `snapshotAt: DateTime?`, `templateVersion: String?`, `snapshotHtml: String? @db.Text`, `snapshotData: Json?`, `snapshotPdfUrl: String?`, `snapshotStatus: SnapshotStatus?`
+- [x] **DATA-06**: `Quote` is linked to `Prospect` via `prospectId` foreign key with cascade rules consistent with existing Prospect relations
+- [x] **DATA-07**: Prisma migration runs cleanly on shadow DB without breaking existing rows; all new columns nullable for backwards compatibility
 - [ ] **DATA-08**: tRPC `quotes` router exists with `create`, `list`, `get`, `update`, `transition` operations using `projectAdminProcedure`
 - [ ] **DATA-09**: `quotes.transition(id, newStatus)` is a transactional helper that handles Quote → Prospect status auto-sync per decisions.md Q13 mapping table
 - [ ] **DATA-10**: All new tRPC endpoints filter by `ctx.projectId` (multi-tenant isolation maintained)
@@ -30,8 +30,8 @@ The Prisma schema and tRPC API surface for Quote/QuoteLine. Foundation that ever
 
 Fragile areas in the existing Qualifai codebase that Phase 60 must address before bolting Quote on top.
 
-- [ ] **FOUND-01**: Typed status constants live in `lib/constants/prospect-statuses.ts` as `as const` arrays (`PUBLIC_STATUSES`, `WIZARD_VISIBLE_STATUSES`, etc.); all hardcoded status string literals in `wizard.ts` and `admin.ts` are replaced by references to these constants
-- [ ] **FOUND-02**: `admin.updateProspect` mutation validates state transitions; invalid transitions (e.g. `CONVERTED → DRAFT`) return a typed error rather than silently writing
+- [x] **FOUND-01**: Typed status constants live in `lib/constants/prospect-statuses.ts` as `as const` arrays (`PUBLIC_STATUSES`, `WIZARD_VISIBLE_STATUSES`, etc.); all hardcoded status string literals in `wizard.ts` and `admin.ts` are replaced by references to these constants
+- [x] **FOUND-02**: `admin.updateProspect` mutation validates state transitions; invalid transitions (e.g. `CONVERTED → DRAFT`) return a typed error rather than silently writing
 - [ ] **FOUND-03**: `Quote.snapshotData` has a Zod schema in `lib/schemas/quote-snapshot.ts`, validated on every write
 - [ ] **FOUND-04**: Type-safe accessor helper exists for reading snapshot fields without unsafe property access
 
@@ -109,7 +109,7 @@ Click-to-sign contract that follows an accepted quote. Per decisions.md Q3 (defa
 
 Tests die direct uit verification criteria komen, niet als bonus.
 
-- [ ] **TEST-01**: State transition tests for `Prospect.updateProspect` covering valid paths and rejected invalid moves
+- [x] **TEST-01**: State transition tests for `Prospect.updateProspect` covering valid paths and rejected invalid moves
 - [ ] **TEST-02**: State transition tests for `Quote.transition` covering full state machine including Quote → Prospect auto-sync
 - [ ] **TEST-03**: Multi-project isolation test for new `quotes.*` endpoints — admin scoped to Project A cannot see/mutate quotes in Project B
 - [ ] **TEST-04**: Integration test for YAML import script — imports the 3 Marfa fixtures and verifies record counts + totals
@@ -154,67 +154,67 @@ Tests die direct uit verification criteria komen, niet als bonus.
 
 ## Traceability
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| DATA-01     | 60    | Pending |
-| DATA-02     | 60    | Pending |
-| DATA-03     | 60    | Pending |
-| DATA-04     | 60    | Pending |
-| DATA-05     | 60    | Pending |
-| DATA-06     | 60    | Pending |
-| DATA-07     | 60    | Pending |
-| DATA-08     | 60    | Pending |
-| DATA-09     | 60    | Pending |
-| DATA-10     | 60    | Pending |
-| FOUND-01    | 60    | Pending |
-| FOUND-02    | 60    | Pending |
-| FOUND-03    | 60    | Pending |
-| FOUND-04    | 60    | Pending |
-| IMPORT-01   | 60    | Pending |
-| IMPORT-02   | 60    | Pending |
-| IMPORT-03   | 60    | Pending |
-| IMPORT-04   | 60    | Pending |
-| TEST-01     | 60    | Pending |
-| TEST-02     | 60    | Pending |
-| TEST-03     | 60    | Pending |
-| TEST-04     | 60    | Pending |
-| TEST-05     | 60    | Pending |
-| ADMIN-01    | 61    | Pending |
-| ADMIN-02    | 61    | Pending |
-| ADMIN-03    | 61    | Pending |
-| ADMIN-04    | 61    | Pending |
-| ADMIN-05    | 61    | Pending |
-| ADMIN-06    | 61    | Pending |
-| ADMIN-07    | 61    | Pending |
-| ADMIN-08    | 61    | Pending |
-| DSGN-01     | 62    | Pending |
-| DSGN-02     | 62    | Pending |
-| DSGN-03     | 62    | Pending |
-| CLIENT-01   | 62    | Pending |
-| CLIENT-02   | 62    | Pending |
-| CLIENT-03   | 62    | Pending |
-| CLIENT-04   | 62    | Pending |
-| CLIENT-05   | 62    | Pending |
-| CLIENT-06   | 62    | Pending |
-| CLIENT-07   | 62    | Pending |
-| CLIENT-08   | 62    | Pending |
-| PDF-01      | 62    | Pending |
-| PDF-02      | 62    | Pending |
-| PDF-03      | 62    | Pending |
-| PDF-04      | 62    | Pending |
-| PDF-05      | 62    | Pending |
-| PDF-06      | 62    | Pending |
-| PDF-07      | 62    | Pending |
-| CONT-01     | 63    | Pending |
-| CONT-02     | 63    | Pending |
-| CONT-03     | 63    | Pending |
-| CONT-04     | 63    | Pending |
-| CONT-05     | 63    | Pending |
-| CONT-06     | 63    | Pending |
-| CONT-07     | 63    | Pending |
-| CONT-08     | 63    | Pending |
-| CONT-09     | 63    | Pending |
-| CONT-10     | 63    | Pending |
+| Requirement | Phase | Status   |
+| ----------- | ----- | -------- |
+| DATA-01     | 60    | Complete |
+| DATA-02     | 60    | Complete |
+| DATA-03     | 60    | Complete |
+| DATA-04     | 60    | Complete |
+| DATA-05     | 60    | Complete |
+| DATA-06     | 60    | Complete |
+| DATA-07     | 60    | Complete |
+| DATA-08     | 60    | Pending  |
+| DATA-09     | 60    | Pending  |
+| DATA-10     | 60    | Pending  |
+| FOUND-01    | 60    | Complete |
+| FOUND-02    | 60    | Complete |
+| FOUND-03    | 60    | Pending  |
+| FOUND-04    | 60    | Pending  |
+| IMPORT-01   | 60    | Pending  |
+| IMPORT-02   | 60    | Pending  |
+| IMPORT-03   | 60    | Pending  |
+| IMPORT-04   | 60    | Pending  |
+| TEST-01     | 60    | Complete |
+| TEST-02     | 60    | Pending  |
+| TEST-03     | 60    | Pending  |
+| TEST-04     | 60    | Pending  |
+| TEST-05     | 60    | Pending  |
+| ADMIN-01    | 61    | Pending  |
+| ADMIN-02    | 61    | Pending  |
+| ADMIN-03    | 61    | Pending  |
+| ADMIN-04    | 61    | Pending  |
+| ADMIN-05    | 61    | Pending  |
+| ADMIN-06    | 61    | Pending  |
+| ADMIN-07    | 61    | Pending  |
+| ADMIN-08    | 61    | Pending  |
+| DSGN-01     | 62    | Pending  |
+| DSGN-02     | 62    | Pending  |
+| DSGN-03     | 62    | Pending  |
+| CLIENT-01   | 62    | Pending  |
+| CLIENT-02   | 62    | Pending  |
+| CLIENT-03   | 62    | Pending  |
+| CLIENT-04   | 62    | Pending  |
+| CLIENT-05   | 62    | Pending  |
+| CLIENT-06   | 62    | Pending  |
+| CLIENT-07   | 62    | Pending  |
+| CLIENT-08   | 62    | Pending  |
+| PDF-01      | 62    | Pending  |
+| PDF-02      | 62    | Pending  |
+| PDF-03      | 62    | Pending  |
+| PDF-04      | 62    | Pending  |
+| PDF-05      | 62    | Pending  |
+| PDF-06      | 62    | Pending  |
+| PDF-07      | 62    | Pending  |
+| CONT-01     | 63    | Pending  |
+| CONT-02     | 63    | Pending  |
+| CONT-03     | 63    | Pending  |
+| CONT-04     | 63    | Pending  |
+| CONT-05     | 63    | Pending  |
+| CONT-06     | 63    | Pending  |
+| CONT-07     | 63    | Pending  |
+| CONT-08     | 63    | Pending  |
+| CONT-09     | 63    | Pending  |
+| CONT-10     | 63    | Pending  |
 
 **Coverage:**
 

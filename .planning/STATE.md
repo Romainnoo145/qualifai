@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
-status: roadmap_ready
-stopped_at: Roadmap created — Phase 60 ready to plan
-last_updated: '2026-04-13T09:00:00.000Z'
-last_activity: '2026-04-13 — v9.0 roadmap created (Phases 60-63, 55 requirements mapped)'
+status: 'Roadmap ready — next action is `/gsd:plan-phase 60`'
+stopped_at: Completed 60-02-PLAN.md (Quote schema foundation)
+last_updated: '2026-04-13T11:25:41.951Z'
+last_activity: 2026-04-13 — Roadmap created for v9.0
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 5
+  completed_plans: 2
 ---
 
 # Project State
@@ -73,6 +72,8 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - Cadence engine config hardcoded thresholds (unrelated to Quote)
 - `ResearchRun.inputSnapshot` Zod schema (separate cleanup, not Phase 60 blocker)
 - Inconsistent snapshot versioning on WorkflowLossMap/ProspectAnalysis (separate cleanup)
+- [Phase 60]: Plan 02: Manually-authored migration to bypass pre-existing dev DB drift, verified clean on shadow DB pre-loaded from dev schema dump
+- [Phase 60]: Plan 02: Quote.replacesId self-FK added in Phase 60 (Q9) to avoid second migration in Phase 61
 
 ### Pending Todos
 
@@ -93,6 +94,6 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-13T09:00:00.000Z
-Stopped at: Roadmap created for v9.0 — 4 phases (60-63), 55 requirements mapped
+Last session: 2026-04-13T11:25:33.678Z
+Stopped at: Completed 60-02-PLAN.md (Quote schema foundation)
 Resume command: `/gsd:plan-phase 60`
