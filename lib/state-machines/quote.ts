@@ -111,69 +111,78 @@ export async function transitionQuote(
   quoteId: string,
   newStatus: QuoteStatus,
 ) {
-  // Use $transaction even for read-then-write to guarantee atomicity
-  return (db as PrismaClient).$transaction(async (tx) => {
-    const quote = await tx.quote.findUnique({
-      where: { id: quoteId },
-      include: {
-        prospect: {
-          select: { id: true, status: true, slug: true, companyName: true },
-        },
-        lines: true,
+  // If caller already started a transaction (Prisma.TransactionClient has no
+  // $transaction method), run inline on the passed client so nested callers
+  // like quotes.createVersion keep a single atomic unit. Otherwise open our
+  // own transaction for the read-then-write atomicity guarantee.
+  const maybeTx = (db as PrismaClient).$transaction;
+  if (typeof maybeTx !== 'function') {
+    return runTransition(db as Prisma.TransactionClient, quoteId, newStatus);
+  }
+  return (db as PrismaClient).$transaction(async (tx) =>
+    runTransition(tx, quoteId, newStatus),
+  );
+}
+
+async function runTransition(
+  tx: Prisma.TransactionClient,
+  quoteId: string,
+  newStatus: QuoteStatus,
+) {
+  const quote = await tx.quote.findUnique({
+    where: { id: quoteId },
+    include: {
+      prospect: {
+        select: { id: true, status: true, slug: true, companyName: true },
       },
-    });
-
-    if (!quote) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: `Quote ${quoteId} not found`,
-      });
-    }
-
-    // 1. Quote-side transition validation
-    if (
-      quote.status !== newStatus &&
-      !VALID_QUOTE_TRANSITIONS[quote.status].includes(newStatus)
-    ) {
-      throw new TRPCError({
-        code: 'PRECONDITION_FAILED',
-        message: `Invalid quote status transition: ${quote.status} -> ${newStatus}`,
-      });
-    }
-
-    // 2. Snapshot-on-SENT freeze (Q9)
-    const updateData: Prisma.QuoteUpdateInput = { status: newStatus };
-    if (newStatus === 'SENT' && quote.status === 'DRAFT') {
-      const snapshot = QuoteSnapshotSchema.parse(buildSnapshotFromQuote(quote));
-      updateData.snapshotData = snapshot as unknown as Prisma.InputJsonValue;
-      updateData.snapshotAt = new Date();
-      updateData.templateVersion =
-        process.env.QUOTE_TEMPLATE_VERSION ??
-        new Date().toISOString().slice(0, 10);
-      updateData.snapshotStatus = 'PENDING';
-    }
-
-    const updatedQuote = await tx.quote.update({
-      where: { id: quoteId },
-      data: updateData,
-    });
-
-    // 3. Prospect sync (Q13) — same transaction
-    const targetProspectStatus = QUOTE_TO_PROSPECT_SYNC[newStatus];
-    if (
-      targetProspectStatus &&
-      quote.prospect.status !== targetProspectStatus
-    ) {
-      assertValidProspectTransition(
-        quote.prospect.status,
-        targetProspectStatus,
-      );
-      await tx.prospect.update({
-        where: { id: quote.prospect.id },
-        data: { status: targetProspectStatus },
-      });
-    }
-
-    return updatedQuote;
+      lines: true,
+    },
   });
+
+  if (!quote) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: `Quote ${quoteId} not found`,
+    });
+  }
+
+  // 1. Quote-side transition validation
+  if (
+    quote.status !== newStatus &&
+    !VALID_QUOTE_TRANSITIONS[quote.status].includes(newStatus)
+  ) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: `Invalid quote status transition: ${quote.status} -> ${newStatus}`,
+    });
+  }
+
+  // 2. Snapshot-on-SENT freeze (Q9)
+  const updateData: Prisma.QuoteUpdateInput = { status: newStatus };
+  if (newStatus === 'SENT' && quote.status === 'DRAFT') {
+    const snapshot = QuoteSnapshotSchema.parse(buildSnapshotFromQuote(quote));
+    updateData.snapshotData = snapshot as unknown as Prisma.InputJsonValue;
+    updateData.snapshotAt = new Date();
+    updateData.templateVersion =
+      process.env.QUOTE_TEMPLATE_VERSION ??
+      new Date().toISOString().slice(0, 10);
+    updateData.snapshotStatus = 'PENDING';
+  }
+
+  const updatedQuote = await tx.quote.update({
+    where: { id: quoteId },
+    data: updateData,
+  });
+
+  // 3. Prospect sync (Q13) — same transaction
+  const targetProspectStatus = QUOTE_TO_PROSPECT_SYNC[newStatus];
+  if (targetProspectStatus && quote.prospect.status !== targetProspectStatus) {
+    assertValidProspectTransition(quote.prospect.status, targetProspectStatus);
+    await tx.prospect.update({
+      where: { id: quote.prospect.id },
+      data: { status: targetProspectStatus },
+    });
+  }
+
+  return updatedQuote;
 }

@@ -89,10 +89,21 @@ interface MockDb {
   prospect: { findFirst: Mock };
   quoteLine: { deleteMany: Mock; createMany: Mock };
   $transaction: Mock;
+  _txQuoteCreate?: Mock;
 }
 
 function makeMockDb(): MockDb {
-  return {
+  const txQuoteCreate = vi
+    .fn()
+    .mockImplementation(
+      async ({ data }: { data: Record<string, unknown> }) => ({
+        id: 'new-quote',
+        ...data,
+        lines: [],
+      }),
+    );
+
+  const db: MockDb = {
     project: { findUnique: vi.fn().mockResolvedValue(PROJECT_A) },
     quote: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -113,6 +124,7 @@ function makeMockDb(): MockDb {
         return (cb as (tx: unknown) => unknown)({
           quote: {
             update: vi.fn().mockResolvedValue({ id: 'q1' }),
+            create: txQuoteCreate,
           },
           quoteLine: {
             deleteMany: vi.fn(),
@@ -122,7 +134,9 @@ function makeMockDb(): MockDb {
       }
       return cb;
     }),
+    _txQuoteCreate: txQuoteCreate,
   };
+  return db;
 }
 
 // ---------------------------------------------------------------------------
@@ -301,5 +315,214 @@ describe('quotes router — transition delegation', () => {
       caller.quotes.transition({ id: 'q-other', newStatus: 'SENT' }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     expect(transitionQuote).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ADMIN-08 / Pitfall 3 — createVersion + suggestNextQuoteNumber
+// ---------------------------------------------------------------------------
+
+describe('quotes.createVersion', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const ORIGINAL_LINES = [
+    {
+      id: 'l1',
+      quoteId: 'q1',
+      fase: 'Discovery & analyse',
+      omschrijving: 'Huidige omgeving analyseren',
+      oplevering: 'Architectuur-doc',
+      uren: 8,
+      tarief: 95,
+      position: 0,
+    },
+    {
+      id: 'l2',
+      quoteId: 'q1',
+      fase: 'Rebuild',
+      omschrijving: 'Volledige rebuild',
+      oplevering: 'Werkend platform',
+      uren: 48,
+      tarief: 95,
+      position: 1,
+    },
+  ];
+
+  const ORIGINAL_QUOTE = {
+    id: 'q1',
+    prospectId: 'p1',
+    replacesId: null,
+    status: 'SENT',
+    nummer: '2026-OFF001',
+    datum: new Date('2026-04-10'),
+    geldigTot: new Date('2026-05-10'),
+    onderwerp: 'Rebuild Plancraft',
+    tagline: 'Pragmatische rebuild.',
+    introductie: 'Intro tekst',
+    uitdaging: 'Uitdaging tekst',
+    aanpak: 'Aanpak tekst',
+    btwPercentage: 21,
+    scope: '- Rebuild\n- Migratie',
+    buitenScope: '- Hosting',
+    lines: ORIGINAL_LINES,
+  };
+
+  it('happy path: clones narrative + lines into DRAFT, sets replacesId, archives original in ONE $transaction', async () => {
+    const db = makeMockDb();
+    db.quote.findFirst.mockResolvedValueOnce({ id: 'q1', status: 'SENT' });
+    db.quote.findUniqueOrThrow.mockResolvedValueOnce(ORIGINAL_QUOTE);
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+
+    await caller.quotes.createVersion({ fromId: 'q1' });
+
+    // One and only one $transaction open
+    expect(db.$transaction).toHaveBeenCalledTimes(1);
+
+    // tx.quote.create called with cloned fields + DRAFT status + replacesId
+    expect(db._txQuoteCreate).toHaveBeenCalledTimes(1);
+    const createArgs = db._txQuoteCreate!.mock.calls[0]![0] as {
+      data: Record<string, unknown> & {
+        lines: { create: Array<Record<string, unknown>> };
+      };
+    };
+    expect(createArgs.data.replacesId).toBe('q1');
+    expect(createArgs.data.status).toBe('DRAFT');
+    expect(createArgs.data.prospectId).toBe('p1');
+    expect(createArgs.data.onderwerp).toBe('Rebuild Plancraft');
+    expect(createArgs.data.uitdaging).toBe('Uitdaging tekst');
+    expect(createArgs.data.aanpak).toBe('Aanpak tekst');
+    expect(createArgs.data.btwPercentage).toBe(21);
+    expect(createArgs.data.scope).toBe('- Rebuild\n- Migratie');
+    expect(createArgs.data.nummer).toBe('2026-OFF001-v2');
+    // Lines cloned
+    expect(createArgs.data.lines.create).toHaveLength(2);
+    expect(createArgs.data.lines.create[0]?.fase).toBe('Discovery & analyse');
+    expect(createArgs.data.lines.create[0]?.tarief).toBe(95);
+
+    // transitionQuote called to ARCHIVE the source, inside the same tx
+    expect(transitionQuote).toHaveBeenCalledWith(
+      expect.anything(),
+      'q1',
+      'ARCHIVED',
+    );
+  });
+
+  it('increments existing -vN suffix: 2026-OFF001-v2 -> 2026-OFF001-v3', async () => {
+    const db = makeMockDb();
+    db.quote.findFirst.mockResolvedValueOnce({ id: 'q1', status: 'SENT' });
+    db.quote.findUniqueOrThrow.mockResolvedValueOnce({
+      ...ORIGINAL_QUOTE,
+      nummer: '2026-OFF001-v2',
+    });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+
+    await caller.quotes.createVersion({ fromId: 'q1' });
+    const createArgs = db._txQuoteCreate!.mock.calls[0]![0] as {
+      data: { nummer: string };
+    };
+    expect(createArgs.data.nummer).toBe('2026-OFF001-v3');
+  });
+
+  it('cross-project reject: NOT_FOUND before any findUniqueOrThrow or $transaction', async () => {
+    const db = makeMockDb();
+    db.quote.findFirst.mockResolvedValueOnce(null);
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+
+    await expect(
+      caller.quotes.createVersion({ fromId: 'q-other-project' }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+
+    expect(db.quote.findUniqueOrThrow).not.toHaveBeenCalled();
+    expect(db.$transaction).not.toHaveBeenCalled();
+    expect(transitionQuote).not.toHaveBeenCalled();
+  });
+
+  it('clones negative-tarief discount line without clamping', async () => {
+    const db = makeMockDb();
+    const discountLine = {
+      id: 'l3',
+      quoteId: 'q1',
+      fase: 'Pakketkorting',
+      omschrijving: 'Korting',
+      oplevering: '',
+      uren: 1,
+      tarief: -800,
+      position: 2,
+    };
+    db.quote.findFirst.mockResolvedValueOnce({ id: 'q1', status: 'SENT' });
+    db.quote.findUniqueOrThrow.mockResolvedValueOnce({
+      ...ORIGINAL_QUOTE,
+      lines: [...ORIGINAL_LINES, discountLine],
+    });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+
+    await caller.quotes.createVersion({ fromId: 'q1' });
+
+    const createArgs = db._txQuoteCreate!.mock.calls[0]![0] as {
+      data: { lines: { create: Array<{ fase: string; tarief: number }> } };
+    };
+    const korting = createArgs.data.lines.create.find(
+      (l) => l.fase === 'Pakketkorting',
+    );
+    expect(korting).toBeDefined();
+    expect(korting?.tarief).toBe(-800);
+  });
+});
+
+describe('quotes.suggestNextQuoteNumber', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns YYYY-OFF001 when no quotes exist in scope', async () => {
+    const db = makeMockDb();
+    db.quote.findFirst.mockResolvedValueOnce(null);
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+
+    const result = await caller.quotes.suggestNextQuoteNumber();
+    const currentYear = new Date().getFullYear();
+    expect(result.nummer).toBe(`${currentYear}-OFF001`);
+    // Query scoped via prospect.projectId
+    expect(db.quote.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          prospect: expect.objectContaining({ projectId: 'proj-a' }),
+        }),
+      }),
+    );
+  });
+
+  it('returns next sequential number when highest existing is OFF003', async () => {
+    const db = makeMockDb();
+    const currentYear = new Date().getFullYear();
+    db.quote.findFirst.mockResolvedValueOnce({
+      nummer: `${currentYear}-OFF003`,
+    });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+
+    const result = await caller.quotes.suggestNextQuoteNumber();
+    expect(result.nummer).toBe(`${currentYear}-OFF004`);
   });
 });

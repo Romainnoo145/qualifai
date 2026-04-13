@@ -245,4 +245,107 @@ export const quotesRouter = router({
       await assertQuoteInProject(ctx as unknown as ScopedCtx, input.id);
       return transitionQuote(ctx.db, input.id, input.newStatus);
     }),
+
+  /**
+   * Phase 61 / O1 — next-quote-number suggester.
+   *
+   * Returns the lowest unused `YYYY-OFF###` sequence number in the active
+   * project. Empty scope → `YYYY-OFF001`. Highest existing → increment by 1.
+   * No atomicity claim: this is an advisory helper only. The actual uniqueness
+   * guard lives on Quote.nummer (DB unique constraint).
+   */
+  suggestNextQuoteNumber: projectAdminProcedure.query(async ({ ctx }) => {
+    const year = new Date().getFullYear();
+    const prefix = `${year}-OFF`;
+    const latest = await ctx.db.quote.findFirst({
+      where: {
+        prospect: { projectId: ctx.projectId },
+        nummer: { startsWith: prefix },
+      },
+      orderBy: { nummer: 'desc' },
+      select: { nummer: true },
+    });
+    if (!latest) return { nummer: `${prefix}001` };
+    const match = latest.nummer.match(/OFF(\d{3})/);
+    const next = match ? Number(match[1]) + 1 : 1;
+    return { nummer: `${prefix}${String(next).padStart(3, '0')}` };
+  }),
+
+  /**
+   * Phase 61 / ADMIN-08 / Pitfall 3 — clone a Quote into a new DRAFT version.
+   *
+   * Clones all narrative + line data from the source Quote (SENT/VIEWED are
+   * expected callers, but any status is accepted — immutability is enforced
+   * on the *source* row which stays untouched in Q9 terms: no snapshot or
+   * narrative field is rewritten) and archives the source inside ONE
+   * prisma.$transaction so the client never sees a half-cloned state.
+   *
+   * The new DRAFT.replacesId points at the source so the UI can render
+   * version lineage. nummer is suffixed `-v2` (follow-up versions: `-v3`,
+   * etc. — executor scans the suffix and increments).
+   */
+  createVersion: projectAdminProcedure
+    .input(z.object({ fromId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertQuoteInProject(ctx as unknown as ScopedCtx, input.fromId);
+
+      const original = await ctx.db.quote.findUniqueOrThrow({
+        where: { id: input.fromId },
+        include: { lines: { orderBy: { position: 'asc' } } },
+      });
+
+      return ctx.db.$transaction(async (tx) => {
+        const now = new Date();
+        const geldigTot = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        const nextNummer = buildNextVersionNummer(original.nummer);
+
+        const created = await tx.quote.create({
+          data: {
+            prospectId: original.prospectId,
+            replacesId: original.id,
+            status: 'DRAFT',
+            nummer: nextNummer,
+            datum: now,
+            geldigTot,
+            onderwerp: original.onderwerp,
+            tagline: original.tagline,
+            introductie: original.introductie,
+            uitdaging: original.uitdaging,
+            aanpak: original.aanpak,
+            btwPercentage: original.btwPercentage,
+            scope: original.scope,
+            buitenScope: original.buitenScope,
+            lines: {
+              create: original.lines.map((l, idx) => ({
+                fase: l.fase,
+                omschrijving: l.omschrijving,
+                oplevering: l.oplevering,
+                uren: l.uren,
+                tarief: l.tarief,
+                position: idx,
+              })),
+            },
+          },
+          include: { lines: { orderBy: { position: 'asc' } } },
+        });
+
+        await transitionQuote(tx, original.id, 'ARCHIVED');
+        return created;
+      });
+    }),
 });
+
+/**
+ * Suffix the quote nummer with `-v2`, or increment an existing `-vN` suffix.
+ * Exported for test visibility via a side-module if needed — intentionally a
+ * private helper for now.
+ */
+function buildNextVersionNummer(currentNummer: string): string {
+  const match = currentNummer.match(/^(.*?)-v(\d+)$/);
+  if (match) {
+    const base = match[1] ?? currentNummer;
+    const n = Number(match[2]) + 1;
+    return `${base}-v${n}`;
+  }
+  return `${currentNummer}-v2`;
+}
