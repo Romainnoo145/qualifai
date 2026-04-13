@@ -16,15 +16,20 @@
 import { TRPCError } from '@trpc/server';
 import type { ProspectStatus } from '@prisma/client';
 
+// Phase 61 / O9: DRAFT/ENRICHED/READY/SENT → QUOTE_SENT added so DRAFT→SENT
+// quote transitions cascade cleanly for prospects that bypassed the engagement
+// funnel (imported, manually seeded, or data-only prospects). See Pitfall 7 in
+// 61-RESEARCH.md. GENERATING stays closed (prospect is in an in-flight state);
+// CONVERTED stays closed (QUOTE_SENT backwards from CONVERTED is nonsensical).
 export const VALID_PROSPECT_TRANSITIONS: Record<
   ProspectStatus,
   readonly ProspectStatus[]
 > = {
-  DRAFT: ['ENRICHED', 'ARCHIVED'],
-  ENRICHED: ['GENERATING', 'READY', 'DRAFT', 'ARCHIVED'],
+  DRAFT: ['ENRICHED', 'ARCHIVED', 'QUOTE_SENT'],
+  ENRICHED: ['GENERATING', 'READY', 'DRAFT', 'ARCHIVED', 'QUOTE_SENT'],
   GENERATING: ['READY', 'ENRICHED', 'DRAFT', 'ARCHIVED'],
-  READY: ['SENT', 'ENRICHED', 'ARCHIVED'],
-  SENT: ['VIEWED', 'ENGAGED', 'READY', 'ARCHIVED'],
+  READY: ['SENT', 'ENRICHED', 'ARCHIVED', 'QUOTE_SENT'],
+  SENT: ['VIEWED', 'ENGAGED', 'READY', 'ARCHIVED', 'QUOTE_SENT'],
   VIEWED: ['ENGAGED', 'QUOTE_SENT', 'ARCHIVED'],
   ENGAGED: ['QUOTE_SENT', 'CONVERTED', 'ARCHIVED'],
   QUOTE_SENT: ['CONVERTED', 'ENGAGED', 'ARCHIVED'],
