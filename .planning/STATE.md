@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
-status: executing
-stopped_at: Completed 61-01-PLAN.md (ADMIN-04, ADMIN-08, Pitfall 7)
-last_updated: '2026-04-13T20:34:36.048Z'
-last_activity: 2026-04-13 — Plan 61-01 shipped (ADMIN-04 + ADMIN-08 + Pitfall 7 backend)
+status: '61-02 shipped — QuoteLineRow/List/StatusBadge/Form primitives + /admin/quotes list page + Voorstellen sidebar nav. 15 vitest cases passing including -800 tarief and read-only mode regressions. Next action: Plan 61-03 (quote create/edit pages wiring).'
+stopped_at: Completed 61-02-PLAN.md
+last_updated: '2026-04-13T20:46:29.380Z'
+last_activity: 2026-04-13 — Plan 61-02 shipped (ADMIN-01/02/03/07 React primitives + list page)
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 9
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 ## Current Position
 
 Phase: 61 — Admin UI for Quotes
-Plan: 01 of 4 — Backend + Preview Renderer Foundation (complete)
-Status: 61-01 shipped — ADMIN-04 preview renderer with all 3 Marfa golden totals locked, ADMIN-08 createVersion mutation + cross-project tests, Pitfall 7 prospect state machine widening. Next action: Plan 61-02 (admin quote list view).
-Last activity: 2026-04-13 — Plan 61-01 shipped (ADMIN-04 + ADMIN-08 + Pitfall 7 backend)
+Plan: 02 of 4 — Admin Quote UI Primitives + List Page (complete)
+Status: 61-02 shipped — QuoteLineRow/List/StatusBadge/Form primitives + /admin/quotes list page + Voorstellen sidebar nav. 15 vitest cases passing including -800 tarief and read-only mode regressions. Next action: Plan 61-03 (quote create/edit pages wiring).
+Last activity: 2026-04-13 — Plan 61-02 shipped (ADMIN-01/02/03/07 React primitives + list page)
 
-**Progress bar:** [███████░░░] 67% (6/9 plans, 1/4 phases)
+**Progress bar:** [████████░░] 78% (7/9 plans, 1/4 phases)
 
 ## Milestones Shipped
 
@@ -84,6 +84,10 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 60]: Plan 04: Pattern: state-machine + router pair per entity — state machine owns mutation, router is a thin scope-check + delegate (Quote is first entity to follow this pattern)
 - [Phase 61-admin-ui-for-quotes]: Nummer versioning via -v2/-vN suffix (no version counter column; lineage via replacesId FK)
 - [Phase 61-admin-ui-for-quotes]: transitionQuote split into dispatcher + runTransition so nested callers (createVersion) can pass an existing Prisma.TransactionClient (runtime detection of method)
+- [Phase 61-admin-ui-for-quotes]: Plan 02: QuoteForm uses plain useState + props callback (no react-hook-form, no schema) — canonical admin form pattern mirroring app/admin/prospects/new/page.tsx
+- [Phase 61-admin-ui-for-quotes]: Plan 02: Dynamic list form pattern established — pure state helpers (addLine/updateLine/removeLine/moveUp/moveDown) exported alongside the list component and unit-tested directly without React mount
+- [Phase 61-admin-ui-for-quotes]: Plan 02: Read-only form mode is a single isReadOnly prop — disables every input + replaces submit button with Dutch muted message; Q9 immutability mirrored at UI layer
+- [Phase 61-admin-ui-for-quotes]: Plan 02: /admin/quotes list uses stacked sections (Concept/Verstuurd/Gearchiveerd) with native HTML <details> for the archived collapsible — no new disclosure primitive added
 
 ### Pending Todos
 
@@ -104,6 +108,6 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-13T20:34:31.655Z
-Stopped at: Completed 61-01-PLAN.md (ADMIN-04, ADMIN-08, Pitfall 7)
+Last session: 2026-04-13T20:45:38.954Z
+Stopped at: Completed 61-02-PLAN.md
 Resume command: `/gsd:execute-plan 61 02`
