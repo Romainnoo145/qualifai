@@ -26,6 +26,8 @@ import {
 import { QuoteStatusBadge } from '@/components/features/quotes/quote-status-badge';
 import { QuoteStatusTimeline } from '@/components/features/quotes/quote-status-timeline';
 import { QuotePreviewIframe } from '@/components/features/quotes/quote-preview-iframe';
+import { QuoteSendConfirm } from '@/components/features/quotes/quote-send-confirm';
+import { QuoteVersionConfirm } from '@/components/features/quotes/quote-version-confirm';
 
 // Pitfall 5 / tRPC v11 inference gap — mirror ResearchRunRow pattern from
 // app/admin/prospects/[id]/page.tsx.
@@ -212,12 +214,18 @@ export default function QuoteDetailPage() {
         </div>
       )}
 
-      {/* Acties slot — 61-04 mounts Verstuur + Nieuwe versie components here. */}
+      {/* Acties slot — Verstuur (DRAFT) + Nieuwe versie (SENT/VIEWED). */}
       <div
         className="flex flex-wrap items-center gap-3"
         data-testid="quote-actions-slot"
       >
-        {/* Intentionally empty in 61-03 — 61-04 injects actions here. */}
+        <QuoteSendConfirm
+          quoteId={quote.id}
+          status={quote.status}
+          lines={quote.lines.map((l) => ({ uren: l.uren, tarief: l.tarief }))}
+          btwPercentage={quote.btwPercentage}
+        />
+        <QuoteVersionConfirm quoteId={quote.id} status={quote.status} />
       </div>
 
       <nav className="flex gap-4 border-b border-slate-200">
