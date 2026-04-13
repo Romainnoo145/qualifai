@@ -8,6 +8,7 @@ import { hypothesesRouter } from './hypotheses';
 import { outreachRouter } from './outreach';
 import { projectsRouter } from './projects';
 import { proofRouter } from './proof';
+import { quotesRouter } from './quotes';
 import { researchRouter } from './research';
 import { searchRouter } from './search';
 import { sequencesRouter } from './sequences';
@@ -25,6 +26,7 @@ export const appRouter = router({
   outreach: outreachRouter,
   projects: projectsRouter,
   proof: proofRouter,
+  quotes: quotesRouter,
   research: researchRouter,
   search: searchRouter,
   sequences: sequencesRouter,
