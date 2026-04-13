@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: 'Roadmap ready — next action is `/gsd:plan-phase 60`'
-stopped_at: Completed 60-02-PLAN.md (Quote schema foundation)
-last_updated: '2026-04-13T11:25:41.951Z'
+stopped_at: Completed 60-01-PLAN.md (FOUND-01, FOUND-02, TEST-01)
+last_updated: '2026-04-13T11:26:09.398Z'
 last_activity: 2026-04-13 — Roadmap created for v9.0
 progress:
   total_phases: 4
@@ -74,6 +74,7 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - Inconsistent snapshot versioning on WorkflowLossMap/ProspectAnalysis (separate cleanup)
 - [Phase 60]: Plan 02: Manually-authored migration to bypass pre-existing dev DB drift, verified clean on shadow DB pre-loaded from dev schema dump
 - [Phase 60]: Plan 02: Quote.replacesId self-FK added in Phase 60 (Q9) to avoid second migration in Phase 61
+- [Phase 60]: Pattern: typed as-const arrays in lib/constants/prospect-statuses.ts are the SSOT for ProspectStatus literals; assertValidProspectTransition pure helper reused by every status mutation entrypoint
 
 ### Pending Todos
 
@@ -94,6 +95,6 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-13T11:25:33.678Z
-Stopped at: Completed 60-02-PLAN.md (Quote schema foundation)
+Last session: 2026-04-13T11:26:04.422Z
+Stopped at: Completed 60-01-PLAN.md (FOUND-01, FOUND-02, TEST-01)
 Resume command: `/gsd:plan-phase 60`
