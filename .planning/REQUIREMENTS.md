@@ -39,10 +39,10 @@ Fragile areas in the existing Qualifai codebase that Phase 60 must address befor
 
 One-shot script that brings existing klarifai-core data into Qualifai. Per decisions.md Q8.
 
-- [ ] **IMPORT-01**: `scripts/import-klarifai-yaml.ts` imports klarifai-core `data/clients/*.yaml` as Qualifai `Prospect` records, matching on `slug` for idempotency
-- [ ] **IMPORT-02**: Script imports klarifai-core `data/quotes/{year}/*.yaml` as `Quote` + `QuoteLine` records, matching on `nummer` for idempotency
-- [ ] **IMPORT-03**: Script supports `--dry` (default) showing what would be created/updated, and `--apply` for real writes
-- [ ] **IMPORT-04**: Script logs all 3 existing Marfa quotes (OFF001, OFF002, OFF003) imported successfully with totals matching klarifai-core (€7.816,60 / €11.495,00 / €13.285,80)
+- [x] **IMPORT-01**: `scripts/import-klarifai-yaml.ts` imports klarifai-core `data/clients/*.yaml` as Qualifai `Prospect` records, matching on `slug` for idempotency
+- [x] **IMPORT-02**: Script imports klarifai-core `data/quotes/{year}/*.yaml` as `Quote` + `QuoteLine` records, matching on `nummer` for idempotency
+- [x] **IMPORT-03**: Script supports `--dry` (default) showing what would be created/updated, and `--apply` for real writes
+- [x] **IMPORT-04**: Script logs all 3 existing Marfa quotes (OFF001, OFF002, OFF003) imported successfully with totals matching klarifai-core (€7.816,60 / €11.495,00 / €13.285,80)
 
 ### Admin UI for Quotes
 
@@ -112,7 +112,7 @@ Tests die direct uit verification criteria komen, niet als bonus.
 - [x] **TEST-01**: State transition tests for `Prospect.updateProspect` covering valid paths and rejected invalid moves
 - [x] **TEST-02**: State transition tests for `Quote.transition` covering full state machine including Quote → Prospect auto-sync
 - [x] **TEST-03**: Multi-project isolation test for new `quotes.*` endpoints — admin scoped to Project A cannot see/mutate quotes in Project B
-- [ ] **TEST-04**: Integration test for YAML import script — imports the 3 Marfa fixtures and verifies record counts + totals
+- [x] **TEST-04**: Integration test for YAML import script — imports the 3 Marfa fixtures and verifies record counts + totals
 - [x] **TEST-05**: Snapshot validation test — Zod parsing rejects malformed `snapshotData`, accepts valid
 
 ---
@@ -170,14 +170,14 @@ Tests die direct uit verification criteria komen, niet als bonus.
 | FOUND-02    | 60    | Complete |
 | FOUND-03    | 60    | Complete |
 | FOUND-04    | 60    | Complete |
-| IMPORT-01   | 60    | Pending  |
-| IMPORT-02   | 60    | Pending  |
-| IMPORT-03   | 60    | Pending  |
-| IMPORT-04   | 60    | Pending  |
+| IMPORT-01   | 60    | Complete |
+| IMPORT-02   | 60    | Complete |
+| IMPORT-03   | 60    | Complete |
+| IMPORT-04   | 60    | Complete |
 | TEST-01     | 60    | Complete |
 | TEST-02     | 60    | Complete |
 | TEST-03     | 60    | Complete |
-| TEST-04     | 60    | Pending  |
+| TEST-04     | 60    | Complete |
 | TEST-05     | 60    | Complete |
 | ADMIN-01    | 61    | Pending  |
 | ADMIN-02    | 61    | Pending  |
