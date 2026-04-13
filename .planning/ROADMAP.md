@@ -151,7 +151,7 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 ### v9.0 Klant Lifecycle Convergence (Phases 60-63) — IN PROGRESS
 
 - [x] **Phase 60: Quote Schema Foundation** — Prisma schema, tRPC router, state machine, YAML import, foundation fixes (completed 2026-04-13)
-- [ ] **Phase 61: Admin UI for Quotes** — Full quote management UI inside existing Qualifai admin shell
+- [x] **Phase 61: Admin UI for Quotes** — Full quote management UI inside existing Qualifai admin shell (completed 2026-04-13)
 - [ ] **Phase 62: Client-Facing Voorstel + PDF Worker** — Prospect proposal page and Railway PDF worker service
 - [ ] **Phase 63: Contract Workflow** — Click-to-sign contract flow following accepted quote
 
@@ -265,7 +265,7 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 | Phase                                   | Plans Complete | Status      | Completed  |
 | --------------------------------------- | -------------- | ----------- | ---------- |
 | 60. Quote Schema Foundation             | 5/5            | Complete    | 2026-04-13 |
-| 61. Admin UI for Quotes                 | 3/4            | In Progress |            |
+| 61. Admin UI for Quotes                 | 4/4            | Complete    | 2026-04-13 |
 | 62. Client-Facing Voorstel + PDF Worker | 0/TBD          | Not started | -          |
 | 63. Contract Workflow                   | 0/TBD          | Not started | -          |
 

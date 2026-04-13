@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
-status: '61-03 shipped — prospect-scoped create page, /admin/quotes/[id] detail page with tabs + read-only branching, admin preview route + sandboxed iframe, and QuoteStatusTimeline (ADMIN-04/ADMIN-06 closed). Resumed session: Tasks 1-3 already committed; Task 4 recovered from timed-out executor and committed as-is. Next action: Plan 61-04 (send + version flow into reserved actions slot).'
-stopped_at: Completed 61-03-PLAN.md
-last_updated: '2026-04-13T21:13:00.000Z'
-last_activity: 2026-04-13 — Plan 61-03 shipped (ADMIN-04 preview route + iframe, ADMIN-06 timeline, ADMIN-02/07 page-wiring)
+status: '61-04 shipped — Verstuur flow (ADMIN-05) + Nieuwe versie flow (ADMIN-08) mounted on detail page. All 8 ADMIN requirements complete. Phase 61 DONE. Next action: Phase 62 (Client quote view) — resolve Q6/Q7 decisions first.'
+stopped_at: Completed 61-04-PLAN.md
+last_updated: '2026-04-13T21:27:58.631Z'
+last_activity: 2026-04-13 — Plan 61-04 shipped (ADMIN-05 send flow, ADMIN-08 new-version flow, Phase 61 complete)
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 9
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -24,12 +24,12 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 
 ## Current Position
 
-Phase: 61 — Admin UI for Quotes
-Plan: 03 of 4 — Admin Quote UI Page Wiring + Preview + Timeline (complete)
-Status: 61-03 shipped — prospect-scoped create page, /admin/quotes/[id] detail page with tabs + read-only branching, admin preview route + sandboxed iframe, QuoteStatusTimeline with 4 vitest cases. ADMIN-04 + ADMIN-06 closed. Task 4 recovered from prior executor timeout and committed as-is after verification. Next action: Plan 61-04 (send + version flow mounting into reserved actions slot).
-Last activity: 2026-04-13 — Plan 61-03 shipped (ADMIN-04 preview route + iframe, ADMIN-06 timeline, ADMIN-02/07 page-wiring)
+Phase: 61 — Admin UI for Quotes (COMPLETE)
+Plan: 04 of 4 — Verstuur + Nieuwe versie action components (complete)
+Status: 61-04 shipped — QuoteSendConfirm (ADMIN-05) + QuoteVersionConfirm (ADMIN-08) mounted on /admin/quotes/[id]. 18 new vitest cases (7 + 11), 37 total in components/features/quotes, 92 total across Phase 61 scope — all green. Full create → edit → send → read-only → new-version admin loop closed. All 8 ADMIN requirements complete. Phase 61 DONE. Next action: Phase 62 (Client quote view) — requires Q6 (design tokens) + Q7 (/voorstel auth model) decisions first.
+Last activity: 2026-04-13 — Plan 61-04 shipped (ADMIN-05 send flow, ADMIN-08 new-version flow, Phase 61 complete)
 
-**Progress bar:** [████████░░] 89% (8/9 plans, 1/4 phases)
+**Progress bar:** [██████████] 100% (9/9 plans, 1/4 phases)
 
 ## Milestones Shipped
 
@@ -94,6 +94,9 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 61-admin-ui-for-quotes]: Plan 03: Empty `data-testid="quote-actions-slot"` div on detail page is the 61-04 contract — 61-04 mounts QuoteSendConfirm + QuoteVersionConfirm into the slot without touching the detail page shell
 - [Phase 61-admin-ui-for-quotes]: Plan 03: Next.js 15 route handler params accepted as sync OR Promise via `await Promise.resolve(context.params)` — single-line forward-compat with upcoming Promise<{id}> params shape
 - [Phase 61-admin-ui-for-quotes]: Plan 03: Timeline viewedAt/acceptedAt hardcoded to null in 61-03 (props optional nullables) — Phase 62 adds real columns and swaps the null literals without touching the component API
+- [Phase 61]: Plan 04: Verbatim Dutch copy locked via module-scope string constants so prettier JSX wrapping can't break grep acceptance — pattern for any future O6-style verbatim check
+- [Phase 61]: Plan 04: Action components are self-visibility-gated (each returns null when its status precondition is not met); page shell mounts both unconditionally without branching on quote.status
+- [Phase 61]: Plan 04: Mutation error/success simulation via captured onError/onSuccess callbacks + act() — required when triggering React state updates outside React event handlers for RTL getByText to see flushed DOM
 
 ### Pending Todos
 
@@ -114,6 +117,6 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-13T21:13:00.000Z
-Stopped at: Completed 61-03-PLAN.md
+Last session: 2026-04-13T21:27:48.487Z
+Stopped at: Completed 61-04-PLAN.md
 Resume command: `/gsd:execute-plan 61 04`
