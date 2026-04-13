@@ -18,8 +18,26 @@ enum ProspectStatus {
   SENT
   VIEWED
   ENGAGED
+  QUOTE_SENT
   CONVERTED
   ARCHIVED
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  VIEWED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  ARCHIVED
+}
+
+enum SnapshotStatus {
+  PENDING
+  RENDERING
+  READY
+  FAILED
 }
 
 enum OutreachStatus {
@@ -186,6 +204,7 @@ model Prospect {
   intentExtractions       IntentExtraction[]
   prospectAnalyses        ProspectAnalysis[]
   outreachLogs            OutreachLog[]
+  quotes                  Quote[]
 
   @@index([domain])
   @@index([status])
@@ -418,19 +437,19 @@ model ProspectSiteCatalogRun {
 }
 
 model ProspectSiteUrl {
-  id           String   @id @default(cuid())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  url          String
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  url           String
   normalizedUrl String
-  lastmod      DateTime?
-  topSegment   String
-  pathDepth    Int
-  score        Float?
-  selectedRank Int?
-  isSelected   Boolean @default(false)
-  source       String
-  metadata     Json?
+  lastmod       DateTime?
+  topSegment    String
+  pathDepth     Int
+  score         Float?
+  selectedRank  Int?
+  isSelected    Boolean   @default(false)
+  source        String
+  metadata      Json?
 
   catalogRunId String
   catalogRun   ProspectSiteCatalogRun @relation(fields: [catalogRunId], references: [id], onDelete: Cascade)
@@ -731,6 +750,75 @@ model WorkflowLossMap {
   @@index([researchRunId])
 }
 
+model Quote {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Identity / meta
+  nummer    String   @unique
+  datum     DateTime
+  geldigTot DateTime
+
+  // Narrative content (DATA-01)
+  onderwerp   String
+  tagline     String?
+  introductie String? @db.Text
+  uitdaging   String? @db.Text
+  aanpak      String? @db.Text
+
+  // Commercial
+  btwPercentage Int
+  scope         String? @db.Text
+  buitenScope   String? @db.Text
+
+  // Status (DATA-03)
+  status QuoteStatus @default(DRAFT)
+
+  // Snapshot fields (DATA-05 + Q9 + Q12)
+  snapshotAt      DateTime?
+  templateVersion String?
+  snapshotHtml    String?         @db.Text
+  snapshotData    Json?
+  snapshotPdfUrl  String?
+  snapshotStatus  SnapshotStatus?
+
+  // Versioning (Q9 — research recommendation #5: add now to avoid second migration in Phase 61)
+  replacesId String?
+  replaces   Quote?  @relation("QuoteVersion", fields: [replacesId], references: [id], onDelete: SetNull)
+  replacedBy Quote[] @relation("QuoteVersion")
+
+  // Multi-tenant via Prospect (DATA-06 + DATA-10)
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Restrict)
+
+  lines QuoteLine[]
+
+  @@index([prospectId])
+  @@index([status])
+  @@index([nummer])
+}
+
+model QuoteLine {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fase         String
+  omschrijving String? @db.Text
+  oplevering   String? @db.Text
+  uren         Int
+  tarief       Int // SIGNED — negative allowed for discount lines (OFF003 Pakketkorting)
+
+  // Stable display order
+  position Int @default(0)
+
+  quoteId String
+  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@index([quoteId])
+}
+
 model OutreachSequence {
   id               String         @id @default(cuid())
   createdAt        DateTime       @default(now())
@@ -918,10 +1006,10 @@ model IntentExtraction {
   id             String   @id @default(cuid())
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  variables      Json     // IntentVariables object
+  variables      Json // IntentVariables object
   populatedCount Int
   sparse         Boolean  @default(false)
-  modelUsed      String?  // which AI model produced this
+  modelUsed      String? // which AI model produced this
 
   researchRunId String      @unique
   researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
@@ -941,9 +1029,9 @@ model ProspectAnalysis {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   version       String   @default("analysis-v1")
-  content       Json     // MasterAnalysis object
+  content       Json // MasterAnalysis object
   modelUsed     String?
-  inputSnapshot Json?    // summary of what went in (intent var count, passage count)
+  inputSnapshot Json? // summary of what went in (intent var count, passage count)
 
   researchRunId String      @unique
   researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
