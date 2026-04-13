@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
-status: verifying
-stopped_at: Completed 60-05-PLAN.md (IMPORT-01..04, TEST-04)
-last_updated: '2026-04-13T14:42:14.234Z'
-last_activity: 2026-04-13 — Plan 60-05 shipped (IMPORT-01, IMPORT-02, IMPORT-03, IMPORT-04, TEST-04)
+status: executing
+stopped_at: Completed 61-01-PLAN.md (ADMIN-04, ADMIN-08, Pitfall 7)
+last_updated: '2026-04-13T20:34:36.048Z'
+last_activity: 2026-04-13 — Plan 61-01 shipped (ADMIN-04 + ADMIN-08 + Pitfall 7 backend)
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 9
+  completed_plans: 6
 ---
 
 # Project State
@@ -24,12 +24,12 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 
 ## Current Position
 
-Phase: 60 — Quote Schema Foundation
-Plan: 05 of 5 — klarifai-core YAML Import Script (complete)
-Status: Phase 60 code-complete — pending manual smoke check at the phase gate (Romano runs `tsx scripts/import-klarifai-yaml.ts --apply` against staging DB + Prisma Studio verification). Next action after smoke check: `/gsd:verify-work` then advance to Phase 61 (admin quote UI).
-Last activity: 2026-04-13 — Plan 60-05 shipped (IMPORT-01, IMPORT-02, IMPORT-03, IMPORT-04, TEST-04)
+Phase: 61 — Admin UI for Quotes
+Plan: 01 of 4 — Backend + Preview Renderer Foundation (complete)
+Status: 61-01 shipped — ADMIN-04 preview renderer with all 3 Marfa golden totals locked, ADMIN-08 createVersion mutation + cross-project tests, Pitfall 7 prospect state machine widening. Next action: Plan 61-02 (admin quote list view).
+Last activity: 2026-04-13 — Plan 61-01 shipped (ADMIN-04 + ADMIN-08 + Pitfall 7 backend)
 
-**Progress bar:** [██████████] 100% (5/5 plans, 0/4 phases — awaiting manual smoke check + verify-work)
+**Progress bar:** [███████░░░] 67% (6/9 plans, 1/4 phases)
 
 ## Milestones Shipped
 
@@ -82,6 +82,8 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 60]: Plan 04: Multi-tenant isolation for Quote uses `prospect: { projectId: ctx.projectId }` relation filter instead of a duplicate projectId column on Quote — Prospect FK IS the tenancy boundary (research decision)
 - [Phase 60]: Plan 04: Snapshot freeze on DRAFT→SENT is transactional — QuoteSnapshotSchema.parse runs BEFORE any Prisma write, inside the same $transaction as the status + Prospect cascade
 - [Phase 60]: Plan 04: Pattern: state-machine + router pair per entity — state machine owns mutation, router is a thin scope-check + delegate (Quote is first entity to follow this pattern)
+- [Phase 61-admin-ui-for-quotes]: Nummer versioning via -v2/-vN suffix (no version counter column; lineage via replacesId FK)
+- [Phase 61-admin-ui-for-quotes]: transitionQuote split into dispatcher + runTransition so nested callers (createVersion) can pass an existing Prisma.TransactionClient (runtime detection of method)
 
 ### Pending Todos
 
@@ -102,6 +104,6 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-13T14:24:21.143Z
-Stopped at: Completed 60-05-PLAN.md (IMPORT-01..04, TEST-04)
-Resume command: `/gsd:execute-plan 60 05`
+Last session: 2026-04-13T20:34:31.655Z
+Stopped at: Completed 61-01-PLAN.md (ADMIN-04, ADMIN-08, Pitfall 7)
+Resume command: `/gsd:execute-plan 61 02`

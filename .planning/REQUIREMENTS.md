@@ -51,11 +51,11 @@ Romano can manage quotes from inside the existing Qualifai admin shell.
 - [ ] **ADMIN-01**: Admin can view all quotes grouped by status at `/admin/quotes`
 - [ ] **ADMIN-02**: Admin can create a new quote for a prospect at `/admin/prospects/[id]/quotes/new` via a form with narrative fields, line items, and scope sections
 - [ ] **ADMIN-03**: Admin can add, reorder, edit, and remove line items in the create form (each line: fase, omschrijving, oplevering, uren, tarief)
-- [ ] **ADMIN-04**: Admin can preview the quote as rendered HTML in an iframe before sending (mirror of `/discover/[slug]/voorstel` for that draft)
-- [ ] **ADMIN-05**: Admin can transition quote from `DRAFT → SENT` via a button that triggers snapshot creation and queues PDF rendering
+- [x] **ADMIN-04**: Admin can preview the quote as rendered HTML in an iframe before sending (mirror of `/discover/[slug]/voorstel` for that draft)
+- [x] **ADMIN-05**: Admin can transition quote from `DRAFT → SENT` via a button that triggers snapshot creation and queues PDF rendering
 - [ ] **ADMIN-06**: Admin can see quote status timeline (Created, Sent at, Viewed at, Accepted at) on the quote detail page
 - [ ] **ADMIN-07**: Admin can edit a `DRAFT` quote freely; `SENT` and later quotes are read-only (immutable snapshot)
-- [ ] **ADMIN-08**: Admin can archive an existing quote and create a new version that references the archived one via `replacesId`
+- [x] **ADMIN-08**: Admin can archive an existing quote and create a new version that references the archived one via `replacesId`
 
 ### Web Voorstel Design Foundation
 
@@ -182,11 +182,11 @@ Tests die direct uit verification criteria komen, niet als bonus.
 | ADMIN-01    | 61    | Pending  |
 | ADMIN-02    | 61    | Pending  |
 | ADMIN-03    | 61    | Pending  |
-| ADMIN-04    | 61    | Pending  |
-| ADMIN-05    | 61    | Pending  |
+| ADMIN-04    | 61    | Complete |
+| ADMIN-05    | 61    | Complete |
 | ADMIN-06    | 61    | Pending  |
 | ADMIN-07    | 61    | Pending  |
-| ADMIN-08    | 61    | Pending  |
+| ADMIN-08    | 61    | Complete |
 | DSGN-01     | 62    | Pending  |
 | DSGN-02     | 62    | Pending  |
 | DSGN-03     | 62    | Pending  |
