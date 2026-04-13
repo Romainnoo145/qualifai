@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<!--
+  Klarifai Voorstel — Canonical HTML/CSS Referentie
+
+  Dit bestand is de goedgekeurde referentie voor de offerte-template.
+  Het Puppeteer generator template (src/documents/quotes/generator.ts)
+  moet deze structuur en styling 1-op-1 overnemen, met {{placeholders}}
+  voor de dynamische data uit YAML.
+
+  Pagina's:
+    1. Cover — dark navy, Klarifai x Klant collab, project titel
+    2. Uitdaging — wit, genummerde blokken, narratief
+    3. Aanpak — wit, genummerde fase-blokken
+    4. Investering — wit, prijstabel met gold totaal-accent
+    5. Scope & Afsluiting — wit, in/buiten scope + CTA + footer
+
+  Design principes:
+    - Sora font (300/500/700)
+    - Navy #0a0a2e tekst (niet zwart)
+    - Gold #E4C33C → #F4D95A voor highlights
+    - Word Normal margins (25mm) met footer 12mm van onderrand
+    - Intro-lead is 1 punchy statement, geen 4-regelige paragraaf
+    - Schrijfstijl volgens docs/design/writing-style.md
+
+  Laatste update: 2026-04-12 (na sessie met Romano waarin alle
+  design- en schrijfstijl-beslissingen zijn vastgelegd)
+-->
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Klarifai Voorstel Template</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;500;700&display=swap');
+
+  :root {
+    --navy: #0a0a2e;
+    --navy-light: #4a5568;
+    --grey-light: #f1f5f9;
+    --border-grey: #e2e8f0;
+    --gold: #E4C33C;
+    --gold-light: #F4D95A;
+    --margin-x: 25mm;
+    --margin-top: 25mm;
+    --margin-bottom: 25mm;
+    --footer-offset: 12mm;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 20px;
+    background-color: #222;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+  }
+
+  /* Pagina container (A4) */
+  .a4-page {
+    width: 210mm;
+    height: 297mm;
+    font-family: 'Sora', sans-serif;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.5);
+  }
+
+  /* === COVER (Dark navy) === */
+  .a4-cover {
+    background-color: var(--navy);
+    color: #ffffff;
+    padding: 30mm;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .a4-cover::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  }
+
+  .cover-logo { margin-bottom: auto; }
+  .cover-logo .logo-svg { height: 40px; width: auto; opacity: 0.95; }
+
+  .cover-body { margin-bottom: 30mm; }
+
+  .cover-collab {
+    font-size: 15pt;
+    font-weight: 500;
+    color: var(--gold-light);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  .cover-collab-line {
+    height: 1px;
+    width: 60px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+  }
+  .cover-collab .x {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 13pt;
+  }
+
+  .cover-title {
+    font-size: 52pt;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -1.5px;
+    margin: 0 0 35px 0;
+    max-width: 95%;
+  }
+
+  .cover-tagline {
+    font-size: 16pt;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.5;
+    max-width: 85%;
+    margin: 0;
+  }
+
+  /* === BINNENPAGINA (Wit) === */
+  .a4-inner {
+    background-color: #ffffff;
+    color: var(--navy);
+    padding: var(--margin-top) var(--margin-x) var(--margin-bottom);
+  }
+
+  h1, h2, h3, p, ul, ol { margin: 0; }
+
+  .section-label {
+    font-size: 10pt;
+    font-weight: 700;
+    color: var(--navy-light);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+  }
+  .section-label .num { color: var(--gold); margin-right: 10px; }
+
+  .main-heading {
+    font-size: 28pt;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 28px;
+  }
+
+  .intro-lead {
+    font-size: 12pt;
+    font-weight: 500;
+    line-height: 1.55;
+    color: var(--navy);
+    margin-bottom: 22px;
+  }
+
+  .text-body {
+    font-size: 10pt;
+    font-weight: 300;
+    line-height: 1.75;
+    color: var(--navy-light);
+    margin-bottom: 20px;
+  }
+
+  /* Genummerde blokken — gebruikt op uitdaging EN aanpak pagina.
+     Op aanpak pagina staat er een .deliverable element (wat krijgt de
+     klant na deze fase) en een subtiele .hours indicator rechtsboven. */
+  .numbered-list { list-style: none; padding: 0; margin: 30px 0 0; }
+  .numbered-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 25px;
+    padding: 22px 0;
+    border-top: 1px solid var(--border-grey);
+    position: relative;
+  }
+  .numbered-list .num {
+    flex: 0 0 55px;
+    font-size: 22pt;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+  .numbered-list .content { flex: 1; padding-right: 70px; }
+  .numbered-list .title {
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+  .numbered-list .desc {
+    font-size: 10pt;
+    font-weight: 300;
+    line-height: 1.65;
+    color: var(--navy-light);
+  }
+
+  /* Deliverable label — subtiel gold, onder de desc */
+  .numbered-list .deliverable {
+    margin-top: 10px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 9pt;
+    line-height: 1.55;
+  }
+  .numbered-list .deliverable-label {
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .numbered-list .deliverable-text {
+    color: var(--navy);
+    font-weight: 500;
+  }
+
+  /* Uren — subtiel rechtsboven in het blok, concurreert niet met content */
+  .numbered-list .hours {
+    position: absolute;
+    top: 26px;
+    right: 0;
+    font-size: 8pt;
+    font-weight: 500;
+    color: #94a3b8;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* Prijstabel (Investering pagina) */
+  .pricing-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 40px;
+  }
+  .pricing-table th {
+    text-align: left;
+    font-size: 9pt;
+    font-weight: 700;
+    color: var(--navy-light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-grey);
+  }
+  .pricing-table th.right, .pricing-table td.right { text-align: right; }
+  .pricing-table td {
+    padding: 16px 0;
+    font-size: 10pt;
+    font-weight: 300;
+    border-bottom: 1px solid var(--grey-light);
+  }
+  .pricing-table td.bold { font-weight: 500; color: var(--navy); }
+  .pricing-table td.discount { color: var(--navy-light); }
+
+  .totals-block {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+  }
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    width: 260px;
+    font-size: 10pt;
+    color: var(--navy-light);
+  }
+  .total-row.final {
+    font-size: 17pt;
+    font-weight: 700;
+    margin-top: 12px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-grey);
+  }
+  .total-row.final .amount {
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .meta-info {
+    font-size: 9pt;
+    font-weight: 300;
+    color: var(--navy-light);
+    margin-top: 45px;
+    padding-left: 15px;
+    border-left: 2px solid var(--border-grey);
+    line-height: 1.7;
+  }
+
+  /* Scope grid (Scope pagina) */
+  .scope-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 55px;
+  }
+  .scope-col h3 {
+    font-size: 11pt;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .scope-list { list-style: none; padding: 0; }
+  .scope-list li {
+    position: relative;
+    padding-left: 28px;
+    font-size: 10pt;
+    font-weight: 300;
+    color: var(--navy-light);
+    margin-bottom: 14px;
+    line-height: 1.55;
+  }
+  .scope-list.in li::before {
+    content: "✓";
+    position: absolute; left: 0; top: 0;
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 11pt;
+  }
+  .scope-list.out li::before {
+    content: "✕";
+    position: absolute; left: 0; top: 1px;
+    color: #a0aec0;
+    font-size: 10pt;
+  }
+
+  .cta-block {
+    background-color: #f8fafc;
+    padding: 28px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .cta-block h3 { font-size: 13pt; margin-bottom: 10px; }
+  .cta-block p {
+    font-size: 10pt;
+    font-weight: 300;
+    color: var(--navy-light);
+    line-height: 1.6;
+  }
+
+  /* Footer (alle binnenpagina's) */
+  .inner-footer {
+    position: absolute;
+    bottom: var(--footer-offset);
+    left: var(--margin-x);
+    right: var(--margin-x);
+    border-top: 1px solid var(--border-grey);
+    padding-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 8pt;
+    font-weight: 300;
+    color: #94a3b8;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ========================================= -->
+  <!-- PAGINA 1 — COVER                          -->
+  <!-- Dynamische velden: {{client_name}},        -->
+  <!-- {{project_title}}, {{tagline}}             -->
+  <!-- ========================================= -->
+  <div class="a4-page a4-cover">
+    <div class="cover-logo">
+      <!-- Logo SVG wordt via generator.ts als base64 data URI ingevoegd -->
+      <svg class="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="390 640 800 220">
+        <defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#E4C33C"/><stop offset="100%" stop-color="#F4D95A"/></linearGradient></defs>
+        <path fill="url(#lg)" d="M 1128.191406 762.824219 C 1120.28125 779.027344 1105.5625 789.902344 1090.621094 790.503906 C 1076.339844 791.109375 1067.554688 785.726562 1062.71875 781.058594 C 1054.753906 773.480469 1050.800781 762.164062 1050.800781 747.5 C 1050.800781 736.734375 1042.011719 727.945312 1031.191406 727.945312 C 1019.21875 727.945312 1009.71875 738.765625 1011.914062 751.070312 C 1013.289062 758.757812 1019.328125 765.019531 1026.964844 766.667969 C 1029.378906 767.164062 1031.796875 767.273438 1034.105469 766.886719 C 1039.652344 766.0625 1045.035156 769.304688 1047.394531 774.359375 C 1047.449219 774.46875 1047.449219 774.523438 1047.503906 774.578125 C 1051.351562 782.652344 1046.351562 792.261719 1037.507812 793.472656 C 1032.070312 794.1875 1026.414062 793.964844 1020.8125 792.757812 C 1002.082031 788.582031 987.691406 772.710938 985.222656 753.652344 C 981.484375 725.363281 1003.511719 701.144531 1031.136719 701.144531 C 1056.679688 701.144531 1077.496094 721.960938 1077.496094 747.5 C 1077.496094 754.308594 1078.8125 759.472656 1081.175781 761.726562 C 1082.769531 763.207031 1085.515625 763.921875 1089.46875 763.757812 C 1092.929688 763.59375 1098.859375 761.945312 1105.285156 751.785156 C 1112.703125 740.085938 1116.328125 697.574219 1078.539062 673.1875 C 1060.6875 661.652344 1038.222656 658.960938 1018.175781 665.992188 C 982.199219 678.679688 956.824219 713.941406 959.296875 754.804688 C 961.933594 798.691406 997.304688 834.445312 1041.1875 837.464844 C 1092.820312 841.035156 1135.769531 800.226562 1135.769531 749.367188 C 1135.769531 746.234375 1135.605469 743.160156 1135.277344 740.140625 C 1133.792969 750.464844 1130.441406 758.15625 1128.191406 762.824219Z"/>
+        <g fill="#fff"><g transform="translate(406.121073, 801.956911)"><path d="M 51.203125 -38.25 L 40.0625 -26.359375 L 40.0625 0 L 10.546875 0 L 10.546875 -105.421875 L 40.0625 -105.421875 L 40.0625 -61.59375 L 80.875 -105.421875 L 113.703125 -105.421875 L 70.640625 -58.734375 L 115.96875 0 L 81.328125 0Z"/></g><g transform="translate(513.346001, 801.956911)"><path d="M 9.1875 -111.75 L 37.796875 -111.75 L 37.796875 0 L 9.1875 0Z"/></g></g>
+      </svg>
+    </div>
+
+    <div class="cover-body">
+      <div class="cover-collab">
+        Klarifai <span class="x">✕</span> {{client_name}}
+        <div class="cover-collab-line"></div>
+      </div>
+      <h1 class="cover-title">{{project_title}}</h1>
+      <p class="cover-tagline">{{tagline}}</p>
+    </div>
+  </div>
+
+  <!-- ========================================= -->
+  <!-- PAGINA 2 — DE UITDAGING                   -->
+  <!-- Dynamische velden: {{intro_lead}},         -->
+  <!-- {{challenge_body}}, {{pillars[]}}          -->
+  <!-- ========================================= -->
+  <div class="a4-page a4-inner">
+    <div class="section-label"><span class="num">[ 01 ]</span> DE UITDAGING</div>
+    <h2 class="main-heading">Plancraft loopt vast<br>op zijn eigen succes.</h2>
+
+    <p class="intro-lead">
+      Wat begon als een slim intern hulpmiddel is uitgegroeid tot een tool waar het hele Marfa-team dagelijks op leunt. Daar zit meteen ook het probleem.
+    </p>
+
+    <p class="text-body">
+      De huidige versie van Plancraft is gebouwd om een idee te bewijzen, niet om met tientallen gebruikers tegelijk een bedrijf aan te sturen. Dat merken jullie nu. Data zit verspreid over verschillende plekken, kleine aanpassingen kosten onevenredig veel tijd, en elke nieuwe feature duwt de rest van het systeem uit balans. Het team werkt er omheen in plaats van er doorheen.
+    </p>
+
+    <p class="text-body">
+      Dit los je niet op met een paar bugfixes of een nieuwe pagina. Om Plancraft het platform te laten worden waar jullie op willen bouwen, moet de onderliggende structuur opnieuw. Voor deze samenwerking vertaalt dat zich in drie concrete doelen:
+    </p>
+
+    <ol class="numbered-list">
+      <li>
+        <div class="num">01</div>
+        <div class="content">
+          <div class="title">De rebuild</div>
+          <div class="desc">Alle bestaande functionaliteit herbouwen in een architectuur die wél is ontworpen om te groeien. Zelfde tool voor de gebruiker, volledig nieuw van binnen.</div>
+        </div>
+      </li>
+      <li>
+        <div class="num">02</div>
+        <div class="content">
+          <div class="title">De aansluiting</div>
+          <div class="desc">De website en het platform als één samenhangend geheel presenteren. Dezelfde taal, dezelfde look, geen breuken meer tussen marketing en product.</div>
+        </div>
+      </li>
+      <li>
+        <div class="num">03</div>
+        <div class="content">
+          <div class="title">De volgende stap</div>
+          <div class="desc">Een basis neerzetten waarop het team straks zelf nieuwe features kan uitrollen zonder dat er elke keer iets anders breekt.</div>
+        </div>
+      </li>
+    </ol>
+
+    <div class="inner-footer">
+      <span>Klarifai x Marfa</span>
+      <span>Pagina 2</span>
+    </div>
+  </div>
+
+  <!-- ========================================= -->
+  <!-- PAGINA 3 — ONZE AANPAK                    -->
+  <!-- Dynamische velden: {{approach_lead}},      -->
+  <!-- {{phases[]}} met elk: title, desc,         -->
+  <!-- oplevering (deliverable), uren (subtiel)   -->
+  <!-- ========================================= -->
+  <div class="a4-page a4-inner">
+    <div class="section-label"><span class="num">[ 02 ]</span> ONZE AANPAK</div>
+    <h2 class="main-heading">In vier stappen naar<br>een schaalbaar platform.</h2>
+
+    <p class="intro-lead">
+      We bouwen niet in het wilde weg. Om een complex project als dit soepel te laten landen werken we in heldere fases.
+    </p>
+
+    <p class="text-body">
+      Elke fase sluit af met iets concreets dat Marfa in handen krijgt. Zo weet je precies waar we staan en wat er klaar is, elke stap van het traject.
+    </p>
+
+    <ol class="numbered-list">
+      <li>
+        <div class="num">01</div>
+        <div class="content">
+          <div class="title">Discovery & architectuur</div>
+          <div class="desc">Requirements in kaart brengen, de nieuwe systeemarchitectuur ontwerpen en UX wireframes opzetten. Hier leggen we de basis waar de rest op rust.</div>
+          <div class="deliverable">
+            <span class="deliverable-label">Oplevering</span>
+            <span class="deliverable-text">Architectuur-document, wireframes en een gedeelde product-brief.</span>
+          </div>
+        </div>
+        <div class="hours">16 uur</div>
+      </li>
+      <li>
+        <div class="num">02</div>
+        <div class="content">
+          <div class="title">App development</div>
+          <div class="desc">De daadwerkelijke bouw van het maatwerk platform met alle functionaliteit die Plancraft nodig heeft om te groeien.</div>
+          <div class="deliverable">
+            <span class="deliverable-label">Oplevering</span>
+            <span class="deliverable-text">Werkend platform op staging, klaar om door het team getest te worden.</span>
+          </div>
+        </div>
+        <div class="hours">72 uur</div>
+      </li>
+      <li>
+        <div class="num">03</div>
+        <div class="content">
+          <div class="title">Website redesign & implementatie</div>
+          <div class="desc">Website redesign zodat marketing en product één samenhangend geheel vormen. Inclusief pakketkorting wegens design-overlap.</div>
+          <div class="deliverable">
+            <span class="deliverable-label">Oplevering</span>
+            <span class="deliverable-text">Nieuwe website live, visueel in lijn met het platform.</span>
+          </div>
+        </div>
+        <div class="hours">20 uur</div>
+      </li>
+      <li>
+        <div class="num">04</div>
+        <div class="content">
+          <div class="title">Testing & oplevering</div>
+          <div class="desc">End-to-end QA van app en website, performance testing, functionele documentatie en de uiteindelijke oplevering.</div>
+          <div class="deliverable">
+            <span class="deliverable-label">Oplevering</span>
+            <span class="deliverable-text">Go-live, compleet met documentatie en twee weken bugfix-support.</span>
+          </div>
+        </div>
+        <div class="hours">16 uur</div>
+      </li>
+    </ol>
+
+    <div class="inner-footer">
+      <span>Klarifai x Marfa</span>
+      <span>Pagina 3</span>
+    </div>
+  </div>
+
+  <!-- ========================================= -->
+  <!-- PAGINA 4 — INVESTERING                    -->
+  <!-- Dynamische velden: {{lines[]}},            -->
+  <!-- {{subtotal}}, {{vat}}, {{total}},          -->
+  <!-- {{reference}}, {{valid_until}}             -->
+  <!-- ========================================= -->
+  <div class="a4-page a4-inner">
+    <div class="section-label"><span class="num">[ 03 ]</span> INVESTERING</div>
+    <h2 class="main-heading">De investering in één beeld.</h2>
+
+    <p class="intro-lead">
+      De volledige investering per fase, zonder verrassingen.
+    </p>
+
+    <table class="pricing-table">
+      <thead>
+        <tr>
+          <th>Fase omschrijving</th>
+          <th class="right">Uren</th>
+          <th class="right">Tarief</th>
+          <th class="right">Bedrag</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">Discovery & architectuur</td>
+          <td class="right">16</td>
+          <td class="right">€ 95,00</td>
+          <td class="right">€ 1.520,00</td>
+        </tr>
+        <tr>
+          <td class="bold">Custom app development</td>
+          <td class="right">72</td>
+          <td class="right">€ 95,00</td>
+          <td class="right">€ 6.840,00</td>
+        </tr>
+        <tr>
+          <td class="bold">Website redesign & implementatie</td>
+          <td class="right">20</td>
+          <td class="right">€ 95,00</td>
+          <td class="right">€ 1.900,00</td>
+        </tr>
+        <tr>
+          <td class="bold">Testing & oplevering</td>
+          <td class="right">16</td>
+          <td class="right">€ 95,00</td>
+          <td class="right">€ 1.520,00</td>
+        </tr>
+        <tr>
+          <td class="bold discount">Pakketkorting (Website design)</td>
+          <td class="right">—</td>
+          <td class="right">—</td>
+          <td class="right discount">€ -800,00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="totals-block">
+      <div class="total-row">
+        <span>Subtotaal</span>
+        <span>€ 10.980,00</span>
+      </div>
+      <div class="total-row">
+        <span>BTW 21%</span>
+        <span>€ 2.305,80</span>
+      </div>
+      <div class="total-row final">
+        <span>Totaal incl. BTW</span>
+        <span class="amount">€ 13.285,80</span>
+      </div>
+    </div>
+
+    <div class="meta-info">
+      Voorstel referentie: 2026-OFF003<br>
+      Dit voorstel is geldig tot 10 mei 2026.<br>
+      Tenzij anders overeengekomen hanteren wij een betalingstermijn van 14 dagen.
+    </div>
+
+    <div class="inner-footer">
+      <span>Klarifai x Marfa</span>
+      <span>Pagina 4</span>
+    </div>
+  </div>
+
+  <!-- ========================================= -->
+  <!-- PAGINA 5 — SCOPE & AFSLUITING             -->
+  <!-- Dynamische velden: {{scope[]}},            -->
+  <!-- {{out_of_scope[]}}, {{cta_body}}           -->
+  <!-- ========================================= -->
+  <div class="a4-page a4-inner">
+    <div class="section-label"><span class="num">[ 04 ]</span> SCOPE & VOLGENDE STAPPEN</div>
+    <h2 class="main-heading">Wat wel en wat niet.</h2>
+
+    <p class="intro-lead">
+      Om verwachtingen te managen maken we vooraf expliciet wat binnen dit voorstel valt.
+    </p>
+
+    <div class="scope-grid">
+      <div class="scope-col">
+        <h3>In Scope</h3>
+        <ul class="scope-list in">
+          <li>Alles uit offerte 'Custom build Marfa (Plancraft)'</li>
+          <li>Volledige website redesign en implementatie</li>
+          <li>Consistente visuele identiteit app + website</li>
+          <li>Technische en functionele documentatie</li>
+          <li>4 weken bugfix-support na oplevering</li>
+        </ul>
+      </div>
+      <div class="scope-col">
+        <h3>Buiten Scope</h3>
+        <ul class="scope-list out">
+          <li>Hosting en infrastructuur (apart te offreren)</li>
+          <li>Data-migratie van bestaande gebruikersdata</li>
+          <li>Content creatie voor website (teksten, afbeeldingen)</li>
+          <li>Doorlopend onderhoud na supportperiode</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="cta-block">
+      <h3>Klaar om te starten?</h3>
+      <p>Heb je nog vragen over dit voorstel of ben je akkoord?<br>Laat het ons weten via <strong>info@klarifai.nl</strong> of bel ons gerust.</p>
+    </div>
+
+    <div class="inner-footer">
+      <span>Klarifai · Le Mairekade 77, 1013CB Amsterdam · KvK 95189335 · BTW NL005136262B35</span>
+    </div>
+  </div>
+
+</body>
+</html>
