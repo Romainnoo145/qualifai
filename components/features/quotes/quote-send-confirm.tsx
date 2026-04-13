@@ -7,8 +7,8 @@
  * Dutch confirm modal with the inclusive-BTW total. Clicking "Verstuur
  * definitief" calls api.quotes.transition with {id, newStatus: 'SENT'} —
  * EXACTLY those two keys. The server (lib/state-machines/quote.ts,
- * transitionQuote) owns snapshot freeze atomically; the UI NEVER
- * builds a QuoteSnapshot. See Pitfall 1 + Q9 in 61-RESEARCH.md.
+ * transitionQuote) rebuilds the frozen payload atomically; the UI NEVER
+ * constructs that payload itself. See Pitfall 1 + Q9 in 61-RESEARCH.md.
  */
 
 import { useEffect, useState } from 'react';
