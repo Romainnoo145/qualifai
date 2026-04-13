@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
-status: 'Roadmap ready — next action is `/gsd:plan-phase 60`'
-stopped_at: Completed 60-01-PLAN.md (FOUND-01, FOUND-02, TEST-01)
-last_updated: '2026-04-13T11:26:09.398Z'
+status: 'Wave 2 in progress — next action is `/gsd:execute-plan 60 04`'
+stopped_at: Completed 60-03-PLAN.md (FOUND-03, FOUND-04, TEST-05)
+last_updated: '2026-04-13T11:32:35.900Z'
 last_activity: 2026-04-13 — Roadmap created for v9.0
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 5
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 ## Current Position
 
 Phase: 60 — Quote Schema Foundation
-Plan: — (not yet planned)
-Status: Roadmap ready — next action is `/gsd:plan-phase 60`
-Last activity: 2026-04-13 — Roadmap created for v9.0
+Plan: 03 of 5 — Quote Snapshot Schema (complete)
+Status: Wave 2 in progress — next action is `/gsd:execute-plan 60 04` (tRPC quotes router + transitionQuote state machine)
+Last activity: 2026-04-13 — Plan 60-03 shipped (FOUND-03, FOUND-04, TEST-05)
 
-**Progress bar:** ░░░░░░░░░░ 0% (0/4 phases)
+**Progress bar:** [██████░░░░] 60% (3/5 plans, 0/4 phases)
 
 ## Milestones Shipped
 
@@ -75,6 +75,9 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 60]: Plan 02: Manually-authored migration to bypass pre-existing dev DB drift, verified clean on shadow DB pre-loaded from dev schema dump
 - [Phase 60]: Plan 02: Quote.replacesId self-FK added in Phase 60 (Q9) to avoid second migration in Phase 61
 - [Phase 60]: Pattern: typed as-const arrays in lib/constants/prospect-statuses.ts are the SSOT for ProspectStatus literals; assertValidProspectTransition pure helper reused by every status mutation entrypoint
+- [Phase 60]: Plan 03: QuoteSnapshotSchema is single source of truth feeding both web template and PDF worker (Q14) — schema describes business content only, snapshotHtml/snapshotPdfUrl live on Quote row
+- [Phase 60]: Plan 03: QuoteSnapshotLine.tarief uses z.number().int() with NO .nonnegative() — OFF003 Pakketkorting carries tarief: -800 (Pitfall 5)
+- [Phase 60]: Plan 03: parseSnapshot returns null on failure (defensive read paths use getSnapshotField with fallback); Plan 04 quotes.update will use safeParse + throw TRPCError on the strict write path
 
 ### Pending Todos
 
@@ -95,6 +98,6 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-13T11:26:04.422Z
-Stopped at: Completed 60-01-PLAN.md (FOUND-01, FOUND-02, TEST-01)
+Last session: 2026-04-13T11:32:35.898Z
+Stopped at: Completed 60-03-PLAN.md (FOUND-03, FOUND-04, TEST-05)
 Resume command: `/gsd:plan-phase 60`

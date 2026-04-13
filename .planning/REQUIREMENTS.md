@@ -32,8 +32,8 @@ Fragile areas in the existing Qualifai codebase that Phase 60 must address befor
 
 - [x] **FOUND-01**: Typed status constants live in `lib/constants/prospect-statuses.ts` as `as const` arrays (`PUBLIC_STATUSES`, `WIZARD_VISIBLE_STATUSES`, etc.); all hardcoded status string literals in `wizard.ts` and `admin.ts` are replaced by references to these constants
 - [x] **FOUND-02**: `admin.updateProspect` mutation validates state transitions; invalid transitions (e.g. `CONVERTED → DRAFT`) return a typed error rather than silently writing
-- [ ] **FOUND-03**: `Quote.snapshotData` has a Zod schema in `lib/schemas/quote-snapshot.ts`, validated on every write
-- [ ] **FOUND-04**: Type-safe accessor helper exists for reading snapshot fields without unsafe property access
+- [x] **FOUND-03**: `Quote.snapshotData` has a Zod schema in `lib/schemas/quote-snapshot.ts`, validated on every write
+- [x] **FOUND-04**: Type-safe accessor helper exists for reading snapshot fields without unsafe property access
 
 ### YAML Migration (klarifai-core import)
 
@@ -113,7 +113,7 @@ Tests die direct uit verification criteria komen, niet als bonus.
 - [ ] **TEST-02**: State transition tests for `Quote.transition` covering full state machine including Quote → Prospect auto-sync
 - [ ] **TEST-03**: Multi-project isolation test for new `quotes.*` endpoints — admin scoped to Project A cannot see/mutate quotes in Project B
 - [ ] **TEST-04**: Integration test for YAML import script — imports the 3 Marfa fixtures and verifies record counts + totals
-- [ ] **TEST-05**: Snapshot validation test — Zod parsing rejects malformed `snapshotData`, accepts valid
+- [x] **TEST-05**: Snapshot validation test — Zod parsing rejects malformed `snapshotData`, accepts valid
 
 ---
 
@@ -168,8 +168,8 @@ Tests die direct uit verification criteria komen, niet als bonus.
 | DATA-10     | 60    | Pending  |
 | FOUND-01    | 60    | Complete |
 | FOUND-02    | 60    | Complete |
-| FOUND-03    | 60    | Pending  |
-| FOUND-04    | 60    | Pending  |
+| FOUND-03    | 60    | Complete |
+| FOUND-04    | 60    | Complete |
 | IMPORT-01   | 60    | Pending  |
 | IMPORT-02   | 60    | Pending  |
 | IMPORT-03   | 60    | Pending  |
@@ -178,7 +178,7 @@ Tests die direct uit verification criteria komen, niet als bonus.
 | TEST-02     | 60    | Pending  |
 | TEST-03     | 60    | Pending  |
 | TEST-04     | 60    | Pending  |
-| TEST-05     | 60    | Pending  |
+| TEST-05     | 60    | Complete |
 | ADMIN-01    | 61    | Pending  |
 | ADMIN-02    | 61    | Pending  |
 | ADMIN-03    | 61    | Pending  |
