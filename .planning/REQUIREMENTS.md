@@ -164,7 +164,7 @@ Field-discovered parity gaps in the manual prospect experience. Surfaced during 
 
 **og:image logo source upgrade:**
 
-- [ ] **PARITY-06**: New helper `lib/enrichment/og-logo.ts` exports `getHighResLogoUrl(domain): Promise<string | null>` — fetches homepage HTML with plain `fetch` + `AbortSignal.timeout(5000)`, extracts og:image / twitter:image / apple-touch-icon / icon-png in priority order, HEAD-probes each candidate to confirm 200 + non-zero content-length, resolves relative URLs. No new dependencies.
+- [x] **PARITY-06**: New helper `lib/enrichment/og-logo.ts` exports `getHighResLogoUrl(domain): Promise<string | null>` — fetches homepage HTML with plain `fetch` + `AbortSignal.timeout(5000)`, extracts og:image / twitter:image / apple-touch-icon / icon-png in priority order, HEAD-probes each candidate to confirm 200 + non-zero content-length, resolves relative URLs. No new dependencies.
 - [ ] **PARITY-07**: `admin.createProspect` fire-and-forget IIFE calls `getHighResLogoUrl` first; falls through to `getFaviconUrl` on null.
 - [ ] **PARITY-08**: `admin.enrichProspect` no-coverage partial-success path also attempts `getHighResLogoUrl` then `getFaviconUrl` to maximise logo quality for out-of-Apollo prospects.
 
@@ -299,7 +299,7 @@ Field-discovered parity gaps in the manual prospect experience. Surfaced during 
 | PARITY-03 | 61.2 | Pending |
 | PARITY-04 | 61.2 | Pending |
 | PARITY-05 | 61.2 | Pending |
-| PARITY-06 | 61.2 | Pending |
+| PARITY-06 | 61.2 | Complete |
 | PARITY-07 | 61.2 | Pending |
 | PARITY-08 | 61.2 | Pending |
 | PARITY-09 | 61.2 | Pending |

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
-status: in-progress
-stopped_at: Phase 61.2 planned + verified (4 plans, 15 PARITY requirements) — ready to execute
-last_updated: '2026-04-14T15:09:01.890Z'
+status: verifying
+stopped_at: Completed 61.2-02-PLAN.md (og-logo helper)
+last_updated: '2026-04-14T15:48:57.063Z'
 last_activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 3
-  total_plans: 13
-  completed_plans: 13
+  total_plans: 17
+  completed_plans: 14
 ---
 
 # Project State
@@ -109,6 +109,7 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 61.1-manual-prospect-flow-polish]: ProspectLogo shape prop drives base rounding class (rounded-full vs rounded-2xl) — callers specify shape not Tailwind override
 - [Phase 61.1-manual-prospect-flow-polish]: FRIENDLY_ERROR_GEMINI_FALLBACK exported from error-mapping.ts but NOT returned by mapMutationError — it is a positive success-with-warning signal for Plan 04 ProspectLastRunStatus
 - [Phase 61.1-manual-prospect-flow-polish]: generateNarrativeAnalysis + generateKlarifaiNarrativeAnalysis return type tightened to include modelUsed narrow union (was missing from Plan 01 — Plan 03 Rule 1 fix)
+- [Phase 61.2-manual-prospect-parity]: og-logo.ts uses plain fetch (not scrapling service) for homepage GET — simpler, no port dependency, sufficient for public homepages
 
 ### Pending Todos
 
@@ -129,6 +130,6 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-14T13:00:00.000Z
-Stopped at: Completed 61.1-04-PLAN.md (Phase 61.1 complete)
+Last session: 2026-04-14T15:48:57.060Z
+Stopped at: Completed 61.2-02-PLAN.md (og-logo helper)
 Resume command: `/gsd:execute-plan 62 01`
