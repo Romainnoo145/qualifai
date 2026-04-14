@@ -477,6 +477,24 @@ export const adminRouter = router({
       z.object({
         domain: z.string().min(1),
         internalNotes: z.string().optional(),
+        // Optional manual enrichment fields (D3 — sticky against Apollo overwrite)
+        companyName: z.string().min(1).max(200).optional().nullable(),
+        industry: z.string().min(1).max(100).optional().nullable(),
+        description: z.string().max(500).optional().nullable(),
+        employeeRange: z
+          .enum([
+            '1-10',
+            '11-50',
+            '51-200',
+            '201-500',
+            '501-1000',
+            '1001-5000',
+            '5001+',
+          ])
+          .optional()
+          .nullable(),
+        city: z.string().max(100).optional().nullable(),
+        country: z.string().max(100).optional().nullable(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -485,7 +503,7 @@ export const adminRouter = router({
         .replace(/^(https?:\/\/)?(www\.)?/, '')
         .split('/')[0]!;
 
-      // Create prospect
+      // Create prospect — write any manual enrichment fields provided at create-time
       let prospect = await ctx.db.prospect.create({
         data: {
           domain: cleanDomain,
@@ -493,6 +511,14 @@ export const adminRouter = router({
           status: 'DRAFT',
           internalNotes: input.internalNotes,
           projectId: ctx.projectId,
+          ...(input.companyName != null && { companyName: input.companyName }),
+          ...(input.industry != null && { industry: input.industry }),
+          ...(input.description != null && { description: input.description }),
+          ...(input.employeeRange != null && {
+            employeeRange: input.employeeRange,
+          }),
+          ...(input.city != null && { city: input.city }),
+          ...(input.country != null && { country: input.country }),
         },
       });
 
@@ -509,22 +535,31 @@ export const adminRouter = router({
           ctx.db,
           slugSource,
         );
+        // Sticky guard: if Romano provided these at create-time, do NOT overwrite them
+        const enrichDataToApply = {
+          ...buildEnrichmentData(combined.merged, {
+            kvk: combined.kvk,
+            confidence: combined.confidence,
+          }),
+          ...(input.companyName != null && { companyName: input.companyName }),
+          ...(input.industry != null && { industry: input.industry }),
+          ...(input.city != null && { city: input.city }),
+          ...(input.country != null && { country: input.country }),
+        };
         prospect = await ctx.db.prospect.update({
           where: { id: prospect.id },
           data: {
-            ...buildEnrichmentData(combined.merged, {
-              kvk: combined.kvk,
-              confidence: combined.confidence,
-            }),
+            ...enrichDataToApply,
             readableSlug,
           },
         });
       } catch (error) {
         console.error('Apollo enrichment failed:', error);
         // Still generate readableSlug from domain even if enrichment fails
+        const slugSource = input.companyName ?? cleanDomain.split('.')[0]!;
         const readableSlug = await generateUniqueReadableSlug(
           ctx.db,
-          cleanDomain.split('.')[0]!,
+          slugSource,
         );
         prospect = await ctx.db.prospect.update({
           where: { id: prospect.id },
