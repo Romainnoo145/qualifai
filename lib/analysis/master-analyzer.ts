@@ -9,7 +9,11 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GEMINI_MODEL_PRO } from '@/lib/ai/constants';
+import type {
+  GenerativeModel,
+  GenerateContentResult,
+} from '@google/generative-ai';
+import { GEMINI_MODEL_PRO, GEMINI_MODEL_FLASH } from '@/lib/ai/constants';
 import { buildMasterPrompt } from './master-prompt';
 import type {
   MasterAnalysis,
@@ -34,6 +38,174 @@ function getGenAI(): GoogleGenerativeAI {
     genaiClient = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
   }
   return genaiClient;
+}
+
+// ---------------------------------------------------------------------------
+// Retry + fallback layer (Phase 61.1 POLISH-01/02 + SC #2)
+// PHASE 61.1 POLISH: retry layer inlined — candidate for extraction to lib/analysis/retry.ts
+// ---------------------------------------------------------------------------
+
+/**
+ * Return envelope for callGeminiWithRetry. Callers MUST destructure this —
+ * the `fallbackUsed` flag is the fidelity signal that drives the Plan 04 UI
+ * fallback-used warning (ROADMAP SC #2).
+ */
+export type GeminiCallResult = {
+  result: GenerateContentResult;
+  fallbackUsed: boolean;
+  modelUsed: 'gemini-2.5-pro' | 'gemini-2.5-flash';
+  attempts: number;
+};
+
+const RETRYABLE_PATTERNS = [
+  /5\d\d/, // any HTTP 5xx in the message
+  /Service Unavailable/i,
+  /quota/i,
+  /429/,
+  /rate.?limit/i,
+];
+
+function isRetryableGeminiError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return RETRYABLE_PATTERNS.some((rx) => rx.test(message));
+}
+
+/**
+ * Call Gemini with exponential backoff + optional fallback model.
+ *
+ * Retry matrix:
+ *   - 3 primary attempts, backoff 1s -> 4s -> 16s (Math.pow(4, attempt) * 1000)
+ *   - 1 fallback attempt if opts.fallbackModel provided
+ *   - Non-retryable errors (4xx except 429) bubble immediately
+ *
+ * Returns a GeminiCallResult envelope so callers can propagate the
+ * `fallbackUsed` + `modelUsed` signals to the UI layer (Plan 04).
+ *
+ * Exported for unit testing.
+ */
+export async function callGeminiWithRetry(
+  primaryModel: GenerativeModel,
+  prompt: string,
+  opts: {
+    modelName: 'gemini-2.5-pro' | 'gemini-2.5-flash';
+    fallbackModel?: GenerativeModel;
+    fallbackModelName?: 'gemini-2.5-pro' | 'gemini-2.5-flash';
+  },
+): Promise<GeminiCallResult> {
+  const maxAttempts = 3;
+  let lastError: unknown = null;
+  let attemptsConsumed = 0;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    attemptsConsumed = attempt + 1;
+    try {
+      const result = await primaryModel.generateContent(prompt);
+      return {
+        result,
+        fallbackUsed: false,
+        modelUsed: opts.modelName,
+        attempts: attemptsConsumed,
+      };
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableGeminiError(error)) {
+        throw error;
+      }
+      if (attempt < maxAttempts - 1) {
+        const delay = Math.pow(4, attempt) * 1000; // 1s, 4s, 16s
+        console.warn(
+          `[master-analyzer] ${opts.modelName} attempt ${attempt + 1}/${maxAttempts} failed (retryable), waiting ${delay}ms: ${error instanceof Error ? error.message.slice(0, 200) : String(error)}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  if (opts.fallbackModel && opts.fallbackModelName) {
+    console.warn(
+      `[master-analyzer] Falling back to ${opts.fallbackModelName} after ${maxAttempts} retries on ${opts.modelName}`,
+    );
+    try {
+      const result = await opts.fallbackModel.generateContent(prompt);
+      return {
+        result,
+        fallbackUsed: true,
+        modelUsed: opts.fallbackModelName,
+        attempts: attemptsConsumed,
+      };
+    } catch (fallbackError) {
+      throw new Error(
+        `[master-analyzer] Failed after ${maxAttempts} primary + 1 fallback attempt. Primary=${opts.modelName} Fallback=${opts.fallbackModelName}. Last primary error: ${lastError instanceof Error ? lastError.message.slice(0, 200) : String(lastError)}. Fallback error: ${fallbackError instanceof Error ? fallbackError.message.slice(0, 200) : String(fallbackError)}`,
+      );
+    }
+  }
+
+  throw new Error(
+    `[master-analyzer] Failed after ${maxAttempts} attempts on ${opts.modelName} (no fallback configured). Last error: ${lastError instanceof Error ? lastError.message.slice(0, 200) : String(lastError)}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Persistence helpers (Plan 03 wires these into research-executor.ts)
+// ---------------------------------------------------------------------------
+
+type ProspectFailureDb = {
+  prospect: {
+    update: (args: {
+      where: { id: string };
+      data: {
+        lastAnalysisError: string | null;
+        lastAnalysisAttemptedAt: Date | null;
+        lastAnalysisModelUsed?: string | null;
+      };
+    }) => Promise<unknown>;
+  };
+};
+
+/**
+ * Persist master-analyzer HARD FAILURE state on the Prospect row. Called
+ * when retry + fallback both exhausted.
+ */
+export async function recordAnalysisFailure(
+  db: ProspectFailureDb,
+  prospectId: string,
+  errorMessage: string,
+): Promise<void> {
+  await db.prospect.update({
+    where: { id: prospectId },
+    data: {
+      lastAnalysisError: errorMessage.slice(0, 500),
+      lastAnalysisAttemptedAt: new Date(),
+      // NOTE: lastAnalysisModelUsed intentionally untouched on failure —
+      // we want the previous successful model to remain as a history breadcrumb.
+    },
+  });
+}
+
+/**
+ * Persist master-analyzer SUCCESS state on the Prospect row. Called on
+ * BOTH clean primary success AND fallback success. The `modelUsed`
+ * argument is the discriminator — when it's 'gemini-2.5-flash' this is
+ * the "fallback used" persisted signal that drives the Plan 04 UI warning
+ * (ROADMAP SC #2).
+ *
+ * - Clears lastAnalysisError
+ * - Stamps lastAnalysisAttemptedAt = now
+ * - Writes lastAnalysisModelUsed = modelUsed
+ */
+export async function recordAnalysisSuccess(
+  db: ProspectFailureDb,
+  prospectId: string,
+  modelUsed: 'gemini-2.5-pro' | 'gemini-2.5-flash',
+): Promise<void> {
+  await db.prospect.update({
+    where: { id: prospectId },
+    data: {
+      lastAnalysisError: null,
+      lastAnalysisAttemptedAt: new Date(),
+      lastAnalysisModelUsed: modelUsed,
+    },
+  });
 }
 
 const VALID_TRIGGER_CATEGORIES: TriggerCategory[] = [
@@ -327,7 +499,7 @@ function extractJSON(text: string): unknown | null {
  */
 export async function generateNarrativeAnalysis(
   input: NarrativeAnalysisInput,
-): Promise<NarrativeAnalysis> {
+): Promise<NarrativeAnalysis & { fallbackUsed: boolean }> {
   const genai = getGenAI();
   const prompt = buildMasterPrompt(input);
   const model = GEMINI_MODEL_PRO;
@@ -338,13 +510,30 @@ export async function generateNarrativeAnalysis(
   );
 
   let lastRawText = '';
+  let outerFallbackUsed = false;
+  let outerModelUsed: 'gemini-2.5-pro' | 'gemini-2.5-flash' = GEMINI_MODEL_PRO;
 
   for (let attempt = 0; attempt < 2; attempt++) {
     const geminiModel = genai.getGenerativeModel({ model });
 
     let response;
     if (attempt === 0) {
-      response = await geminiModel.generateContent(prompt);
+      const fallback = genai.getGenerativeModel({ model: GEMINI_MODEL_FLASH });
+      const { result, fallbackUsed, modelUsed } = await callGeminiWithRetry(
+        geminiModel,
+        prompt,
+        {
+          modelName: model as 'gemini-2.5-pro' | 'gemini-2.5-flash',
+          fallbackModel: fallback,
+          fallbackModelName: GEMINI_MODEL_FLASH,
+        },
+      );
+      response = result;
+      // Stash for the top-level return value. The outer schema-validation retry
+      // loop may loop once more, but fallbackUsed only changes on transport errors
+      // — not on schema errors — so the last-seen value is authoritative.
+      outerFallbackUsed = fallbackUsed;
+      outerModelUsed = modelUsed;
     } else {
       const chat = geminiModel.startChat({
         history: [
@@ -388,7 +577,8 @@ export async function generateNarrativeAnalysis(
     return {
       ...validated,
       generatedAt: new Date().toISOString(),
-      modelUsed: model,
+      modelUsed: outerModelUsed,
+      fallbackUsed: outerFallbackUsed,
     };
   }
 
@@ -480,7 +670,7 @@ export function validateKlarifaiNarrativeAnalysis(
  */
 export async function generateKlarifaiNarrativeAnalysis(
   input: KlarifaiNarrativeInput,
-): Promise<KlarifaiNarrativeAnalysis> {
+): Promise<KlarifaiNarrativeAnalysis & { fallbackUsed: boolean }> {
   const genai = getGenAI();
   const prompt = buildMasterPrompt(input);
   const model = GEMINI_MODEL_PRO;
@@ -491,13 +681,30 @@ export async function generateKlarifaiNarrativeAnalysis(
   );
 
   let lastRawText = '';
+  let outerFallbackUsed = false;
+  let outerModelUsed: 'gemini-2.5-pro' | 'gemini-2.5-flash' = GEMINI_MODEL_PRO;
 
   for (let attempt = 0; attempt < 2; attempt++) {
     const geminiModel = genai.getGenerativeModel({ model });
 
     let response;
     if (attempt === 0) {
-      response = await geminiModel.generateContent(prompt);
+      const fallback = genai.getGenerativeModel({ model: GEMINI_MODEL_FLASH });
+      const { result, fallbackUsed, modelUsed } = await callGeminiWithRetry(
+        geminiModel,
+        prompt,
+        {
+          modelName: model as 'gemini-2.5-pro' | 'gemini-2.5-flash',
+          fallbackModel: fallback,
+          fallbackModelName: GEMINI_MODEL_FLASH,
+        },
+      );
+      response = result;
+      // Stash for the top-level return value. The outer schema-validation retry
+      // loop may loop once more, but fallbackUsed only changes on transport errors
+      // — not on schema errors — so the last-seen value is authoritative.
+      outerFallbackUsed = fallbackUsed;
+      outerModelUsed = modelUsed;
     } else {
       const chat = geminiModel.startChat({
         history: [
@@ -541,7 +748,8 @@ export async function generateKlarifaiNarrativeAnalysis(
     return {
       ...validated,
       generatedAt: new Date().toISOString(),
-      modelUsed: model,
+      modelUsed: outerModelUsed,
+      fallbackUsed: outerFallbackUsed,
     };
   }
 
