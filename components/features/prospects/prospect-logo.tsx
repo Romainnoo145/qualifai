@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { buildInlineGoogleFaviconUrl } from '@/lib/enrichment/favicon';
+import {
+  buildInlineDuckDuckGoFaviconUrl,
+  buildInlineGoogleFaviconUrl,
+} from '@/lib/enrichment/favicon';
 import { cn } from '@/lib/utils';
 
 interface ProspectLogoProps {
@@ -15,20 +18,21 @@ interface ProspectLogoProps {
   className?: string;
 }
 
-type Stage = 'apollo' | 'favicon' | 'initial';
+type Stage = 'apollo' | 'ddg' | 'google' | 'initial';
 
 /**
- * Three-level logo fallback: Apollo logoUrl → Google favicon → initial
- * letter circle. Uses `<img onError>` to cascade through stages client-side
- * without any probing latency.
+ * Four-level logo fallback: Apollo logoUrl → DuckDuckGo favicon → Google
+ * favicon → initial letter circle. Uses `<img onError>` to cascade through
+ * stages client-side without any probing latency.
+ *
+ * DuckDuckGo is the primary favicon source because it scrapes the site's
+ * own favicon directly (works for small Dutch SMBs). Google's s2 is the
+ * secondary because it returns a generic globe with HTTP 200 for misses,
+ * which would otherwise stick forever without onError firing.
  *
  * Phase 61.1 POLISH-10 / POLISH-11 — rendered in both the prospect list
  * cards (shape='rounded', size=56) and the prospect detail page header
  * (shape='circle', size=64).
- *
- * The `shape` prop drives the base rounding class (rounded-full vs
- * rounded-2xl) so callers don't have to fight tailwind-merge precedence
- * via className overrides.
  */
 export function ProspectLogo({
   prospect,
@@ -36,19 +40,20 @@ export function ProspectLogo({
   shape = 'circle',
   className,
 }: ProspectLogoProps): React.ReactElement {
-  // Decide the initial stage from the data we have
   const initialStage: Stage = prospect.logoUrl
     ? 'apollo'
     : prospect.domain
-      ? 'favicon'
+      ? 'ddg'
       : 'initial';
 
   const [stage, setStage] = useState<Stage>(initialStage);
 
   const handleError = () => {
     if (stage === 'apollo') {
-      setStage(prospect.domain ? 'favicon' : 'initial');
-    } else if (stage === 'favicon') {
+      setStage(prospect.domain ? 'ddg' : 'initial');
+    } else if (stage === 'ddg') {
+      setStage(prospect.domain ? 'google' : 'initial');
+    } else if (stage === 'google') {
       setStage('initial');
     }
   };
@@ -87,7 +92,9 @@ export function ProspectLogo({
   const src =
     stage === 'apollo'
       ? prospect.logoUrl!
-      : (buildInlineGoogleFaviconUrl(prospect.domain!, size * 2) ?? '');
+      : stage === 'ddg'
+        ? (buildInlineDuckDuckGoFaviconUrl(prospect.domain!) ?? '')
+        : (buildInlineGoogleFaviconUrl(prospect.domain!, 128) ?? '');
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
