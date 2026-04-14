@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: verifying
-stopped_at: Completed 61.2-01-PLAN.md (Apollo no-coverage error handling)
-last_updated: '2026-04-14T15:51:50.000Z'
+stopped_at: Completed 61.2-03-PLAN.md (og-logo wiring + createAndProcess enrichment extension + Optionele verrijking form)
+last_updated: '2026-04-14T15:57:35.608Z'
 last_activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 17
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # Project State
@@ -112,6 +112,8 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 61.2-manual-prospect-parity]: og-logo.ts uses plain fetch (not scrapling service) for homepage GET — simpler, no port dependency, sufficient for public homepages
 - [Phase 61.2]: EnrichmentNoCoverageError placed in apollo.ts, re-exported from service.ts for single import point
 - [Phase 61.2]: enrichProspect returns { success, fallbackUsed, noCoverage } shape — fires Acties panel amber branch via existing markSuccess(data.fallbackUsed) hook, no component change needed
+- [Phase 61.2]: createAndProcess: sticky guard covers companyName/industry/city/country only — description and employeeRange are NOT sticky (Apollo values preferred for quality)
+- [Phase 61.2]: og-logo IIFE in createAndProcess is a net-new addition (the mutation had no favicon IIFE before Plan 03) — createProspect still has its own favicon-only IIFE unchanged
 
 ### Pending Todos
 
@@ -132,6 +134,6 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-14T15:51:45.948Z
-Stopped at: Completed 61.2-01-PLAN.md (Apollo no-coverage error handling)
+Last session: 2026-04-14T15:57:35.605Z
+Stopped at: Completed 61.2-03-PLAN.md (og-logo wiring + createAndProcess enrichment extension + Optionele verrijking form)
 Resume command: `/gsd:execute-plan 62 01`
