@@ -1,5 +1,8 @@
 import { env } from '@/env.mjs';
-import { apolloProvider } from '@/lib/enrichment/providers/apollo';
+import {
+  apolloProvider,
+  EnrichmentNoCoverageError,
+} from '@/lib/enrichment/providers/apollo';
 import type {
   CompanySearchFilters,
   ContactSearchFilters,
@@ -49,6 +52,8 @@ class EnrichmentNoResultError extends Error {
     );
   }
 }
+
+export { EnrichmentNoCoverageError } from '@/lib/enrichment/providers/apollo';
 
 export class EnrichmentPlanLimitedError extends Error {
   readonly operation: string;
@@ -173,12 +178,14 @@ async function withInFlightDedup<T>(
 async function runWithWaterfall<T>(
   operation: string,
   invoke: (provider: EnrichmentProvider) => Promise<T | null>,
+  input?: { domain: string },
 ): Promise<T> {
   const order = resolveProviderOrder();
   const errors: string[] = [];
   let errorCount = 0;
   let noResultCount = 0;
   let planLimitCount = 0;
+  let noCoverageCount = 0;
 
   for (const providerName of order) {
     const provider = PROVIDERS[providerName];
@@ -188,6 +195,12 @@ async function runWithWaterfall<T>(
       errors.push(`${providerName}: no result`);
       noResultCount++;
     } catch (error) {
+      if (error instanceof EnrichmentNoCoverageError) {
+        // Apollo has no coverage for this domain — treat as partial success,
+        // not a provider failure. Fast-exit handling happens after the loop.
+        noCoverageCount++;
+        continue;
+      }
       const message = error instanceof Error ? error.message : String(error);
       if (PLAN_LIMIT_ERROR_MARKERS.some((marker) => message.includes(marker))) {
         errors.push(
@@ -199,6 +212,42 @@ async function runWithWaterfall<T>(
       errors.push(`${providerName}: ${message}`);
       errorCount++;
     }
+  }
+
+  // All providers returned no-coverage (not an error — expected for small NL SMBs).
+  // Return minimal EnrichedCompanyData with just domain populated.
+  if (
+    noCoverageCount > 0 &&
+    errorCount === 0 &&
+    noResultCount === 0 &&
+    planLimitCount === 0
+  ) {
+    const domain = input?.domain ?? '';
+    return {
+      domain,
+      companyName: null,
+      industry: null,
+      subIndustry: null,
+      employeeCount: null,
+      employeeRange: null,
+      revenueRange: null,
+      revenueEstimate: null,
+      description: null,
+      city: null,
+      state: null,
+      country: null,
+      foundedYear: null,
+      linkedinUrl: null,
+      logoUrl: null,
+      technologies: [],
+      specialties: [],
+      naicsCode: null,
+      sicCode: null,
+      lushaCompanyId: null,
+      intentTopics: null,
+      fundingInfo: null,
+      rawData: {},
+    } as unknown as T;
   }
 
   if (
@@ -264,13 +313,17 @@ export async function enrichCompany(
     const warm = getCached(companyCache, cacheKey);
     if (warm) return warm;
 
-    const result = await runWithWaterfall('enrichCompany', async (provider) => {
-      if (!provider.enrichCompany) return null;
-      const company = await provider.enrichCompany(domain, prospectId);
-      return company.companyName || company.description || company.industry
-        ? company
-        : null;
-    });
+    const result = await runWithWaterfall(
+      'enrichCompany',
+      async (provider) => {
+        if (!provider.enrichCompany) return null;
+        const company = await provider.enrichCompany(domain, prospectId);
+        return company.companyName || company.description || company.industry
+          ? company
+          : null;
+      },
+      { domain: normalizeDomain(domain) },
+    );
 
     setCached(companyCache, cacheKey, result, MEMORY_CACHE_TTL_MS);
     return result;

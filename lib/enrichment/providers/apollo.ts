@@ -18,6 +18,21 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 const RATE_LIMIT_DELAY_MS = 120; // Apollo rate limits vary by plan, keep conservative by default.
 
+/**
+ * Thrown when Apollo returns HTTP 422 / "no org found" / "Required parameter"
+ * semantics — meaning Apollo has no record for this domain, not a transient
+ * error. Callers should treat this as partial success, not a failure.
+ */
+export class EnrichmentNoCoverageError extends Error {
+  readonly domain: string;
+
+  constructor(domain: string) {
+    super(`Apollo has no coverage for domain: ${domain}`);
+    this.name = 'EnrichmentNoCoverageError';
+    this.domain = domain;
+  }
+}
+
 let lastRequestTime = 0;
 
 function getApolloApiKey(): string {
@@ -438,6 +453,7 @@ async function apolloFetch<T>(
   let lastError: Error | null = null;
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     await rateLimitWait();
+    let noRetryError: Error | null = null;
     try {
       const url = new URL(`${APOLLO_BASE_URL}${path}`);
       if (query) {
@@ -467,18 +483,30 @@ async function apolloFetch<T>(
 
       if (!response.ok) {
         const message = await response.text();
-        throw new Error(`Apollo API error (${response.status}): ${message}`);
+        const error = new Error(
+          `Apollo API error (${response.status}): ${message}`,
+        );
+        // 422 = Apollo has no record for this domain — do not retry (saves ~2s per attempt).
+        if (response.status === 422) {
+          noRetryError = error;
+        } else {
+          throw error;
+        }
+      } else {
+        const payload = (await response.json()) as T;
+        await logUsage(path, operation, credits, prospectId, contactId);
+        return payload;
       }
-
-      const payload = (await response.json()) as T;
-      await logUsage(path, operation, credits, prospectId, contactId);
-      return payload;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       if (attempt < MAX_RETRIES - 1) {
         const backoff = RETRY_DELAY_MS * Math.pow(2, attempt);
         await new Promise((resolve) => setTimeout(resolve, backoff));
       }
+    }
+    // Fast-exit for 422: bypass retry loop without backoff delay.
+    if (noRetryError) {
+      throw noRetryError;
     }
   }
 
@@ -519,10 +547,20 @@ async function enrichCompanyWithFallbackQueries(
       if (organization) return organization;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
+      // 422 means Apollo doesn't know this domain — no point trying other query variants.
+      if (/422/.test(lastError.message)) {
+        break;
+      }
     }
   }
 
   if (!sawSuccessfulResponse && lastError) {
+    const isNoCoverage = /422|no org found|Required parameter/i.test(
+      lastError.message,
+    );
+    if (isNoCoverage) {
+      throw new EnrichmentNoCoverageError(clean);
+    }
     throw lastError;
   }
 
