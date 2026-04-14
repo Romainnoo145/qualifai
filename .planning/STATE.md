@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
-status: verifying
-stopped_at: Completed 61.2-04-PLAN.md (ProspectEnrichmentBadge + render audit + human-verify approved)
+status: in-progress
+stopped_at: Phase 61.3 Logo Pipeline Unification shipped (lean exec, 4 commits, backfill run) — next Phase 62 design consultation
 last_updated: '2026-04-14T16:08:30.194Z'
 last_activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
 progress:
@@ -24,9 +24,9 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 
 ## Current Position
 
-Phase: 61.2 — Manual Prospect Parity (PLANNED, ready to execute)
-Plan: 4 plans written + verified across 3 waves — Wave 1 = 61.2-01 (Apollo fallback) + 61.2-02 (og-logo helper) parallel; Wave 2 = 61.2-03 (og-logo wiring + createAndProcess Zod + Optionele verrijking form); Wave 3 = 61.2-04 (ProspectEnrichmentBadge + render audit, autonomous=false human-verify)
-Status: Phase 61.1 complete (4/4 plans, 14/14 POLISH verified, committed 10ae7c5). Phase 61.2 plans went through 2 revision iterations (iter 1: Wave 1 admin.ts conflict resolved by moving og-logo wiring to Plan 03; iter 2: VALIDATION.md created, PARITY-08 ownership corrected from Plan 02 to Plan 03). All 15 PARITY requirements covered. Marfa-specific logo bug discovered during 61.1 smoke test is PARKED in 61.2 Plan 03 Task 1 — not a blocker, will be fixed by og-logo wiring. Next action: /gsd:execute-phase 61.2.
+Phase: 61.3 — Logo Pipeline Unification (COMPLETE, lean exec) — next Phase 62 design consultation
+Plan: Single session, 4 atomic commits, no GSD plan-checker ceremony per Romano's request
+Status: 60 / 61 / 61.1 / 61.2 / 61.3 all shipped. resolveLogoUrl pipeline unified three scattered call sites, ProspectLogo component simplified to 2-stage trust-the-DB, backfill script ran and populated 2 empty rows (marcore + stb-kozijnen) + re-validated 8 existing. Romano flagged meta-concern about lack of design spec / component system / uniform backend endpoints — Phase 62 is being restructured to start with /design-consultation skill before any implementation. Next action: run /design-consultation for admin prospect detail + client /voorstel pages as anchor surfaces.
 Last activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
 
 **Progress bar:** [██████████] 100% (9/9 plans, 1/4 phases)
