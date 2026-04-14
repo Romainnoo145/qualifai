@@ -121,9 +121,9 @@ Field-discovered roughness in the manual prospect creation flow. Surfaced during
 
 **Master analyzer resilience:**
 
-- [ ] **POLISH-01**: `lib/analysis/master-analyzer.ts` retries on Gemini 5xx/429 errors with exponential backoff (3 attempts, 1s → 4s → 16s). Catches only retryable errors; all other errors bubble immediately.
-- [ ] **POLISH-02**: After retry exhaustion, master-analyzer falls back to `gemini-2.5-flash` for one final attempt before failing. Logged with model used and attempt count.
-- [ ] **POLISH-03**: Master analyzer failures are persisted on `ProspectAnalysis` (or a sibling field on Prospect) with `lastAnalysisError: string?` and `lastAnalysisAttemptedAt: DateTime?` so the UI can render a friendly status instead of nothing.
+- [x] **POLISH-01**: `lib/analysis/master-analyzer.ts` retries on Gemini 5xx/429 errors with exponential backoff (3 attempts, 1s → 4s → 16s). Catches only retryable errors; all other errors bubble immediately.
+- [x] **POLISH-02**: After retry exhaustion, master-analyzer falls back to `gemini-2.5-flash` for one final attempt before failing. Logged with model used and attempt count.
+- [x] **POLISH-03**: Master analyzer failures are persisted on `ProspectAnalysis` (or a sibling field on Prospect) with `lastAnalysisError: string?` and `lastAnalysisAttemptedAt: DateTime?` so the UI can render a friendly status instead of nothing.
 
 **Favicon fallback (replaces Apollo logo gap):**
 
@@ -144,7 +144,7 @@ Field-discovered roughness in the manual prospect creation flow. Surfaced during
 
 **Tests:**
 
-- [ ] **POLISH-12**: Unit test for `master-analyzer` retry logic — mocks Gemini SDK, asserts 3 retry attempts on 503, asserts fallback to flash on exhaustion, asserts non-retryable errors bubble immediately.
+- [x] **POLISH-12**: Unit test for `master-analyzer` retry logic — mocks Gemini SDK, asserts 3 retry attempts on 503, asserts fallback to flash on exhaustion, asserts non-retryable errors bubble immediately.
 - [x] **POLISH-13**: Unit test for `favicon.ts` — Google success path, Google fail → DuckDuckGo fallback, both fail → null, timeout path.
 - [ ] **POLISH-14**: Component test for the Acties panel error surface — mocked mutation rejects with Gemini 503 → assert friendly message rendered, no raw error string in the DOM.
 
@@ -248,9 +248,9 @@ Field-discovered roughness in the manual prospect creation flow. Surfaced during
 | CONT-08     | 63    | Pending  |
 | CONT-09     | 63    | Pending  |
 | CONT-10     | 63    | Pending  |
-| POLISH-01   | 61.1  | Pending  |
-| POLISH-02   | 61.1  | Pending  |
-| POLISH-03   | 61.1  | Pending  |
+| POLISH-01   | 61.1  | Complete |
+| POLISH-02   | 61.1  | Complete |
+| POLISH-03   | 61.1  | Complete |
 | POLISH-04   | 61.1  | Complete |
 | POLISH-05   | 61.1  | Pending  |
 | POLISH-06   | 61.1  | Pending  |
@@ -259,7 +259,7 @@ Field-discovered roughness in the manual prospect creation flow. Surfaced during
 | POLISH-09   | 61.1  | Pending  |
 | POLISH-10   | 61.1  | Pending  |
 | POLISH-11   | 61.1  | Pending  |
-| POLISH-12   | 61.1  | Pending  |
+| POLISH-12   | 61.1  | Complete |
 | POLISH-13   | 61.1  | Complete |
 | POLISH-14   | 61.1  | Pending  |
 

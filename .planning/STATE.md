@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: completed
-stopped_at: Completed 61.1-02-PLAN.md
-last_updated: '2026-04-14T12:22:26.409Z'
+stopped_at: Completed 61.1-01-PLAN.md
+last_updated: '2026-04-14T12:24:56.298Z'
 last_activity: 2026-04-13 — Plan 61-04 shipped (ADMIN-05 send flow, ADMIN-08 new-version flow, Phase 61 complete)
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 13
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -102,6 +102,8 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 61]: Plan 04: Action components are self-visibility-gated (each returns null when its status precondition is not met); page shell mounts both unconditionally without branching on quote.status
 - [Phase 61]: Plan 04: Mutation error/success simulation via captured onError/onSuccess callbacks + act() — required when triggering React state updates outside React event handlers for RTL getByText to see flushed DOM
 - [Phase 61.1-manual-prospect-flow-polish]: getFaviconUrl: Google s2/favicons HEAD probe → DuckDuckGo ip3 fallback → null; buildInlineGoogleFaviconUrl exported as pure URL builder for ProspectLogo onError chain
+- [Phase 61.1-manual-prospect-flow-polish]: callGeminiWithRetry returns GeminiCallResult envelope (not raw GenerateContentResult) so Plans 03 and 04 can thread fallbackUsed end-to-end
+- [Phase 61.1-manual-prospect-flow-polish]: recordAnalysisFailure intentionally leaves lastAnalysisModelUsed untouched — previous successful model stays as history breadcrumb
 
 ### Pending Todos
 
@@ -122,6 +124,6 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-14T12:22:26.406Z
-Stopped at: Completed 61.1-02-PLAN.md
+Last session: 2026-04-14T12:24:56.295Z
+Stopped at: Completed 61.1-01-PLAN.md
 Resume command: `/gsd:execute-plan 61 04`
