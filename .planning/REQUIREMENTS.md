@@ -115,6 +115,39 @@ Tests die direct uit verification criteria komen, niet als bonus.
 - [x] **TEST-04**: Integration test for YAML import script — imports the 3 Marfa fixtures and verifies record counts + totals
 - [x] **TEST-05**: Snapshot validation test — Zod parsing rejects malformed `snapshotData`, accepts valid
 
+### Manual Prospect Flow Polish (Phase 61.1 — INSERTED)
+
+Field-discovered roughness in the manual prospect creation flow. Surfaced during Phase 61 smoke testing on Marfa.
+
+**Master analyzer resilience:**
+
+- [ ] **POLISH-01**: `lib/analysis/master-analyzer.ts` retries on Gemini 5xx/429 errors with exponential backoff (3 attempts, 1s → 4s → 16s). Catches only retryable errors; all other errors bubble immediately.
+- [ ] **POLISH-02**: After retry exhaustion, master-analyzer falls back to `gemini-2.5-flash` for one final attempt before failing. Logged with model used and attempt count.
+- [ ] **POLISH-03**: Master analyzer failures are persisted on `ProspectAnalysis` (or a sibling field on Prospect) with `lastAnalysisError: string?` and `lastAnalysisAttemptedAt: DateTime?` so the UI can render a friendly status instead of nothing.
+
+**Favicon fallback (replaces Apollo logo gap):**
+
+- [x] **POLISH-04**: New helper `lib/enrichment/favicon.ts` exports `getFaviconUrl(domain: string): Promise<string | null>` that probes Google's free favicon service (`https://www.google.com/s2/favicons?domain=<d>&sz=128`), falls back to DuckDuckGo's `https://icons.duckduckgo.com/ip3/<d>.ico`, returns null if both fail. Uses a HEAD request with a short timeout.
+- [ ] **POLISH-05**: `admin.createProspect` mutation calls `getFaviconUrl(domain)` after the Prisma create and updates `Prospect.logoUrl` if successful. Non-blocking — prospect is returned even if favicon fetch fails or times out.
+- [ ] **POLISH-06**: Existing prospects without `logoUrl` get an on-the-fly favicon via the same Google service rendered in the prospect card UI — no DB write required for backfill.
+
+**Pipeline retrigger UI + error surface:**
+
+- [ ] **POLISH-07**: `/admin/prospects/[id]` has an "Acties" panel with three buttons: **Verrijk opnieuw** (calls `enrichProspect`), **Run research** (calls `executeResearchRun` via a new tRPC mutation), **Run analyse** (calls master-analyzer via a new tRPC mutation). Each button shows loading state and post-run feedback.
+- [ ] **POLISH-08**: Pipeline mutation errors are surfaced in the UI as friendly messages, not stack traces. Specifically: Gemini 503 / 429 / quota errors render as "AI tijdelijk niet beschikbaar — probeer over een paar minuten opnieuw." with a retry button.
+- [ ] **POLISH-09**: A "Laatste run" status indicator on `/admin/prospects/[id]` shows the last research/analysis run timestamp, status (success/warning/error), and brief message — populated from `ResearchRun.finishedAt` + `ProspectAnalysis.lastAnalysisError`.
+
+**Logo rendering in prospect cards:**
+
+- [ ] **POLISH-10**: Prospect cards in `/admin/prospects` list page render `prospect.logoUrl` if present, else fall back to inline Google favicon URL (`https://www.google.com/s2/favicons?domain=${prospect.domain}&sz=128`). Avatar circle with initial letter as final fallback for prospects without a domain.
+- [ ] **POLISH-11**: `/admin/prospects/[id]` detail page header includes the same logo/favicon avatar next to the prospect name.
+
+**Tests:**
+
+- [ ] **POLISH-12**: Unit test for `master-analyzer` retry logic — mocks Gemini SDK, asserts 3 retry attempts on 503, asserts fallback to flash on exhaustion, asserts non-retryable errors bubble immediately.
+- [x] **POLISH-13**: Unit test for `favicon.ts` — Google success path, Google fail → DuckDuckGo fallback, both fail → null, timeout path.
+- [ ] **POLISH-14**: Component test for the Acties panel error surface — mocked mutation rejects with Gemini 503 → assert friendly message rendered, no raw error string in the DOM.
+
 ---
 
 ## v10.0 Requirements (deferred)
@@ -215,14 +248,28 @@ Tests die direct uit verification criteria komen, niet als bonus.
 | CONT-08     | 63    | Pending  |
 | CONT-09     | 63    | Pending  |
 | CONT-10     | 63    | Pending  |
+| POLISH-01   | 61.1  | Pending  |
+| POLISH-02   | 61.1  | Pending  |
+| POLISH-03   | 61.1  | Pending  |
+| POLISH-04   | 61.1  | Complete |
+| POLISH-05   | 61.1  | Pending  |
+| POLISH-06   | 61.1  | Pending  |
+| POLISH-07   | 61.1  | Pending  |
+| POLISH-08   | 61.1  | Pending  |
+| POLISH-09   | 61.1  | Pending  |
+| POLISH-10   | 61.1  | Pending  |
+| POLISH-11   | 61.1  | Pending  |
+| POLISH-12   | 61.1  | Pending  |
+| POLISH-13   | 61.1  | Complete |
+| POLISH-14   | 61.1  | Pending  |
 
 **Coverage:**
 
-- v9.0 requirements: 59 total (DATA 10 + FOUND 4 + IMPORT 4 + DSGN 3 + ADMIN 8 + CLIENT 8 + PDF 7 + CONT 10 + TEST 5)
-- Mapped to phases: 59
+- v9.0 requirements: 73 total (DATA 10 + FOUND 4 + IMPORT 4 + DSGN 3 + ADMIN 8 + CLIENT 8 + PDF 7 + CONT 10 + TEST 5 + POLISH 14)
+- Mapped to phases: 73
 - Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-04-13_
-_Last updated: 2026-04-13 — Phase 62 scope refined: added DSGN category for design exploration, expanded PDF requirements (PDF-07 added), CLIENT-03/CLIENT-08 reframed for web-native priority per decisions.md Q14_
+_Last updated: 2026-04-14 — Phase 61.1 inserted with 14 POLISH requirements (master-analyzer retry, favicon fallback, retrigger UI, logo rendering)_

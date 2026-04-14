@@ -298,7 +298,7 @@ Plans:
 | --------------------------------------- | -------------- | ----------- | ---------- |
 | 60. Quote Schema Foundation             | 5/5            | Complete    | 2026-04-13 |
 | 61. Admin UI for Quotes                 | 4/4            | Complete    | 2026-04-14 |
-| 61.1. Manual prospect flow polish       | 0/4            | Planned     | -          |
+| 61.1. Manual prospect flow polish       | 1/4            | In Progress |            |
 | 62. Client-Facing Voorstel + PDF Worker | 0/TBD          | Not started | -          |
 | 63. Contract Workflow                   | 0/TBD          | Not started | -          |
 
