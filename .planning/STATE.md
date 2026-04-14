@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
-status: completed
-stopped_at: Completed 61.1-04-PLAN.md (Phase 61.1 complete)
+status: in-progress
+stopped_at: Completed 61.1-04-PLAN.md (Phase 61.1 complete) — next Phase 61.2 (inserted, not yet planned)
 last_updated: '2026-04-14T15:09:01.890Z'
 last_activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
 progress:
@@ -24,9 +24,9 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 
 ## Current Position
 
-Phase: 61.1 — Manual Prospect Flow Polish (COMPLETE)
-Plan: 04 of 4 — Acties panel + Laatste run indicator + mount into admin pages (complete)
-Status: 61.1-04 shipped — ProspectActionsPanel (three retrigger buttons, Dutch error surface, fallback-aware amber toast); ProspectLastRunStatus (four-state indicator: error/fallback/success/null); ProspectLogo + both components mounted into /admin/prospects/[id] and /admin/prospects list. Romano's 7-step smoke test: 7/7 pass. Marfa favicon quality + Apollo 422 parked to Phase 61.2. Phase 61.1 complete — next: Phase 62 (Client-Facing Voorstel + PDF Worker).
+Phase: 61.2 — Manual Prospect Parity (INSERTED, not yet planned)
+Plan: TBD — run /gsd:plan-phase 61.2 to break down into 4 plans across 3 waves
+Status: Phase 61.1 complete (4/4 plans, 14/14 POLISH requirements verified). 61.2 inserted to handle Marfa-style edge cases (Apollo 422 fallback, og:image logo scraping, manual enrichment form, evidence/analysis render audit). Next action: /gsd:plan-phase 61.2.
 Last activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
 
 **Progress bar:** [██████████] 100% (9/9 plans, 1/4 phases)
@@ -51,6 +51,7 @@ Last activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, Prospec
 ### Roadmap Evolution
 
 - Phase 61.1 inserted after Phase 61: Manual prospect flow polish (URGENT) — Romano discovered during Phase 61 smoke testing that (a) `createProspect` never triggers enrichment so manual prospects have no logo/Apollo data, (b) Marfa is too small for Apollo so even Apollo path wouldn't have given a logo (need favicon fallback), (c) master-analyzer hits Gemini 503 with no retry, (d) no UI to retrigger pipeline.
+- Phase 61.2 inserted after Phase 61.1: Manual Prospect Parity (URGENT) — discovered during 61.1 smoke testing that the favicon fallback chain "works" but renders 16x16 lo-res icons as generic globes when upscaled, Apollo throws 422 on small NL SMBs without graceful fallback, and the manual prospect detail card is hollow (12+ Apollo-only fields blank). Also need an evidence/analysis page render audit. Scope: Apollo error catch + og:image scraping + inline manual enrichment form + render parity audit.
 
 ### Decisions
 
