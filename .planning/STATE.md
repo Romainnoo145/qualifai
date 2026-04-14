@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: completed
-stopped_at: Completed 61.1-01-PLAN.md
-last_updated: '2026-04-14T12:24:56.298Z'
-last_activity: 2026-04-13 — Plan 61-04 shipped (ADMIN-05 send flow, ADMIN-08 new-version flow, Phase 61 complete)
+stopped_at: Completed 61.1-03-PLAN.md
+last_updated: '2026-04-14T12:32:00.000Z'
+last_activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis* wiring)
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 13
-  completed_plans: 11
+  completed_plans: 12
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 
 ## Current Position
 
-Phase: 61 — Admin UI for Quotes (COMPLETE)
-Plan: 04 of 4 — Verstuur + Nieuwe versie action components (complete)
-Status: 61-04 shipped — QuoteSendConfirm (ADMIN-05) + QuoteVersionConfirm (ADMIN-08) mounted on /admin/quotes/[id]. 18 new vitest cases (7 + 11), 37 total in components/features/quotes, 92 total across Phase 61 scope — all green. Full create → edit → send → read-only → new-version admin loop closed. All 8 ADMIN requirements complete. Phase 61 DONE. Next action: Phase 62 (Client quote view) — requires Q6 (design tokens) + Q7 (/voorstel auth model) decisions first.
-Last activity: 2026-04-13 — Plan 61-04 shipped (ADMIN-05 send flow, ADMIN-08 new-version flow, Phase 61 complete)
+Phase: 61.1 — Manual Prospect Flow Polish (IN PROGRESS)
+Plan: 03 of 4 — Retrigger mutations + ProspectLogo + error-mapping + recordAnalysis* wiring (complete)
+Status: 61.1-03 shipped — admin.runResearchRun + admin.runMasterAnalysis mutations with multi-tenant scope checks; createProspect favicon fire-and-forget; ProspectLogo component with 3-level fallback + shape prop; error-mapping.ts with Dutch constants; research-executor Atlantis + Klarifai paths wrapped with recordAnalysisSuccess/Failure. 30 tests green. Next: Plan 04 (Acties panel shell — mounts ProspectLogo + calls retrigger mutations).
+Last activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis* wiring)
 
 **Progress bar:** [██████████] 100% (9/9 plans, 1/4 phases)
 
@@ -104,6 +104,10 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 61.1-manual-prospect-flow-polish]: getFaviconUrl: Google s2/favicons HEAD probe → DuckDuckGo ip3 fallback → null; buildInlineGoogleFaviconUrl exported as pure URL builder for ProspectLogo onError chain
 - [Phase 61.1-manual-prospect-flow-polish]: callGeminiWithRetry returns GeminiCallResult envelope (not raw GenerateContentResult) so Plans 03 and 04 can thread fallbackUsed end-to-end
 - [Phase 61.1-manual-prospect-flow-polish]: recordAnalysisFailure intentionally leaves lastAnalysisModelUsed untouched — previous successful model stays as history breadcrumb
+- [Phase 61.1-manual-prospect-flow-polish]: runMasterAnalysis throws PRECONDITION_FAILED with Dutch copy — ProspectAnalysis.inputSnapshot is counts-only (not reconstructable); runResearchRun is the primary rerun path in Phase 61.1
+- [Phase 61.1-manual-prospect-flow-polish]: ProspectLogo shape prop drives base rounding class (rounded-full vs rounded-2xl) — callers specify shape not Tailwind override
+- [Phase 61.1-manual-prospect-flow-polish]: FRIENDLY_ERROR_GEMINI_FALLBACK exported from error-mapping.ts but NOT returned by mapMutationError — it is a positive success-with-warning signal for Plan 04 ProspectLastRunStatus
+- [Phase 61.1-manual-prospect-flow-polish]: generateNarrativeAnalysis + generateKlarifaiNarrativeAnalysis return type tightened to include modelUsed narrow union (was missing from Plan 01 — Plan 03 Rule 1 fix)
 
 ### Pending Todos
 

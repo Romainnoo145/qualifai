@@ -128,19 +128,19 @@ Field-discovered roughness in the manual prospect creation flow. Surfaced during
 **Favicon fallback (replaces Apollo logo gap):**
 
 - [x] **POLISH-04**: New helper `lib/enrichment/favicon.ts` exports `getFaviconUrl(domain: string): Promise<string | null>` that probes Google's free favicon service (`https://www.google.com/s2/favicons?domain=<d>&sz=128`), falls back to DuckDuckGo's `https://icons.duckduckgo.com/ip3/<d>.ico`, returns null if both fail. Uses a HEAD request with a short timeout.
-- [ ] **POLISH-05**: `admin.createProspect` mutation calls `getFaviconUrl(domain)` after the Prisma create and updates `Prospect.logoUrl` if successful. Non-blocking — prospect is returned even if favicon fetch fails or times out.
-- [ ] **POLISH-06**: Existing prospects without `logoUrl` get an on-the-fly favicon via the same Google service rendered in the prospect card UI — no DB write required for backfill.
+- [x] **POLISH-05**: `admin.createProspect` mutation calls `getFaviconUrl(domain)` after the Prisma create and updates `Prospect.logoUrl` if successful. Non-blocking — prospect is returned even if favicon fetch fails or times out.
+- [x] **POLISH-06**: Existing prospects without `logoUrl` get an on-the-fly favicon via the same Google service rendered in the prospect card UI — no DB write required for backfill.
 
 **Pipeline retrigger UI + error surface:**
 
 - [ ] **POLISH-07**: `/admin/prospects/[id]` has an "Acties" panel with three buttons: **Verrijk opnieuw** (calls `enrichProspect`), **Run research** (calls `executeResearchRun` via a new tRPC mutation), **Run analyse** (calls master-analyzer via a new tRPC mutation). Each button shows loading state and post-run feedback.
-- [ ] **POLISH-08**: Pipeline mutation errors are surfaced in the UI as friendly messages, not stack traces. Specifically: Gemini 503 / 429 / quota errors render as "AI tijdelijk niet beschikbaar — probeer over een paar minuten opnieuw." with a retry button.
+- [x] **POLISH-08**: Pipeline mutation errors are surfaced in the UI as friendly messages, not stack traces. Specifically: Gemini 503 / 429 / quota errors render as "AI tijdelijk niet beschikbaar — probeer over een paar minuten opnieuw." with a retry button.
 - [ ] **POLISH-09**: A "Laatste run" status indicator on `/admin/prospects/[id]` shows the last research/analysis run timestamp, status (success/warning/error), and brief message — populated from `ResearchRun.finishedAt` + `ProspectAnalysis.lastAnalysisError`.
 
 **Logo rendering in prospect cards:**
 
-- [ ] **POLISH-10**: Prospect cards in `/admin/prospects` list page render `prospect.logoUrl` if present, else fall back to inline Google favicon URL (`https://www.google.com/s2/favicons?domain=${prospect.domain}&sz=128`). Avatar circle with initial letter as final fallback for prospects without a domain.
-- [ ] **POLISH-11**: `/admin/prospects/[id]` detail page header includes the same logo/favicon avatar next to the prospect name.
+- [x] **POLISH-10**: Prospect cards in `/admin/prospects` list page render `prospect.logoUrl` if present, else fall back to inline Google favicon URL (`https://www.google.com/s2/favicons?domain=${prospect.domain}&sz=128`). Avatar circle with initial letter as final fallback for prospects without a domain.
+- [x] **POLISH-11**: `/admin/prospects/[id]` detail page header includes the same logo/favicon avatar next to the prospect name.
 
 **Tests:**
 
@@ -252,13 +252,13 @@ Field-discovered roughness in the manual prospect creation flow. Surfaced during
 | POLISH-02   | 61.1  | Complete |
 | POLISH-03   | 61.1  | Complete |
 | POLISH-04   | 61.1  | Complete |
-| POLISH-05   | 61.1  | Pending  |
-| POLISH-06   | 61.1  | Pending  |
+| POLISH-05   | 61.1  | Complete |
+| POLISH-06   | 61.1  | Complete |
 | POLISH-07   | 61.1  | Pending  |
-| POLISH-08   | 61.1  | Pending  |
+| POLISH-08   | 61.1  | Complete |
 | POLISH-09   | 61.1  | Pending  |
-| POLISH-10   | 61.1  | Pending  |
-| POLISH-11   | 61.1  | Pending  |
+| POLISH-10   | 61.1  | Complete |
+| POLISH-11   | 61.1  | Complete |
 | POLISH-12   | 61.1  | Complete |
 | POLISH-13   | 61.1  | Complete |
 | POLISH-14   | 61.1  | Pending  |
