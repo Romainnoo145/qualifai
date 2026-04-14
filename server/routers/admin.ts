@@ -16,6 +16,7 @@ import { executeResearchRun } from '@/lib/research-executor';
 import { matchProofs } from '@/lib/workflow-engine';
 import { TRPCError } from '@trpc/server';
 import { getFaviconUrl } from '@/lib/enrichment/favicon';
+import { getHighResLogoUrl } from '@/lib/enrichment/og-logo';
 import {
   recordAnalysisFailure,
   recordAnalysisSuccess,
@@ -283,6 +284,20 @@ export const adminRouter = router({
             fundingInfo: null,
             rawData: {},
           };
+          // Best-effort logo improvement on no-coverage path (PARITY-08)
+          try {
+            const ogLogo = await getHighResLogoUrl(prospect.domain ?? '');
+            const logoUrl =
+              ogLogo ?? (await getFaviconUrl(prospect.domain ?? ''));
+            if (logoUrl) {
+              await ctx.db.prospect.update({
+                where: { id: prospect.id },
+                data: { logoUrl },
+              });
+            }
+          } catch {
+            // Non-blocking — partial success response still returned
+          }
         } else {
           throw err; // Re-throw all other errors — existing error handling picks them up.
         }
@@ -545,6 +560,22 @@ export const adminRouter = router({
           status: 'READY',
         },
       });
+
+      // Fire-and-forget: og-logo first → favicon fallback → no-op (PARITY-07)
+      void (async () => {
+        try {
+          const ogLogo = await getHighResLogoUrl(cleanDomain);
+          const logoUrl = ogLogo ?? (await getFaviconUrl(cleanDomain));
+          if (logoUrl) {
+            await ctx.db.prospect.update({
+              where: { id: prospect.id },
+              data: { logoUrl },
+            });
+          }
+        } catch {
+          // Non-blocking — prospect is returned regardless
+        }
+      })();
 
       // Run research pipeline in background so create flow always returns quickly.
       // Failures are logged and do not block prospect creation.
