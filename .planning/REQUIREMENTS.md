@@ -150,6 +150,37 @@ Field-discovered roughness in the manual prospect creation flow. Surfaced during
 
 ---
 
+### Manual Prospect Parity (Phase 61.2 — INSERTED)
+
+Field-discovered parity gaps in the manual prospect experience. Surfaced during Phase 61.1 smoke testing on Marfa.
+
+**Apollo graceful fallback:**
+
+- [ ] **PARITY-01**: `enrichCompanyWithFallbackQueries` in `lib/enrichment/providers/apollo.ts` throws `EnrichmentNoCoverageError` (a typed class mirroring `EnrichmentPlanLimitedError`) when all Apollo fetch attempts return HTTP 422 — no raw error throw.
+- [ ] **PARITY-02**: `runWithWaterfall` in `lib/enrichment/service.ts` catches `EnrichmentNoCoverageError` as a partial-success case and returns a minimal `EnrichedCompanyData` with just `domain` populated — does NOT throw "all providers failed".
+- [ ] **PARITY-03**: `admin.enrichProspect` tRPC mutation catches `EnrichmentNoCoverageError` and returns `{ success: true, fallbackUsed: true, noCoverage: true }` — the existing Acties panel amber branch fires automatically.
+- [ ] **PARITY-04**: `FRIENDLY_ERROR_APOLLO_NO_COVERAGE` constant added to `components/features/prospects/error-mapping.ts` with verbatim Dutch text: "Apollo heeft deze organisatie niet in zijn database — verrijking gedeeltelijk."
+- [ ] **PARITY-05**: Acties panel `enrichProspect` button renders amber state with the Dutch message for the no-coverage case (via existing `markSuccess(data)` with `data.fallbackUsed` — no component change required).
+
+**og:image logo source upgrade:**
+
+- [ ] **PARITY-06**: New helper `lib/enrichment/og-logo.ts` exports `getHighResLogoUrl(domain): Promise<string | null>` — fetches homepage HTML with plain `fetch` + `AbortSignal.timeout(5000)`, extracts og:image / twitter:image / apple-touch-icon / icon-png in priority order, HEAD-probes each candidate to confirm 200 + non-zero content-length, resolves relative URLs. No new dependencies.
+- [ ] **PARITY-07**: `admin.createProspect` fire-and-forget IIFE calls `getHighResLogoUrl` first; falls through to `getFaviconUrl` on null.
+- [ ] **PARITY-08**: `admin.enrichProspect` no-coverage partial-success path also attempts `getHighResLogoUrl` then `getFaviconUrl` to maximise logo quality for out-of-Apollo prospects.
+
+**Inline enrichment form:**
+
+- [ ] **PARITY-09**: `/admin/prospects/new` gets an "Optionele verrijking" collapsible `<details>` section (default closed) with 6 optional fields: companyName (text), industry (text), description (textarea, max 500 chars), employeeRange (select: `1-10`, `11-50`, `51-200`, `201-500`, `501-1000`, `1001-5000`, `5001+`), city (text), country (text, default "Nederland").
+- [ ] **PARITY-10**: `admin.createAndProcess` Zod input schema extended with 6 optional nullable enrichment fields; manual entries are sticky — if `input.companyName` is set, the Apollo enrichment data merge does NOT overwrite it.
+
+**Render parity + badge:**
+
+- [ ] **PARITY-11**: `/admin/prospects/[id]` detail page renders without crashes on NULL Apollo fields — null guard audit confirms all field accesses use optional chaining or conditional rendering.
+- [ ] **PARITY-12**: New `ProspectEnrichmentBadge` component renders an amber pill "Verrijking onvolledig" in the detail header when `companyName` OR `industry` OR `description` is null. Tooltip shows "Verrijking ontbreekt: " + Dutch-labeled list of missing fields.
+- [ ] **PARITY-13**: Evidence tab renders cleanly for manual prospects with no research runs (shows "Geen runs" empty state — no crash).
+- [ ] **PARITY-14**: Analysis tab renders cleanly for manual prospects with no analysis rows (shows empty state — no crash).
+- [ ] **PARITY-15**: Human-verify checkpoint: Romano opens Marfa detail — zero crashes, amber pill visible (or absent if fields populated), evidence/analysis tabs show clean empty states.
+
 ## v10.0 Requirements (deferred)
 
 ### Invoice generation pipeline
@@ -263,13 +294,29 @@ Field-discovered roughness in the manual prospect creation flow. Surfaced during
 | POLISH-13   | 61.1  | Complete |
 | POLISH-14   | 61.1  | Complete |
 
+| PARITY-01 | 61.2 | Pending |
+| PARITY-02 | 61.2 | Pending |
+| PARITY-03 | 61.2 | Pending |
+| PARITY-04 | 61.2 | Pending |
+| PARITY-05 | 61.2 | Pending |
+| PARITY-06 | 61.2 | Pending |
+| PARITY-07 | 61.2 | Pending |
+| PARITY-08 | 61.2 | Pending |
+| PARITY-09 | 61.2 | Pending |
+| PARITY-10 | 61.2 | Pending |
+| PARITY-11 | 61.2 | Pending |
+| PARITY-12 | 61.2 | Pending |
+| PARITY-13 | 61.2 | Pending |
+| PARITY-14 | 61.2 | Pending |
+| PARITY-15 | 61.2 | Pending |
+
 **Coverage:**
 
-- v9.0 requirements: 73 total (DATA 10 + FOUND 4 + IMPORT 4 + DSGN 3 + ADMIN 8 + CLIENT 8 + PDF 7 + CONT 10 + TEST 5 + POLISH 14)
-- Mapped to phases: 73
+- v9.0 requirements: 88 total (DATA 10 + FOUND 4 + IMPORT 4 + DSGN 3 + ADMIN 8 + CLIENT 8 + PDF 7 + CONT 10 + TEST 5 + POLISH 14 + PARITY 15)
+- Mapped to phases: 88
 - Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-04-13_
-_Last updated: 2026-04-14 — Phase 61.1 inserted with 14 POLISH requirements (master-analyzer retry, favicon fallback, retrigger UI, logo rendering)_
+_Last updated: 2026-04-14 — Phase 61.2 inserted with 15 PARITY requirements (Apollo fallback, og-logo, enrichment form, render audit)_

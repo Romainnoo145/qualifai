@@ -248,14 +248,16 @@ Plans:
 3. **Hollow detail card** — manual prospects skip 12+ Apollo-populated fields (companyName, industry, description, location, employees, revenue, founded, linkedinUrl, etc.). The detail page hero looks empty.
 4. **Evidence/Analysis pages parity unknown** — these pages may also break or look incomplete for manual prospects with NULL Apollo fields. Needs a render-fallback audit.
 
-**Requirements**: TBD (run /gsd:plan-phase 61.2 to derive)
+**Requirements**: PARITY-01, PARITY-02, PARITY-03, PARITY-04, PARITY-05, PARITY-06, PARITY-07, PARITY-08, PARITY-09, PARITY-10, PARITY-11, PARITY-12, PARITY-13, PARITY-14, PARITY-15
 
-**Plans (proposed, 4 plans / 3 waves):**
+**Plans**: 4 plans
 
-- [ ] 61.2-01-PLAN.md — Apollo enrichment graceful fallback: catch 422 / "no org" errors, return minimal `EnrichedCompanyData`, surface partial-success amber toast (Wave 1)
-- [ ] 61.2-02-PLAN.md — Logo source upgrade: og:image + apple-touch-icon + meta-icon scraping helper, wire into createProspect and ProspectLogo render priority chain (Wave 1)
-- [ ] 61.2-03-PLAN.md — Manual prospect inline enrichment form: optional companyName / industry / description / employeeRange / location fields on `/admin/prospects/new` (Wave 2)
-- [ ] 61.2-04-PLAN.md — Evidence + Analysis page render parity audit: walk both pages with a manual prospect, fix unguarded Apollo-field accesses, add "Verrijking onvolledig" pill when companyName is null. Human-verify checkpoint at end. (Wave 3)
+Plans:
+
+- [ ] 61.2-01-PLAN.md — Apollo enrichment graceful fallback: EnrichmentNoCoverageError class, runWithWaterfall partial-success path, enrichProspect amber return (Wave 1)
+- [ ] 61.2-02-PLAN.md — og:image logo scraper: getHighResLogoUrl helper, wire into createProspect IIFE and enrichProspect no-coverage path (Wave 1)
+- [ ] 61.2-03-PLAN.md — Manual prospect inline enrichment form: "Optionele verrijking" collapsible on /admin/prospects/new, createAndProcess Zod schema extended, sticky guard (Wave 2)
+- [ ] 61.2-04-PLAN.md — Render parity audit: ProspectEnrichmentBadge amber pill, null guard audit, human-verify checkpoint (Wave 3)
 
 ### Phase 62: Client-Facing Voorstel + PDF Worker
 
