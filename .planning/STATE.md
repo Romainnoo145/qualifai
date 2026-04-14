@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: completed
-stopped_at: Completed 61.1-03-PLAN.md
-last_updated: '2026-04-14T12:32:00.000Z'
-last_activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis* wiring)
+stopped_at: Completed 61.1-04-PLAN.md
+last_updated: '2026-04-14T13:00:00.000Z'
+last_activity: 2026-04-14 — Plan 61.1-04 shipped (ProspectActionsPanel + ProspectLastRunStatus + admin page mounts, phase 61.1 complete)
 progress:
   total_phases: 5
   completed_phases: 2
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 
 ## Current Position
 
-Phase: 61.1 — Manual Prospect Flow Polish (IN PROGRESS)
-Plan: 03 of 4 — Retrigger mutations + ProspectLogo + error-mapping + recordAnalysis* wiring (complete)
-Status: 61.1-03 shipped — admin.runResearchRun + admin.runMasterAnalysis mutations with multi-tenant scope checks; createProspect favicon fire-and-forget; ProspectLogo component with 3-level fallback + shape prop; error-mapping.ts with Dutch constants; research-executor Atlantis + Klarifai paths wrapped with recordAnalysisSuccess/Failure. 30 tests green. Next: Plan 04 (Acties panel shell — mounts ProspectLogo + calls retrigger mutations).
-Last activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis* wiring)
+Phase: 61.1 — Manual Prospect Flow Polish (COMPLETE)
+Plan: 04 of 4 — Acties panel + Laatste run indicator + mount into admin pages (complete)
+Status: 61.1-04 shipped — ProspectActionsPanel (three retrigger buttons, Dutch error surface, fallback-aware amber toast); ProspectLastRunStatus (four-state indicator: error/fallback/success/null); ProspectLogo + both components mounted into /admin/prospects/[id] and /admin/prospects list. Romano's 7-step smoke test: 7/7 pass. Marfa favicon quality + Apollo 422 parked to Phase 61.2. Phase 61.1 complete — next: Phase 62 (Client-Facing Voorstel + PDF Worker).
+Last activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
 
 **Progress bar:** [██████████] 100% (9/9 plans, 1/4 phases)
 
@@ -128,6 +128,6 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-14T12:24:56.295Z
-Stopped at: Completed 61.1-01-PLAN.md
-Resume command: `/gsd:execute-plan 61 04`
+Last session: 2026-04-14T13:00:00.000Z
+Stopped at: Completed 61.1-04-PLAN.md (Phase 61.1 complete)
+Resume command: `/gsd:execute-plan 62 01`

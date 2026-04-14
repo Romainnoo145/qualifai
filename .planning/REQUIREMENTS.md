@@ -133,9 +133,9 @@ Field-discovered roughness in the manual prospect creation flow. Surfaced during
 
 **Pipeline retrigger UI + error surface:**
 
-- [ ] **POLISH-07**: `/admin/prospects/[id]` has an "Acties" panel with three buttons: **Verrijk opnieuw** (calls `enrichProspect`), **Run research** (calls `executeResearchRun` via a new tRPC mutation), **Run analyse** (calls master-analyzer via a new tRPC mutation). Each button shows loading state and post-run feedback.
+- [x] **POLISH-07**: `/admin/prospects/[id]` has an "Acties" panel with three buttons: **Verrijk opnieuw** (calls `enrichProspect`), **Run research** (calls `executeResearchRun` via a new tRPC mutation), **Run analyse** (calls master-analyzer via a new tRPC mutation). Each button shows loading state and post-run feedback.
 - [x] **POLISH-08**: Pipeline mutation errors are surfaced in the UI as friendly messages, not stack traces. Specifically: Gemini 503 / 429 / quota errors render as "AI tijdelijk niet beschikbaar — probeer over een paar minuten opnieuw." with a retry button.
-- [ ] **POLISH-09**: A "Laatste run" status indicator on `/admin/prospects/[id]` shows the last research/analysis run timestamp, status (success/warning/error), and brief message — populated from `ResearchRun.finishedAt` + `ProspectAnalysis.lastAnalysisError`.
+- [x] **POLISH-09**: A "Laatste run" status indicator on `/admin/prospects/[id]` shows the last research/analysis run timestamp, status (success/warning/error), and brief message — populated from `ResearchRun.finishedAt` + `ProspectAnalysis.lastAnalysisError`.
 
 **Logo rendering in prospect cards:**
 
@@ -146,7 +146,7 @@ Field-discovered roughness in the manual prospect creation flow. Surfaced during
 
 - [x] **POLISH-12**: Unit test for `master-analyzer` retry logic — mocks Gemini SDK, asserts 3 retry attempts on 503, asserts fallback to flash on exhaustion, asserts non-retryable errors bubble immediately.
 - [x] **POLISH-13**: Unit test for `favicon.ts` — Google success path, Google fail → DuckDuckGo fallback, both fail → null, timeout path.
-- [ ] **POLISH-14**: Component test for the Acties panel error surface — mocked mutation rejects with Gemini 503 → assert friendly message rendered, no raw error string in the DOM.
+- [x] **POLISH-14**: Component test for the Acties panel error surface — mocked mutation rejects with Gemini 503 → assert friendly message rendered, no raw error string in the DOM.
 
 ---
 
@@ -254,14 +254,14 @@ Field-discovered roughness in the manual prospect creation flow. Surfaced during
 | POLISH-04   | 61.1  | Complete |
 | POLISH-05   | 61.1  | Complete |
 | POLISH-06   | 61.1  | Complete |
-| POLISH-07   | 61.1  | Pending  |
+| POLISH-07   | 61.1  | Complete |
 | POLISH-08   | 61.1  | Complete |
-| POLISH-09   | 61.1  | Pending  |
+| POLISH-09   | 61.1  | Complete |
 | POLISH-10   | 61.1  | Complete |
 | POLISH-11   | 61.1  | Complete |
 | POLISH-12   | 61.1  | Complete |
 | POLISH-13   | 61.1  | Complete |
-| POLISH-14   | 61.1  | Pending  |
+| POLISH-14   | 61.1  | Complete |
 
 **Coverage:**
 

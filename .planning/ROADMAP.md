@@ -230,10 +230,10 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 Plans:
 
-- [ ] 61.1-01-PLAN.md — Master analyzer retry + backoff + fallback + Prisma migration (POLISH-01, POLISH-02, POLISH-03, POLISH-12)
-- [ ] 61.1-02-PLAN.md — Favicon helper (getFaviconUrl + buildInlineGoogleFaviconUrl) + unit tests (POLISH-04, POLISH-13)
-- [ ] 61.1-03-PLAN.md — createProspect favicon wiring + runResearchRun/runMasterAnalysis mutations + ProspectLogo + error-mapping (POLISH-05, POLISH-06, POLISH-08, POLISH-10, POLISH-11)
-- [ ] 61.1-04-PLAN.md — Acties panel + Laatste run indicator + mount into admin pages (POLISH-07, POLISH-09, POLISH-14)
+- [x] 61.1-01-PLAN.md — Master analyzer retry + backoff + fallback + Prisma migration (POLISH-01, POLISH-02, POLISH-03, POLISH-12)
+- [x] 61.1-02-PLAN.md — Favicon helper (getFaviconUrl + buildInlineGoogleFaviconUrl) + unit tests (POLISH-04, POLISH-13)
+- [x] 61.1-03-PLAN.md — createProspect favicon wiring + runResearchRun/runMasterAnalysis mutations + ProspectLogo + error-mapping (POLISH-05, POLISH-06, POLISH-08, POLISH-10, POLISH-11)
+- [x] 61.1-04-PLAN.md — Acties panel + Laatste run indicator + mount into admin pages (POLISH-07, POLISH-09, POLISH-14)
 
 ### Phase 62: Client-Facing Voorstel + PDF Worker
 
@@ -298,7 +298,7 @@ Plans:
 | --------------------------------------- | -------------- | ----------- | ---------- |
 | 60. Quote Schema Foundation             | 5/5            | Complete    | 2026-04-13 |
 | 61. Admin UI for Quotes                 | 4/4            | Complete    | 2026-04-14 |
-| 61.1. Manual prospect flow polish       | 3/4            | In Progress |            |
+| 61.1. Manual prospect flow polish       | 4/4            | Complete    | 2026-04-14 |
 | 62. Client-Facing Voorstel + PDF Worker | 0/TBD          | Not started | -          |
 | 63. Contract Workflow                   | 0/TBD          | Not started | -          |
 
