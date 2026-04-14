@@ -24,6 +24,7 @@ import { computePipelineStage, type PipelineStage } from '@/lib/pipeline-stage';
 import { buildDiscoverPath } from '@/lib/prospect-url';
 import { deepAnalysisStatus } from '@/lib/deep-analysis';
 import { PageLoader } from '@/components/ui/page-loader';
+import { ProspectLogo } from '@/components/features/prospects/prospect-logo';
 
 type View = 'all' | 'search-companies' | 'search-contacts';
 type SearchGuardrail = {
@@ -296,17 +297,16 @@ function AllCompanies() {
             className="glass-card glass-card-hover p-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between group"
           >
             <div className="flex items-center gap-6">
-              <div className="w-14 h-14 rounded-2xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden">
-                {prospect.logoUrl ? (
-                  <img
-                    src={prospect.logoUrl}
-                    alt=""
-                    className="w-8 h-8 object-contain"
-                  />
-                ) : (
-                  <Building2 className="w-6 h-6 text-slate-200" />
-                )}
-              </div>
+              <ProspectLogo
+                prospect={{
+                  logoUrl: prospect.logoUrl ?? null,
+                  domain: prospect.domain ?? null,
+                  companyName: prospect.companyName ?? null,
+                }}
+                size={56}
+                shape="rounded"
+                className="border border-slate-100 bg-[#FCFCFD] shadow-inner"
+              />
               <div>
                 <div className="flex flex-wrap items-center gap-4">
                   <Link
@@ -716,17 +716,16 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
                       }}
                       className="w-4 h-4 rounded accent-[#040026] shrink-0"
                     />
-                    <div className="w-16 h-16 rounded-2xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden">
-                      {company.logoUrl ? (
-                        <img
-                          src={company.logoUrl}
-                          alt=""
-                          className="w-10 h-10 object-contain"
-                        />
-                      ) : (
-                        <Globe className="w-6 h-6 text-slate-100" />
-                      )}
-                    </div>
+                    <ProspectLogo
+                      prospect={{
+                        logoUrl: company.logoUrl ?? null,
+                        domain: company.domain ?? null,
+                        companyName: company.companyName ?? null,
+                      }}
+                      size={64}
+                      shape="rounded"
+                      className="border border-slate-100 bg-[#FCFCFD] shadow-inner"
+                    />
                     <div>
                       <p className="text-lg font-black text-[#040026] tracking-tight">
                         {company.companyName ?? company.domain}

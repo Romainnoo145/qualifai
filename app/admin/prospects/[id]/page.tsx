@@ -33,6 +33,9 @@ import { QualityChip } from '@/components/features/prospects/quality-chip';
 import { IntentSignalsSection } from '@/components/features/prospects/intent-signals-section';
 import { buildDiscoverPath } from '@/lib/prospect-url';
 import { deepAnalysisStatus } from '@/lib/deep-analysis';
+import { ProspectLogo } from '@/components/features/prospects/prospect-logo';
+import { ProspectActionsPanel } from '@/components/features/prospects/prospect-actions-panel';
+import { ProspectLastRunStatus } from '@/components/features/prospects/prospect-last-run-status';
 
 // ---------------------------------------------------------------------------
 // Typed helper for ResearchRun rows returned by api.research.listRuns
@@ -265,9 +268,21 @@ export default function ProspectDetail() {
       {/* Hero */}
       <div className="relative flex flex-col gap-4 py-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <h1 className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-[#040026] to-[#040026]/60 tracking-tighter pb-1">
-            {p.companyName ?? p.domain}
-          </h1>
+          <div className="flex items-center gap-5">
+            <ProspectLogo
+              prospect={{
+                logoUrl: p.logoUrl ?? null,
+                domain: p.domain ?? null,
+                companyName: p.companyName ?? null,
+              }}
+              size={64}
+              shape="circle"
+              className="border border-slate-100 shadow-inner"
+            />
+            <h1 className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-[#040026] to-[#040026]/60 tracking-tighter pb-1">
+              {p.companyName ?? p.domain}
+            </h1>
+          </div>
           <div className="flex flex-wrap items-center gap-3">
             {combinedConfidence !== null && (
               <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-100">
@@ -413,6 +428,37 @@ export default function ProspectDetail() {
         {p.internalNotes && (
           <p className="text-sm text-slate-600">{p.internalNotes}</p>
         )}
+      </div>
+
+      {/* Phase 61.1 — Laatste run indicator + Acties panel */}
+      <div className="space-y-4">
+        <ProspectLastRunStatus
+          latestRun={
+            latestRun
+              ? {
+                  finishedAt: null,
+                  completedAt: latestRun.completedAt ?? null,
+                  status: latestRun.status,
+                  _count: latestRun._count,
+                }
+              : null
+          }
+          prospect={{
+            lastAnalysisError: (p.lastAnalysisError ?? null) as string | null,
+            lastAnalysisAttemptedAt: (p.lastAnalysisAttemptedAt ??
+              null) as Date | null,
+            lastAnalysisModelUsed: (p.lastAnalysisModelUsed ?? null) as
+              | string
+              | null,
+          }}
+        />
+        <ProspectActionsPanel
+          prospectId={id}
+          onRunComplete={() => {
+            void utils.admin.getProspect.invalidate({ id });
+            void utils.research.listRuns.invalidate({ prospectId: id });
+          }}
+        />
       </div>
 
       {/* Contacts */}
