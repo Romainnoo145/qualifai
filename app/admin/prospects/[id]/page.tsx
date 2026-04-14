@@ -36,6 +36,7 @@ import { deepAnalysisStatus } from '@/lib/deep-analysis';
 import { ProspectLogo } from '@/components/features/prospects/prospect-logo';
 import { ProspectActionsPanel } from '@/components/features/prospects/prospect-actions-panel';
 import { ProspectLastRunStatus } from '@/components/features/prospects/prospect-last-run-status';
+import { ProspectEnrichmentBadge } from '@/components/features/prospects/prospect-enrichment-badge';
 
 // ---------------------------------------------------------------------------
 // Typed helper for ResearchRun rows returned by api.research.listRuns
@@ -279,9 +280,16 @@ export default function ProspectDetail() {
               shape="circle"
               className="border border-slate-100 shadow-inner"
             />
-            <h1 className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-[#040026] to-[#040026]/60 tracking-tighter pb-1">
-              {p.companyName ?? p.domain}
-            </h1>
+            <div className="flex flex-col gap-1.5">
+              <h1 className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-[#040026] to-[#040026]/60 tracking-tighter pb-1">
+                {p.companyName ?? p.domain}
+              </h1>
+              <ProspectEnrichmentBadge
+                companyName={p.companyName ?? null}
+                industry={p.industry ?? null}
+                description={p.description ?? null}
+              />
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {combinedConfidence !== null && (
