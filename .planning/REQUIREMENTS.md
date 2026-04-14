@@ -156,11 +156,11 @@ Field-discovered parity gaps in the manual prospect experience. Surfaced during 
 
 **Apollo graceful fallback:**
 
-- [ ] **PARITY-01**: `enrichCompanyWithFallbackQueries` in `lib/enrichment/providers/apollo.ts` throws `EnrichmentNoCoverageError` (a typed class mirroring `EnrichmentPlanLimitedError`) when all Apollo fetch attempts return HTTP 422 — no raw error throw.
-- [ ] **PARITY-02**: `runWithWaterfall` in `lib/enrichment/service.ts` catches `EnrichmentNoCoverageError` as a partial-success case and returns a minimal `EnrichedCompanyData` with just `domain` populated — does NOT throw "all providers failed".
-- [ ] **PARITY-03**: `admin.enrichProspect` tRPC mutation catches `EnrichmentNoCoverageError` and returns `{ success: true, fallbackUsed: true, noCoverage: true }` — the existing Acties panel amber branch fires automatically.
-- [ ] **PARITY-04**: `FRIENDLY_ERROR_APOLLO_NO_COVERAGE` constant added to `components/features/prospects/error-mapping.ts` with verbatim Dutch text: "Apollo heeft deze organisatie niet in zijn database — verrijking gedeeltelijk."
-- [ ] **PARITY-05**: Acties panel `enrichProspect` button renders amber state with the Dutch message for the no-coverage case (via existing `markSuccess(data)` with `data.fallbackUsed` — no component change required).
+- [x] **PARITY-01**: `enrichCompanyWithFallbackQueries` in `lib/enrichment/providers/apollo.ts` throws `EnrichmentNoCoverageError` (a typed class mirroring `EnrichmentPlanLimitedError`) when all Apollo fetch attempts return HTTP 422 — no raw error throw.
+- [x] **PARITY-02**: `runWithWaterfall` in `lib/enrichment/service.ts` catches `EnrichmentNoCoverageError` as a partial-success case and returns a minimal `EnrichedCompanyData` with just `domain` populated — does NOT throw "all providers failed".
+- [x] **PARITY-03**: `admin.enrichProspect` tRPC mutation catches `EnrichmentNoCoverageError` and returns `{ success: true, fallbackUsed: true, noCoverage: true }` — the existing Acties panel amber branch fires automatically.
+- [x] **PARITY-04**: `FRIENDLY_ERROR_APOLLO_NO_COVERAGE` constant added to `components/features/prospects/error-mapping.ts` with verbatim Dutch text: "Apollo heeft deze organisatie niet in zijn database — verrijking gedeeltelijk."
+- [x] **PARITY-05**: Acties panel `enrichProspect` button renders amber state with the Dutch message for the no-coverage case (via existing `markSuccess(data)` with `data.fallbackUsed` — no component change required).
 
 **og:image logo source upgrade:**
 
@@ -294,11 +294,11 @@ Field-discovered parity gaps in the manual prospect experience. Surfaced during 
 | POLISH-13   | 61.1  | Complete |
 | POLISH-14   | 61.1  | Complete |
 
-| PARITY-01 | 61.2 | Pending |
-| PARITY-02 | 61.2 | Pending |
-| PARITY-03 | 61.2 | Pending |
-| PARITY-04 | 61.2 | Pending |
-| PARITY-05 | 61.2 | Pending |
+| PARITY-01 | 61.2 | Complete |
+| PARITY-02 | 61.2 | Complete |
+| PARITY-03 | 61.2 | Complete |
+| PARITY-04 | 61.2 | Complete |
+| PARITY-05 | 61.2 | Complete |
 | PARITY-06 | 61.2 | Complete |
 | PARITY-07 | 61.2 | Pending |
 | PARITY-08 | 61.2 | Pending |

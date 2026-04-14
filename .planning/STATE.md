@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: verifying
-stopped_at: Completed 61.2-02-PLAN.md (og-logo helper)
-last_updated: '2026-04-14T15:48:57.063Z'
+stopped_at: Completed 61.2-01-PLAN.md (Apollo no-coverage error handling)
+last_updated: '2026-04-14T15:51:50.000Z'
 last_activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 17
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Project State
@@ -110,6 +110,8 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 61.1-manual-prospect-flow-polish]: FRIENDLY_ERROR_GEMINI_FALLBACK exported from error-mapping.ts but NOT returned by mapMutationError — it is a positive success-with-warning signal for Plan 04 ProspectLastRunStatus
 - [Phase 61.1-manual-prospect-flow-polish]: generateNarrativeAnalysis + generateKlarifaiNarrativeAnalysis return type tightened to include modelUsed narrow union (was missing from Plan 01 — Plan 03 Rule 1 fix)
 - [Phase 61.2-manual-prospect-parity]: og-logo.ts uses plain fetch (not scrapling service) for homepage GET — simpler, no port dependency, sufficient for public homepages
+- [Phase 61.2]: EnrichmentNoCoverageError placed in apollo.ts, re-exported from service.ts for single import point
+- [Phase 61.2]: enrichProspect returns { success, fallbackUsed, noCoverage } shape — fires Acties panel amber branch via existing markSuccess(data.fallbackUsed) hook, no component change needed
 
 ### Pending Todos
 
@@ -130,6 +132,6 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-14T15:48:57.060Z
-Stopped at: Completed 61.2-02-PLAN.md (og-logo helper)
+Last session: 2026-04-14T15:51:45.948Z
+Stopped at: Completed 61.2-01-PLAN.md (Apollo no-coverage error handling)
 Resume command: `/gsd:execute-plan 62 01`
