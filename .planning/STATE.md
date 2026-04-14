@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
-status: '61-04 shipped — Verstuur flow (ADMIN-05) + Nieuwe versie flow (ADMIN-08) mounted on detail page. All 8 ADMIN requirements complete. Phase 61 DONE. Next action: Phase 62 (Client quote view) — resolve Q6/Q7 decisions first.'
+status: completed
 stopped_at: Completed 61-04-PLAN.md
-last_updated: '2026-04-13T21:27:58.631Z'
+last_updated: '2026-04-14T11:22:14.291Z'
 last_activity: 2026-04-13 — Plan 61-04 shipped (ADMIN-05 send flow, ADMIN-08 new-version flow, Phase 61 complete)
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 9
   completed_plans: 9
 ---
