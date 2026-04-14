@@ -50,7 +50,7 @@ export default function QuotesListPage() {
   const list = (api.quotes.list as any).useQuery(undefined);
 
   if (list.isLoading) {
-    return <PageLoader label="Voorstellen laden" description="Eén moment." />;
+    return <PageLoader label="Offertes laden" description="Eén moment." />;
   }
 
   if (list.error) {
@@ -72,18 +72,18 @@ export default function QuotesListPage() {
     <div className="space-y-10">
       <header className="space-y-2">
         <h1 className="text-4xl font-black tracking-tighter text-[#040026]">
-          Voorstellen
+          Offertes
         </h1>
         <p className="text-sm font-bold text-slate-400">
-          Maak een nieuw voorstel vanuit een prospect-detailpagina.
+          Maak een nieuwe offerte vanuit een prospect-detailpagina.
         </p>
       </header>
 
       {rows.length === 0 ? (
         <div className="glass-card p-10 text-center">
           <p className="text-sm font-bold text-slate-500">
-            Nog geen voorstellen. Ga naar een prospect en klik &quot;Nieuw
-            voorstel&quot;.
+            Nog geen offertes. Ga naar een prospect en klik &quot;Nieuwe
+            offerte&quot;.
           </p>
         </div>
       ) : (

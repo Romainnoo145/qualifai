@@ -246,7 +246,7 @@ function AdminShell({
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/prospects', label: 'Companies', icon: Building2 },
     { href: '/admin/campaigns', label: 'Campaigns', icon: FolderKanban },
-    { href: '/admin/quotes', label: 'Voorstellen', icon: FileText },
+    { href: '/admin/quotes', label: 'Offertes', icon: FileText },
     { href: '/admin/outreach', label: 'Draft Queue', icon: Mail },
     { href: '/admin/use-cases', label: 'Use Cases', icon: BookOpen },
     { href: '/admin/signals', label: 'Signals', icon: Zap },

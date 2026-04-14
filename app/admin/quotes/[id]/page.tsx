@@ -97,7 +97,7 @@ export default function QuoteDetailPage() {
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
-      setError(err?.message ?? 'Kon voorstel niet opslaan.');
+      setError(err?.message ?? 'Kon offerte niet opslaan.');
     },
   });
 

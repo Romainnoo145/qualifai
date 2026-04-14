@@ -47,7 +47,7 @@ export default function NewQuoteForProspectPage() {
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
-      setError(err?.message ?? 'Kon voorstel niet opslaan.');
+      setError(err?.message ?? 'Kon offerte niet opslaan.');
     },
   });
 
@@ -112,7 +112,7 @@ export default function NewQuoteForProspectPage() {
         >
           <ArrowLeft className="h-4 w-4" /> Terug naar prospect
         </Link>
-        <h1 className="text-3xl font-black text-[#040026]">Nieuw voorstel</h1>
+        <h1 className="text-3xl font-black text-[#040026]">Nieuwe offerte</h1>
         <p className="text-sm text-slate-500">
           {prospectQuery.data?.companyName ?? 'Onbekende prospect'}
         </p>
