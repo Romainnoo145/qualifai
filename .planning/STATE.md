@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: in-progress
-stopped_at: Completed 61.1-04-PLAN.md (Phase 61.1 complete) — next Phase 61.2 (inserted, not yet planned)
+stopped_at: Phase 61.2 planned + verified (4 plans, 15 PARITY requirements) — ready to execute
 last_updated: '2026-04-14T15:09:01.890Z'
 last_activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
 progress:
@@ -24,9 +24,9 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 
 ## Current Position
 
-Phase: 61.2 — Manual Prospect Parity (INSERTED, not yet planned)
-Plan: TBD — run /gsd:plan-phase 61.2 to break down into 4 plans across 3 waves
-Status: Phase 61.1 complete (4/4 plans, 14/14 POLISH requirements verified). 61.2 inserted to handle Marfa-style edge cases (Apollo 422 fallback, og:image logo scraping, manual enrichment form, evidence/analysis render audit). Next action: /gsd:plan-phase 61.2.
+Phase: 61.2 — Manual Prospect Parity (PLANNED, ready to execute)
+Plan: 4 plans written + verified across 3 waves — Wave 1 = 61.2-01 (Apollo fallback) + 61.2-02 (og-logo helper) parallel; Wave 2 = 61.2-03 (og-logo wiring + createAndProcess Zod + Optionele verrijking form); Wave 3 = 61.2-04 (ProspectEnrichmentBadge + render audit, autonomous=false human-verify)
+Status: Phase 61.1 complete (4/4 plans, 14/14 POLISH verified, committed 10ae7c5). Phase 61.2 plans went through 2 revision iterations (iter 1: Wave 1 admin.ts conflict resolved by moving og-logo wiring to Plan 03; iter 2: VALIDATION.md created, PARITY-08 ownership corrected from Plan 02 to Plan 03). All 15 PARITY requirements covered. Marfa-specific logo bug discovered during 61.1 smoke test is PARKED in 61.2 Plan 03 Task 1 — not a blocker, will be fixed by og-logo wiring. Next action: /gsd:execute-phase 61.2.
 Last activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
 
 **Progress bar:** [██████████] 100% (9/9 plans, 1/4 phases)
