@@ -20,6 +20,12 @@ export default function NewProspect() {
   const router = useRouter();
   const [domain, setDomain] = useState('');
   const [notes, setNotes] = useState('');
+  const [enrichCompanyName, setEnrichCompanyName] = useState('');
+  const [enrichIndustry, setEnrichIndustry] = useState('');
+  const [enrichDescription, setEnrichDescription] = useState('');
+  const [enrichEmployeeRange, setEnrichEmployeeRange] = useState('');
+  const [enrichCity, setEnrichCity] = useState('');
+  const [enrichCountry, setEnrichCountry] = useState('Nederland');
   const [stage, setStage] = useState<ProcessStage>('idle');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{
@@ -62,6 +68,25 @@ export default function NewProspect() {
     createAndProcess.mutate({
       domain: domain.trim(),
       internalNotes: notes.trim() || undefined,
+      ...(enrichCompanyName.trim() && {
+        companyName: enrichCompanyName.trim(),
+      }),
+      ...(enrichIndustry.trim() && { industry: enrichIndustry.trim() }),
+      ...(enrichDescription.trim() && {
+        description: enrichDescription.trim(),
+      }),
+      ...(enrichEmployeeRange && {
+        employeeRange: enrichEmployeeRange as
+          | '1-10'
+          | '11-50'
+          | '51-200'
+          | '201-500'
+          | '501-1000'
+          | '1001-5000'
+          | '5001+',
+      }),
+      ...(enrichCity.trim() && { city: enrichCity.trim() }),
+      ...(enrichCountry.trim() && { country: enrichCountry.trim() }),
     });
   };
 
@@ -160,6 +185,12 @@ export default function NewProspect() {
               setStage('idle');
               setDomain('');
               setNotes('');
+              setEnrichCompanyName('');
+              setEnrichIndustry('');
+              setEnrichDescription('');
+              setEnrichEmployeeRange('');
+              setEnrichCity('');
+              setEnrichCountry('Nederland');
               setResult(null);
             }}
             className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 hover:text-[#040026] transition-all"
@@ -203,6 +234,103 @@ export default function NewProspect() {
                 className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all resize-none placeholder:text-slate-300"
               />
             </div>
+
+            <details className="border border-gray-200 rounded-lg mt-4">
+              <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-gray-700 select-none hover:bg-gray-50">
+                Optionele verrijking
+              </summary>
+              <div className="px-4 pb-4 pt-2 grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bedrijfsnaam
+                  </label>
+                  <input
+                    type="text"
+                    value={enrichCompanyName}
+                    onChange={(e) => setEnrichCompanyName(e.target.value)}
+                    placeholder="bijv. Marfa Design Studio"
+                    className="input-minimal w-full"
+                    maxLength={200}
+                    disabled={stage !== 'idle'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Sector
+                  </label>
+                  <input
+                    type="text"
+                    value={enrichIndustry}
+                    onChange={(e) => setEnrichIndustry(e.target.value)}
+                    placeholder="bijv. Grafisch ontwerp"
+                    className="input-minimal w-full"
+                    maxLength={100}
+                    disabled={stage !== 'idle'}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Omschrijving
+                  </label>
+                  <textarea
+                    value={enrichDescription}
+                    onChange={(e) => setEnrichDescription(e.target.value)}
+                    placeholder="Korte omschrijving van het bedrijf..."
+                    className="input-minimal w-full"
+                    rows={3}
+                    maxLength={500}
+                    disabled={stage !== 'idle'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Medewerkers
+                  </label>
+                  <select
+                    value={enrichEmployeeRange}
+                    onChange={(e) => setEnrichEmployeeRange(e.target.value)}
+                    className="input-minimal w-full"
+                    disabled={stage !== 'idle'}
+                  >
+                    <option value="">— kies een range —</option>
+                    <option value="1-10">1–10</option>
+                    <option value="11-50">11–50</option>
+                    <option value="51-200">51–200</option>
+                    <option value="201-500">201–500</option>
+                    <option value="501-1000">501–1.000</option>
+                    <option value="1001-5000">1.001–5.000</option>
+                    <option value="5001+">5.001+</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Stad
+                  </label>
+                  <input
+                    type="text"
+                    value={enrichCity}
+                    onChange={(e) => setEnrichCity(e.target.value)}
+                    placeholder="bijv. Amsterdam"
+                    className="input-minimal w-full"
+                    maxLength={100}
+                    disabled={stage !== 'idle'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Land
+                  </label>
+                  <input
+                    type="text"
+                    value={enrichCountry}
+                    onChange={(e) => setEnrichCountry(e.target.value)}
+                    className="input-minimal w-full"
+                    maxLength={100}
+                    disabled={stage !== 'idle'}
+                  />
+                </div>
+              </div>
+            </details>
           </div>
 
           {error && (
