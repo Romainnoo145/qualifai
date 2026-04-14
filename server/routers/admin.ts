@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { projectAdminProcedure, router } from '../trpc';
 import { nanoid } from 'nanoid';
 import { enrichCompany } from '@/lib/enrichment';
+import { EnrichmentNoCoverageError } from '@/lib/enrichment/service';
 import { mergeApolloWithKvk } from '@/lib/enrichment/merge';
 import { generateWizardContent } from '@/lib/ai/generate-wizard';
 import type { CompanyContext, IndustryPrompts } from '@/lib/ai/prompts';
@@ -245,10 +246,48 @@ export const adminRouter = router({
       });
 
       if (!input.force && isEnrichmentFresh(prospect.lastEnrichedAt)) {
-        return prospect;
+        return { success: true, fallbackUsed: false, noCoverage: false };
       }
 
-      const enriched = await enrichCompany(prospect.domain, prospect.id);
+      let noCoverage = false;
+      let enriched: Awaited<ReturnType<typeof enrichCompany>>;
+      try {
+        enriched = await enrichCompany(prospect.domain, prospect.id);
+      } catch (err) {
+        if (err instanceof EnrichmentNoCoverageError) {
+          // Apollo has no coverage for this domain — partial success, not an error.
+          // Return the amber-branch signal so ProspectActionsPanel fires the fallback state.
+          noCoverage = true;
+          enriched = {
+            domain: prospect.domain ?? '',
+            companyName: null,
+            industry: null,
+            subIndustry: null,
+            employeeCount: null,
+            employeeRange: null,
+            revenueRange: null,
+            revenueEstimate: null,
+            description: null,
+            city: null,
+            state: null,
+            country: null,
+            foundedYear: null,
+            linkedinUrl: null,
+            logoUrl: null,
+            technologies: [],
+            specialties: [],
+            naicsCode: null,
+            sicCode: null,
+            lushaCompanyId: null,
+            intentTopics: null,
+            fundingInfo: null,
+            rawData: {},
+          };
+        } else {
+          throw err; // Re-throw all other errors — existing error handling picks them up.
+        }
+      }
+
       const combined = await mergeApolloWithKvk(enriched, {
         domainHint: prospect.domain,
         companyNameHint: prospect.companyName,
@@ -260,7 +299,7 @@ export const adminRouter = router({
         ? await generateUniqueReadableSlug(ctx.db, combined.merged.companyName!)
         : undefined;
 
-      const updated = await ctx.db.prospect.update({
+      await ctx.db.prospect.update({
         where: { id: input.id },
         data: {
           ...buildEnrichmentData(combined.merged, {
@@ -271,7 +310,7 @@ export const adminRouter = router({
         },
       });
 
-      return updated;
+      return { success: true, fallbackUsed: noCoverage, noCoverage };
     }),
 
   runResearchRun: projectAdminProcedure

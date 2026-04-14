@@ -21,6 +21,11 @@ export const FRIENDLY_ERROR_GEMINI_RATELIMIT =
 export const FRIENDLY_ERROR_GEMINI_FALLBACK =
   'AI tijdelijk niet beschikbaar — fallback model gebruikt';
 export const FRIENDLY_ERROR_UNKNOWN = 'Onbekende fout — probeer opnieuw.';
+// Apollo no-coverage: expected for small NL SMBs not in Apollo's DB.
+// This is a positive-success warning copy (amber state), NOT returned by
+// mapMutationError — ProspectActionsPanel reads it directly for the fallback branch.
+export const FRIENDLY_ERROR_APOLLO_NO_COVERAGE =
+  'Apollo heeft deze organisatie niet in zijn database — verrijking gedeeltelijk.';
 
 /**
  * Translate a thrown error into a user-facing Dutch message.
