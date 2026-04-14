@@ -15,8 +15,7 @@ import {
 import { executeResearchRun } from '@/lib/research-executor';
 import { matchProofs } from '@/lib/workflow-engine';
 import { TRPCError } from '@trpc/server';
-import { getFaviconUrl } from '@/lib/enrichment/favicon';
-import { getHighResLogoUrl } from '@/lib/enrichment/og-logo';
+import { resolveLogoUrl } from '@/lib/enrichment/logo-pipeline';
 import {
   recordAnalysisFailure,
   recordAnalysisSuccess,
@@ -211,21 +210,22 @@ export const adminRouter = router({
         },
       });
 
-      // POLISH-05: fire-and-forget favicon fetch. Does not block the mutation
-      // return — prospect is usable immediately. If the favicon arrives later,
-      // the next getProspect query will pick it up.
+      // Fire-and-forget logo resolution (Phase 61.3 unified pipeline).
+      // Does not block the mutation return — prospect is usable immediately.
+      // resolveLogoUrl tries og:image → DDG → Google and validates each with
+      // a HEAD probe, so whatever lands in prospect.logoUrl is guaranteed live.
       void (async () => {
         try {
-          const faviconUrl = await getFaviconUrl(cleanDomain);
-          if (faviconUrl) {
+          const logoUrl = await resolveLogoUrl(cleanDomain);
+          if (logoUrl) {
             await ctx.db.prospect.update({
               where: { id: prospect.id },
-              data: { logoUrl: faviconUrl },
+              data: { logoUrl },
             });
           }
         } catch (err) {
           console.warn(
-            `[createProspect] favicon fetch failed for ${cleanDomain}:`,
+            `[createProspect] resolveLogoUrl failed for ${cleanDomain}:`,
             err instanceof Error ? err.message : err,
           );
         }
@@ -284,11 +284,10 @@ export const adminRouter = router({
             fundingInfo: null,
             rawData: {},
           };
-          // Best-effort logo improvement on no-coverage path (PARITY-08)
+          // Best-effort logo improvement on no-coverage path (PARITY-08).
+          // Uses the unified pipeline — no Apollo URL available on this branch.
           try {
-            const ogLogo = await getHighResLogoUrl(prospect.domain ?? '');
-            const logoUrl =
-              ogLogo ?? (await getFaviconUrl(prospect.domain ?? ''));
+            const logoUrl = await resolveLogoUrl(prospect.domain ?? '');
             if (logoUrl) {
               await ctx.db.prospect.update({
                 where: { id: prospect.id },
@@ -596,12 +595,15 @@ export const adminRouter = router({
         },
       });
 
-      // Fire-and-forget: og-logo first → favicon fallback → no-op (PARITY-07)
+      // Fire-and-forget: unified logo pipeline. Validates Apollo's logoUrl
+      // first (if Apollo provided one in the enriched data), otherwise walks
+      // the og:image → DDG → Google chain with HEAD verification at each step.
       void (async () => {
         try {
-          const ogLogo = await getHighResLogoUrl(cleanDomain);
-          const logoUrl = ogLogo ?? (await getFaviconUrl(cleanDomain));
-          if (logoUrl) {
+          const logoUrl = await resolveLogoUrl(cleanDomain, {
+            apolloLogoUrl: prospect.logoUrl,
+          });
+          if (logoUrl && logoUrl !== prospect.logoUrl) {
             await ctx.db.prospect.update({
               where: { id: prospect.id },
               data: { logoUrl },
