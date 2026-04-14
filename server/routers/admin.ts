@@ -14,6 +14,11 @@ import {
 import { executeResearchRun } from '@/lib/research-executor';
 import { matchProofs } from '@/lib/workflow-engine';
 import { TRPCError } from '@trpc/server';
+import { getFaviconUrl } from '@/lib/enrichment/favicon';
+import {
+  recordAnalysisFailure,
+  recordAnalysisSuccess,
+} from '@/lib/analysis/master-analyzer';
 import { assertValidProspectTransition } from '@/lib/state-machines/prospect';
 import {
   READY_FOR_OUTREACH_STATUSES,
@@ -191,17 +196,38 @@ export const adminRouter = router({
     .input(z.object({ domain: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const slug = nanoid(8);
+      const cleanDomain = input.domain
+        .replace(/^(https?:\/\/)?(www\.)?/, '')
+        .split('/')[0]!;
 
       const prospect = await ctx.db.prospect.create({
         data: {
-          domain: input.domain
-            .replace(/^(https?:\/\/)?(www\.)?/, '')
-            .split('/')[0]!,
+          domain: cleanDomain,
           slug,
           status: 'DRAFT',
           projectId: ctx.projectId,
         },
       });
+
+      // POLISH-05: fire-and-forget favicon fetch. Does not block the mutation
+      // return — prospect is usable immediately. If the favicon arrives later,
+      // the next getProspect query will pick it up.
+      void (async () => {
+        try {
+          const faviconUrl = await getFaviconUrl(cleanDomain);
+          if (faviconUrl) {
+            await ctx.db.prospect.update({
+              where: { id: prospect.id },
+              data: { logoUrl: faviconUrl },
+            });
+          }
+        } catch (err) {
+          console.warn(
+            `[createProspect] favicon fetch failed for ${cleanDomain}:`,
+            err instanceof Error ? err.message : err,
+          );
+        }
+      })();
 
       return prospect;
     }),
@@ -246,6 +272,70 @@ export const adminRouter = router({
       });
 
       return updated;
+    }),
+
+  runResearchRun: projectAdminProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Multi-tenant scope check BEFORE any side effect
+      const prospect = await ctx.db.prospect.findFirst({
+        where: { id: input.id, projectId: ctx.projectId },
+        select: { id: true },
+      });
+      if (!prospect) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Prospect not found in active project scope',
+        });
+      }
+
+      await executeResearchRun(ctx.db, {
+        prospectId: input.id,
+        manualUrls: [],
+        deepCrawl: true,
+      });
+
+      return { ok: true as const };
+    }),
+
+  runMasterAnalysis: projectAdminProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Multi-tenant scope check BEFORE any side effect
+      const prospect = await ctx.db.prospect.findFirst({
+        where: { id: input.id, projectId: ctx.projectId },
+        select: { id: true },
+      });
+      if (!prospect) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Prospect not found in active project scope',
+        });
+      }
+
+      // Phase 61.1 limitation: ProspectAnalysis.inputSnapshot is a SUMMARY
+      // (counts only), NOT a reconstructable NarrativeAnalysisInput. Rerunning
+      // ONLY the analysis step would require reassembling evidence + passages
+      // + cross-connections from the DB, which duplicates research-executor
+      // logic. For Phase 61.1, direct Romano to "Run research" instead —
+      // that path runs the full pipeline including analysis AND now records
+      // success/failure state via the Task 3 wrapper in research-executor.ts.
+      //
+      // Future: reassemble NarrativeAnalysisInput from EvidenceItem + Passage
+      // + cross-connections (see research-executor.ts lines 1650-1670), then
+      // call generateNarrativeAnalysis / generateKlarifaiNarrativeAnalysis,
+      // destructure { modelUsed, fallbackUsed }, call recordAnalysisSuccess on
+      // success, recordAnalysisFailure + rethrow on failure.
+      // Return: { ok: true as const, modelUsed, fallbackUsed }
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message:
+          'Analyse herhalen niet ondersteund — draai eerst onderzoek opnieuw.',
+      });
+
+      // Suppress "unused import" TS warning — imports are ready for future impl
+      void recordAnalysisSuccess;
+      void recordAnalysisFailure;
     }),
 
   generateReadableSlug: projectAdminProcedure
