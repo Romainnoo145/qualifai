@@ -499,7 +499,12 @@ function extractJSON(text: string): unknown | null {
  */
 export async function generateNarrativeAnalysis(
   input: NarrativeAnalysisInput,
-): Promise<NarrativeAnalysis & { fallbackUsed: boolean }> {
+): Promise<
+  NarrativeAnalysis & {
+    fallbackUsed: boolean;
+    modelUsed: 'gemini-2.5-pro' | 'gemini-2.5-flash';
+  }
+> {
   const genai = getGenAI();
   const prompt = buildMasterPrompt(input);
   const model = GEMINI_MODEL_PRO;
@@ -670,7 +675,12 @@ export function validateKlarifaiNarrativeAnalysis(
  */
 export async function generateKlarifaiNarrativeAnalysis(
   input: KlarifaiNarrativeInput,
-): Promise<KlarifaiNarrativeAnalysis & { fallbackUsed: boolean }> {
+): Promise<
+  KlarifaiNarrativeAnalysis & {
+    fallbackUsed: boolean;
+    modelUsed: 'gemini-2.5-pro' | 'gemini-2.5-flash';
+  }
+> {
   const genai = getGenAI();
   const prompt = buildMasterPrompt(input);
   const model = GEMINI_MODEL_PRO;

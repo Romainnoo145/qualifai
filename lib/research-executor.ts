@@ -59,6 +59,8 @@ import type { IntentVariables } from '@/lib/extraction/types';
 import {
   generateNarrativeAnalysis,
   generateKlarifaiNarrativeAnalysis,
+  recordAnalysisSuccess,
+  recordAnalysisFailure,
 } from '@/lib/analysis/master-analyzer';
 import type {
   NarrativeAnalysisInput,
@@ -1687,12 +1689,39 @@ export async function executeResearchRun(
           },
         });
 
+        // Phase 61.1 SC #2: persist which model actually answered + clear prior
+        // failure state. Uses analysisResult.modelUsed which is 'gemini-2.5-pro'
+        // on clean success or 'gemini-2.5-flash' when the retry layer fell back.
+        await recordAnalysisSuccess(
+          db,
+          input.prospectId,
+          analysisResult.modelUsed,
+        );
+
         diagnostics.push({
           source: 'master_analysis',
           status: 'ok',
-          message: `Narrative analysis generated: ${analysisResult.sections.length} sections, ${analysisResult.spvRecommendations.length} SPV recommendations`,
+          message: `Narrative analysis generated: ${analysisResult.sections.length} sections, ${analysisResult.spvRecommendations.length} SPV recommendations${analysisResult.fallbackUsed ? ' (fallback model used)' : ''}`,
         });
       } catch (analysisErr) {
+        // Phase 61.1 POLISH-03: persist failure state BEFORE the warning diagnostic
+        // so the prospect row reflects the failure even though the pipeline
+        // catch-and-continues. Existing warning-diagnostic behavior preserved.
+        try {
+          await recordAnalysisFailure(
+            db,
+            input.prospectId,
+            analysisErr instanceof Error
+              ? analysisErr.message
+              : String(analysisErr),
+          );
+        } catch (persistErr) {
+          console.warn(
+            '[research-executor] recordAnalysisFailure itself failed:',
+            persistErr instanceof Error ? persistErr.message : persistErr,
+          );
+        }
+
         diagnostics.push({
           source: 'master_analysis',
           status: 'warning',
@@ -1829,13 +1858,40 @@ export async function executeResearchRun(
             },
           });
 
+          // Phase 61.1 SC #2: persist which model actually answered + clear
+          // prior failure state. analysisResult.modelUsed is 'gemini-2.5-pro'
+          // on clean success or 'gemini-2.5-flash' when retry fell back.
+          await recordAnalysisSuccess(
+            db,
+            input.prospectId,
+            analysisResult.modelUsed,
+          );
+
           diagnostics.push({
             source: 'master_analysis',
             status: 'ok',
-            message: `Klarifai narrative analysis generated: ${analysisResult.sections.length} sections, ${analysisResult.useCaseRecommendations.length} use case recommendations`,
+            message: `Klarifai narrative analysis generated: ${analysisResult.sections.length} sections, ${analysisResult.useCaseRecommendations.length} use case recommendations${analysisResult.fallbackUsed ? ' (fallback model used)' : ''}`,
           });
         }
       } catch (analysisErr) {
+        // Phase 61.1 POLISH-03: persist failure state BEFORE the warning diagnostic
+        // so the prospect row reflects the failure even though the pipeline
+        // catch-and-continues. Existing warning-diagnostic behavior preserved.
+        try {
+          await recordAnalysisFailure(
+            db,
+            input.prospectId,
+            analysisErr instanceof Error
+              ? analysisErr.message
+              : String(analysisErr),
+          );
+        } catch (persistErr) {
+          console.warn(
+            '[research-executor] recordAnalysisFailure itself failed (Klarifai path):',
+            persistErr instanceof Error ? persistErr.message : persistErr,
+          );
+        }
+
         diagnostics.push({
           source: 'master_analysis',
           status: 'warning',
