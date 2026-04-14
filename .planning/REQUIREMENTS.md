@@ -175,11 +175,11 @@ Field-discovered parity gaps in the manual prospect experience. Surfaced during 
 
 **Render parity + badge:**
 
-- [ ] **PARITY-11**: `/admin/prospects/[id]` detail page renders without crashes on NULL Apollo fields — null guard audit confirms all field accesses use optional chaining or conditional rendering.
-- [ ] **PARITY-12**: New `ProspectEnrichmentBadge` component renders an amber pill "Verrijking onvolledig" in the detail header when `companyName` OR `industry` OR `description` is null. Tooltip shows "Verrijking ontbreekt: " + Dutch-labeled list of missing fields.
-- [ ] **PARITY-13**: Evidence tab renders cleanly for manual prospects with no research runs (shows "Geen runs" empty state — no crash).
-- [ ] **PARITY-14**: Analysis tab renders cleanly for manual prospects with no analysis rows (shows empty state — no crash).
-- [ ] **PARITY-15**: Human-verify checkpoint: Romano opens Marfa detail — zero crashes, amber pill visible (or absent if fields populated), evidence/analysis tabs show clean empty states.
+- [x] **PARITY-11**: `/admin/prospects/[id]` detail page renders without crashes on NULL Apollo fields — null guard audit confirms all field accesses use optional chaining or conditional rendering.
+- [x] **PARITY-12**: New `ProspectEnrichmentBadge` component renders an amber pill "Verrijking onvolledig" in the detail header when `companyName` OR `industry` OR `description` is null. Tooltip shows "Verrijking ontbreekt: " + Dutch-labeled list of missing fields.
+- [x] **PARITY-13**: Evidence tab renders cleanly for manual prospects with no research runs (shows "Geen runs" empty state — no crash).
+- [x] **PARITY-14**: Analysis tab renders cleanly for manual prospects with no analysis rows (shows empty state — no crash).
+- [x] **PARITY-15**: Human-verify checkpoint: Romano opens Marfa detail — zero crashes, amber pill visible (or absent if fields populated), evidence/analysis tabs show clean empty states.
 
 ## v10.0 Requirements (deferred)
 
@@ -304,11 +304,11 @@ Field-discovered parity gaps in the manual prospect experience. Surfaced during 
 | PARITY-08 | 61.2 | Complete |
 | PARITY-09 | 61.2 | Complete |
 | PARITY-10 | 61.2 | Complete |
-| PARITY-11 | 61.2 | Pending |
-| PARITY-12 | 61.2 | Pending |
-| PARITY-13 | 61.2 | Pending |
-| PARITY-14 | 61.2 | Pending |
-| PARITY-15 | 61.2 | Pending |
+| PARITY-11 | 61.2 | Complete |
+| PARITY-12 | 61.2 | Complete |
+| PARITY-13 | 61.2 | Complete |
+| PARITY-14 | 61.2 | Complete |
+| PARITY-15 | 61.2 | Complete |
 
 **Coverage:**
 
