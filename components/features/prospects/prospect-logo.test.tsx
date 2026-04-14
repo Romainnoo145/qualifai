@@ -1,22 +1,12 @@
 /**
- * Tests for ProspectLogo — POLISH-10 / POLISH-11
+ * Tests for ProspectLogo — Phase 61.3 simplified 2-stage renderer.
  *
- * Covers: 4-level fallback (Apollo → DuckDuckGo → Google → initial),
- * shape prop, size prop, and className passthrough.
+ * Covers: DB logoUrl trust, img onError → initial-letter fallback,
+ * shape prop, size prop, className passthrough.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProspectLogo } from './prospect-logo';
-
-vi.mock('@/lib/enrichment/favicon', () => ({
-  buildInlineDuckDuckGoFaviconUrl: vi.fn(
-    (domain: string) => `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-  ),
-  buildInlineGoogleFaviconUrl: vi.fn(
-    (domain: string) =>
-      `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
-  ),
-}));
 
 const mockProspect = (overrides: {
   logoUrl?: string | null;
@@ -33,45 +23,45 @@ describe('ProspectLogo', () => {
     vi.clearAllMocks();
   });
 
-  describe('initial stage selection', () => {
-    it('renders Apollo img when logoUrl is present', () => {
+  describe('DB logoUrl rendering', () => {
+    it('renders the DB logoUrl as an img when present', () => {
       render(
         <ProspectLogo
           prospect={mockProspect({
-            logoUrl: 'https://apollo.example.com/logo.png',
+            logoUrl: 'https://cdn.example.com/logo.png',
             domain: 'example.com',
             companyName: 'Example',
           })}
         />,
       );
-      const img = screen.getByTestId('prospect-logo-apollo');
+      const img = screen.getByTestId('prospect-logo-image') as HTMLImageElement;
       expect(img).toBeDefined();
-      expect((img as HTMLImageElement).src).toContain('apollo.example.com');
+      expect(img.src).toBe('https://cdn.example.com/logo.png');
+      expect(img.alt).toBe('Example');
     });
 
-    it('renders DuckDuckGo img when logoUrl is null but domain is present', () => {
+    it('uses domain as alt when companyName is null', () => {
       render(
         <ProspectLogo
           prospect={mockProspect({
-            logoUrl: null,
-            domain: 'marfa.nl',
-            companyName: 'Marfa',
+            logoUrl: 'https://cdn.example.com/logo.png',
+            domain: 'example.com',
+            companyName: null,
           })}
         />,
       );
-      const img = screen.getByTestId('prospect-logo-ddg');
-      expect(img).toBeDefined();
-      expect((img as HTMLImageElement).src).toContain(
-        'icons.duckduckgo.com/ip3/marfa.nl.ico',
-      );
+      const img = screen.getByTestId('prospect-logo-image') as HTMLImageElement;
+      expect(img.alt).toBe('example.com');
     });
+  });
 
-    it('renders initial letter when both logoUrl and domain are null', () => {
+  describe('initial letter fallback', () => {
+    it('renders initial letter when logoUrl is null', () => {
       render(
         <ProspectLogo
           prospect={mockProspect({
             logoUrl: null,
-            domain: null,
+            domain: 'example.com',
             companyName: 'Acme Corp',
           })}
         />,
@@ -80,7 +70,7 @@ describe('ProspectLogo', () => {
       expect(initial.textContent).toBe('A');
     });
 
-    it('renders "?" when logoUrl, domain, and companyName are all null', () => {
+    it('renders "?" when all three fields are null', () => {
       render(
         <ProspectLogo
           prospect={mockProspect({
@@ -93,71 +83,35 @@ describe('ProspectLogo', () => {
       const initial = screen.getByTestId('prospect-logo-initial');
       expect(initial.textContent).toBe('?');
     });
-  });
 
-  describe('fallback cascade', () => {
-    it('cascades apollo → ddg → google → initial', () => {
-      render(
-        <ProspectLogo
-          prospect={mockProspect({
-            logoUrl: 'https://apollo.example.com/logo.png',
-            domain: 'marfa.nl',
-            companyName: 'Marfa',
-          })}
-        />,
-      );
-
-      const apolloImg = screen.getByTestId('prospect-logo-apollo');
-      fireEvent.error(apolloImg);
-
-      const ddgImg = screen.getByTestId('prospect-logo-ddg');
-      expect(ddgImg).toBeDefined();
-      fireEvent.error(ddgImg);
-
-      const googleImg = screen.getByTestId('prospect-logo-google');
-      expect(googleImg).toBeDefined();
-      expect((googleImg as HTMLImageElement).src).toContain(
-        'google.com/s2/favicons',
-      );
-      fireEvent.error(googleImg);
-
-      const initial = screen.getByTestId('prospect-logo-initial');
-      expect(initial.textContent).toBe('M');
-    });
-
-    it('cascades from ddg to google on img error', () => {
+    it('uses domain initial when companyName is null', () => {
       render(
         <ProspectLogo
           prospect={mockProspect({
             logoUrl: null,
             domain: 'marfa.nl',
-            companyName: 'Marfa',
+            companyName: null,
           })}
         />,
       );
-      const ddgImg = screen.getByTestId('prospect-logo-ddg');
-      fireEvent.error(ddgImg);
-      const googleImg = screen.getByTestId('prospect-logo-google');
-      expect(googleImg).toBeDefined();
-      expect((googleImg as HTMLImageElement).src).toContain(
-        'google.com/s2/favicons',
-      );
+      const initial = screen.getByTestId('prospect-logo-initial');
+      expect(initial.textContent).toBe('M');
     });
 
-    it('cascades from apollo directly to initial when domain is null', () => {
+    it('cascades from img to initial letter on img error', () => {
       render(
         <ProspectLogo
           prospect={mockProspect({
-            logoUrl: 'https://apollo.example.com/logo.png',
-            domain: null,
-            companyName: 'NoSlug',
+            logoUrl: 'https://broken.example.com/logo.png',
+            domain: 'example.com',
+            companyName: 'Broken',
           })}
         />,
       );
-      const img = screen.getByTestId('prospect-logo-apollo');
+      const img = screen.getByTestId('prospect-logo-image');
       fireEvent.error(img);
       const initial = screen.getByTestId('prospect-logo-initial');
-      expect(initial.textContent).toBe('N');
+      expect(initial.textContent).toBe('B');
     });
   });
 
@@ -166,13 +120,13 @@ describe('ProspectLogo', () => {
       render(
         <ProspectLogo
           prospect={mockProspect({
-            logoUrl: null,
-            domain: 'marfa.nl',
-            companyName: 'Marfa',
+            logoUrl: 'https://cdn.example.com/logo.png',
+            domain: 'example.com',
+            companyName: 'Example',
           })}
         />,
       );
-      const img = screen.getByTestId('prospect-logo-ddg') as HTMLImageElement;
+      const img = screen.getByTestId('prospect-logo-image') as HTMLImageElement;
       expect(img.width).toBe(40);
       expect(img.height).toBe(40);
     });
@@ -181,14 +135,14 @@ describe('ProspectLogo', () => {
       render(
         <ProspectLogo
           prospect={mockProspect({
-            logoUrl: null,
-            domain: 'marfa.nl',
-            companyName: 'Marfa',
+            logoUrl: 'https://cdn.example.com/logo.png',
+            domain: 'example.com',
+            companyName: 'Example',
           })}
           size={64}
         />,
       );
-      const img = screen.getByTestId('prospect-logo-ddg') as HTMLImageElement;
+      const img = screen.getByTestId('prospect-logo-image') as HTMLImageElement;
       expect(img.width).toBe(64);
       expect(img.height).toBe(64);
     });
@@ -199,13 +153,13 @@ describe('ProspectLogo', () => {
       render(
         <ProspectLogo
           prospect={mockProspect({
-            logoUrl: null,
-            domain: 'marfa.nl',
-            companyName: 'Marfa',
+            logoUrl: 'https://cdn.example.com/logo.png',
+            domain: 'example.com',
+            companyName: 'Example',
           })}
         />,
       );
-      const img = screen.getByTestId('prospect-logo-ddg');
+      const img = screen.getByTestId('prospect-logo-image');
       expect(img.getAttribute('data-shape')).toBe('circle');
       expect(img.className).toContain('rounded-full');
     });
@@ -214,14 +168,14 @@ describe('ProspectLogo', () => {
       render(
         <ProspectLogo
           prospect={mockProspect({
-            logoUrl: null,
-            domain: 'marfa.nl',
-            companyName: 'Marfa',
+            logoUrl: 'https://cdn.example.com/logo.png',
+            domain: 'example.com',
+            companyName: 'Example',
           })}
           shape="rounded"
         />,
       );
-      const img = screen.getByTestId('prospect-logo-ddg');
+      const img = screen.getByTestId('prospect-logo-image');
       expect(img.getAttribute('data-shape')).toBe('rounded');
       expect(img.className).toContain('rounded-2xl');
       expect(img.className).not.toContain('rounded-full');

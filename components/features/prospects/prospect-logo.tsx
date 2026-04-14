@@ -1,38 +1,31 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  buildInlineDuckDuckGoFaviconUrl,
-  buildInlineGoogleFaviconUrl,
-} from '@/lib/enrichment/favicon';
 import { cn } from '@/lib/utils';
 
 interface ProspectLogoProps {
   prospect: {
     logoUrl: string | null;
-    domain: string | null;
     companyName: string | null;
+    domain: string | null;
   };
   size?: number;
-  shape?: 'circle' | 'rounded'; // drives base shape class, default 'circle'
+  shape?: 'circle' | 'rounded';
   className?: string;
 }
 
-type Stage = 'apollo' | 'ddg' | 'google' | 'initial';
-
 /**
- * Four-level logo fallback: Apollo logoUrl → DuckDuckGo favicon → Google
- * favicon → initial letter circle. Uses `<img onError>` to cascade through
- * stages client-side without any probing latency.
+ * Two-stage logo rendering: validated DB logoUrl → initial-letter avatar.
  *
- * DuckDuckGo is the primary favicon source because it scrapes the site's
- * own favicon directly (works for small Dutch SMBs). Google's s2 is the
- * secondary because it returns a generic globe with HTTP 200 for misses,
- * which would otherwise stick forever without onError firing.
+ * Phase 61.3 unification: the backend resolveLogoUrl pipeline guarantees that
+ * whatever lands in `prospect.logoUrl` is a HEAD-verified live URL. We no
+ * longer cascade through DDG / Google fallbacks in the browser. When logoUrl
+ * is null or the img fails to load (e.g. network hiccup or URL went stale
+ * post-write), we drop straight to the initial-letter avatar.
  *
- * Phase 61.1 POLISH-10 / POLISH-11 — rendered in both the prospect list
- * cards (shape='rounded', size=56) and the prospect detail page header
- * (shape='circle', size=64).
+ * The shape prop drives the base rounding class so callers can request
+ * circle (detail header) or rounded (list card) without fighting Tailwind
+ * class precedence via className overrides.
  */
 export function ProspectLogo({
   prospect,
@@ -40,38 +33,22 @@ export function ProspectLogo({
   shape = 'circle',
   className,
 }: ProspectLogoProps): React.ReactElement {
-  const initialStage: Stage = prospect.logoUrl
-    ? 'apollo'
-    : prospect.domain
-      ? 'ddg'
-      : 'initial';
-
-  const [stage, setStage] = useState<Stage>(initialStage);
-
-  const handleError = () => {
-    if (stage === 'apollo') {
-      setStage(prospect.domain ? 'ddg' : 'initial');
-    } else if (stage === 'ddg') {
-      setStage(prospect.domain ? 'google' : 'initial');
-    } else if (stage === 'google') {
-      setStage('initial');
-    }
-  };
-
-  const initial =
-    (prospect.companyName ?? prospect.domain ?? '?')
-      .trim()
-      .charAt(0)
-      .toUpperCase() || '?';
+  const [imageFailed, setImageFailed] = useState(false);
 
   const shapeClass = shape === 'circle' ? 'rounded-full' : 'rounded-2xl';
-
   const sharedStyle: React.CSSProperties = {
     width: `${size}px`,
     height: `${size}px`,
   };
 
-  if (stage === 'initial') {
+  const showImage = prospect.logoUrl && !imageFailed;
+
+  if (!showImage) {
+    const initial =
+      (prospect.companyName ?? prospect.domain ?? '?')
+        .trim()
+        .charAt(0)
+        .toUpperCase() || '?';
     return (
       <div
         className={cn(
@@ -89,25 +66,18 @@ export function ProspectLogo({
     );
   }
 
-  const src =
-    stage === 'apollo'
-      ? prospect.logoUrl!
-      : stage === 'ddg'
-        ? (buildInlineDuckDuckGoFaviconUrl(prospect.domain!) ?? '')
-        : (buildInlineGoogleFaviconUrl(prospect.domain!, 128) ?? '');
-
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={src}
+      src={prospect.logoUrl!}
       alt={prospect.companyName ?? prospect.domain ?? 'Prospect logo'}
       width={size}
       height={size}
       loading="lazy"
-      onError={handleError}
+      onError={() => setImageFailed(true)}
       className={cn('object-contain', shapeClass, className)}
       style={sharedStyle}
-      data-testid={`prospect-logo-${stage}`}
+      data-testid="prospect-logo-image"
       data-shape={shape}
     />
   );
