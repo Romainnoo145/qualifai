@@ -16,6 +16,7 @@ import { executeResearchRun } from '@/lib/research-executor';
 import { matchProofs } from '@/lib/workflow-engine';
 import { TRPCError } from '@trpc/server';
 import { resolveLogoUrl } from '@/lib/enrichment/logo-pipeline';
+import { prettifyDomainToName } from '@/lib/enrichment/company-name';
 import {
   recordAnalysisFailure,
   recordAnalysisSuccess,
@@ -194,12 +195,25 @@ async function findScopedProspectOrThrow(
 
 export const adminRouter = router({
   createProspect: projectAdminProcedure
-    .input(z.object({ domain: z.string().min(1) }))
+    .input(
+      z.object({
+        domain: z.string().min(1),
+        companyName: z.string().optional().nullable(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const slug = nanoid(8);
       const cleanDomain = input.domain
         .replace(/^(https?:\/\/)?(www\.)?/, '')
         .split('/')[0]!;
+
+      // Romano's workflow: the domain is the scraping primary key; the
+      // company name is optional in the form. If empty, derive a readable
+      // fallback from the domain ("marfa.nl" → "Marfa") so downstream
+      // surfaces never show a raw domain as the client name.
+      const providedName = input.companyName?.trim();
+      const derivedName = prettifyDomainToName(cleanDomain);
+      const companyName = providedName || derivedName || null;
 
       const prospect = await ctx.db.prospect.create({
         data: {
@@ -207,6 +221,7 @@ export const adminRouter = router({
           slug,
           status: 'DRAFT',
           projectId: ctx.projectId,
+          ...(companyName ? { companyName } : {}),
         },
       });
 
