@@ -12,9 +12,6 @@ import {
   FolderKanban,
   BookOpen,
   FileText,
-  Menu,
-  X,
-  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api } from '@/components/providers';
@@ -26,7 +23,7 @@ import {
 type NavItem = {
   href: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
 };
 
 function dispatchTokenChanged() {
@@ -87,131 +84,95 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-[#F9F9FB] px-4 py-6 sm:px-8 sm:py-10">
-        <div className="mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
-          <aside className="relative overflow-hidden rounded-3xl bg-[#040026] p-8 text-white shadow-2xl shadow-[#040026]/15 sm:p-10">
-            <div className="absolute -right-20 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
-            <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full bg-[#EBCB4B]/15 blur-2xl" />
-
-            <div className="relative z-10 flex h-full flex-col justify-between gap-10">
-              <div>
-                <div className="inline-flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#EBCB4B] text-[#040026]">
-                    <span className="text-xs font-black tracking-tight">K</span>
-                  </div>
-                  <span className="text-sm font-black tracking-wide">
-                    Qualifai Admin
-                  </span>
-                </div>
-
-                <h1 className="mt-8 text-4xl font-black leading-tight tracking-tight sm:text-5xl">
-                  Sales Intelligence Control Center
-                </h1>
-                <p className="mt-4 max-w-md text-sm font-medium text-white/80 sm:text-base">
-                  Zelfde engine, account-gebonden toegang. Je ziet alleen
-                  bedrijven en use cases binnen jouw login-scope.
-                </p>
+      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center px-6 py-10">
+        <div className="w-full max-w-sm space-y-10">
+          <div className="text-center space-y-5">
+            <div className="inline-flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[var(--color-ink)] shadow-sm">
+                <span className="font-['Sora'] text-xs font-bold tracking-tight text-[var(--color-gold-hi)]">
+                  K
+                </span>
               </div>
-
-              <div className="relative z-10 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                <div className="flex items-start gap-3">
-                  <ShieldCheck className="mt-0.5 h-5 w-5 text-[#EBCB4B]" />
-                  <div>
-                    <p className="text-sm font-bold">
-                      Scope beveiliging actief
-                    </p>
-                    <p className="mt-1 text-xs text-white/80">
-                      Projectgrenzen worden server-side afgedwongen op basis van
-                      je token.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <span className="font-['Sora'] text-xl font-bold tracking-tight text-[var(--color-ink)]">
+                Qualifai
+              </span>
             </div>
-          </aside>
 
-          <section className="flex items-center justify-center rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/60 sm:p-10">
-            <div className="w-full max-w-sm space-y-7">
-              <div className="text-center">
-                <h2 className="text-2xl font-black tracking-tight text-[#040026]">
-                  Admin Login
-                </h2>
-                <p className="mt-2 text-sm font-medium text-slate-500">
-                  Gebruik je account-token om in te loggen
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {[
-                  {
-                    label: 'Klarifai',
-                    slug: 'klarifai',
-                    initials: 'KL',
-                    token: process.env.NEXT_PUBLIC_ADMIN_SECRET,
-                  },
-                  {
-                    label: "Atlantis (Europe's Gate)",
-                    slug: 'europes-gate',
-                    initials: 'AT',
-                    token: process.env.NEXT_PUBLIC_ATLANTIS_ADMIN_SECRET,
-                  },
-                ]
-                  .filter((a) => a.token)
-                  .map((account) => (
-                    <button
-                      key={account.slug}
-                      onClick={async () => {
-                        if (isVerifying || !account.token) return;
-                        setIsVerifying(true);
-                        try {
-                          const isValid = await verifyAdminToken(account.token);
-                          if (!isValid) {
-                            setLoginError(
-                              `Token ongeldig voor ${account.label}.`,
-                            );
-                            return;
-                          }
-                          localStorage.setItem(
-                            ADMIN_TOKEN_STORAGE_KEY,
-                            account.token,
-                          );
-                          setLoginError(null);
-                          dispatchTokenChanged();
-                        } catch {
-                          setLoginError(
-                            'Kon token niet verifiëren. Probeer opnieuw.',
-                          );
-                        } finally {
-                          setIsVerifying(false);
-                        }
-                      }}
-                      disabled={isVerifying}
-                      className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-all hover:border-[#040026]/30 hover:bg-white hover:shadow-md disabled:opacity-50"
-                    >
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#040026] shadow-sm">
-                        <span className="text-xs font-black text-[#EBCB4B]">
-                          {account.initials}
-                        </span>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-[#040026]">
-                          {account.label}
-                        </p>
-                        <p className="text-[10px] font-bold text-slate-400">
-                          {account.slug}
-                        </p>
-                      </div>
-                      <span className="text-xs font-bold text-slate-300">
-                        →
-                      </span>
-                    </button>
-                  ))}
-              </div>
-              {loginError ? (
-                <p className="text-xs font-bold text-red-500">{loginError}</p>
-              ) : null}
+            <div>
+              <p className="admin-eyebrow">Admin login</p>
+              <p className="mt-2 text-[13px] font-normal text-[var(--color-muted-dark)]">
+                Gebruik je account-token om in te loggen.
+              </p>
             </div>
-          </section>
+          </div>
+
+          <div className="space-y-2.5">
+            {[
+              {
+                label: 'Klarifai',
+                slug: 'klarifai',
+                initials: 'KL',
+                token: process.env.NEXT_PUBLIC_ADMIN_SECRET,
+              },
+              {
+                label: "Atlantis · Europe's Gate",
+                slug: 'europes-gate',
+                initials: 'AT',
+                token: process.env.NEXT_PUBLIC_ATLANTIS_ADMIN_SECRET,
+              },
+            ]
+              .filter((a) => a.token)
+              .map((account) => (
+                <button
+                  key={account.slug}
+                  onClick={async () => {
+                    if (isVerifying || !account.token) return;
+                    setIsVerifying(true);
+                    try {
+                      const isValid = await verifyAdminToken(account.token);
+                      if (!isValid) {
+                        setLoginError(`Token ongeldig voor ${account.label}.`);
+                        return;
+                      }
+                      localStorage.setItem(
+                        ADMIN_TOKEN_STORAGE_KEY,
+                        account.token,
+                      );
+                      setLoginError(null);
+                      dispatchTokenChanged();
+                    } catch {
+                      setLoginError(
+                        'Kon token niet verifiëren. Probeer opnieuw.',
+                      );
+                    } finally {
+                      setIsVerifying(false);
+                    }
+                  }}
+                  disabled={isVerifying}
+                  className="flex w-full items-center gap-3.5 rounded-md border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-4 py-3.5 text-left transition-colors hover:border-[var(--color-ink)] disabled:opacity-50"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--color-ink)]">
+                    <span className="font-['Sora'] text-[10px] font-bold text-[var(--color-gold-hi)]">
+                      {account.initials}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-semibold text-[var(--color-ink)]">
+                      {account.label}
+                    </p>
+                    <p className="mt-0.5 font-mono text-[10px] tracking-[0.08em] text-[var(--color-muted)]">
+                      {account.slug}
+                    </p>
+                  </div>
+                  <span className="text-[var(--color-muted)] text-xs">→</span>
+                </button>
+              ))}
+          </div>
+          {loginError ? (
+            <p className="text-center font-mono text-[11px] text-[var(--color-brand-danger)]">
+              {loginError}
+            </p>
+          ) : null}
         </div>
       </div>
     );
@@ -228,7 +189,6 @@ function AdminShell({
   onLogout: () => void;
 }) {
   const pathname = usePathname();
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const projectsQuery = api.projects.list.useQuery(undefined, {
     staleTime: 60_000,
@@ -259,131 +219,104 @@ function AdminShell({
 
   const accountLabel = activeProject?.name ?? 'Account';
 
-  const NavLink = ({ item }: { item: NavItem }) => {
+  const RailItem = ({ item }: { item: NavItem }) => {
     const isActive =
       pathname === item.href ||
       (item.href !== '/admin' && pathname.startsWith(item.href));
     return (
       <Link
         href={item.href}
+        title={item.label}
+        aria-label={item.label}
         className={cn(
-          'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-all',
+          'group relative flex h-9 w-9 items-center justify-center rounded-md transition-colors',
           isActive
-            ? 'bg-[#040026] text-white'
-            : 'text-slate-500 hover:bg-slate-200/50 hover:text-[#040026]',
+            ? 'text-[var(--color-ink)]'
+            : 'text-[var(--color-muted)] hover:bg-[rgba(10,10,46,0.06)] hover:text-[var(--color-ink)]',
         )}
       >
-        <item.icon
-          className={cn(
-            'h-4 w-4 transition-colors',
-            isActive
-              ? 'text-[#EBCB4B]'
-              : 'text-slate-400 group-hover:text-[#040026]',
-          )}
-        />
-        {item.label}
+        {isActive && (
+          <span
+            aria-hidden="true"
+            className="absolute -left-[calc(theme(spacing.4)/2+3px)] top-2 bottom-2 w-[2px] rounded-full bg-[var(--color-gold)]"
+            style={{ left: '-9px' }}
+          />
+        )}
+        <item.icon className="h-[16px] w-[16px]" strokeWidth={1.75} />
       </Link>
     );
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F9FB] flex">
-      <aside className="sticky top-0 hidden h-screen w-72 flex-col border-r border-[#E9ECEF] bg-[#F8F9FA] lg:flex">
-        <div className="flex items-center justify-between p-8 pb-4">
-          <Link href="/admin" className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#040026] shadow-lg">
-              <span className="text-xs font-bold tracking-tighter text-[#EBCB4B]">
-                K
-              </span>
-            </div>
-            <span className="text-xl font-black tracking-tight text-[#040026]">
-              Qualifai
-            </span>
-          </Link>
-        </div>
+    <div className="flex min-h-screen bg-[var(--color-background)]">
+      <aside className="sticky top-0 hidden h-screen w-[58px] flex-shrink-0 flex-col items-center border-r border-[var(--color-border-strong)] bg-[var(--color-surface-2)] py-5 lg:flex">
+        {/* Brand */}
+        <Link
+          href="/admin"
+          aria-label="Qualifai"
+          className="mb-5 flex h-8 w-8 items-center justify-center rounded-[8px] bg-[var(--color-ink)] shadow-sm"
+        >
+          <span className="font-['Sora'] text-[13px] font-bold tracking-tight text-[var(--color-gold-hi)]">
+            K
+          </span>
+        </Link>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-8">
+        {/* Nav icons */}
+        <nav className="flex flex-col items-center gap-1">
           {navItems.map((item) => (
-            <NavLink key={item.href} item={item} />
+            <RailItem key={item.href} item={item} />
           ))}
         </nav>
 
-        <div className="border-t border-slate-100 p-6">
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#040026] shadow-sm">
-              <span className="text-[10px] font-bold text-[#EBCB4B]">RA</span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-[#040026]">
-                Romano
-              </p>
-              <p className="truncate text-[10px] font-bold text-slate-400">
-                {accountLabel}
-              </p>
-            </div>
-            <button
-              onClick={onLogout}
-              className="text-slate-300 transition-colors hover:text-red-500"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+        {/* Footer */}
+        <div className="mt-auto flex flex-col items-center gap-2">
+          <button
+            onClick={onLogout}
+            title={`Uitloggen · ${accountLabel}`}
+            aria-label="Uitloggen"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-muted)] transition-colors hover:bg-[rgba(10,10,46,0.06)] hover:text-[var(--color-brand-danger)]"
+          >
+            <LogOut className="h-[14px] w-[14px]" strokeWidth={1.75} />
+          </button>
+          <div
+            title={`Romano · ${accountLabel}`}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-ink)]"
+          >
+            <span className="font-['Sora'] text-[10px] font-bold text-[var(--color-gold-hi)]">
+              RK
+            </span>
           </div>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-20 items-center justify-between border-b border-slate-200 bg-white px-6 lg:h-0 lg:border-none lg:px-0">
-          <div className="flex items-center gap-3 lg:hidden">
-            <button
-              onClick={() => setMobileNavOpen(true)}
-              className="rounded-xl bg-slate-50 p-2 text-[#040026]"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <span className="font-black text-[#040026]">Qualifai</span>
+        {/* Mobile header — kept for <lg. Desktop has no topbar. */}
+        <header className="flex h-14 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-background)] px-5 lg:hidden">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--color-ink)]">
+              <span className="font-['Sora'] text-[11px] font-bold text-[var(--color-gold-hi)]">
+                K
+              </span>
+            </div>
+            <span className="font-['Sora'] text-[15px] font-bold tracking-tight">
+              Qualifai
+            </span>
           </div>
-          <div className="pointer-events-none hidden w-full items-center justify-between px-12 pt-8 opacity-0 lg:flex" />
+          <button
+            onClick={onLogout}
+            aria-label="Uitloggen"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-muted)] hover:text-[var(--color-ink)]"
+          >
+            <LogOut className="h-4 w-4" strokeWidth={1.75} />
+          </button>
         </header>
 
-        <main className="flex-1 overflow-x-hidden pt-10 lg:pt-0">
-          <div className="mx-auto max-w-7xl px-8 py-16 lg:px-20 lg:py-24">
+        <main className="flex-1 overflow-x-hidden">
+          <div className="mx-auto max-w-7xl px-6 py-10 lg:px-10 lg:py-14">
             {children}
           </div>
         </main>
       </div>
-
-      {mobileNavOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="fixed inset-0 bg-[#040026]/40 backdrop-blur-sm"
-            onClick={() => setMobileNavOpen(false)}
-          />
-          <aside className="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl">
-            <div className="flex items-center justify-between p-8">
-              <span className="font-black text-[#040026]">Qualifai</span>
-              <button
-                onClick={() => setMobileNavOpen(false)}
-                className="p-2 text-slate-400"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <nav className="space-y-1 p-4">
-              {navItems.map((item) => (
-                <NavLink key={item.href} item={item} />
-              ))}
-            </nav>
-            <div className="p-4 pt-2">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
-                <p className="text-xs font-bold text-[#040026]">Romano</p>
-                <p className="text-[10px] font-bold text-slate-400">
-                  {accountLabel}
-                </p>
-              </div>
-            </div>
-          </aside>
-        </div>
-      )}
     </div>
   );
 }
