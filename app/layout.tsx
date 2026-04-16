@@ -1,17 +1,19 @@
 import type { Metadata } from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Sora, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import { TRPCProvider } from '@/components/providers';
 
-const inter = Inter({
-  variable: '--font-inter',
+const sora = Sora({
+  variable: '--font-sora',
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
   display: 'swap',
 });
 
-const spaceGrotesk = Space_Grotesk({
-  variable: '--font-space',
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: '--font-plex-mono',
   subsets: ['latin'],
+  weight: ['400', '500', '600'],
   display: 'swap',
 });
 
@@ -44,7 +46,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased min-h-screen bg-[#FCFCFD] text-[#040026] relative`}
+        className={`${sora.variable} ${ibmPlexMono.variable} font-sans antialiased min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)] relative`}
       >
         <TRPCProvider>{children}</TRPCProvider>
       </body>
