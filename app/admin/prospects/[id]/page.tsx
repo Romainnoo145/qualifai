@@ -1,47 +1,30 @@
 'use client';
 
 import type { Prisma } from '@prisma/client';
-import { api } from '@/components/providers';
-import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import {
-  Globe,
-  MapPin,
-  Users,
-  DollarSign,
-  Check,
-  ExternalLink,
   ArrowLeft,
-  Clock,
-  Phone,
-  Calendar,
-  Linkedin,
-  ShieldAlert,
+  Copy,
+  ArrowRight,
+  RefreshCw,
+  Play,
+  PenLine,
+  Send,
+  ExternalLink,
+  Check,
 } from 'lucide-react';
-import { useState, useSyncExternalStore } from 'react';
-import { cn } from '@/lib/utils';
-import { PipelineChip } from '@/components/features/prospects/pipeline-chip';
-import { computePipelineStage } from '@/lib/pipeline-stage';
-import { EvidenceSection } from '@/components/features/prospects/evidence-section';
+import { api } from '@/components/providers';
 import { PageLoader } from '@/components/ui/page-loader';
-import { SourceSetSection } from '@/components/features/prospects/source-set-section';
-import { AnalysisSection } from '@/components/features/prospects/analysis-section';
-import { OutreachPreviewSection } from '@/components/features/prospects/outreach-preview-section';
-import { ResultsSection } from '@/components/features/prospects/results-section';
-import { ContactsSection } from '@/components/features/prospects/contacts-section';
-import { QualityChip } from '@/components/features/prospects/quality-chip';
-import { IntentSignalsSection } from '@/components/features/prospects/intent-signals-section';
+import { cn } from '@/lib/utils';
 import { buildDiscoverPath } from '@/lib/prospect-url';
-import { deepAnalysisStatus } from '@/lib/deep-analysis';
-import { ProspectLogo } from '@/components/features/prospects/prospect-logo';
-import { ProspectActionsPanel } from '@/components/features/prospects/prospect-actions-panel';
-import { ProspectLastRunStatus } from '@/components/features/prospects/prospect-last-run-status';
-import { ProspectEnrichmentBadge } from '@/components/features/prospects/prospect-enrichment-badge';
 
-// ---------------------------------------------------------------------------
-// Typed helper for ResearchRun rows returned by api.research.listRuns
-// Mirrors the include shape of the listRuns query exactly to replace TS2589 as any casts
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────
+// Prospect Detail — Editorial layout (Fase A Step 3)
+// Spec: docs/superpowers/specs/2026-04-16-admin-prospect-detail-redesign.md
+// Handoff: .planning/handoffs/fase-a-admin-foundation-prospect-detail.md
+// ─────────────────────────────────────────────────────────────────────
 
 type ResearchRunRow = Prisma.ResearchRunGetPayload<{
   include: {
@@ -60,528 +43,857 @@ type ResearchRunRow = Prisma.ResearchRunGetPayload<{
   };
 }>;
 
-// ---------------------------------------------------------------------------
-// Gate type badge helper
-// ---------------------------------------------------------------------------
+type EventType =
+  | 'ENRICH'
+  | 'QUALITY'
+  | 'RUN'
+  | 'QUOTE'
+  | 'OUTREACH'
+  | 'EVIDENCE';
 
-function gateTypeBadgeClass(gateType: string): string {
-  if (gateType === 'pain') {
-    return 'admin-state-pill admin-state-warning';
+type ActivityEvent = {
+  id: string;
+  type: EventType;
+  occurredAt: Date;
+  title: string;
+  description: React.ReactNode;
+};
+
+const TAG_CLASS: Record<EventType, string> = {
+  ENRICH:
+    'bg-[var(--color-tag-enrich-bg)] text-[var(--color-tag-enrich-text)] border-[var(--color-tag-enrich-border)]',
+  QUALITY:
+    'bg-[var(--color-tag-quality-bg)] text-[var(--color-tag-quality-text)] border-[var(--color-tag-quality-border)]',
+  RUN: 'bg-[var(--color-tag-run-bg)] text-[var(--color-tag-run-text)] border-[var(--color-tag-run-border)]',
+  QUOTE:
+    'bg-[var(--color-surface-2)] text-[var(--color-foreground)] border-[var(--color-border-strong)]',
+  OUTREACH:
+    'bg-[var(--color-tag-outreach-bg)] text-[var(--color-tag-outreach-text)] border-[var(--color-tag-outreach-border)]',
+  EVIDENCE:
+    'bg-[var(--color-tag-evidence-bg)] text-[var(--color-tag-evidence-text)] border-[var(--color-tag-evidence-border)]',
+};
+
+const DATE_TZ: Intl.DateTimeFormatOptions = {
+  day: '2-digit',
+  month: 'short',
+};
+
+const TIME_TZ: Intl.DateTimeFormatOptions = {
+  hour: '2-digit',
+  minute: '2-digit',
+};
+
+// useSyncExternalStore subscription stub — the snapshot (`Date.now`) is
+// captured once at mount; we don't need to push updates.
+function subscribeNow(): () => void {
+  return () => {};
+}
+
+function formatNumber(n: number | null | undefined): string {
+  if (n == null) return '—';
+  return new Intl.NumberFormat('nl-NL').format(n);
+}
+
+function formatDuration(ms: number | null | undefined): string {
+  if (!ms) return '—';
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${m}m ${rem.toString().padStart(2, '0')}s`;
+}
+
+// Derive activity events from existing queries — full unified feed
+// will move to admin.getProspectActivity in a later step.
+function buildActivityFromRuns(
+  runs: ResearchRunRow[] | undefined,
+  prospect: ProspectShape,
+): ActivityEvent[] {
+  const events: ActivityEvent[] = [];
+
+  if (prospect.lastEnrichedAt) {
+    events.push({
+      id: 'enrich-last',
+      type: 'ENRICH',
+      occurredAt: new Date(prospect.lastEnrichedAt),
+      title: 'Enrichment voltooid',
+      description: (
+        <>
+          Firmographics verrijkt.
+          {prospect.industry ? (
+            <>
+              {' '}
+              Industry <b>{prospect.industry}</b>.
+            </>
+          ) : null}
+          {prospect.employeeCount ? (
+            <>
+              {' '}
+              <b>{prospect.employeeCount}</b> medewerkers.
+            </>
+          ) : null}
+        </>
+      ),
+    });
   }
-  return 'admin-state-pill admin-state-danger';
+
+  (runs ?? []).forEach((run) => {
+    const isDone = run.status === 'COMPLETED';
+    const ended = run.completedAt ?? run.createdAt;
+    const dur =
+      run.completedAt && run.createdAt
+        ? new Date(run.completedAt).getTime() -
+          new Date(run.createdAt).getTime()
+        : null;
+
+    events.push({
+      id: `run-${run.id}`,
+      type: 'RUN',
+      occurredAt: new Date(ended),
+      title: isDone ? 'Research run voltooid' : `Research run · ${run.status}`,
+      description: (
+        <>
+          {run._count.evidenceItems > 0 ? (
+            <>
+              <b>{run._count.evidenceItems}</b> evidence items ·{' '}
+            </>
+          ) : null}
+          {run._count.workflowHypotheses > 0 ? (
+            <>
+              <b>{run._count.workflowHypotheses}</b> hypotheses ·{' '}
+            </>
+          ) : null}
+          {dur ? (
+            <>
+              duur <span className="mono">{formatDuration(dur)}</span>
+            </>
+          ) : null}
+        </>
+      ),
+    });
+
+    if (run.qualityApproved === true) {
+      const summaryText =
+        typeof run.summary === 'string'
+          ? run.summary
+          : run.summary && typeof run.summary === 'object'
+            ? JSON.stringify(run.summary).slice(0, 160)
+            : null;
+      events.push({
+        id: `quality-${run.id}`,
+        type: 'QUALITY',
+        occurredAt: new Date(run.qualityReviewedAt ?? ended),
+        title: 'Kwaliteit goedgekeurd',
+        description: (
+          <>
+            Quality gate gepasseerd op <b>{run._count.evidenceItems}</b>{' '}
+            evidence items.
+            {summaryText ? (
+              <>
+                {' '}
+                <span className="italic text-[var(--color-muted-dark)]">
+                  {summaryText.slice(0, 140)}
+                  {summaryText.length > 140 ? '…' : ''}
+                </span>
+              </>
+            ) : null}
+          </>
+        ),
+      });
+    }
+  });
+
+  return events.sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
 }
 
-// ---------------------------------------------------------------------------
-// Debug mode — toggle via browser console:
-//   localStorage.setItem('qualifai-debug', 'true')  → show debug sections
-//   localStorage.removeItem('qualifai-debug')        → hide debug sections
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────
+// Inline sub-components
+// ─────────────────────────────────────────────────────────────────────
 
-function subscribeDebugMode(onStoreChange: () => void) {
-  if (typeof window === 'undefined') return () => {};
-  const onStorage = (e: StorageEvent) => {
-    if (e.key === 'qualifai-debug') onStoreChange();
-  };
-  window.addEventListener('storage', onStorage);
-  return () => window.removeEventListener('storage', onStorage);
+type ProspectShape = Record<string, unknown> & {
+  companyName: string | null;
+  domain: string | null;
+  industry: string | null;
+  subIndustry: string | null;
+  city: string | null;
+  country: string | null;
+  employeeCount: number | null;
+  employeeRange: string | null;
+  linkedinUrl: string | null;
+  foundedYear: number | null;
+  logoUrl: string | null;
+  description: string | null;
+  status: string | null;
+  slug: string;
+  readableSlug: string | null;
+  lastEnrichedAt: Date | null;
+  contacts?: Array<{
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    jobTitle: string | null;
+    primaryEmail: string | null;
+  }>;
+};
+
+function Eyebrow({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <span className={cn('admin-eyebrow', className)}>{children}</span>;
 }
 
-function getDebugModeSnapshot(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem('qualifai-debug') === 'true';
-}
-
-function useDebugMode(): boolean {
-  return useSyncExternalStore(
-    subscribeDebugMode,
-    getDebugModeSnapshot,
-    () => false,
+function HeroName({ name }: { name: string }) {
+  return (
+    <h1 className="font-['Sora'] text-[clamp(56px,7vw,104px)] font-bold leading-[0.95] tracking-[-0.035em] text-[var(--color-ink)]">
+      {name}
+      <span className="text-[var(--color-gold-hi)]">.</span>
+    </h1>
   );
 }
 
-const BASE_TABS = [
-  { id: 'evidence', label: 'Evidence' },
-  { id: 'intent-signals', label: 'Intent Signals' },
-  { id: 'analysis', label: 'Analysis' },
-  { id: 'outreach-preview', label: 'Outreach Preview' },
-  { id: 'results', label: 'Results' },
-] as const;
+function HeroBtn({
+  children,
+  variant = 'paper',
+  onClick,
+  title,
+}: {
+  children: React.ReactNode;
+  variant?: 'paper' | 'ink' | 'gold';
+  onClick?: () => void;
+  title?: string;
+}) {
+  const base =
+    'inline-flex items-center gap-2 rounded-[6px] border px-4 py-2.5 text-[13px] font-medium leading-none transition-colors cursor-pointer';
+  const variants = {
+    paper:
+      'bg-[var(--color-surface)] border-[var(--color-border-strong)] text-[var(--color-ink)] hover:border-[var(--color-ink)]',
+    ink: 'bg-[var(--color-ink)] border-[var(--color-ink)] text-[var(--color-background)] hover:bg-[#1c1c44]',
+    gold: 'bg-[var(--color-gold)] border-[var(--color-gold)] text-[var(--color-ink)] hover:bg-[var(--color-brand-yellow-dark)] font-semibold',
+  };
+  return (
+    <button
+      type="button"
+      className={cn(base, variants[variant])}
+      onClick={onClick}
+      title={title}
+    >
+      {children}
+    </button>
+  );
+}
 
-type TabId = (typeof BASE_TABS)[number]['id'];
+function MegaStat({
+  label,
+  value,
+  sub,
+  goldDot,
+}: {
+  label: string;
+  value: React.ReactNode;
+  sub: React.ReactNode;
+  goldDot?: boolean;
+}) {
+  return (
+    <div className="px-7 py-6 border-r border-[var(--color-border)] last:border-r-0">
+      <Eyebrow>{label}</Eyebrow>
+      <div className="mt-3 font-['Sora'] text-[clamp(36px,3.4vw,52px)] font-bold leading-none tracking-[-0.035em] text-[var(--color-ink)]">
+        {value}
+        {goldDot ? (
+          <span className="text-[var(--color-gold-hi)]">.</span>
+        ) : null}
+      </div>
+      <div className="mt-2 text-[12px] font-normal text-[var(--color-muted)]">
+        {sub}
+      </div>
+    </div>
+  );
+}
+
+function ActionRow({
+  icon: Icon,
+  label,
+  kbd,
+  variant = 'paper',
+  onClick,
+}: {
+  icon: typeof RefreshCw;
+  label: string;
+  kbd?: string;
+  variant?: 'paper' | 'gold';
+  onClick?: () => void;
+}) {
+  const base =
+    'flex w-full items-center justify-between gap-2 px-3 py-2.5 rounded-[6px] border text-[13px] font-medium transition-colors cursor-pointer';
+  const variants = {
+    paper:
+      'bg-[var(--color-surface)] border-[var(--color-border-strong)] text-[var(--color-ink)] hover:border-[var(--color-ink)]',
+    gold: 'bg-[var(--color-gold)] border-[var(--color-gold)] text-[var(--color-ink)] hover:bg-[var(--color-brand-yellow-dark)] font-semibold',
+  };
+  return (
+    <button
+      type="button"
+      className={cn(base, variants[variant])}
+      onClick={onClick}
+    >
+      <span className="inline-flex items-center gap-2.5">
+        <Icon
+          className="h-[14px] w-[14px] text-[var(--color-muted)]"
+          strokeWidth={1.75}
+          style={variant === 'gold' ? { color: 'var(--color-ink)' } : undefined}
+        />
+        {label}
+      </span>
+      {kbd ? (
+        <span className="font-mono text-[10px] font-medium text-[var(--color-muted)] px-1.5 py-0.5 rounded-[3px] border border-[var(--color-border-strong)] bg-[var(--color-background)]">
+          {kbd}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function ContactRow({
+  initials,
+  name,
+  role,
+  isPrimary,
+  accent,
+}: {
+  initials: string;
+  name: string;
+  role: string;
+  isPrimary?: boolean;
+  accent?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-2.5 py-2 rounded-[6px] hover:bg-[var(--color-surface-hover)] transition-colors">
+      <div
+        className="flex h-7 w-7 items-center justify-center rounded-full"
+        style={{
+          background: accent ?? 'var(--color-ink)',
+          color: accent ? '#ffffff' : 'var(--color-gold-hi)',
+        }}
+      >
+        <span className="font-['Sora'] text-[10px] font-bold">{initials}</span>
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[12px] font-semibold text-[var(--color-ink)] truncate">
+          {name}
+        </div>
+        <div className="text-[10px] text-[var(--color-muted)] truncate">
+          {role}
+        </div>
+      </div>
+      {isPrimary ? (
+        <span className="font-mono text-[9px] text-[var(--color-tag-quality-text)] tracking-wider">
+          primair
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function ActivityRow({ event }: { event: ActivityEvent }) {
+  const date = event.occurredAt.toLocaleDateString('nl-NL', DATE_TZ);
+  const time = event.occurredAt.toLocaleTimeString('nl-NL', TIME_TZ);
+  return (
+    <article className="grid grid-cols-[64px_1fr_auto] gap-5 py-4 border-b border-[var(--color-border)] last:border-b-0">
+      <div className="font-mono text-[10px] font-medium tracking-[0.04em] text-[var(--color-muted)] pt-0.5">
+        <span className="block font-semibold text-[var(--color-gold-hi)]">
+          {date}
+        </span>
+        {time}
+      </div>
+      <div>
+        <div className="text-[14px] font-semibold text-[var(--color-ink)] leading-snug">
+          {event.title}
+        </div>
+        <div className="mt-1 text-[13px] font-light text-[var(--color-muted-dark)] leading-relaxed max-w-[620px]">
+          {event.description}
+        </div>
+      </div>
+      <span
+        className={cn(
+          'self-start inline-flex items-center h-[20px] px-2 rounded-[4px] border font-mono text-[9px] font-medium tracking-[0.14em] uppercase whitespace-nowrap',
+          TAG_CLASS[event.type],
+        )}
+      >
+        {event.type}
+      </span>
+    </article>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Main component
+// ─────────────────────────────────────────────────────────────────────
+
+const FEED_TABS: { id: 'ALL' | EventType; label: string }[] = [
+  { id: 'ALL', label: 'Alles' },
+  { id: 'EVIDENCE', label: 'Evidence' },
+  { id: 'RUN', label: 'Runs' },
+  { id: 'OUTREACH', label: 'Outreach' },
+  { id: 'QUOTE', label: 'Offertes' },
+];
 
 export default function ProspectDetail() {
   const params = useParams();
   const id = params.id as string;
+
+  const prospectQuery = api.admin.getProspect.useQuery({ id });
+  const runsQuery = api.research.listRuns.useQuery({ prospectId: id });
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>('evidence');
-  const debugMode = useDebugMode();
+  const [feedFilter, setFeedFilter] = useState<'ALL' | EventType>('ALL');
 
-  const prospect = api.admin.getProspect.useQuery({ id });
-  const researchRuns = api.research.listRuns.useQuery({ prospectId: id });
-  const latestRunId = researchRuns.data?.[0]?.id ?? null;
-  const overrideAudits = api.research.listOverrideAudits.useQuery(
-    { runId: latestRunId! },
-    { enabled: !!latestRunId },
+  // TODO: tRPC v11 inference — getProspect return type too deep for TS to infer.
+  // Cast through unknown to avoid TS2589 excessively deep instantiation.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const p = prospectQuery.data as any as ProspectShape | null;
+  const runs = runsQuery.data as ResearchRunRow[] | undefined;
+  const latestRun = runs?.[0] ?? null;
+
+  const events = useMemo(
+    () => (p ? buildActivityFromRuns(runs, p) : []),
+    [runs, p],
   );
-  const utils = api.useUtils();
 
-  const copyLink = () => {
-    if (!prospect.data) return;
-    // TODO: tRPC v11 inference — getProspect return type too deep; p is typed as any below
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = prospect.data as any;
+  const visibleEvents = useMemo(
+    () =>
+      feedFilter === 'ALL'
+        ? events
+        : events.filter((e) => e.type === feedFilter),
+    [events, feedFilter],
+  );
+
+  // useSyncExternalStore reads system clock at mount without triggering
+  // react-hooks/purity; server snapshot keeps SSR output stable.
+  const now = useSyncExternalStore(
+    subscribeNow,
+    () => Date.now(),
+    () => 0,
+  );
+  const runLabel = useMemo(() => {
+    if (!latestRun || now === 0) return '—';
+    const runDate = new Date(
+      latestRun.completedAt ?? latestRun.createdAt,
+    ).getTime();
+    const dayDelta = Math.ceil((runDate - now) / (1000 * 60 * 60 * 24));
+    return new Intl.RelativeTimeFormat('nl-NL', { numeric: 'auto' }).format(
+      dayDelta,
+      'day',
+    );
+  }, [latestRun, now]);
+
+  const onCopyLink = () => {
+    if (!p) return;
     const url = `${window.location.origin}${buildDiscoverPath({
-      slug: data.slug,
-      readableSlug: data.readableSlug ?? null,
-      companyName: data.companyName ?? null,
-      domain: data.domain ?? null,
+      slug: p.slug,
+      readableSlug: p.readableSlug ?? null,
+      companyName: p.companyName ?? null,
+      domain: p.domain ?? null,
     })}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (prospect.isLoading) {
+  if (prospectQuery.isLoading) {
     return (
       <PageLoader
-        label="Loading company"
-        description="Preparing the company workspace."
+        label="Company laden"
+        description="Gegevens en activiteit ophalen."
       />
     );
   }
 
-  if (!prospect.data) {
+  if (!p) {
     return (
-      <div className="glass-card p-12 text-center rounded-[2.5rem]">
-        <p className="text-slate-500">Prospect not found</p>
+      <div className="py-24 text-center">
+        <Eyebrow>Not found</Eyebrow>
+        <p className="mt-4 text-[var(--color-muted-dark)]">
+          Deze prospect bestaat niet of is niet zichtbaar voor jouw account.
+        </p>
+        <Link
+          href="/admin/prospects"
+          className="inline-block mt-6 admin-btn-secondary"
+        >
+          Terug naar Companies
+        </Link>
       </div>
     );
   }
 
-  // TODO: tRPC v11 inference — getProspect return type too deep for TS to infer Prospect fields
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const p = prospect.data as any;
-  const enrichmentMeta =
-    p.lushaRawData &&
-    typeof p.lushaRawData === 'object' &&
-    !Array.isArray(p.lushaRawData)
-      ? (p.lushaRawData as Record<string, unknown>)
-      : null;
-  const kvkMeta =
-    enrichmentMeta?.kvk &&
-    typeof enrichmentMeta.kvk === 'object' &&
-    !Array.isArray(enrichmentMeta.kvk)
-      ? (enrichmentMeta.kvk as Record<string, unknown>)
-      : null;
-  const confidenceMeta =
-    enrichmentMeta?.confidence &&
-    typeof enrichmentMeta.confidence === 'object' &&
-    !Array.isArray(enrichmentMeta.confidence)
-      ? (enrichmentMeta.confidence as Record<string, unknown>)
-      : null;
-  const combinedConfidence =
-    typeof confidenceMeta?.combined === 'number'
-      ? Math.round((confidenceMeta.combined as number) * 100)
-      : null;
-  const metaPillClass =
-    'inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3.5 py-1.5 text-[12px] font-semibold text-slate-700 shadow-[0_1px_0_0_rgba(15,23,42,0.03)]';
-  // ResearchRunRow mirrors the listRuns query include shape — replaces TS2589 as any casts
-  const runs = researchRuns.data as ResearchRunRow[] | undefined;
-  const latestRun = runs?.[0] ?? null;
-  const latestDeepRun = runs?.find(
-    (run) => deepAnalysisStatus(run) !== 'not_started',
-  );
-  const deepStatus = deepAnalysisStatus(latestDeepRun);
-  const deepStatusLabel =
-    deepStatus === 'completed'
-      ? 'Deep Analysis Done'
-      : deepStatus === 'running'
-        ? 'Deep Analysis Running'
-        : deepStatus === 'failed'
-          ? 'Deep Analysis Failed'
-          : null;
-  const deepStatusClass =
-    deepStatus === 'completed'
-      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-      : deepStatus === 'running'
-        ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
-        : deepStatus === 'failed'
-          ? 'bg-red-50 text-red-700 border-red-200'
-          : null;
-  const deepCompletedLabel =
-    deepStatus === 'completed' && latestDeepRun?.completedAt
-      ? new Date(latestDeepRun.completedAt).toLocaleDateString('nl-NL', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-        })
-      : null;
+  // Quality score isn't a ResearchRun column — approval + evidence count is
+  // the signal surfaced on this page. Score itself comes from evidence items
+  // (aggregated in a future admin.getProspectActivity procedure).
+  const qualityApproved = latestRun?.qualityApproved === true;
+  const evidenceCount = latestRun?._count?.evidenceItems ?? 0;
+
+  const displayName = p.companyName ?? p.domain ?? 'Prospect';
+  const location = [p.city, p.country].filter(Boolean).join(', ') || null;
+  const employees =
+    p.employeeCount != null
+      ? `${formatNumber(p.employeeCount)} medewerkers`
+      : p.employeeRange
+        ? `${p.employeeRange} medewerkers`
+        : null;
 
   return (
-    <div className="space-y-8">
-      {/* Back row */}
-      <div className="flex items-center gap-3">
+    <div className="space-y-0 pb-20">
+      {/* Back line */}
+      <div className="flex items-center gap-2 pb-3.5 mb-8 border-b border-[var(--color-border)]">
         <Link
           href="/admin/prospects"
-          className="ui-tap p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-[#040026] hover:bg-slate-100 border border-slate-100 transition-all"
+          className="inline-flex items-center gap-1.5 px-2 py-1 -mx-2 rounded-[5px] font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.75} />
+          Companies
         </Link>
-        <PipelineChip
-          stage={computePipelineStage({
-            status: p.status,
-            researchRun: runs?.[0]
-              ? {
-                  status: runs[0].status,
-                  qualityApproved: runs[0].qualityApproved ?? null,
-                }
-              : null,
-            hasCompletedResearch:
-              runs?.some((run) => run.status === 'COMPLETED') ?? false,
-            hasActiveResearch:
-              runs?.some((run) =>
-                [
-                  'PENDING',
-                  'CRAWLING',
-                  'EXTRACTING',
-                  'HYPOTHESIS',
-                  'BRIEFING',
-                ].includes(run.status),
-              ) ?? false,
-            hasSession: (p._count?.sessions ?? 0) > 0,
-            hasBookedSession:
-              p.sessions?.some((s: any) => s.callBooked) ?? false,
-          })}
-        />
-        {runs?.[0] && (
-          <QualityChip
-            runId={runs[0].id}
-            evidenceCount={runs[0]._count.evidenceItems}
-            hypothesisCount={runs[0]._count.workflowHypotheses}
-            qualityApproved={runs[0].qualityApproved ?? null}
-            qualityReviewedAt={runs[0].qualityReviewedAt ?? null}
-            runStatus={runs[0].status}
-            summary={runs[0].summary}
-          />
-        )}
+        <span className="font-mono text-[10px] font-medium tracking-[0.14em] text-[var(--color-muted)]">
+          /
+        </span>
+        <span className="font-mono text-[10px] font-bold tracking-[0.14em] uppercase text-[var(--color-ink)]">
+          {displayName}
+        </span>
       </div>
 
       {/* Hero */}
-      <div className="relative flex flex-col gap-4 py-2">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-center gap-5">
-            <ProspectLogo
-              prospect={{
-                logoUrl: p.logoUrl ?? null,
-                domain: p.domain ?? null,
-                companyName: p.companyName ?? null,
-              }}
-              size={64}
-              shape="circle"
-              className="border border-slate-100 shadow-inner"
-            />
-            <div className="flex flex-col gap-1.5">
-              <h1 className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-[#040026] to-[#040026]/60 tracking-tighter pb-1">
-                {p.companyName ?? p.domain}
-              </h1>
-              <ProspectEnrichmentBadge
-                companyName={p.companyName ?? null}
-                industry={p.industry ?? null}
-                description={p.description ?? null}
+      <header className="grid grid-cols-[1fr_auto] gap-10 items-end pb-7 mb-9 border-b border-[var(--color-ink)]">
+        <div>
+          <div className="flex flex-wrap items-center gap-6 font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--color-muted)] mb-5">
+            <span className="text-[var(--color-gold)] font-semibold">
+              COMPANY · {p.status ?? 'DRAFT'}
+            </span>
+            {p.industry ? <span>{p.industry.toUpperCase()}</span> : null}
+            {location ? <span>{location.toUpperCase()}</span> : null}
+            {p.foundedYear ? <span>EST {p.foundedYear}</span> : null}
+          </div>
+          <HeroName name={displayName} />
+          {p.description ? (
+            <p className="mt-5 max-w-[620px] text-[16px] font-light leading-[1.55] text-[var(--color-muted-dark)]">
+              {p.description}
+            </p>
+          ) : (
+            <p className="mt-5 max-w-[620px] text-[16px] font-light leading-[1.55] text-[var(--color-muted)]">
+              Geen beschrijving beschikbaar.{' '}
+              <button
+                type="button"
+                className="underline underline-offset-2 decoration-[var(--color-border-strong)] hover:decoration-[var(--color-ink)] text-[var(--color-ink)]"
+              >
+                Voeg er een toe
+              </button>{' '}
+              om deze prospect context te geven in alle briefings en outreach.
+            </p>
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <HeroBtn
+            variant="paper"
+            onClick={onCopyLink}
+            title="Kopieer link naar /discover"
+          >
+            {copied ? (
+              <>
+                <Check className="h-3.5 w-3.5" strokeWidth={1.75} />
+                Gekopieerd
+              </>
+            ) : (
+              <>
+                <Copy className="h-3.5 w-3.5" strokeWidth={1.75} />
+                Kopieer voorstel-link
+              </>
+            )}
+          </HeroBtn>
+          <HeroBtn variant="gold">
+            Start voorstel
+            <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.75} />
+          </HeroBtn>
+        </div>
+      </header>
+
+      {/* Mega-stat bar */}
+      <section className="grid grid-cols-[repeat(4,minmax(0,1fr))] border-b border-[var(--color-ink)] mb-10">
+        <MegaStat
+          label="Stage"
+          value={
+            <span className="inline-flex items-baseline gap-2">
+              {qualityApproved ? 'Ready' : (p.status ?? '—')}
+              {qualityApproved ? (
+                <span className="text-[var(--color-gold-hi)]">.</span>
+              ) : null}
+            </span>
+          }
+          sub={
+            qualityApproved
+              ? 'klaar voor outreach'
+              : latestRun
+                ? `run · ${latestRun.status.toLowerCase()}`
+                : 'nog geen research run'
+          }
+        />
+        <MegaStat
+          label="Kwaliteit"
+          value={qualityApproved ? 'Approved' : latestRun ? 'In review' : '—'}
+          sub={
+            latestRun ? (
+              <>
+                <b className="text-[var(--color-ink)]">{evidenceCount}</b>{' '}
+                evidence items
+              </>
+            ) : (
+              'geen run'
+            )
+          }
+        />
+        <MegaStat
+          label="Laatste run"
+          value={<span className="capitalize">{runLabel}</span>}
+          sub={
+            latestRun
+              ? `${latestRun.status.toLowerCase()} · gemini-2.5-pro`
+              : '—'
+          }
+        />
+        <MegaStat
+          label="Staat"
+          value={latestRun ? (latestRun.error ? 'Error' : 'Gezond') : '—'}
+          sub={
+            latestRun?.error ? (
+              <span className="text-[var(--color-brand-danger)]">
+                {latestRun.error.slice(0, 60)}
+              </span>
+            ) : latestRun ? (
+              '0 errors · enriched recent'
+            ) : (
+              'nog geen data'
+            )
+          }
+        />
+      </section>
+
+      {/* Main grid: facts · activity · actions */}
+      <div className="grid grid-cols-[280px_minmax(0,1fr)_260px] gap-10">
+        {/* Left: facts */}
+        <aside className="space-y-2">
+          <Eyebrow>Feiten</Eyebrow>
+          <dl className="space-y-2 pt-1">
+            {p.domain ? (
+              <FactsRow k="Domein">
+                <a
+                  href={`https://${p.domain}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 border-b border-[var(--color-border-strong)] hover:border-[var(--color-ink)]"
+                >
+                  {p.domain}
+                  <ExternalLink className="h-2.5 w-2.5" strokeWidth={2} />
+                </a>
+              </FactsRow>
+            ) : null}
+            {p.industry ? (
+              <FactsRow k="Industrie">
+                {p.industry}
+                {p.subIndustry ? ` / ${p.subIndustry}` : ''}
+              </FactsRow>
+            ) : null}
+            {location ? <FactsRow k="Locatie">{location}</FactsRow> : null}
+            {employees ? <FactsRow k="Team">{employees}</FactsRow> : null}
+            {p.foundedYear ? (
+              <FactsRow k="Opgericht">{p.foundedYear}</FactsRow>
+            ) : null}
+            {p.linkedinUrl ? (
+              <FactsRow k="LinkedIn">
+                <a
+                  href={p.linkedinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 border-b border-[var(--color-border-strong)] hover:border-[var(--color-ink)]"
+                >
+                  Bekijk
+                  <ExternalLink className="h-2.5 w-2.5" strokeWidth={2} />
+                </a>
+              </FactsRow>
+            ) : null}
+            {p.lastEnrichedAt ? (
+              <FactsRow k="Verrijkt" mono>
+                {new Date(p.lastEnrichedAt).toLocaleDateString('nl-NL')}
+              </FactsRow>
+            ) : null}
+          </dl>
+
+          {/* Dossier quick links — stand-in for sub-routes */}
+          <div className="pt-8">
+            <Eyebrow>Dossier</Eyebrow>
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <DossierLink href={`#`} label="Evidence" count={evidenceCount} />
+              <DossierLink href={`#`} label="Analyse" />
+              <DossierLink href={`#`} label="Outreach" />
+              <DossierLink href={`#`} label="Resultaten" />
+            </div>
+          </div>
+        </aside>
+
+        {/* Center: activity */}
+        <main>
+          <div className="flex items-baseline justify-between pb-3 mb-1 border-b border-[var(--color-border)]">
+            <h2 className="text-[13px] font-semibold text-[var(--color-ink)]">
+              Activity{' '}
+              <span className="font-normal text-[var(--color-muted)]">
+                · {events.length} events
+              </span>
+            </h2>
+            <div className="admin-toggle-group">
+              {FEED_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setFeedFilter(tab.id)}
+                  className={cn(
+                    'admin-toggle-btn admin-toggle-btn-sm',
+                    feedFilter === tab.id && 'admin-toggle-btn-active',
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {visibleEvents.length === 0 ? (
+            <p className="py-12 text-center text-[13px] text-[var(--color-muted)]">
+              Geen events{' '}
+              {feedFilter !== 'ALL' ? `in filter "${feedFilter}"` : 'nog'}.
+            </p>
+          ) : (
+            <div>
+              {visibleEvents.map((event) => (
+                <ActivityRow key={event.id} event={event} />
+              ))}
+            </div>
+          )}
+        </main>
+
+        {/* Right: actions + contacts */}
+        <aside className="space-y-8">
+          <div className="space-y-2.5">
+            <Eyebrow>Acties</Eyebrow>
+            <div className="space-y-1.5 pt-1">
+              <ActionRow icon={RefreshCw} label="Re-enrich" />
+              <ActionRow icon={Play} label="Nieuwe run" kbd="⌘R" />
+              <ActionRow icon={PenLine} label="Genereer analyse" />
+              <ActionRow
+                icon={Send}
+                label="Start outreach"
+                kbd="⌘↵"
+                variant="gold"
               />
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            {combinedConfidence !== null && (
-              <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-100">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Data Confidence
-                </span>
-                <span className="text-sm font-black text-[#040026]">
-                  {combinedConfidence}%
-                </span>
-              </div>
-            )}
-            <button
-              onClick={copyLink}
-              className="ui-tap flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-600 hover:text-[#040026] hover:bg-[#EBCB4B]/20 hover:border-[#D4B43B] shadow-sm border border-slate-200 transition-all w-fit"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3.5 h-3.5" /> Copied
-                </>
-              ) : (
-                <>
-                  <ExternalLink className="w-3.5 h-3.5" /> Share
-                </>
-              )}
-            </button>
+
+          <div className="space-y-2.5">
+            <Eyebrow>Contacts · {p.contacts?.length ?? 0}</Eyebrow>
+            <div className="space-y-0.5 pt-1">
+              {(p.contacts ?? []).slice(0, 5).map((c, i) => {
+                const name = [c.firstName, c.lastName]
+                  .filter(Boolean)
+                  .join(' ');
+                const initials = name
+                  .split(/\s+/)
+                  .map((s) => s[0])
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase();
+                const accents = [
+                  undefined,
+                  '#3d5f82',
+                  '#4a7a52',
+                  '#6e4780',
+                  '#b45a3b',
+                ];
+                return (
+                  <ContactRow
+                    key={c.id}
+                    initials={initials || '??'}
+                    name={name || c.primaryEmail || 'Onbekend'}
+                    role={c.jobTitle ?? '—'}
+                    isPrimary={i === 0}
+                    accent={accents[i % accents.length]}
+                  />
+                );
+              })}
+              {(p.contacts?.length ?? 0) === 0 ? (
+                <p className="text-[12px] text-[var(--color-muted)] px-2.5 py-2">
+                  Nog geen contacts.
+                </p>
+              ) : null}
+            </div>
           </div>
-        </div>
-        {p.description && (
-          <p className="text-[15px] font-medium text-slate-500 max-w-3xl leading-relaxed">
-            {p.description}
-          </p>
-        )}
-      </div>
-
-      {/* Company metadata — bare row, no card */}
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2.5">
-          {p.industry && (
-            <div className={metaPillClass}>
-              <Globe className="w-4 h-4 text-slate-400" />
-              <span>
-                {p.industry}
-                {p.subIndustry ? ` / ${p.subIndustry}` : ''}
-              </span>
-            </div>
-          )}
-          {(p.city ?? p.country) && (
-            <div className={metaPillClass}>
-              <MapPin className="w-4 h-4 text-rose-500" />
-              <span>
-                {[p.city, p.state, p.country].filter(Boolean).join(', ')}
-              </span>
-            </div>
-          )}
-          {(p.employeeRange || p.employeeCount) && (
-            <div className={metaPillClass}>
-              <Users className="w-4 h-4 text-indigo-500" />
-              <span>
-                {p.employeeCount
-                  ? `${p.employeeCount.toLocaleString()} employees`
-                  : `${p.employeeRange} employees`}
-              </span>
-            </div>
-          )}
-          {(p.revenueRange || p.revenueEstimate) && (
-            <div className={metaPillClass}>
-              <DollarSign className="w-4 h-4 text-emerald-500" />
-              <span>{p.revenueEstimate ?? p.revenueRange}</span>
-            </div>
-          )}
-          {p.foundedYear && (
-            <div className={metaPillClass}>
-              <Calendar className="w-4 h-4 text-sky-500" />
-              <span>Founded {p.foundedYear}</span>
-            </div>
-          )}
-          {p.linkedinUrl && (
-            <div className={metaPillClass}>
-              <Linkedin className="w-4 h-4 text-[#0A66C2]" />
-              <a
-                href={p.linkedinUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ui-focus text-[#0A66C2] hover:text-[#004182] font-semibold hover:underline rounded-full"
-              >
-                LinkedIn
-              </a>
-            </div>
-          )}
-          {typeof kvkMeta?.kvkNummer === 'string' && kvkMeta.kvkNummer && (
-            <div className={metaPillClass}>
-              <span className="text-slate-400 text-[10px] font-black tracking-wider uppercase">
-                KvK
-              </span>
-              <span>{kvkMeta.kvkNummer}</span>
-            </div>
-          )}
-          {typeof kvkMeta?.rechtsvorm === 'string' && kvkMeta.rechtsvorm && (
-            <div className={metaPillClass}>
-              <span className="text-slate-400 text-[10px] font-black tracking-wider uppercase">
-                Rechtsvorm
-              </span>
-              <span>{kvkMeta.rechtsvorm}</span>
-            </div>
-          )}
-
-          {(p._count?.sessions ?? 0) > 0 && (
-            <div className={metaPillClass}>
-              <Clock className="w-4 h-4 text-amber-500" />
-              <span>{p._count.sessions} sessions</span>
-            </div>
-          )}
-          {deepStatusLabel && deepStatusClass && (
-            <div
-              className={cn(
-                'inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12px] font-semibold',
-                deepStatusClass,
-              )}
-            >
-              <span>{deepStatusLabel}</span>
-              {deepCompletedLabel && <span>· {deepCompletedLabel}</span>}
-            </div>
-          )}
-          {(p.notificationLogs?.length ?? 0) > 0 && (
-            <div className={metaPillClass}>
-              <Phone className="w-4 h-4 text-teal-500" />
-              <span>{p.notificationLogs.length} notifications</span>
-            </div>
-          )}
-        </div>
-        {p.technologies?.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {p.technologies.map((tech: string) => (
-              <span
-                key={tech}
-                className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600"
-              >
-                {tech}
-              </span>
-            ))}
-          </div>
-        )}
-        {p.internalNotes && (
-          <p className="text-sm text-slate-600">{p.internalNotes}</p>
-        )}
-      </div>
-
-      {/* Phase 61.1 — Laatste run indicator + Acties panel */}
-      <div className="space-y-4">
-        <ProspectLastRunStatus
-          latestRun={
-            latestRun
-              ? {
-                  finishedAt: null,
-                  completedAt: latestRun.completedAt ?? null,
-                  status: latestRun.status,
-                  _count: latestRun._count,
-                }
-              : null
-          }
-          prospect={{
-            lastAnalysisError: (p.lastAnalysisError ?? null) as string | null,
-            lastAnalysisAttemptedAt: (p.lastAnalysisAttemptedAt ??
-              null) as Date | null,
-            lastAnalysisModelUsed: (p.lastAnalysisModelUsed ?? null) as
-              | string
-              | null,
-          }}
-        />
-        <ProspectActionsPanel
-          prospectId={id}
-          onRunComplete={() => {
-            void utils.admin.getProspect.invalidate({ id });
-            void utils.research.listRuns.invalidate({ prospectId: id });
-          }}
-        />
-      </div>
-
-      {/* Contacts */}
-      <ContactsSection
-        prospectId={id}
-        contacts={p.contacts}
-        onContactCreated={() => utils.admin.getProspect.invalidate({ id })}
-      />
-
-      {/* Tab nav */}
-      <nav className="mt-8 mb-6 overflow-x-auto">
-        <div className="admin-toggle-group w-max">
-          {BASE_TABS.filter(
-            (tab) =>
-              tab.id !== 'intent-signals' ||
-              p.project?.projectType === 'ATLANTIS',
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                'ui-tap ui-focus admin-toggle-btn admin-toggle-btn-sm',
-                activeTab === tab.id && 'admin-toggle-btn-active',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      {/* All sections stay mounted, inactive ones hidden via CSS */}
-      <div
-        className={cn(
-          'pt-1 space-y-4',
-          activeTab === 'evidence' ? '' : 'hidden',
-        )}
-      >
-        {debugMode && latestRunId && (
-          <SourceSetSection
-            runId={latestRunId}
-            inputSnapshot={latestRun?.inputSnapshot ?? null}
-            prospectId={id}
-          />
-        )}
-        <EvidenceSection
-          prospectId={id}
-          latestRunId={latestRunId}
-          projectType={p.project?.projectType}
-          signals={p.signals}
-          latestRunSummary={latestRun?.summary}
-          latestRunError={latestRun?.error ?? null}
-          latestRunInputSnapshot={latestRun?.inputSnapshot ?? null}
-        />
-        {(overrideAudits.data?.length ?? 0) > 0 && (
-          <div className="glass-card p-6 space-y-3">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4" /> Override History
-            </h3>
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {(overrideAudits.data as any[]).map(
-              (audit: {
-                id: string;
-                createdAt: Date;
-                gateType: string;
-                reason: string;
-              }) => (
-                <div
-                  key={audit.id}
-                  className="p-3 bg-amber-50/50 border border-amber-100 rounded-xl text-xs space-y-1"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-slate-400">
-                      {new Date(audit.createdAt).toLocaleDateString('nl-NL')}{' '}
-                      {new Date(audit.createdAt).toLocaleTimeString('nl-NL', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                    <span className={gateTypeBadgeClass(audit.gateType)}>
-                      {audit.gateType}
-                    </span>
-                  </div>
-                  <p className="text-slate-600">{audit.reason}</p>
-                </div>
-              ),
-            )}
-          </div>
-        )}
-      </div>
-      {p.project?.projectType === 'ATLANTIS' && (
-        <div
-          className={cn('pt-1', activeTab === 'intent-signals' ? '' : 'hidden')}
-        >
-          <IntentSignalsSection runId={latestRunId} />
-        </div>
-      )}
-      <div className={cn('pt-1', activeTab === 'analysis' ? '' : 'hidden')}>
-        <AnalysisSection
-          prospectId={id}
-          projectType={p.project?.projectType ?? null}
-        />
-      </div>
-      <div
-        className={cn('pt-1', activeTab === 'outreach-preview' ? '' : 'hidden')}
-      >
-        <OutreachPreviewSection
-          prospectId={id}
-          prospect={p}
-          latestRunId={latestRunId}
-        />
-      </div>
-      <div className={cn('pt-1', activeTab === 'results' ? '' : 'hidden')}>
-        <ResultsSection prospectId={id} prospect={p} />
+        </aside>
       </div>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Smaller inline primitives
+// ─────────────────────────────────────────────────────────────────────
+
+function FactsRow({
+  k,
+  children,
+  mono,
+}: {
+  k: string;
+  children: React.ReactNode;
+  mono?: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-[88px_1fr] gap-3 items-baseline">
+      <dt className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+        {k}
+      </dt>
+      <dd
+        className={cn(
+          'text-[12px] font-medium text-[var(--color-ink)] min-w-0',
+          mono && 'font-mono',
+        )}
+      >
+        {children}
+      </dd>
+    </div>
+  );
+}
+
+function DossierLink({
+  href,
+  label,
+  count,
+}: {
+  href: string;
+  label: string;
+  count?: number;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex flex-col gap-1 p-3 rounded-[6px] border border-[var(--color-border-strong)] bg-[var(--color-surface)] transition-colors hover:border-[var(--color-ink)]"
+    >
+      <span className="text-[12px] font-semibold text-[var(--color-ink)]">
+        {label}
+      </span>
+      {count != null ? (
+        <span className="font-mono text-[10px] text-[var(--color-muted)]">
+          {count} items
+        </span>
+      ) : (
+        <span className="font-mono text-[10px] text-[var(--color-muted)]">
+          open →
+        </span>
+      )}
+    </Link>
   );
 }
