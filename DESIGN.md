@@ -233,47 +233,99 @@ No drop shadows on text. No ambient shadows on sections. No glow effects.
 - Arrow button hover: 150ms ease-out scale 1.02 + shadow lift
 - Keyboard nav: same 250ms transition
 
-### 3.2 Admin (`/admin/*`) — Command center
+### 3.2 Admin (`/admin/*`) — Editorial
 
-**Interaction model:** Linear-style sidebar + main content. Keyboard-first, data-dense, information hierarchy over decoration.
+**Direction:** Editorial — ink on warm paper. Approved 2026-04-16 after a round of design exploration (mockups preserved at `~/.gstack/projects/Romainnoo145-qualifai/designs/admin-prospect-detail-mockup/v2-editorial.html`). Distinct from the brochure §3.1 dark surface, shared brand DNA (Sora, navy, gold). No longer the "Linear-adjacent SaaS admin" the original spec described.
+
+**Canvas & surfaces:**
+
+- Page canvas: **paper** `#f5f2ea` (warm off-white, reads as paper not screen)
+- Card / sidebar surface: **paper-2** `#ece8da`
+- Ink text + borders: `#0a0a2e`
+- Gold accent: `#c79a1f` (primary CTA, ink-leaning) and `#e4c33c` (hero period + active sidebar indicator)
+- Rule soft: `#c9c3b0` (between column dividers, event rows, feiten list)
+- Muted text: `#6e6958` / `#4a4536`
+
+No white, no shadows, no `.glass-card`. Typography + 1px ink lines + one gold accent per screen.
+
+**Typography:**
+
+- **Sora** 300 / 500 / 700 — display, body, buttons
+- **IBM Plex Mono** 400 / 500 / 600 — data labels, timestamps, KvK, run IDs, eyebrows, keyboard shortcuts
+- Hero name on detail pages: `clamp(72px, 9vw, 128px)` Sora 700 with gold period
+- Mega-stat values: 56px Sora 700
+- Body: 14px Sora 300
+- Lede / intro: 17px Sora 300
+- Mono eyebrows: 10-11px Plex Mono 500 uppercase letter-spacing 0.14em
 
 **Chrome:**
 
 ```
-┌─────────┬───────────────────────────────────────────────┐
-│ Klarifai│  Prospects                            [filter]│  ← 64px top bar
-│         ├───────────────────────────────────────────────┤
-│ Prospects│                                               │
-│ Offertes │  ┌───────────────────────────────────────┐   │
-│ Drafts   │  │  content card                         │   │
-│ Signals  │  │                                       │   │
-│          │  └───────────────────────────────────────┘   │
-│ Romano   │                                               │
-└─────────┴───────────────────────────────────────────────┘
-  240px            main content, max 1440px
+┌────┬────────────────────────────────────────────────────┐
+│ K  │ ← Companies / Marfa · 01 of 42                     │  back-line
+│ ▪  ├────────────────────────────────────────────────────┤
+│ ▪  │                                                    │
+│ ▪  │   Marfa.                                           │  hero (128px max)
+│ ▪  │   42 medewerkers · Amsterdam · Series A...         │  lede
+│ ▪  │                                                    │
+│ ▪  ├────────────────────────────────────────────────────┤
+│    │ Ready.  │ 0.68   │ €32k   │ 1/3                    │  mega-stats
+│    ├────────┬────────────────────────┬──────────────────┤
+│    │ feiten │ activity feed          │ acties + contacts│  3-col
+│    │ 280px  │ flex                   │ 260px            │
+│ RK │        │                        │                  │
+└────┴────────────────────────────────────────────────────┘
+  58px           no topbar
 ```
 
-**Sidebar (240px fixed, left):**
+**Sidebar (58px icon rail, fixed left):**
 
-- Klarifai wordmark top
-- Vertical nav: Prospects · Offertes · Drafts · Signals · (future: Use Cases, Dashboard)
-- Active item: `#f1f5f9` background, 2px navy left-edge bar
-- Each item: Sora 500 14px navy, 12px vertical padding, icon prefix optional (keep minimal)
-- Bottom: Romano profile (circle avatar + name)
+- Background: paper-2 `#ece8da`, 1px ink right border
+- K brand logo top: 30×30 navy square, gold K, letter-spacing -0.02em
+- 6 nav icons (Dashboard · Companies · Campaigns · Offertes · Draft Queue · Signals): 16px lucide SVGs, 1.75px stroke, 36×36 hit targets
+- Active state: 2px gold bar on left edge + ink color (no filled background)
+- Hover: subtle ink tint `rgba(10, 10, 46, 0.06)`
+- Bottom: Romano avatar 30×30 navy circle, gold initials
+- Title tooltips on hover for discoverability
+- No labels visible by default — type-heavy top content gets all attention
 
-**Top bar (64px):**
+**No topbar on desktop.** Pages start with a back-line `← Companies / Marfa · 01 of 42` in Plex Mono 10px muted, then hero.
 
-- Left: page title (Sora 500, 20px)
-- Right: filters, search, actions (icon buttons only, no labels)
+**Content layout (detail pages):**
 
-**Content:**
+1. Back-line (14px padding, 1px rule-soft bottom border)
+2. Hero: 56px top padding, 40px horizontal, 2-col grid (content + hero actions)
+3. Mega-stat bar: 4-col grid, 1px ink dividers between columns, 1px ink bottom border
+4. Main grid: 280px feiten | flex activity feed | 260px actions + contacts
+5. 1px rule-soft dividers between columns
+6. Column padding: 48px vertical, 32-40px horizontal
 
-- White bg
-- Generous padding: 48px sides, 48px top
-- Cards with 1px #e2e8f0 border, 16px radius, 24–32px internal padding
-- Tables with 1px row borders, Sora 300 body, Sora 500 headers, mono numbers
+**Buttons:**
 
-**No sidebar decoration. No illustrations. No avatars for system items. Typography + whitespace + 1px lines + occasional gold accent.**
+- Square corners (no pill shape — pill is for brochure CTAs only per §3.1)
+- 1px ink border, ink text on paper bg
+- Hover: inverts to ink bg + paper text
+- Gold variant: ink bg + paper text, hover inverts to gold bg + ink text
+- Padding: 13-14px vertical, 20-22px horizontal
+- Font: Sora 500 13-14px, letter-spacing 0.02em
+- Keyboard shortcut chip to the right: Plex Mono 10px muted
+
+**Activity feed event tags (only color beyond gold + ink):**
+
+Subtle semantic tints for 1-second category scanning. All warm-paper-compatible, low saturation:
+
+| Type     | Text                 | Background        | Border    |
+| -------- | -------------------- | ----------------- | --------- |
+| ENRICH   | `#4a7a52` sage green | `#ebf1e5`         | `#c5d4b9` |
+| QUALITY  | `#8c6f13` gold-ink   | `#fdf6d7`         | `#eddda4` |
+| RUN      | `#3d5f82` ink blue   | `#e8edf2`         | `#c1d0de` |
+| QUOTE    | `#0a0a2e` ink        | `#ece8da` paper-2 | `#c9c3b0` |
+| OUTREACH | `#6e4780` muted plum | `#eee6f0`         | `#d9c5dd` |
+| EVIDENCE | `#5e6a3a` olive      | `#f0efe0`         | `#cfd0a8` |
+
+These tags are the **only** place beyond gold where color appears. No semantic pill palette in status cells, no colored icon chips in buttons, no gradient backgrounds, no illustrations.
+
+**Reference spec:** `docs/superpowers/specs/2026-04-16-admin-prospect-detail-redesign.md` contains the full locked design for the prospect detail page. Sibling admin pages (Companies list, Campaigns, Offertes, Draft Queue, Signals, Use Cases, Dashboard) inherit these tokens and chrome; their individual layouts are scheduled as follow-up phases.
 
 ### 3.3 Shared — what both surfaces have in common
 
@@ -534,18 +586,21 @@ Three approved mockup images from the design consultation session (2026-04-14). 
 
 ## 10. Decisions Log
 
-| Date       | Decision                                                         | Rationale                                                                                                                                                        |
-| ---------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-04-14 | Design system = Klarifai brand reuse, not rebrand                | Klarifai has a working brand (navy + gold + Sora) in klarifai-core. The consultation is a structure/layout upgrade, not a color/type rebrand.                    |
-| 2026-04-14 | Sora font everywhere                                             | Matches proposal-template.html. Replaces the placeholder Inter/SF Pro in globals.css over time.                                                                  |
-| 2026-04-14 | Click-through brochure UX over scroll-per-page                   | Romano's intuition: brochure metaphor matches a sales proposal. Click-through forces sequential reading, controlled tempo, matches "quiet, premium, structured". |
-| 2026-04-14 | Video cover plays once, freezes on last frame                    | Premium feel > loop restart. The animation earns its place by revealing the brand, then steps out of the way while the client reads.                             |
-| 2026-04-14 | 7 pages, not 5                                                   | Add Signing (integrated akkoord + e-sig) and Post-accept — both web-only, not in PDF template.                                                                   |
-| 2026-04-14 | Scope page after Investering                                     | Explicit ordering preference. Investering answers "how much", Scope answers "what for that money".                                                               |
-| 2026-04-14 | Drop Team page                                                   | Klarifai is Romano-led boutique — no team page needed. Team can be implied via the main heading or a subtle "Door Romano Kanters" line.                          |
-| 2026-04-14 | No editorial serif (reversed from initial consultation proposal) | Instrument Serif / magazine direction didn't land. Sora carries the editorial weight through scale and section label discipline.                                 |
-| 2026-04-14 | No new accent color                                              | The electric coral #FF4F2E was a misstep. Klarifai gold #E4C33C is the accent.                                                                                   |
-| 2026-04-14 | Client brochure is KLARIFAI branded, not Qualifai                | Qualifai = admin tool (internal). Client sees Klarifai branding. Collab label `KLARIFAI ✕ {client}`.                                                             |
+| Date       | Decision                                                         | Rationale                                                                                                                                                                                                                                                             |
+| ---------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-04-14 | Design system = Klarifai brand reuse, not rebrand                | Klarifai has a working brand (navy + gold + Sora) in klarifai-core. The consultation is a structure/layout upgrade, not a color/type rebrand.                                                                                                                         |
+| 2026-04-14 | Sora font everywhere                                             | Matches proposal-template.html. Replaces the placeholder Inter/SF Pro in globals.css over time.                                                                                                                                                                       |
+| 2026-04-14 | Click-through brochure UX over scroll-per-page                   | Romano's intuition: brochure metaphor matches a sales proposal. Click-through forces sequential reading, controlled tempo, matches "quiet, premium, structured".                                                                                                      |
+| 2026-04-14 | Video cover plays once, freezes on last frame                    | Premium feel > loop restart. The animation earns its place by revealing the brand, then steps out of the way while the client reads.                                                                                                                                  |
+| 2026-04-14 | 7 pages, not 5                                                   | Add Signing (integrated akkoord + e-sig) and Post-accept — both web-only, not in PDF template.                                                                                                                                                                        |
+| 2026-04-14 | Scope page after Investering                                     | Explicit ordering preference. Investering answers "how much", Scope answers "what for that money".                                                                                                                                                                    |
+| 2026-04-14 | Drop Team page                                                   | Klarifai is Romano-led boutique — no team page needed. Team can be implied via the main heading or a subtle "Door Romano Kanters" line.                                                                                                                               |
+| 2026-04-14 | No editorial serif (reversed from initial consultation proposal) | Instrument Serif / magazine direction didn't land. Sora carries the editorial weight through scale and section label discipline.                                                                                                                                      |
+| 2026-04-14 | No new accent color                                              | The electric coral #FF4F2E was a misstep. Klarifai gold #E4C33C is the accent.                                                                                                                                                                                        |
+| 2026-04-14 | Client brochure is KLARIFAI branded, not Qualifai                | Qualifai = admin tool (internal). Client sees Klarifai branding. Collab label `KLARIFAI ✕ {client}`.                                                                                                                                                                  |
+| 2026-04-16 | Admin direction locked: **Editorial** (ink on paper)             | Replaces vague "migrate admin to Sora over time". Paper canvas `#f5f2ea`, Sora + IBM Plex Mono, 58px icon rail, square buttons, no white surfaces, no shadows, no `.glass-card`. Distinct from brochure dark surface but shares brand DNA. See §3.2.                  |
+| 2026-04-16 | Admin rail sidebar is 58px icon-only, no topbar                  | Tested 240/272/288px labeled sidebars + top nav variants in mockups. Rail keeps typography + activity feed dominant; icon tooltips handle discoverability.                                                                                                            |
+| 2026-04-16 | Activity feed replaces tabs for deep data                        | Old detail page's 5-tab structure (Evidence / Intent / Analysis / Outreach / Results) became scroll friction nobody used. Reverse-chronological feed with colored type tags + filter chips surfaces latest state at a glance; sub-route pages handle long-form views. |
 
 ---
 

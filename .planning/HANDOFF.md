@@ -1,53 +1,55 @@
 # HANDOFF — Qualifai v9.0 design system execution
 
-> **Laatste update:** 2026-04-15
+> **Laatste update:** 2026-04-16
 > **Doel:** open dit bestand in een verse sessie en je kunt direct verder. Geen context reconstructie nodig.
-> **Status:** client brochure design shipped, 2 admin pijlers nog te doen, daarna data wiring.
+> **Status:** brochure shipped, admin Editorial gespec'd en Fase A in uitvoering.
 
 ---
 
 ## 1. TL;DR
 
-**Wat is af deze sessie:**
+De 3 pijlers uit de v9.0 roadmap zijn nu in 4 werkfasen herverdeeld omdat de admin-taal een eigen systeem werd dat los van de brochure loopt.
 
-- ✅ Phase 61.1 / 61.2 / 61.3 geshipped (manual prospect polish + parity + logo pipeline unification) — v9.0 Wave 1 compleet
-- ✅ `/design-consultation` draaide, produceerde `DESIGN.md` — volledige brand spec (Klarifai navy/gold/Sora), click-through brochure UX, 7-page architectuur
-- ✅ Klant-facing `/offerte/[slug]` brochure volledig geïmplementeerd in code — alle 7 pages live, video cover, gold signature canvas, Klarifai chrome
-- ✅ 3 Marfa offertes bevestigd in Quote tabel (geïmporteerd tijdens Phase 60, bedragen €7.816,60 / €11.495,00 / €13.285,80)
-- ✅ Mail template voor Romano om Marfa de 3 offertes toe te lichten (zonder bedragen, met Marcore-vermelding bij OFF003, buiten-scope sectie)
+| Fase                                            | Scope                                                                               | Aesthetic                                                 | Status                    |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------- |
+| **Pijler 1** — `/offerte/[slug]` brochure       | 7-page click-through brochure, video cover, Klarifai brand                          | Brochure dark (§3.1)                                      | ✅ SHIPPED 2026-04-15     |
+| **Fase A** — admin foundation + prospect detail | globals.css tokens + fonts + 58px rail + `/admin/prospects/[id]` rewrite            | Editorial paper (§3.2)                                    | 🟡 IN PROGRESS 2026-04-16 |
+| **Fase B** — quotes Editorial + brochure wire   | `/admin/quotes/*` redesign + wire brochure Page 4 Investering naar echte Quote data | Editorial paper + brochure data contract                  | ⏳ QUEUED                 |
+| **Fase C** — invoices + contract workflow       | Accept → generate invoices, `/admin/invoices/*`, e-signature                        | Editorial paper (admin) + brochure dark (signing surface) | ⏳ QUEUED                 |
+| **Fase D** — `/discover/[slug]` redesign        | Port client-facing discover page naar brochure-taal                                 | Brochure dark (§3.1)                                      | ⏳ QUEUED (lage prio)     |
 
-**Wat is af deze sessie qua design richting:**
-
-- 1 van 3 design pijlers compleet (de client brochure)
-
-**Wat nog moet:**
-
-- 2 design pijlers: admin prospect detail + admin quotes UI
-- Daarna content, data wiring, backend glue
+Per-fase details in `.planning/handoffs/fase-{a|b|c|d}-*.md`. Lees die voor executie-context.
 
 ---
 
-## 2. De 3 design pijlers
+## 2. Twee design-talen (gelockt)
 
-Uit de design consultation kwam een systeem met 3 anker surfaces die allemaal tegen hetzelfde DESIGN.md worden gebouwd.
+| Surface                      | Aesthetic                                                                                                    | Wie ziet het         |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------- |
+| `/offerte/[slug]` brochure   | **Donker · Klarifai** (navy `#040026`, goud gradient, Sora, hero + 7 pages)                                  | Klant extern         |
+| `/discover/[slug]` dashboard | **Donker · Klarifai** (zelfde taal na Fase D)                                                                | Klant extern         |
+| `/admin/*` alles             | **Editorial · paper** (paper `#f5f2ea`, ink `#0a0a2e`, Sora + IBM Plex Mono, 58px icon rail, square buttons) | Romano + team intern |
 
-| #   | Surface                                     | Status               | Scope                                                                                  |
-| --- | ------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------- |
-| 1   | `app/offerte/[slug]` — client brochure      | ✅ DONE (2026-04-15) | 7 pages, video cover, signature canvas, click-through UX, Klarifai brand               |
-| 2   | `app/admin/prospects/[id]` — detail page    | ⏳ TODO              | "Te onoverzichtelijk" per Romano. Herdesign tegen DESIGN.md §3.2 admin command center. |
-| 3   | `app/admin/quotes/*` — quotes management UI | ⏳ TODO              | "Nog een ramp" per Romano. List + edit pages herdesign.                                |
-
-Pas ná alle 3 de pijlers volgt de niet-design inhoud (content, data wiring, backend).
+DESIGN.md §3.1 = client dark. §3.2 = admin editorial. Beide concreet met tokens, component patterns, en decision log.
 
 ---
 
-## 3. Geparkeerd tot na de pijlers
+## 3. Deze sessie (2026-04-16)
 
-- **Content pass op de client brochure** — huidige tekst is placeholder (Plancraft rebuild scenario). Marfa's echte context: ze starten _nog_ met Plancraft, willen eigenlijk een custom tool. Echte copy komt uit klarifai-core writing-style docs + per-klant handwerk.
-- **Brochure wired to real Quote data** — Page 4 Investering gebruikt nu een hardcoded stub (200u × €95 = €22.990). Moet Prisma `Quote` + `QuoteLine` query worden. Data staat al in DB.
-- **PDF worker voor snapshot** — was originele Phase 62 scope. Q14 locked: PDF is secundair archief, web is primair. Nog niet gebouwd.
-- **Phase 63 Contract Workflow** — click-to-sign na quote acceptance. Originele v9.0 scope, nog niet gestart.
-- **Pop-ups voor extra uitleg** op brochure pages — Romano suggereerde, ik adviseerde tegen (breekt click-through ritme). Geparkeerd tot een concreet gat zich meldt.
+**Ontwerp afgerond:**
+
+- `/design-consultation` gedraaid voor admin direction — Editorial gekozen na round-trips (zag V1 dark command center, V2 editorial mega, V3 dense console; Romano koos V2, daarna iteraties op canvas temperatuur, mono font choice, icon treatment, type tags)
+- Mockup op `http://127.0.0.1:9201/v2-editorial.html` (python http.server op :9201 in background)
+- DESIGN.md §3.2 herschreven van vage "migrate over time" naar concrete Editorial spec
+- Design spec geschreven naar `docs/superpowers/specs/2026-04-16-admin-prospect-detail-redesign.md`
+- Decisions log in DESIGN.md §10 aangevuld met 3 entries van 2026-04-16
+
+**Fase A gestart:**
+
+- 3 atomaire commits gepland (globals → layout → detail page)
+- 4 placeholder sub-route pages voor `/admin/prospects/[id]/{evidence|analyse|outreach|resultaten}`
+- 8 nieuwe editorial componenten (`components/features/prospects/editorial/*`)
+- 1 nieuwe tRPC query `admin.getProspectActivity` voor unified feed
 
 ---
 
@@ -57,128 +59,103 @@ Copy-paste deze zin in een nieuwe sessie:
 
 > Lees in deze volgorde:
 >
-> 1. `qualifai/.planning/HANDOFF.md` (deze, vooral §2, §5, §6)
-> 2. `qualifai/DESIGN.md` (design contract, leidend voor alle UI)
-> 3. `qualifai/components/features/offerte/brochure-cover.tsx` (referentie-implementatie van het systeem — 7 pages in code)
-> 4. `qualifai/app/admin/prospects/[id]/page.tsx` (surface #2, de huidige "te onoverzichtelijke" admin prospect detail)
+> 1. `qualifai/.planning/HANDOFF.md` (deze, voor de 4-fasen map)
+> 2. `qualifai/.planning/handoffs/fase-{huidige}-*.md` (detailed execution instructies)
+> 3. `qualifai/DESIGN.md` (design system contract)
+> 4. `qualifai/docs/superpowers/specs/2026-04-16-admin-prospect-detail-redesign.md` (Fase A spec)
 >
-> Daarna: ontwerp EN implementeer de admin prospect detail page tegen DESIGN.md §3.2 (admin command center pattern: 240px sidebar + top bar + main content, Linear-adjacent). Pas alle primitives uit de brochure toe waar relevant (Sora font, navy `#040026` bg, container gradient `linear-gradient(180deg, #040026 0%, #080054 100%)`, gold accents `#e1c33c → #fdf97b`, pill buttons, `[ 0X ] SECTION` label pattern, gold heading period). Wire niet naar nieuwe data — gebruik de bestaande tRPC queries die al draaien, fix alleen de presentatie.
->
-> Als Romano de richting van surface #2 goedkeurt, door naar surface #3 (`/admin/quotes`).
+> Als Fase A nog niet compleet is: rond af via de stappen in de fase-A handoff, pas de drie commits toe, valideer met `npm run check`, smoke test `/admin/prospects/<marfa>` tegen de mockup op :9201. Als Fase A shipped is: start Fase B via `.planning/handoffs/fase-b-quotes-editorial-brochure-wire.md`.
 
 ---
 
 ## 5. Kern state na deze sessie
 
-### Files die shipped zijn deze sessie (brochure)
+### Fase A plan (executing)
 
-| Pad                                              | Inhoud                                                                                                                                                                                                            |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app/offerte/[slug]/page.tsx`                    | Server component, Prisma lookup by readableSlug, prettifyDomainToName fallback voor companyName                                                                                                                   |
-| `app/offerte/[slug]/layout.tsx`                  | Scoped Sora font load (Google Fonts, weights 300/500/700)                                                                                                                                                         |
-| `components/features/offerte/brochure-cover.tsx` | Volledige 7-page brochure component (~1200 LOC). Cover (video) / Uitdaging / Aanpak / Investering / Scope / Akkoord / Bevestigd. Fixed chrome, gold signature canvas, keyboard nav, all viewport-fit geen scroll. |
-| `public/video/klarifai-intro.mp4`                | 12MB, 15s, 1920×1080 Klarifai intro video (navy + gold branded)                                                                                                                                                   |
-| `public/video/klarifai-intro-poster.jpg`         | Last frame fallback voor `prefers-reduced-motion` en mobile                                                                                                                                                       |
-| `public/brand/klarifai-icon.svg`                 | Gold K mark (uit klarifai-core/assets/logo)                                                                                                                                                                       |
-| `public/brand/klarifai-logo-white.svg`           | Full wordmark, reserved                                                                                                                                                                                           |
-| `lib/enrichment/company-name.ts` + `.test.ts`    | `prettifyDomainToName()` util. 9 tests green.                                                                                                                                                                     |
-| `lib/enrichment/logo-pipeline.ts` + `.test.ts`   | Phase 61.3 unified `resolveLogoUrl()`. 9 tests green.                                                                                                                                                             |
-| `server/routers/admin.ts`                        | `createProspect` auto-derives companyName from domain via prettifyDomainToName                                                                                                                                    |
-| `DESIGN.md`                                      | Design system contract (640+ lines). De wet voor alle UI werk.                                                                                                                                                    |
-| `CLAUDE.md`                                      | Project instructions die DESIGN.md als leidend markeren.                                                                                                                                                          |
+Stappen in detail in `.planning/handoffs/fase-a-admin-foundation-prospect-detail.md`. Samengevat:
 
-### Brand tokens (uit DESIGN.md, extracted from klarifai.nl live CSS)
+1. **Foundation commit** — `app/globals.css` token swap + `app/layout.tsx` Sora/Plex Mono fonts via `next/font/google`
+2. **Shell commit** — `app/admin/layout.tsx` 58px icon rail, verwijder desktop topbar
+3. **Detail page commit** — `app/admin/prospects/[id]/page.tsx` rewrite naar Editorial, 8 nieuwe componenten, 1 nieuwe tRPC query
+
+Sub-route placeholders (evidence/analyse/outreach/resultaten) worden gebouwd als thin pagina's die de activity feed gefilterd tonen + "Volledige weergave volgt" notitie.
+
+### Locked design tokens (uit DESIGN.md §3.2)
 
 ```
---color-navy: #040026           (Klarifai Indigo, primary bg)
---color-navy-deep: #000319      (deepest accent for backdrops)
---color-container-gradient: linear-gradient(180deg, #040026 0%, #080054 100%)
---color-container-border: rgba(53, 59, 102, 0.55)
---color-gold-gradient: linear-gradient(180deg, #e1c33c 0%, #fdf97b 100%)
---color-gold-mid: #e1c33c
---color-gold-light: #fdf97b
---color-text-on-navy: #fefefe
---color-text-muted-on-navy: #898999
+--color-background: #f5f2ea  (paper)
+--color-surface:    #ece8da  (paper-2)
+--color-ink:        #0a0a2e  (text + borders)
+--color-gold:       #c79a1f  (primary CTA, ink-leaning)
+--color-gold-hi:    #e4c33c  (hero period, active sidebar bar)
+--color-muted:      #6e6958
+--color-muted-dark: #4a4536
 
-Font family: Sora 300 / 500 / 700 (Google Fonts)
-Pill radius: 9999px
-Card radius: 16px (pillars), 20px (summary cards)
+--font-sora: 'Sora', sans-serif  (300/500/700)
+--font-plex: 'IBM Plex Mono', monospace  (400/500/600)
 ```
 
-### Brochure interaction patterns (re-use on admin pages)
+Event type tags (alleen in activity feed):
 
-- **Top-left chrome**: Klarifai gold icon (36px, `public/brand/klarifai-icon.svg`), `position: fixed`
-- **Top-right progress**: `01 / 07` in Sora 500 11px gold `#fdf97b`, `position: fixed`
-- **Section label pattern**: `[ 0X ]  LABEL NAME` — gold gradient bracket number + white navy label, Sora 500 12px uppercase letter-spacing 0.18em
-- **Hero heading pattern**: Sora 700 clamp(40px, 4.5vw, 96px), gold period via `WebkitBackgroundClip: text` + `WebkitTextFillColor: transparent` on a `<span>`
-- **Numbered items pattern**: gold gradient Sora 700 big number + Sora 500 title + Sora 300 muted desc
-- **Arrow nav**: circular 64px buttons, grey outline for back (`rgba(255,255,255,0.18)` border + transparent bg), gold gradient fill for next
-- **Keyboard nav**: `←` `→` arrows wired via `useEffect` + window keydown listener
+- ENRICH sage `#4a7a52` on `#ebf1e5`
+- QUALITY gold-ink `#8c6f13` on `#fdf6d7`
+- RUN ink blue `#3d5f82` on `#e8edf2`
+- QUOTE ink on paper-2
+- OUTREACH plum `#6e4780` on `#eee6f0`
+- EVIDENCE olive `#5e6a3a` on `#f0efe0`
 
-### Pages bouwmethode (uit brochure-cover.tsx)
+### Critical gotchas voor Fase A
 
-Elke page is een functie die `main` returnt met `pageBase` style (fixed + inset 0 + overflow hidden), `<GeometricBackdrop />` SVG, `<BrandChrome />`, `<ProgressIndicator />`, een content grid met `gridTemplateRows` en eigen inhoud, en `<BackArrow />` + `<NextArrow />` onderin. Dit patroon is direct herbruikbaar voor admin layout.
+- **Niet breken `/offerte/[slug]`**: brochure laadt eigen Sora via `app/offerte/[slug]/layout.tsx`. Verify na Step 1 door de brochure te bezoeken.
+- **Niet breken `/discover/[slug]`**: Fase D redesignt dit, tot die tijd onaangetast. Verify na Step 1.
+- **Tailwind slate classes**: admin pagina's gebruiken `bg-slate-50`, `border-slate-100` etc direct in TSX. Die blijven werken, maar alleen de prospect detail page + admin shell krijgen paper classes. Sibling pagina's (Companies list, Draft Queue etc) houden huidige styling tot hun eigen redesign fase.
+- **TS2589 tRPC v11 inference**: `getProspect` returnt te diepe types. Houd `as any` patroon met `// TODO: tRPC v11 inference` comment aan.
+- **Override audits**: fold in activity feed als `QUALITY_OVERRIDE` event in plaats van apart blok.
+- **SourceSetSection**: alleen in debug mode (localStorage `qualifai-debug`). Render als collapsed disclosure onderin feed.
 
-### Marfa DB state
+### Dev servers
 
-- `readableSlug = marfa`, `companyName = "Marfa"` (backfilled deze sessie), `domain = marfa.nl`
-- `logoUrl` = Wix banner photo (gezet via psql in een vorige sessie)
-- 3 offertes in `Quote` tabel met line items:
-  - `2026-OFF001` Rebuild Plancraft in Marfa-vorm — 68u, €6.460 excl / €7.816,60 incl
-  - `2026-OFF002` Custom build Marfa — 100u, €9.500 excl / €11.495,00 incl
-  - `2026-OFF003` Custom build + website redesign — 124u, €10.980 excl / €13.285,80 incl (inclusief −€800 pakketkorting)
-- Alle 3 status `DRAFT`
-
-### Critical gotchas
-
-- **Brochure Investering page** gebruikt een hardcoded stub `200u × €95 = €22.990`, NIET de echte Marfa Quote data. Wordt in een latere phase aangesloten op `prisma.quote.findFirst()`.
-- **Cover video** speelt één keer af (GEEN `loop` attribute), freezes op laatste frame. Dit is intentioneel.
-- **Signature canvas** gebruikt native `addEventListener` (niet React pointer events) omdat die laatste quirks hebben met `setPointerCapture` op canvas elementen. De stroke is een canvas gradient van `#e1c33c → #fdf97b`.
-- **Section nummers matchen page nummers**: page `02 / 07` = sectie `[ 02 ]  DE UITDAGING`. Aangepast deze sessie zodat er geen dubbele count verwarring is.
-- **Logos in chrome**: alleen Klarifai icon, GEEN client logo naast. Reden: de meeste prospects hebben een Wix banner photo als `logoUrl`, niet een echt square logo. Zodra we real logo sourcing hebben kan het clientlogo + `×` terug.
-- **`createProspect` mutation** derivet nu automatisch een companyName uit het domain als die niet is meegegeven — `marfa.nl` → `Marfa`, `stb-kozijnen.nl` → `STB Kozijnen`. Wordt gebruikt als fallback overal waar companyName null kan zijn.
+- Qualifai dev server: `localhost:9200` (running background task)
+- Design mockup server: `127.0.0.1:9201` (python http.server in `~/.gstack/projects/Romainnoo145-qualifai/designs/admin-prospect-detail-mockup/`)
 
 ---
 
-## 6. Open questions voor volgende sessie
+## 6. Open questions uit de spec (§6 daar)
 
-1. **Admin prospect detail** — welk van de bestaande content moet blijven? Welk moet weg? Phase 61 heeft er veel ingestopt (enrichment panel, Acties panel, last-run status, research runs list, etc.). De herdesign moet een beslissing maken over informatie hiërarchie, niet alleen cosmetic.
-2. **Admin quotes UI** — hoe manage je een quote die al DRAFT is in Qualifai? Nieuwe knop? Line items editor? Preview naar de brochure? De bestaande Phase 61 "quotes" tab is een functional shell; nu moet het echt uit te leggen zijn.
-3. **Content phase scope** — wat hoort bij content herschrijven: alleen brochure copy, of ook admin labels, tooltips, success messages, email templates? Groot verschil in werk.
+Moeten beantwoord tijdens Fase A executie of planning:
 
----
+1. **Oude admin classes aliasen of direct deleten?** Recommendation: alias `.admin-btn-primary` → nieuwe `.btn--gold` voor backcompat, delete `.glass-card` direct (incompatibel).
+2. **Tabs-componenten verwijderen in één PR?** Recommendation: ja — `EvidenceSection` / `AnalysisSection` / `OutreachPreviewSection` / `ResultsSection` uit de detail page knippen. Blijven bestaan als library-componenten voor sub-route pages later.
+3. **Activity feed data: server-side union query of client-side merge?** Recommendation: nieuwe `admin.getProspectActivity` tRPC procedure met discriminated union type, server-side gemerged.
+4. **Sub-route placeholder copy?** Recommendation: `<ActivityFeed filter="EVIDENCE" />` + "Volledige weergave volgt" Plex Mono 11px muted.
 
-## 7. Definition of done voor v9.0 (bijgewerkt)
-
-- [x] Phase 60 Quote Schema Foundation
-- [x] Phase 61 Admin UI for Quotes (functional shell, design komt nog)
-- [x] Phase 61.1 Manual prospect flow polish
-- [x] Phase 61.2 Manual prospect parity
-- [x] Phase 61.3 Logo pipeline unification
-- [x] Design consultation + DESIGN.md
-- [x] Design pijler 1: client brochure (`/offerte/[slug]`)
-- [ ] Design pijler 2: admin prospect detail (`/admin/prospects/[id]`)
-- [ ] Design pijler 3: admin quotes UI (`/admin/quotes`)
-- [ ] Content pass op brochure (echte Marfa copy uit klarifai-core writing style)
-- [ ] Brochure wired to real Quote data
-- [ ] Phase 62 PDF worker (web snapshot generation)
-- [ ] Phase 63 Contract workflow (click-to-sign)
+Neem beslissingen tijdens de step-3 commit.
 
 ---
 
-## 8. Commits van deze sessie
+## 7. Decisions van deze sessie
 
-```
-(chronologisch — zie git log voor hashes)
-Phase 61.1 complete → Phase 61.2 plans → verification → execution → Phase 61.3 lean exec
-→ DESIGN.md + CLAUDE.md via /design-consultation
-→ /offerte/[slug] route structure + video assets
-→ brochure-cover.tsx (all 7 pages built incrementally)
-→ prettifyDomainToName util + createProspect auto-derive
-→ Marfa backfill (psql direct)
-→ (pending) Deze HANDOFF + final commit
-```
+| Datum      | Beslissing                                | Waarom                                                                                                                                                                                                                            |
+| ---------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-04-16 | Admin taal is Editorial (ink on paper)    | V2 gekozen uit vergelijking met V1 dark command center en V3 dense console. Warm paper canvas + Sora + Plex Mono + bright gold + square buttons. Distinct van brochure maar zelfde brand DNA.                                     |
+| 2026-04-16 | 58px icon-only rail, geen topbar          | Test 240/272/288 labeled sidebars + top nav — rail houdt typografie + activity feed dominant. Tooltips op icons handelen discoverability.                                                                                         |
+| 2026-04-16 | Activity feed vervangt 5-tab navigation   | Oude 5-tab structuur (Evidence / Intent / Analysis / Outreach / Results) = scroll friction, niemand gebruikt. Reverse-chrono feed met gekleurde type tags surfaces state in 1 seconde. Sub-route pagina's voor long-form content. |
+| 2026-04-16 | IBM Plex Mono ipv JetBrains Mono          | JB Mono te coder-sharp voor paper canvas. Plex Mono humanistischer, past bij document-gevoel. Bij zelfde font-size identiek leesbaar voor data labels.                                                                            |
+| 2026-04-16 | Alleen gold + 6 event type tags als kleur | Volledige semantic palette (sage/blue/amber/coral in status cells) voelde "speels" bij multi-user admin. Kleur scoped tot activity feed event tags voor 1-seconde scanbaarheid.                                                   |
+| 2026-04-16 | Sub-routes → separate pages, niet tabs    | Per earlier sessie al besloten, bevestigd. Evidence/Analyse/Outreach/Resultaten krijgen eigen URLs `/admin/prospects/[id]/<naam>`. Placeholder gevuld met gefilterde activity feed + "Volledige weergave volgt".                  |
 
 ---
 
-_Volgende sessie: open dit bestand, copy-paste §4 opening in de chat, en start met design pijler #2 (admin prospect detail)._
+## 8. Parked (niet in scope voor Fase A)
+
+- **Content pass op de brochure** — Marfa placeholder copy vervangen door echte Marfa context (Plancraft start + custom tool roadmap)
+- **Phase 62 PDF worker** — snapshot brochure als PDF
+- **Phase 63 contract workflow** — verplaatst naar Fase C
+- **Mobile optimalisatie** — admin + brochure beide desktop-first
+- **Dark admin mode toggle** — optioneel, uit scope
+- **Sibling admin page redesigns** (Companies list, Campaigns, Offertes list etc) — elke krijgt eigen klein plan na Fase A
+- **`/discover/[slug]` redesign** — Fase D, lage prio
+
+---
+
+_Volgende sessie: lees deze HANDOFF + de relevante fase-handoff + DESIGN.md + spec. Pak op waar Fase A stopt._
