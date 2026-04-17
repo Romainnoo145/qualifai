@@ -101,8 +101,8 @@ export default function QuoteDetailPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activeProposalMutation = (
-    api.quotes.setActiveProposal as any
-  ).useMutation({
+    api.quotes as any
+  ).setActiveProposal.useMutation({
     onSuccess: () => {
       utils.quotes?.get?.invalidate?.({ id });
       utils.quotes?.list?.invalidate?.();
