@@ -233,30 +233,50 @@ No drop shadows on text. No ambient shadows on sections. No glow effects.
 - Arrow button hover: 150ms ease-out scale 1.02 + shadow lift
 - Keyboard nav: same 250ms transition
 
-### 3.2 Admin (`/admin/*`) — Editorial
+### 3.2 Admin (`/admin/*`) — Cool SaaS
 
-**Direction:** Editorial — ink on warm paper. Approved 2026-04-16 after a round of design exploration (mockups preserved at `~/.gstack/projects/Romainnoo145-qualifai/designs/admin-prospect-detail-mockup/v2-editorial.html`). Distinct from the brochure §3.1 dark surface, shared brand DNA (Sora, navy, gold). No longer the "Linear-adjacent SaaS admin" the original spec described.
+**Direction:** Clean, cool-neutral SaaS dashboard. Think Linear, Attio — professional, data-focused, not warm or editorial. Revised 2026-04-17 after rejecting the warm cream "Editorial" direction as too magazine/interior-design for a sales automation tool.
 
 **Canvas & surfaces:**
 
-- Page canvas: **paper** `#f5f2ea` (warm off-white, reads as paper not screen)
-- Card / sidebar surface: **paper-2** `#ece8da`
-- Ink text + borders: `#0a0a2e`
-- Gold accent: `#c79a1f` (primary CTA, ink-leaning) and `#e4c33c` (hero period + active sidebar indicator)
-- Rule soft: `#c9c3b0` (between column dividers, event rows, feiten list)
-- Muted text: `#6e6958` / `#4a4536`
+- Page canvas: `#fafafa` (cool near-white)
+- Card / sidebar surface: `#f4f4f5` (zinc-100)
+- Sidebar: white `#ffffff` with subtle `#e4e4e7` right border
+- Ink text: `#0a0a2e` (deep navy — the only dark color, never pure black)
+- Borders: `#e4e4e7` (zinc-200) standard, `#d4d4d8` (zinc-300) strong
+- Hover: `#efefef` (subtle surface shift)
+- Muted text: `#71717a` (zinc-500) / `#52525b` (zinc-600)
 
-No white, no shadows, no `.glass-card`. Typography + 1px ink lines + one gold accent per screen.
+Minimal borders. Prefer subtle bg fills (`surface-2`) over border boxes. No shadows except subtle hover lift on interactive cards.
+
+**Gold accent (Klarifai gradient):**
+
+- Primary CTA buttons: `linear-gradient(180deg, #e1c33c → #fdf97b)` — the Klarifai brand gradient, gold-to-light
+- Gold-hi: `#f4d95a` — hero period, active sidebar indicator
+- Gold standard: `#ebcb4b` — accent dots, underlines
+- Hover: `linear-gradient(180deg, #d4b43b → #f4e96e)`
+- **NEVER** use muddy/brown gold like `#c79a1f` or `#a87f15` — these read as brown on white canvas
+
+**Deep navy accent (`#0a0a2e` / `#040026`):**
+
+Use deep navy for high-contrast accent elements:
+
+- Active filter pills (navy bg, white text)
+- Key status badges (e.g. "Verstuurd", "Bekeken" — navy bg, white/gold text)
+- Sidebar logo mark (navy square, gold K)
+- User avatar (navy circle, gold initials)
+- Hero heading text
+- Table header text (navy, not grey)
 
 **Typography:**
 
-- **Sora** 300 / 500 / 700 — display, body, buttons
-- **IBM Plex Mono** 400 / 500 / 600 — data labels, timestamps, KvK, run IDs, eyebrows, keyboard shortcuts
-- Hero name on detail pages: `clamp(72px, 9vw, 128px)` Sora 700 with gold period
+- **Sora only** — 300 / 500 / 700. No monospace font in admin UI.
+- Use `tabular-nums` (font-variant-numeric) for number column alignment, not a mono font.
+- Hero name on detail pages: `clamp(56px, 7vw, 104px)` Sora 700 with gold period
 - Mega-stat values: 56px Sora 700
-- Body: 14px Sora 300
-- Lede / intro: 17px Sora 300
-- Mono eyebrows: 10-11px Plex Mono 500 uppercase letter-spacing 0.14em
+- Body: 14-15px Sora 300
+- Lede / intro: 16-17px Sora 300 light
+- Eyebrow labels: 10-11px Sora 500 uppercase tracking 0.14-0.18em
 
 **Chrome:**
 
@@ -280,7 +300,7 @@ No white, no shadows, no `.glass-card`. Typography + 1px ink lines + one gold ac
 
 **Sidebar (58px icon rail, fixed left):**
 
-- Background: paper-2 `#ece8da`, 1px ink right border
+- Background: white `#ffffff`, 1px zinc-200 right border
 - K brand logo top: 30×30 navy square, gold K, letter-spacing -0.02em
 - 6 nav icons (Dashboard · Companies · Campaigns · Offertes · Draft Queue · Signals): 16px lucide SVGs, 1.75px stroke, 36×36 hit targets
 - Active state: 2px gold bar on left edge + ink color (no filled background)
@@ -289,7 +309,7 @@ No white, no shadows, no `.glass-card`. Typography + 1px ink lines + one gold ac
 - Title tooltips on hover for discoverability
 - No labels visible by default — type-heavy top content gets all attention
 
-**No topbar on desktop.** Pages start with a back-line `← Companies / Marfa · 01 of 42` in Plex Mono 10px muted, then hero.
+**No topbar on desktop.** Pages start with a back-line `← Companies / Marfa · 01 of 42` in Sora 10px muted, then hero.
 
 **Content layout (detail pages):**
 
@@ -302,17 +322,16 @@ No white, no shadows, no `.glass-card`. Typography + 1px ink lines + one gold ac
 
 **Buttons:**
 
-- Square corners (no pill shape — pill is for brochure CTAs only per §3.1)
-- 1px ink border, ink text on paper bg
-- Hover: inverts to ink bg + paper text
-- Gold variant: ink bg + paper text, hover inverts to gold bg + ink text
-- Padding: 13-14px vertical, 20-22px horizontal
-- Font: Sora 500 13-14px, letter-spacing 0.02em
-- Keyboard shortcut chip to the right: Plex Mono 10px muted
+- Rounded corners `--radius-sm` (8px) — softer than square, not pill
+- Primary: Klarifai gold gradient `linear-gradient(180deg, #e1c33c → #fdf97b)`, ink text, 1px #e1c33c border
+- Secondary: white bg, 1px zinc-300 border, ink text. Hover: border darkens to ink.
+- Danger: white bg, 1px border, rust text #b45a3b
+- Padding: 8px 14px
+- Font: Sora 500 13px
 
 **Activity feed event tags (only color beyond gold + ink):**
 
-Subtle semantic tints for 1-second category scanning. All warm-paper-compatible, low saturation:
+Subtle semantic tints for 1-second category scanning. Cool-neutral compatible:
 
 | Type     | Text                 | Background        | Border    |
 | -------- | -------------------- | ----------------- | --------- |
