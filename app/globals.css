@@ -7,21 +7,21 @@
    * docs/superpowers/specs/2026-04-16-admin-prospect-detail-redesign.md
    * ───────────────────────────────────────────────────────────── */
 
-  /* Core surfaces */
-  --color-background: #f5f2ea;
-  /* paper · primary canvas */
+  /* Core surfaces — cool neutral */
+  --color-background: #fafafa;
+  /* near-white · primary canvas */
   --color-foreground: #0a0a2e;
   /* ink · primary text + borders */
   --color-surface: #ffffff;
-  /* white · tight contrast cards */
-  --color-surface-2: #ece8da;
-  /* paper-2 · sidebar, inline cards */
-  --color-surface-hover: #f0ebd9;
+  /* white · cards */
+  --color-surface-2: #f4f4f5;
+  /* zinc-100 · sidebar, inline sections */
+  --color-surface-hover: #efefef;
   /* subtle hover */
-  --color-border: #e2dcc6;
-  /* rule-soft */
-  --color-border-strong: #c9c3b0;
-  /* rule */
+  --color-border: #e4e4e7;
+  /* zinc-200 */
+  --color-border-strong: #d4d4d8;
+  /* zinc-300 */
 
   /* Klarifai brand (shared with brochure §3.1) */
   --color-ink: #0a0a2e;
@@ -37,9 +37,11 @@
   /* legacy alias — keep until all admin-btn-primary refs migrated */
   --color-brand-yellow-dark: #a87f15;
 
-  /* Text scale */
-  --color-muted: #6e6958;
-  --color-muted-dark: #4a4536;
+  /* Text scale — cool neutral */
+  --color-muted: #71717a;
+  /* zinc-500 */
+  --color-muted-dark: #52525b;
+  /* zinc-600 */
 
   /* Semantic (used narrowly — event tags in activity feed + states) */
   --color-brand-blue: #3d5f82;
@@ -49,15 +51,15 @@
   --color-brand-danger: #b45a3b;
   /* rust */
 
-  /* Activity feed type tints (DESIGN.md §3.2 event tags) */
-  --color-tag-enrich-bg: #ebf1e5;
-  --color-tag-enrich-text: #4a7a52;
-  --color-tag-enrich-border: #c5d4b9;
-  --color-tag-quality-bg: #fdf6d7;
-  --color-tag-quality-text: #8c6f13;
-  --color-tag-quality-border: #eddda4;
-  --color-tag-run-bg: #e8edf2;
-  --color-tag-run-text: #3d5f82;
+  /* Activity feed type tints (cool-neutral compatible) */
+  --color-tag-enrich-bg: #ecfdf5;
+  --color-tag-enrich-text: #047857;
+  --color-tag-enrich-border: #a7f3d0;
+  --color-tag-quality-bg: #fefce8;
+  --color-tag-quality-text: #a16207;
+  --color-tag-quality-border: #fde68a;
+  --color-tag-run-bg: #eff6ff;
+  --color-tag-run-text: #1d4ed8;
   --color-tag-run-border: #c1d0de;
   --color-tag-outreach-bg: #eee6f0;
   --color-tag-outreach-text: #6e4780;
