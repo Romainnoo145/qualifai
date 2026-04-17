@@ -41,9 +41,14 @@ export function ProspectLogo({
     height: `${size}px`,
   };
 
-  const showImage = prospect.logoUrl && !imageFailed;
+  // Prefer Google's favicon API for clean icons — the stored logoUrl
+  // is often an og:image / social card banner, not a real logo.
+  const faviconUrl = prospect.domain
+    ? `https://www.google.com/s2/favicons?domain=${prospect.domain}&sz=128`
+    : null;
+  const imgSrc = !imageFailed ? (faviconUrl ?? prospect.logoUrl) : null;
 
-  if (!showImage) {
+  if (!imgSrc) {
     const initial =
       (prospect.companyName ?? prospect.domain ?? '?')
         .trim()
@@ -69,7 +74,7 @@ export function ProspectLogo({
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={prospect.logoUrl!}
+      src={imgSrc}
       alt={prospect.companyName ?? prospect.domain ?? 'Prospect logo'}
       width={size}
       height={size}
