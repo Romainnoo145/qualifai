@@ -25,6 +25,17 @@ export default async function OffertePage({
     notFound();
   }
 
+  // Active quote for brochure Page 4 (Fase B wire-up)
+  const activeQuote = await prisma.quote.findFirst({
+    where: {
+      prospectId: prospect.id,
+      isActiveProposal: true,
+    },
+    include: {
+      lines: { orderBy: { position: 'asc' } },
+    },
+  });
+
   // Display name priority:
   //   1. stored companyName (from Apollo or manual entry)
   //   2. derived from domain (e.g. marfa.nl → "Marfa")
@@ -44,6 +55,21 @@ export default async function OffertePage({
         logoUrl: prospect.logoUrl ?? null,
         domain: prospect.domain ?? null,
       }}
+      quote={
+        activeQuote
+          ? {
+              nummer: activeQuote.nummer,
+              onderwerp: activeQuote.onderwerp,
+              btwPercentage: activeQuote.btwPercentage,
+              lines: activeQuote.lines.map((l) => ({
+                fase: l.fase,
+                omschrijving: l.omschrijving ?? '',
+                uren: l.uren,
+                tarief: l.tarief,
+              })),
+            }
+          : null
+      }
     />
   );
 }

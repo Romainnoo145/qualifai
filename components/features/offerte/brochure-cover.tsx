@@ -35,12 +35,26 @@ interface BrochureProspect {
   domain: string | null;
 }
 
+export type BrochureQuote = {
+  nummer: string;
+  onderwerp: string;
+  btwPercentage: number;
+  lines: {
+    fase: string;
+    omschrijving: string;
+    uren: number;
+    tarief: number;
+  }[];
+} | null;
+
 export function BrochureCover({
   slug: _slug,
   prospect,
+  quote,
 }: {
   slug: string;
   prospect: BrochureProspect;
+  quote?: BrochureQuote;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -130,6 +144,7 @@ export function BrochureCover({
         onBack={handleBack}
         progressLabel={progressLabel}
         prospect={prospect}
+        quote={quote ?? null}
       />
     );
   }
@@ -152,6 +167,7 @@ export function BrochureCover({
         onNext={handleNext}
         progressLabel={progressLabel}
         prospect={prospect}
+        quote={quote ?? null}
       />
     );
   }
@@ -647,41 +663,35 @@ function Investering({
   onBack,
   progressLabel,
   prospect,
+  quote,
 }: {
   onNext: () => void;
   onBack: () => void;
   progressLabel: string;
   prospect: BrochureProspect;
+  quote: BrochureQuote;
 }) {
-  // Placeholder rates — real numbers come from the Quote schema (Phase 60)
-  // when this page gets wired to live data.
-  const RATE = 95;
-  const lines = [
-    {
-      num: '01',
-      fase: 'Discovery & architectuur',
-      desc: 'Requirements, wireframes, product brief',
-      uren: 24,
-    },
-    {
-      num: '02',
-      fase: 'Design & prototypes',
-      desc: 'Visuele richting, interaction design, clickables',
-      uren: 40,
-    },
-    {
-      num: '03',
-      fase: 'Build & iteratie',
-      desc: 'Sprint-based development, wekelijkse demos',
-      uren: 120,
-    },
-    {
-      num: '04',
-      fase: 'Launch & overdracht',
-      desc: 'Polish, QA, documentatie, team training',
-      uren: 16,
-    },
-  ];
+  const hasQuote = quote && quote.lines.length > 0;
+
+  const lines = hasQuote
+    ? quote.lines.map((l, i) => ({
+        num: String(i + 1).padStart(2, '0'),
+        fase: l.fase,
+        desc: l.omschrijving,
+        uren: l.uren,
+        rate: l.tarief,
+      }))
+    : [
+        {
+          num: '—',
+          fase: 'Voorstel in voorbereiding',
+          desc: 'De offerte voor dit project wordt momenteel samengesteld.',
+          uren: 0,
+          rate: 0,
+        },
+      ];
+
+  const btwPct = hasQuote ? quote.btwPercentage / 100 : 0.21;
 
   const fmt = (n: number) =>
     new Intl.NumberFormat('nl-NL', {
@@ -689,8 +699,8 @@ function Investering({
       maximumFractionDigits: 2,
     }).format(n);
 
-  const subtotal = lines.reduce((acc, l) => acc + l.uren * RATE, 0);
-  const vat = subtotal * 0.21;
+  const subtotal = lines.reduce((acc, l) => acc + l.uren * l.rate, 0);
+  const vat = subtotal * btwPct;
   const total = subtotal + vat;
   const phase1 = total * 0.25;
   const phase2 = total * 0.5;
@@ -856,7 +866,7 @@ function Investering({
                     fontVariantNumeric: 'tabular-nums',
                   }}
                 >
-                  {l.uren}
+                  {l.uren > 0 ? `${l.uren}u × €${l.rate}` : '—'}
                 </div>
                 <div
                   style={{
@@ -868,7 +878,7 @@ function Investering({
                     letterSpacing: '-0.01em',
                   }}
                 >
-                  €&nbsp;{fmt(l.uren * RATE)}
+                  {l.uren > 0 ? `€\u00a0${fmt(l.uren * l.rate)}` : '—'}
                 </div>
               </div>
             ))}
@@ -883,8 +893,9 @@ function Investering({
                 letterSpacing: '0.02em',
               }}
             >
-              Dagtarief €&nbsp;{fmt(RATE * 8)} (€&nbsp;{fmt(RATE)} per uur) —
-              bedragen excl. BTW
+              {hasQuote
+                ? `Bedragen excl. BTW (${Math.round(quote.btwPercentage)}% BTW)`
+                : 'Bedragen excl. BTW'}
             </div>
           </div>
 
@@ -916,7 +927,11 @@ function Investering({
               style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
             >
               <Row label="Subtotaal" value={`€ ${fmt(subtotal)}`} muted />
-              <Row label="BTW 21%" value={`€ ${fmt(vat)}`} muted />
+              <Row
+                label={`BTW ${Math.round(btwPct * 100)}%`}
+                value={`€ ${fmt(vat)}`}
+                muted
+              />
             </div>
 
             <div
@@ -1341,11 +1356,13 @@ function Signing({
   onNext,
   progressLabel,
   prospect,
+  quote,
 }: {
   onBack: () => void;
   onNext: () => void;
   progressLabel: string;
   prospect: BrochureProspect;
+  quote: BrochureQuote;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasSignature, setHasSignature] = useState(false);
@@ -1477,8 +1494,12 @@ function Signing({
     setHasSignature(false);
   };
 
-  // Numbers mirror Investering page (would come from live Quote data in production)
-  const total = 200 * 95 * 1.21;
+  // Numbers mirror Investering page
+  const hasQuote = quote && quote.lines.length > 0;
+  const subtotal = hasQuote
+    ? quote.lines.reduce((acc, l) => acc + l.uren * l.tarief, 0)
+    : 0;
+  const total = hasQuote ? subtotal * (1 + quote.btwPercentage / 100) : 0;
   const fmt = (n: number) =>
     new Intl.NumberFormat('nl-NL', {
       minimumFractionDigits: 2,
@@ -1648,7 +1669,7 @@ function Signing({
                   fontVariantNumeric: 'tabular-nums',
                 }}
               >
-                €&nbsp;{fmt(total)}
+                {hasQuote ? `€\u00a0${fmt(total)}` : '—'}
               </div>
               <div
                 style={{
