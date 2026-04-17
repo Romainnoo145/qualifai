@@ -2,9 +2,8 @@
 
 @theme {
   /* ─────────────────────────────────────────────────────────────
-   * Editorial · ink on paper
-   * Locked 2026-04-16 per DESIGN.md §3.2 + spec
-   * docs/superpowers/specs/2026-04-16-admin-prospect-detail-redesign.md
+   * Cool SaaS · ink on white · Klarifai gold gradient
+   * Revised 2026-04-17 per DESIGN.md §3.2
    * ───────────────────────────────────────────────────────────── */
 
   /* Core surfaces — cool neutral */
@@ -129,7 +128,7 @@
   .glass-card {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     transition: border-color 0.2s ease;
   }
 
@@ -137,10 +136,14 @@
     border-color: var(--color-border-strong);
   }
 
-  /* Legacy frosted panel — restyled to paper-2 flat. Keep name for backward compat. */
+  .glass-card-hover:hover {
+    box-shadow: 0 2px 8px rgba(10, 10, 46, 0.06);
+  }
+
   .glass-panel {
     background: var(--color-surface-2);
     border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
   }
 
   /* ─────────────── Buttons ─────────────── */
@@ -262,53 +265,55 @@
     font-size: 0.75rem;
   }
 
-  /* Legacy pill buttons — keep for brochure CTAs only. Do NOT use on admin surfaces. */
+  /* Pill buttons — used across admin (legacy) and brochure.
+     Restyled to match cool SaaS direction (2026-04-17). */
 
   .btn-pill-primary {
-    border-radius: var(--radius-full);
-    background: var(--color-ink);
-    color: var(--color-background);
+    border-radius: var(--radius-sm);
+    background: linear-gradient(180deg, #e1c33c 0%, #fdf97b 100%);
+    color: var(--color-ink);
     font-weight: 500;
-    padding: 0.6rem 1.75rem;
-    border: 1px solid var(--color-ink);
-    transition: all 0.2s ease;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid #e1c33c;
+    transition: all 0.15s ease;
     cursor: pointer;
   }
 
   .btn-pill-primary:hover {
-    background: #1a1550;
+    background: linear-gradient(180deg, #d4b43b 0%, #f4e96e 100%);
+    border-color: #d4b43b;
   }
 
   .btn-pill-secondary {
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-sm);
     background: var(--color-surface);
     border: 1px solid var(--color-border-strong);
     color: var(--color-ink);
     font-weight: 500;
-    padding: 0.6rem 1.75rem;
-    transition: all 0.2s ease;
+    padding: 0.5rem 1.25rem;
+    transition: all 0.15s ease;
     cursor: pointer;
   }
 
   .btn-pill-secondary:hover {
-    background: var(--color-surface-hover);
+    background: var(--color-surface);
     border-color: var(--color-ink);
   }
 
   .btn-pill-yellow {
-    border-radius: var(--radius-full);
-    background: var(--color-gold);
+    border-radius: var(--radius-sm);
+    background: linear-gradient(180deg, #e1c33c 0%, #fdf97b 100%);
     color: var(--color-ink);
-    font-weight: 600;
-    padding: 0.6rem 1.75rem;
-    border: 1px solid var(--color-gold);
-    transition: all 0.2s ease;
+    font-weight: 500;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid #e1c33c;
+    transition: all 0.15s ease;
     cursor: pointer;
   }
 
   .btn-pill-yellow:hover {
-    background: var(--color-brand-yellow-dark);
-    border-color: var(--color-brand-yellow-dark);
+    background: linear-gradient(180deg, #d4b43b 0%, #f4e96e 100%);
+    border-color: #d4b43b;
   }
 
   /* ─────────────── Tabs / segmented controls ─────────────── */
@@ -414,51 +419,45 @@
     align-items: center;
     justify-content: center;
     gap: 0.25rem;
-    min-height: 1.25rem;
-    padding: 0 0.5rem;
-    border-radius: var(--radius-xs);
-    border: 1px solid;
-    font-size: 0.625rem;
+    min-height: 1.375rem;
+    padding: 0.125rem 0.625rem;
+    border-radius: var(--radius-full);
+    border: none;
+    font-size: 0.6875rem;
     line-height: 1;
     font-weight: 500;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
   }
 
   .admin-state-neutral {
     background: var(--color-surface-2);
     color: var(--color-muted-dark);
-    border-color: var(--color-border-strong);
   }
 
   .admin-state-info {
     background: var(--color-tag-run-bg);
     color: var(--color-tag-run-text);
-    border-color: var(--color-tag-run-border);
   }
 
   .admin-state-success {
     background: var(--color-tag-enrich-bg);
     color: var(--color-tag-enrich-text);
-    border-color: var(--color-tag-enrich-border);
   }
 
   .admin-state-warning {
     background: var(--color-tag-quality-bg);
     color: var(--color-tag-quality-text);
-    border-color: var(--color-tag-quality-border);
   }
 
   .admin-state-danger {
-    background: #fbeee7;
-    color: var(--color-brand-danger);
-    border-color: #e0b8a8;
+    background: #fef2f2;
+    color: #dc2626;
   }
 
   .admin-state-accent {
     background: var(--color-tag-outreach-bg);
     color: var(--color-tag-outreach-text);
-    border-color: var(--color-tag-outreach-border);
   }
 
   /* ─────────────── Inputs ─────────────── */
@@ -482,12 +481,12 @@
   }
 
   .status-badge {
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
     font-weight: 500;
-    padding: 0.125rem 0.5rem;
-    border-radius: var(--radius-xs);
+    padding: 0.125rem 0.625rem;
+    border-radius: var(--radius-full);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.04em;
   }
 }
 
@@ -508,7 +507,8 @@
   animation: fade-in-up 0.4s ease-out forwards;
 }
 
+/* Tabular numbers for data alignment — no mono font, just the OpenType feature */
 .text-data {
-  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" on, "lnum" on;
 }
