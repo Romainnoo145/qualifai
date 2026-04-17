@@ -44,7 +44,11 @@ export function ProspectLogo({
         height={size}
         loading="lazy"
         onError={() => setFailed(true)}
-        className={cn('object-cover bg-white shrink-0', shapeClass, className)}
+        className={cn(
+          'object-contain bg-[var(--color-surface-2)] shrink-0 p-1',
+          shapeClass,
+          className,
+        )}
         style={{ ...sharedStyle, minWidth: `${size}px`, maxWidth: `${size}px` }}
         data-testid="prospect-logo-image"
       />

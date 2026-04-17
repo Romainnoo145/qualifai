@@ -1,11 +1,11 @@
 /**
- * og-logo.ts — High-resolution logo extraction from homepage og:image / apple-touch-icon.
+ * og-logo.ts — Logo extraction from homepage favicon / apple-touch-icon.
  *
- * Priority chain:
- *   1. <meta property="og:image">          — first match (both attribute orderings)
- *   2. <meta name="twitter:image">         — fallback (both orderings)
- *   3. <link rel="apple-touch-icon">       — picks largest sizes= attribute
- *   4. <link rel="icon" type="image/png">  — picks largest sizes= attribute
+ * Priority chain (ICONS FIRST — og:image is a social banner, not a logo):
+ *   1. <link rel="apple-touch-icon">       — picks largest sizes= attribute
+ *   2. <link rel="icon" type="image/png">  — picks largest sizes= attribute
+ *   3. <link rel="icon"> (any type)        — favicon fallback
+ *   4. <meta property="og:image">          — LAST RESORT (often social cards)
  *
  * Each candidate URL is HEAD-probed for 200 + non-zero content-length before
  * returning. Falls through to the next candidate on probe failure.
@@ -65,8 +65,8 @@ async function headProbe(url: string): Promise<boolean> {
       method: 'HEAD',
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    const cl = Number(res.headers.get('content-length') ?? '0');
-    return res.ok && cl > 0;
+    // Accept any 2xx — some CDNs (Framer) don't send content-length on HEAD
+    return res.ok;
   } catch {
     return false;
   }
@@ -79,57 +79,71 @@ async function headProbe(url: string): Promise<boolean> {
 function extractCandidates(html: string, domain: string): string[] {
   const candidates: string[] = [];
 
-  // Priority 1: og:image — handle both attribute orderings
-  const ogForward =
-    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i.exec(
-      html,
-    );
-  const ogReverse =
-    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i.exec(
-      html,
-    );
-  const ogMatch = ogForward ?? ogReverse;
-  if (ogMatch?.[1]) candidates.push(resolveUrl(ogMatch[1], domain));
-
-  // Priority 2: twitter:image — handle both attribute orderings
-  const twForward =
-    /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i.exec(
-      html,
-    );
-  const twReverse =
-    /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i.exec(
-      html,
-    );
-  const twMatch = twForward ?? twReverse;
-  if (twMatch?.[1]) candidates.push(resolveUrl(twMatch[1], domain));
-
-  // Priority 3: apple-touch-icon — pick the one with the largest sizes= attribute
-  const applePattern =
-    /<link[^>]+rel=["']apple-touch-icon["'][^>]*href=["']([^"']+)["'][^>]*/gi;
+  // Priority 1: apple-touch-icon — clean square icon, best quality
+  // Match both: <link rel="apple-touch-icon" href="..."> and <link href="..." rel="apple-touch-icon">
+  const applePatterns = [
+    /<link[^>]+rel=["']apple-touch-icon["'][^>]*href=["']([^"']+)["'][^>]*/gi,
+    /<link[^>]+href=["']([^"']+)["'][^>]*rel=["']apple-touch-icon["'][^>]*/gi,
+  ];
   let bestApple: { url: string; size: number } | null = null;
-  let appleMatch: RegExpExecArray | null;
-  while ((appleMatch = applePattern.exec(html)) !== null) {
-    const sizeMatch = /sizes=["'](\d+)x\d+["']/.exec(appleMatch[0]);
-    const size = sizeMatch ? parseInt(sizeMatch[1]!, 10) : 1;
-    if (!bestApple || size > bestApple.size) {
-      bestApple = { url: resolveUrl(appleMatch[1]!, domain), size };
+  for (const pattern of applePatterns) {
+    let appleMatch: RegExpExecArray | null;
+    while ((appleMatch = pattern.exec(html)) !== null) {
+      const sizeMatch = /sizes=["'](\d+)x\d+["']/.exec(appleMatch[0]);
+      const size = sizeMatch ? parseInt(sizeMatch[1]!, 10) : 1;
+      if (!bestApple || size > bestApple.size) {
+        bestApple = { url: resolveUrl(appleMatch[1]!, domain), size };
+      }
     }
   }
   if (bestApple) candidates.push(bestApple.url);
 
-  // Priority 4: icon type=image/png — pick the one with the largest sizes= attribute
-  const iconPattern =
-    /<link[^>]+rel=["'](?:shortcut )?icon["'][^>]+type=["']image\/png["'][^>]*href=["']([^"']+)["'][^>]*/gi;
-  let bestIcon: { url: string; size: number } | null = null;
-  let iconMatch: RegExpExecArray | null;
-  while ((iconMatch = iconPattern.exec(html)) !== null) {
-    const sizeMatch = /sizes=["'](\d+)x\d+["']/.exec(iconMatch[0]);
-    const size = sizeMatch ? parseInt(sizeMatch[1]!, 10) : 1;
-    if (!bestIcon || size > bestIcon.size) {
-      bestIcon = { url: resolveUrl(iconMatch[1]!, domain), size };
+  // Priority 2: icon type=image/png — pick the one with the largest sizes= attribute
+  const iconPngPatterns = [
+    /<link[^>]+rel=["'](?:shortcut )?icon["'][^>]+type=["']image\/png["'][^>]*href=["']([^"']+)["'][^>]*/gi,
+    /<link[^>]+href=["']([^"']+)["'][^>]*rel=["'](?:shortcut )?icon["'][^>]+type=["']image\/png["'][^>]*/gi,
+  ];
+  let bestIconPng: { url: string; size: number } | null = null;
+  for (const pattern of iconPngPatterns) {
+    let iconPngMatch: RegExpExecArray | null;
+    while ((iconPngMatch = pattern.exec(html)) !== null) {
+      const sizeMatch = /sizes=["'](\d+)x\d+["']/.exec(iconPngMatch[0]);
+      const size = sizeMatch ? parseInt(sizeMatch[1]!, 10) : 1;
+      if (!bestIconPng || size > bestIconPng.size) {
+        bestIconPng = { url: resolveUrl(iconPngMatch[1]!, domain), size };
+      }
     }
   }
-  if (bestIcon) candidates.push(bestIcon.url);
+  if (bestIconPng) candidates.push(bestIconPng.url);
+
+  // Priority 3: any <link rel="icon"> (including .ico, .svg)
+  // Handle both orderings: rel before href AND href before rel
+  const iconAnyPatternA =
+    /<link[^>]+rel=["'](?:shortcut )?icon["'][^>]*href=["']([^"']+)["'][^>]*/gi;
+  const iconAnyPatternB =
+    /<link[^>]+href=["']([^"']+)["'][^>]*rel=["'](?:shortcut )?icon["'][^>]*/gi;
+  for (const pattern of [iconAnyPatternA, iconAnyPatternB]) {
+    let iconAnyMatch: RegExpExecArray | null;
+    while ((iconAnyMatch = pattern.exec(html)) !== null) {
+      const url = resolveUrl(iconAnyMatch[1]!, domain);
+      if (!candidates.includes(url)) candidates.push(url);
+    }
+  }
+
+  // Priority 4 (LAST RESORT): og:image — often a social card banner, not a logo.
+  // Only use if no icon candidates were found above.
+  if (candidates.length === 0) {
+    const ogForward =
+      /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i.exec(
+        html,
+      );
+    const ogReverse =
+      /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i.exec(
+        html,
+      );
+    const ogMatch = ogForward ?? ogReverse;
+    if (ogMatch?.[1]) candidates.push(resolveUrl(ogMatch[1], domain));
+  }
 
   return candidates;
 }

@@ -27,9 +27,8 @@ import {
 const HEAD_TIMEOUT_MS = 3000;
 
 /**
- * HEAD-probe a URL and confirm status 200 + non-zero content-length.
- * Follows redirects by default (fetch behavior). Returns false on any error,
- * non-2xx status, or missing / zero content-length.
+ * HEAD-probe a URL. Accept any 2xx — some CDNs (Framer, Cloudflare)
+ * don't send content-length on HEAD requests.
  */
 async function headProbe(url: string): Promise<boolean> {
   try {
@@ -37,9 +36,7 @@ async function headProbe(url: string): Promise<boolean> {
       method: 'HEAD',
       signal: AbortSignal.timeout(HEAD_TIMEOUT_MS),
     });
-    if (!res.ok || res.status !== 200) return false;
-    const cl = Number(res.headers.get('content-length') ?? '0');
-    return cl > 0;
+    return res.ok;
   } catch {
     return false;
   }
