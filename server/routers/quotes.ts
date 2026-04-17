@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { projectAdminProcedure, router } from '../trpc';
 import { transitionQuote } from '@/lib/state-machines/quote';
+import { generateQuoteNarrative } from '@/lib/analysis/quote-narrative-generator';
 
 const QUOTE_STATUS_VALUES = [
   'DRAFT',
@@ -381,6 +382,115 @@ export const quotesRouter = router({
                 readableSlug: true,
                 companyName: true,
                 status: true,
+              },
+            },
+          },
+        });
+      });
+    }),
+
+  updateNotes: projectAdminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        meetingNotes: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertQuoteInProject(ctx as unknown as ScopedCtx, input.id);
+      return ctx.db.quote.update({
+        where: { id: input.id },
+        data: { meetingNotes: input.meetingNotes },
+        select: { id: true, meetingNotes: true },
+      });
+    }),
+
+  generateNarrative: projectAdminProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const quote = await ctx.db.quote.findFirst({
+        where: { id: input.id, prospect: { projectId: ctx.projectId } },
+        include: {
+          prospect: {
+            select: {
+              id: true,
+              companyName: true,
+              domain: true,
+              industry: true,
+              city: true,
+              employeeCount: true,
+              prospectAnalyses: {
+                where: { version: 'analysis-v2' },
+                orderBy: { createdAt: 'desc' },
+                take: 1,
+                select: { content: true },
+              },
+            },
+          },
+        },
+      });
+      if (!quote) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Quote not found in active project scope',
+        });
+      }
+      if (!quote.meetingNotes?.trim()) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Meeting notes are required before generating narrative',
+        });
+      }
+
+      const analysis = quote.prospect.prospectAnalyses[0]?.content ?? null;
+
+      const result = await generateQuoteNarrative({
+        meetingNotes: quote.meetingNotes,
+        prospectName:
+          quote.prospect.companyName ?? quote.prospect.domain ?? 'Prospect',
+        prospectDomain: quote.prospect.domain,
+        prospectIndustry: quote.prospect.industry,
+        prospectCity: quote.prospect.city,
+        prospectEmployeeCount: quote.prospect.employeeCount,
+        analysisContent: analysis,
+      });
+
+      return ctx.db.$transaction(async (tx) => {
+        const updated = await tx.quote.update({
+          where: { id: input.id },
+          data: {
+            introductie: result.introductie,
+            uitdaging: result.uitdaging,
+            aanpak: result.aanpak,
+            narrativeGeneratedAt: new Date(),
+          },
+          include: { lines: { orderBy: { position: 'asc' } } },
+        });
+
+        // If no existing lines, create suggested lines from AI
+        if (updated.lines.length === 0 && result.suggestedLines.length > 0) {
+          await tx.quoteLine.createMany({
+            data: result.suggestedLines.map((l, idx) => ({
+              quoteId: input.id,
+              fase: l.omschrijving,
+              omschrijving: l.omschrijving,
+              uren: l.uren,
+              tarief: l.tarief,
+              position: idx,
+            })),
+          });
+        }
+
+        return tx.quote.findUniqueOrThrow({
+          where: { id: input.id },
+          include: {
+            lines: { orderBy: { position: 'asc' } },
+            prospect: {
+              select: {
+                id: true,
+                slug: true,
+                readableSlug: true,
+                companyName: true,
               },
             },
           },
