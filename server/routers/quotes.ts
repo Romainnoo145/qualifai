@@ -333,6 +333,60 @@ export const quotesRouter = router({
         return created;
       });
     }),
+
+  /**
+   * Fase B — toggle "active voorstel" for a prospect.
+   *
+   * Atomically clears isActiveProposal on all quotes for the same prospect,
+   * then sets it on the target quote. Passing `active: false` just clears.
+   */
+  setActiveProposal: projectAdminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        active: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const quote = await ctx.db.quote.findFirst({
+        where: { id: input.id, prospect: { projectId: ctx.projectId } },
+        select: { id: true, prospectId: true },
+      });
+      if (!quote) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Quote not found in active project scope',
+        });
+      }
+
+      return ctx.db.$transaction(async (tx) => {
+        await tx.quote.updateMany({
+          where: { prospectId: quote.prospectId },
+          data: { isActiveProposal: false },
+        });
+        if (input.active) {
+          await tx.quote.update({
+            where: { id: input.id },
+            data: { isActiveProposal: true },
+          });
+        }
+        return tx.quote.findUniqueOrThrow({
+          where: { id: input.id },
+          include: {
+            lines: { orderBy: { position: 'asc' } },
+            prospect: {
+              select: {
+                id: true,
+                slug: true,
+                readableSlug: true,
+                companyName: true,
+                status: true,
+              },
+            },
+          },
+        });
+      });
+    }),
 });
 
 /**
