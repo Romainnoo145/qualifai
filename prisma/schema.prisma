@@ -793,6 +793,11 @@ model Quote {
   replaces   Quote?  @relation("QuoteVersion", fields: [replacesId], references: [id], onDelete: SetNull)
   replacedBy Quote[] @relation("QuoteVersion")
 
+  // Offerte lifecycle (2026-04-18 redesign)
+  meetingNotes         String?   @db.Text
+  narrativeGeneratedAt DateTime?
+  viewedAt             DateTime?
+
   // Active voorstel flag — only one per prospect (Fase B)
   isActiveProposal Boolean @default(false)
 
