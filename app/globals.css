@@ -77,16 +77,16 @@
   --space-xl: 4.5rem;
 
   /* Radius — admin is square, pill reserved for brochure CTAs */
-  --radius-xs: 0.25rem;
-  /* 4px */
-  --radius-sm: 0.375rem;
-  /* 6px — admin buttons */
-  --radius-md: 0.625rem;
-  /* 10px */
-  --radius-lg: 0.875rem;
-  /* 14px */
-  --radius-xl: 1rem;
-  /* 16px — max for admin cards */
+  --radius-xs: 0.375rem;
+  /* 6px */
+  --radius-sm: 0.5rem;
+  /* 8px — admin buttons */
+  --radius-md: 0.75rem;
+  /* 12px */
+  --radius-lg: 1rem;
+  /* 16px */
+  --radius-xl: 1.25rem;
+  /* 20px — admin cards */
   --radius-2xl: 1.25rem;
   --radius-full: 9999px;
   /* brochure only */

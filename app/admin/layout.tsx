@@ -249,7 +249,7 @@ function AdminShell({
 
   return (
     <div className="flex min-h-screen bg-[var(--color-background)]">
-      <aside className="sticky top-0 hidden h-screen w-[58px] flex-shrink-0 flex-col items-center border-r border-[var(--color-border-strong)] bg-[var(--color-surface-2)] py-5 lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-[58px] flex-shrink-0 flex-col items-center border-r border-[var(--color-border)] bg-[var(--color-surface)] py-5 lg:flex">
         {/* Brand */}
         <Link
           href="/admin"

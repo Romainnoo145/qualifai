@@ -56,22 +56,8 @@ export default function QuotesListPage() {
 
   if (list.error) {
     return (
-      <div
-        style={{
-          background: 'var(--color-surface-2)',
-          border: '1px solid var(--color-border)',
-          borderRadius: '4px',
-          padding: '24px',
-        }}
-      >
-        <p
-          style={{
-            fontSize: '11px',
-            color: '#c0392b',
-            textTransform: 'uppercase',
-            letterSpacing: '0.12em',
-          }}
-        >
+      <div style={{ padding: '24px' }}>
+        <p className="text-[13px] text-red-500">
           Fout bij laden: {String(list.error.message)}
         </p>
       </div>
@@ -115,22 +101,8 @@ export default function QuotesListPage() {
       </header>
 
       {rows.length === 0 ? (
-        <div
-          style={{
-            border: '1px solid var(--color-border)',
-            borderRadius: '4px',
-            padding: '48px',
-            textAlign: 'center',
-          }}
-        >
-          <p
-            style={{
-              fontSize: '11px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.18em',
-              color: 'var(--color-muted)',
-            }}
-          >
+        <div style={{ padding: '48px 0', textAlign: 'center' }}>
+          <p className="text-[13px] text-[var(--color-muted)]">
             Nog geen offertes. Ga naar een prospect en klik &quot;Nieuwe
             offerte&quot;.
           </p>
@@ -162,16 +134,12 @@ function QuoteSection({
   if (rows.length === 0) return null;
 
   return (
-    <details
-      open={defaultOpen}
-      style={{ border: '1px solid var(--color-border)', borderRadius: '4px' }}
-    >
+    <details open={defaultOpen}>
       {/* Section header */}
       <summary
         style={{
           cursor: 'pointer',
-          padding: '14px 20px',
-          borderRadius: '4px',
+          padding: '6px 0',
           listStyle: 'none',
           display: 'flex',
           alignItems: 'center',

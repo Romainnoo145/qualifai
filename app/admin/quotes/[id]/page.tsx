@@ -303,10 +303,7 @@ export default function QuoteDetailPage() {
         {/* Right sidebar */}
         <div className="space-y-4">
           {/* Prospect card */}
-          <div
-            className="p-4 space-y-1 border"
-            style={{ borderColor: 'var(--color-border, #e5e3da)' }}
-          >
+          <div className="p-4 space-y-1 rounded-xl bg-[var(--color-surface-2)]">
             <p
               className="text-[10px] uppercase tracking-[0.18em] mb-2"
               style={{
@@ -325,10 +322,7 @@ export default function QuoteDetailPage() {
           </div>
 
           {/* Active proposal toggle */}
-          <div
-            className="p-4 border"
-            style={{ borderColor: 'var(--color-border, #e5e3da)' }}
-          >
+          <div className="p-4 rounded-xl bg-[var(--color-surface-2)]">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
