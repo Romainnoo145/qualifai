@@ -119,7 +119,6 @@ export default function QuotesListPage() {
       {rows.length === 0 ? (
         <div
           style={{
-            background: 'var(--color-surface-2)',
             border: '1px solid var(--color-border)',
             borderRadius: '4px',
             padding: '48px',
@@ -175,7 +174,6 @@ function QuoteSection({
         style={{
           cursor: 'pointer',
           padding: '14px 20px',
-          background: 'var(--color-surface-2)',
           borderRadius: '4px',
           listStyle: 'none',
           display: 'flex',
@@ -214,7 +212,6 @@ function QuoteSection({
             <tr
               style={{
                 borderBottom: '1px solid var(--color-border)',
-                background: 'var(--color-surface)',
               }}
             >
               {(
@@ -248,26 +245,13 @@ function QuoteSection({
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, idx) => {
+            {rows.map((r) => {
               const totals = computeQuoteTotals(r.lines, r.btwPercentage);
-              const isOdd = idx % 2 === 0;
               return (
                 <tr
                   key={r.id}
                   style={{
-                    background: isOdd
-                      ? 'var(--color-surface-2)'
-                      : 'var(--color-surface)',
                     borderBottom: '1px solid var(--color-border)',
-                    transition: 'background 0.1s',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLTableRowElement).style.background =
-                      'var(--color-surface-hover)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLTableRowElement).style.background =
-                      isOdd ? 'var(--color-surface-2)' : 'var(--color-surface)';
                   }}
                 >
                   {/* Nummer */}
