@@ -793,6 +793,9 @@ model Quote {
   replaces   Quote?  @relation("QuoteVersion", fields: [replacesId], references: [id], onDelete: SetNull)
   replacedBy Quote[] @relation("QuoteVersion")
 
+  // Active voorstel flag — only one per prospect (Fase B)
+  isActiveProposal Boolean @default(false)
+
   // Multi-tenant via Prospect (DATA-06 + DATA-10)
   prospectId String
   prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Restrict)
@@ -800,6 +803,7 @@ model Quote {
   lines QuoteLine[]
 
   @@index([prospectId])
+  @@index([prospectId, isActiveProposal])
   @@index([status])
   @@index([nummer])
 }
