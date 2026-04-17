@@ -15,17 +15,12 @@ interface ProspectLogoProps {
 }
 
 /**
- * Two-stage logo rendering: validated DB logoUrl → initial-letter avatar.
+ * Three-stage logo cascade:
+ *   1. Google Favicon API (clean 128px icon for most domains)
+ *   2. Stored logoUrl with object-cover crop (handles banners/og:images)
+ *   3. Initial-letter avatar fallback
  *
- * Phase 61.3 unification: the backend resolveLogoUrl pipeline guarantees that
- * whatever lands in `prospect.logoUrl` is a HEAD-verified live URL. We no
- * longer cascade through DDG / Google fallbacks in the browser. When logoUrl
- * is null or the img fails to load (e.g. network hiccup or URL went stale
- * post-write), we drop straight to the initial-letter avatar.
- *
- * The shape prop drives the base rounding class so callers can request
- * circle (detail header) or rounded (list card) without fighting Tailwind
- * class precedence via className overrides.
+ * Each stage falls through on load error.
  */
 export function ProspectLogo({
   prospect,
@@ -33,7 +28,9 @@ export function ProspectLogo({
   shape = 'circle',
   className,
 }: ProspectLogoProps): React.ReactElement {
-  const [imageFailed, setImageFailed] = useState(false);
+  const [stage, setStage] = useState<'favicon' | 'stored' | 'initial'>(
+    'favicon',
+  );
 
   const shapeClass = shape === 'circle' ? 'rounded-full' : 'rounded-2xl';
   const sharedStyle: React.CSSProperties = {
@@ -41,49 +38,63 @@ export function ProspectLogo({
     height: `${size}px`,
   };
 
-  // Prefer Google's favicon API for clean icons — the stored logoUrl
-  // is often an og:image / social card banner, not a real logo.
   const faviconUrl = prospect.domain
     ? `https://www.google.com/s2/favicons?domain=${prospect.domain}&sz=128`
     : null;
-  const imgSrc = !imageFailed ? (faviconUrl ?? prospect.logoUrl) : null;
 
-  if (!imgSrc) {
-    const initial =
-      (prospect.companyName ?? prospect.domain ?? '?')
-        .trim()
-        .charAt(0)
-        .toUpperCase() || '?';
+  // Determine what to show based on current stage
+  if (stage === 'favicon' && faviconUrl) {
     return (
-      <div
-        className={cn(
-          'flex items-center justify-center bg-slate-200 font-bold text-slate-700',
-          shapeClass,
-          className,
-        )}
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={faviconUrl}
+        alt={prospect.companyName ?? prospect.domain ?? 'Prospect logo'}
+        width={size}
+        height={size}
+        loading="lazy"
+        onError={() => setStage(prospect.logoUrl ? 'stored' : 'initial')}
+        className={cn('object-contain bg-white', shapeClass, className)}
         style={sharedStyle}
-        aria-label={`Logo placeholder for ${prospect.companyName ?? prospect.domain ?? 'unknown prospect'}`}
-        data-testid="prospect-logo-initial"
-        data-shape={shape}
-      >
-        {initial}
-      </div>
+        data-testid="prospect-logo-favicon"
+      />
     );
   }
 
+  if (stage !== 'initial' && prospect.logoUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={prospect.logoUrl}
+        alt={prospect.companyName ?? prospect.domain ?? 'Prospect logo'}
+        width={size}
+        height={size}
+        loading="lazy"
+        onError={() => setStage('initial')}
+        className={cn('object-cover bg-white', shapeClass, className)}
+        style={sharedStyle}
+        data-testid="prospect-logo-stored"
+      />
+    );
+  }
+
+  // Stage 3: initial letter avatar
+  const initial =
+    (prospect.companyName ?? prospect.domain ?? '?')
+      .trim()
+      .charAt(0)
+      .toUpperCase() || '?';
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={imgSrc}
-      alt={prospect.companyName ?? prospect.domain ?? 'Prospect logo'}
-      width={size}
-      height={size}
-      loading="lazy"
-      onError={() => setImageFailed(true)}
-      className={cn('object-contain', shapeClass, className)}
+    <div
+      className={cn(
+        'flex items-center justify-center bg-[var(--color-surface-2)] font-medium text-[var(--color-muted-dark)]',
+        shapeClass,
+        className,
+      )}
       style={sharedStyle}
-      data-testid="prospect-logo-image"
-      data-shape={shape}
-    />
+      aria-label={`Logo placeholder for ${prospect.companyName ?? prospect.domain ?? 'unknown prospect'}`}
+      data-testid="prospect-logo-initial"
+    >
+      {initial}
+    </div>
   );
 }
