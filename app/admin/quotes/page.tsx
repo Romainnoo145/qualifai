@@ -1,24 +1,14 @@
 'use client';
 
-/**
- * /admin/quotes — list page grouped by status.
- *
- * Sections in fixed order:
- *  - Concept (DRAFT, open)
- *  - Verstuurd (SENT/VIEWED/ACCEPTED/REJECTED/EXPIRED, open)
- *  - Gearchiveerd (ARCHIVED, collapsed by default via <details>)
- *
- * Row target is /admin/quotes/${id} (detail page ships in Plan 61-03).
- */
-
+import { useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/components/providers';
 import { PageLoader } from '@/components/ui/page-loader';
 import { QuoteStatusBadge } from '@/components/features/quotes/quote-status-badge';
 import { computeQuoteTotals, formatEuro } from '@/lib/quotes/quote-totals';
 import type { QuoteStatus } from '@prisma/client';
+import { cn } from '@/lib/utils';
 
-// TODO: tRPC v11 inference gap — explicit Row type mirrors the list include
 type Row = {
   id: string;
   nummer: string;
@@ -36,19 +26,27 @@ type Row = {
   };
 };
 
-const DRAFT_STATUSES: QuoteStatus[] = ['DRAFT'];
-const SENT_STATUSES: QuoteStatus[] = [
-  'SENT',
-  'VIEWED',
-  'ACCEPTED',
-  'REJECTED',
-  'EXPIRED',
+type Filter = 'ALL' | 'DRAFT' | 'SENT' | 'ACCEPTED' | 'ARCHIVED';
+
+const FILTERS: { key: Filter; label: string }[] = [
+  { key: 'ALL', label: 'Alles' },
+  { key: 'DRAFT', label: 'Concept' },
+  { key: 'SENT', label: 'Verstuurd' },
+  { key: 'ACCEPTED', label: 'Geaccepteerd' },
+  { key: 'ARCHIVED', label: 'Gearchiveerd' },
 ];
-const ARCHIVED_STATUSES: QuoteStatus[] = ['ARCHIVED'];
+
+function matchesFilter(status: QuoteStatus, filter: Filter): boolean {
+  if (filter === 'ALL') return true;
+  if (filter === 'SENT')
+    return ['SENT', 'VIEWED', 'EXPIRED', 'REJECTED'].includes(status);
+  return status === filter;
+}
 
 export default function QuotesListPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const list = (api.quotes.list as any).useQuery(undefined);
+  const [filter, setFilter] = useState<Filter>('ALL');
 
   if (list.isLoading) {
     return <PageLoader label="Offertes laden" description="Eén moment." />;
@@ -56,150 +54,81 @@ export default function QuotesListPage() {
 
   if (list.error) {
     return (
-      <div style={{ padding: '24px' }}>
-        <p className="text-[13px] text-red-500">
-          Fout bij laden: {String(list.error.message)}
-        </p>
-      </div>
+      <p className="p-6 text-[13px] text-red-500">
+        Fout bij laden: {String(list.error.message)}
+      </p>
     );
   }
 
-  const rows: Row[] = (list.data ?? []) as Row[];
-  const draft = rows.filter((r) => DRAFT_STATUSES.includes(r.status));
-  const sent = rows.filter((r) => SENT_STATUSES.includes(r.status));
-  const archived = rows.filter((r) => ARCHIVED_STATUSES.includes(r.status));
+  const allRows: Row[] = (list.data ?? []) as Row[];
+  const rows = allRows.filter((r) => matchesFilter(r.status, filter));
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       {/* Header */}
-      <header className="flex items-start justify-between gap-6">
-        <div className="space-y-1">
-          <p
-            style={{
-              fontSize: '11px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.18em',
-              color: 'var(--color-muted)',
-            }}
-          >
-            Overzicht
-          </p>
-          <h1
-            className="text-3xl font-semibold"
-            style={{
-              color: 'var(--color-ink)',
-              fontFamily: 'var(--font-sans)',
-            }}
-          >
+      <header className="flex items-end justify-between gap-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-[var(--color-ink)]">
             Offertes
-            <span style={{ color: 'var(--color-gold)' }}>.</span>
           </h1>
+          <p className="mt-1 text-[13px] text-[var(--color-muted)]">
+            {allRows.length} offerte{allRows.length !== 1 ? 's' : ''}
+          </p>
         </div>
         <Link href="/admin/prospects" className="admin-btn-primary">
           + Nieuwe offerte
         </Link>
       </header>
 
-      {rows.length === 0 ? (
-        <div style={{ padding: '48px 0', textAlign: 'center' }}>
-          <p className="text-[13px] text-[var(--color-muted)]">
-            Nog geen offertes. Ga naar een prospect en klik &quot;Nieuwe
-            offerte&quot;.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          <QuoteSection title="Concept" rows={draft} defaultOpen />
-          <QuoteSection title="Verstuurd" rows={sent} defaultOpen />
-          <QuoteSection
-            title="Gearchiveerd"
-            rows={archived}
-            defaultOpen={false}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function QuoteSection({
-  title,
-  rows,
-  defaultOpen,
-}: {
-  title: string;
-  rows: Row[];
-  defaultOpen: boolean;
-}) {
-  if (rows.length === 0) return null;
-
-  return (
-    <details open={defaultOpen}>
-      {/* Section header */}
-      <summary
-        style={{
-          cursor: 'pointer',
-          padding: '6px 0',
-          listStyle: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-        }}
-      >
-        <span
-          style={{
-            fontSize: '11px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.18em',
-            color: 'var(--color-muted-dark)',
-            fontWeight: 500,
-          }}
-        >
-          {title}
-        </span>
-        <span
-          style={{
-            fontSize: '11px',
-            color: 'var(--color-muted)',
-            letterSpacing: '0.12em',
-          }}
-        >
-          {rows.length}
-        </span>
-      </summary>
+      {/* Filter pills */}
+      <div className="flex gap-1.5">
+        {FILTERS.map((f) => {
+          const count =
+            f.key === 'ALL'
+              ? allRows.length
+              : allRows.filter((r) => matchesFilter(r.status, f.key)).length;
+          if (count === 0 && f.key !== 'ALL') return null;
+          return (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-[13px] transition-colors',
+                filter === f.key
+                  ? 'bg-[var(--color-ink)] text-white font-medium'
+                  : 'text-[var(--color-muted-dark)] hover:bg-[var(--color-surface-2)]',
+              )}
+            >
+              {f.label}
+              <span className="ml-1.5 text-[11px] opacity-60">{count}</span>
+            </button>
+          );
+        })}
+      </div>
 
       {/* Table */}
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      {rows.length === 0 ? (
+        <p className="py-12 text-center text-[13px] text-[var(--color-muted)]">
+          Geen offertes met deze filter.
+        </p>
+      ) : (
+        <table className="w-full text-[13px]">
           <thead>
-            <tr
-              style={{
-                borderBottom: '1px solid var(--color-border)',
-              }}
-            >
-              {(
-                [
-                  'Nummer',
-                  'Bedrijf',
-                  'Onderwerp',
-                  'Status',
-                  'Bedrag',
-                  'Datum',
-                ] as const
-              ).map((col) => (
+            <tr className="border-b border-[var(--color-border)] text-left">
+              {[
+                'Nummer',
+                'Bedrijf',
+                'Onderwerp',
+                'Status',
+                'Bedrag',
+                'Datum',
+              ].map((col) => (
                 <th
                   key={col}
-                  style={{
-                    padding: '10px 20px',
-                    textAlign:
-                      col === 'Bedrag' || col === 'Datum' ? 'right' : 'left',
-                    fontSize: '10px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.18em',
-                    color: 'var(--color-ink)',
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap',
-                  }}
+                  className={cn(
+                    'pb-2 pr-4 text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)]',
+                    (col === 'Bedrag' || col === 'Datum') && 'text-right',
+                  )}
                 >
                   {col}
                 </th>
@@ -212,142 +141,43 @@ function QuoteSection({
               return (
                 <tr
                   key={r.id}
-                  style={{
-                    borderBottom: '1px solid var(--color-border)',
-                  }}
+                  className="border-b border-[var(--color-border)] hover:bg-[var(--color-surface-2)] transition-colors"
                 >
-                  {/* Nummer */}
-                  <td style={{ padding: '14px 20px', whiteSpace: 'nowrap' }}>
+                  <td className="py-3 pr-4">
                     <Link
                       href={`/admin/quotes/${r.id}`}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        textDecoration: 'none',
-                      }}
+                      className="inline-flex items-center gap-2 font-medium text-[var(--color-ink)] hover:underline"
                     >
                       {r.isActiveProposal && (
                         <span
+                          className="h-1.5 w-1.5 rounded-full bg-[var(--color-gold)]"
                           title="Actief voorstel"
-                          style={{
-                            display: 'inline-block',
-                            width: '7px',
-                            height: '7px',
-                            borderRadius: '50%',
-                            background: 'var(--color-gold)',
-                            flexShrink: 0,
-                          }}
                         />
                       )}
-                      <span
-                        style={{
-                          fontSize: '12px',
-                          fontWeight: 500,
-                          color: 'var(--color-ink)',
-                          letterSpacing: '0.04em',
-                          fontVariantNumeric: 'tabular-nums',
-                        }}
-                      >
-                        {r.nummer}
-                      </span>
+                      {r.nummer}
                     </Link>
                   </td>
-
-                  {/* Bedrijf */}
-                  <td style={{ padding: '14px 20px', whiteSpace: 'nowrap' }}>
-                    <Link
-                      href={`/admin/quotes/${r.id}`}
-                      style={{
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        color: 'var(--color-ink)',
-                        textDecoration: 'none',
-                      }}
-                    >
-                      {r.prospect.companyName ?? r.prospect.slug}
-                    </Link>
+                  <td className="py-3 pr-4 text-[var(--color-muted-dark)]">
+                    {r.prospect.companyName ?? r.prospect.slug}
                   </td>
-
-                  {/* Onderwerp */}
-                  <td
-                    style={{
-                      padding: '14px 20px',
-                      fontSize: '13px',
-                      color: 'var(--color-muted-dark)',
-                      maxWidth: '280px',
-                    }}
-                  >
-                    <Link
-                      href={`/admin/quotes/${r.id}`}
-                      style={{
-                        display: 'block',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        color: 'inherit',
-                        textDecoration: 'none',
-                      }}
-                    >
-                      {r.onderwerp}
-                    </Link>
+                  <td className="py-3 pr-4 text-[var(--color-muted-dark)] max-w-[260px] truncate">
+                    {r.onderwerp}
                   </td>
-
-                  {/* Status */}
-                  <td style={{ padding: '14px 20px', whiteSpace: 'nowrap' }}>
+                  <td className="py-3 pr-4">
                     <QuoteStatusBadge status={r.status} />
                   </td>
-
-                  {/* Bedrag */}
-                  <td
-                    style={{
-                      padding: '14px 20px',
-                      textAlign: 'right',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <Link
-                      href={`/admin/quotes/${r.id}`}
-                      style={{ textDecoration: 'none' }}
-                    >
-                      <span
-                        style={{
-                          fontSize: '13px',
-                          fontWeight: 600,
-                          color: 'var(--color-ink)',
-                          fontVariantNumeric: 'tabular-nums',
-                        }}
-                      >
-                        {formatEuro(totals.bruto)}
-                      </span>
-                    </Link>
+                  <td className="py-3 pr-4 text-right font-medium text-[var(--color-ink)] tabular-nums">
+                    {formatEuro(totals.bruto)}
                   </td>
-
-                  {/* Datum */}
-                  <td
-                    style={{
-                      padding: '14px 20px',
-                      textAlign: 'right',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        color: 'var(--color-muted)',
-                        letterSpacing: '0.06em',
-                        fontVariantNumeric: 'tabular-nums',
-                      }}
-                    >
-                      {new Date(r.createdAt).toLocaleDateString('nl-NL')}
-                    </span>
+                  <td className="py-3 text-right text-[var(--color-muted)] tabular-nums text-[12px]">
+                    {new Date(r.createdAt).toLocaleDateString('nl-NL')}
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-      </div>
-    </details>
+      )}
+    </div>
   );
 }
