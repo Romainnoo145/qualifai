@@ -26,6 +26,7 @@ type Row = {
   status: QuoteStatus;
   btwPercentage: number;
   createdAt: string | Date;
+  isActiveProposal: boolean;
   lines: { uren: number; tarief: number }[];
   prospect: {
     id: string;
@@ -55,8 +56,23 @@ export default function QuotesListPage() {
 
   if (list.error) {
     return (
-      <div className="glass-card p-10">
-        <p className="text-xs font-bold text-red-500">
+      <div
+        style={{
+          background: 'var(--color-surface-2)',
+          border: '1px solid var(--color-border)',
+          borderRadius: '4px',
+          padding: '24px',
+        }}
+      >
+        <p
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            color: '#c0392b',
+            textTransform: 'uppercase',
+            letterSpacing: '0.12em',
+          }}
+        >
           Fout bij laden: {String(list.error.message)}
         </p>
       </div>
@@ -70,24 +86,61 @@ export default function QuotesListPage() {
 
   return (
     <div className="space-y-10">
-      <header className="space-y-2">
-        <h1 className="text-4xl font-black tracking-tighter text-[#040026]">
-          Offertes
-        </h1>
-        <p className="text-sm font-bold text-slate-400">
-          Maak een nieuwe offerte vanuit een prospect-detailpagina.
-        </p>
+      {/* Header */}
+      <header className="flex items-start justify-between gap-6">
+        <div className="space-y-1">
+          <p
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.18em',
+              color: 'var(--color-muted)',
+            }}
+          >
+            Overzicht
+          </p>
+          <h1
+            className="text-3xl font-semibold"
+            style={{
+              color: 'var(--color-ink)',
+              fontFamily: 'var(--font-sans)',
+            }}
+          >
+            Offertes
+            <span style={{ color: 'var(--color-gold)' }}>.</span>
+          </h1>
+        </div>
+        <Link href="/admin/prospects" className="admin-btn-primary">
+          + Nieuwe offerte
+        </Link>
       </header>
 
       {rows.length === 0 ? (
-        <div className="glass-card p-10 text-center">
-          <p className="text-sm font-bold text-slate-500">
+        <div
+          style={{
+            background: 'var(--color-surface-2)',
+            border: '1px solid var(--color-border)',
+            borderRadius: '4px',
+            padding: '48px',
+            textAlign: 'center',
+          }}
+        >
+          <p
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.18em',
+              color: 'var(--color-muted)',
+            }}
+          >
             Nog geen offertes. Ga naar een prospect en klik &quot;Nieuwe
             offerte&quot;.
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <QuoteSection title="Concept" rows={draft} defaultOpen />
           <QuoteSection title="Verstuurd" rows={sent} defaultOpen />
           <QuoteSection
@@ -111,41 +164,246 @@ function QuoteSection({
   defaultOpen: boolean;
 }) {
   if (rows.length === 0) return null;
+
   return (
-    <details open={defaultOpen} className="glass-card p-6">
-      <summary className="cursor-pointer text-lg font-black text-[#040026]">
-        {title} ({rows.length})
+    <details
+      open={defaultOpen}
+      style={{ border: '1px solid var(--color-border)', borderRadius: '4px' }}
+    >
+      {/* Section header */}
+      <summary
+        style={{
+          cursor: 'pointer',
+          padding: '14px 20px',
+          background: 'var(--color-surface-2)',
+          borderRadius: '4px',
+          listStyle: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.18em',
+            color: 'var(--color-muted-dark)',
+            fontWeight: 500,
+          }}
+        >
+          {title}
+        </span>
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            color: 'var(--color-muted)',
+            letterSpacing: '0.12em',
+          }}
+        >
+          {rows.length}
+        </span>
       </summary>
-      <div className="mt-4 space-y-3">
-        {rows.map((r) => {
-          const totals = computeQuoteTotals(r.lines, r.btwPercentage);
-          return (
-            <Link
-              key={r.id}
-              href={`/admin/quotes/${r.id}`}
-              className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/40 p-4 hover:bg-slate-50"
+
+      {/* Table */}
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr
+              style={{
+                borderBottom: '1px solid var(--color-border)',
+                background: 'var(--color-surface)',
+              }}
             >
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                  <span className="font-black text-[#040026]">{r.nummer}</span>
-                  <QuoteStatusBadge status={r.status} />
-                </div>
-                <div className="text-sm text-slate-600">{r.onderwerp}</div>
-                <div className="text-xs text-slate-400">
-                  {r.prospect.companyName ?? r.prospect.slug}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="font-black text-[#040026]">
-                  {formatEuro(totals.bruto)}
-                </div>
-                <div className="text-xs text-slate-400">
-                  {new Date(r.createdAt).toLocaleDateString('nl-NL')}
-                </div>
-              </div>
-            </Link>
-          );
-        })}
+              {(
+                [
+                  'Nummer',
+                  'Bedrijf',
+                  'Onderwerp',
+                  'Status',
+                  'Bedrag',
+                  'Datum',
+                ] as const
+              ).map((col) => (
+                <th
+                  key={col}
+                  style={{
+                    padding: '10px 20px',
+                    textAlign:
+                      col === 'Bedrag' || col === 'Datum' ? 'right' : 'left',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.18em',
+                    color: 'var(--color-ink)',
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, idx) => {
+              const totals = computeQuoteTotals(r.lines, r.btwPercentage);
+              const isOdd = idx % 2 === 0;
+              return (
+                <tr
+                  key={r.id}
+                  style={{
+                    background: isOdd
+                      ? 'var(--color-surface-2)'
+                      : 'var(--color-surface)',
+                    borderBottom: '1px solid var(--color-border)',
+                    transition: 'background 0.1s',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLTableRowElement).style.background =
+                      'var(--color-surface-hover)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLTableRowElement).style.background =
+                      isOdd ? 'var(--color-surface-2)' : 'var(--color-surface)';
+                  }}
+                >
+                  {/* Nummer */}
+                  <td style={{ padding: '14px 20px', whiteSpace: 'nowrap' }}>
+                    <Link
+                      href={`/admin/quotes/${r.id}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {r.isActiveProposal && (
+                        <span
+                          title="Actief voorstel"
+                          style={{
+                            display: 'inline-block',
+                            width: '7px',
+                            height: '7px',
+                            borderRadius: '50%',
+                            background: 'var(--color-gold)',
+                            flexShrink: 0,
+                          }}
+                        />
+                      )}
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          color: 'var(--color-ink)',
+                          letterSpacing: '0.04em',
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
+                        {r.nummer}
+                      </span>
+                    </Link>
+                  </td>
+
+                  {/* Bedrijf */}
+                  <td style={{ padding: '14px 20px', whiteSpace: 'nowrap' }}>
+                    <Link
+                      href={`/admin/quotes/${r.id}`}
+                      style={{
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        color: 'var(--color-ink)',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {r.prospect.companyName ?? r.prospect.slug}
+                    </Link>
+                  </td>
+
+                  {/* Onderwerp */}
+                  <td
+                    style={{
+                      padding: '14px 20px',
+                      fontSize: '13px',
+                      color: 'var(--color-muted-dark)',
+                      maxWidth: '280px',
+                    }}
+                  >
+                    <Link
+                      href={`/admin/quotes/${r.id}`}
+                      style={{
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        color: 'inherit',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {r.onderwerp}
+                    </Link>
+                  </td>
+
+                  {/* Status */}
+                  <td style={{ padding: '14px 20px', whiteSpace: 'nowrap' }}>
+                    <QuoteStatusBadge status={r.status} />
+                  </td>
+
+                  {/* Bedrag */}
+                  <td
+                    style={{
+                      padding: '14px 20px',
+                      textAlign: 'right',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Link
+                      href={`/admin/quotes/${r.id}`}
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          color: 'var(--color-ink)',
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
+                        {formatEuro(totals.bruto)}
+                      </span>
+                    </Link>
+                  </td>
+
+                  {/* Datum */}
+                  <td
+                    style={{
+                      padding: '14px 20px',
+                      textAlign: 'right',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '11px',
+                        color: 'var(--color-muted)',
+                        letterSpacing: '0.06em',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {new Date(r.createdAt).toLocaleDateString('nl-NL')}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </details>
   );
