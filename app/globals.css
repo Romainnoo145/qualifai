@@ -153,9 +153,9 @@
     justify-content: center;
     gap: 0.5rem;
     border-radius: var(--radius-sm);
-    background: var(--color-gold);
+    background: linear-gradient(180deg, #e1c33c 0%, #fdf97b 100%);
     color: var(--color-ink);
-    border: 1px solid var(--color-gold);
+    border: 1px solid #e1c33c;
     font-size: 0.8125rem;
     font-weight: 500;
     letter-spacing: -0.005em;
@@ -166,8 +166,8 @@
   }
 
   .admin-btn-primary:hover {
-    background: var(--color-brand-yellow-dark);
-    border-color: var(--color-brand-yellow-dark);
+    background: linear-gradient(180deg, #d4b43b 0%, #f4e96e 100%);
+    border-color: #d4b43b;
   }
 
   .admin-btn-primary:disabled {
