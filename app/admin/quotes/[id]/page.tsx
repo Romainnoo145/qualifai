@@ -1,22 +1,20 @@
 'use client';
 
 /**
- * Phase 61-03 / ADMIN-07 wiring — Quote detail page.
+ * Quote detail — Editorial two-column layout.
  *
- * Tabs: Details / Voorbeeld / Tijdlijn (CSS `hidden` pattern — panels stay
- * mounted so tab switches never refetch). Read-only branching on
- * `status !== 'DRAFT'` flips the shared QuoteForm into read-only mode.
- * Dirty tracking + beforeunload warning only active for DRAFT edits.
+ * Left: QuoteForm + totals block.
+ * Right sidebar: prospect card, active proposal toggle, preview link, actions.
  *
- * Action slot (Verstuur / Nieuwe versie) is intentionally empty here —
- * 61-04 mounts those actions into the dedicated slot div below.
+ * Read-only branching on `status !== 'DRAFT'`. Dirty tracking + beforeunload
+ * warning only active for DRAFT edits.
  */
 
 import type { Prisma } from '@prisma/client';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { api } from '@/components/providers';
 import { PageLoader } from '@/components/ui/page-loader';
 import {
@@ -24,13 +22,11 @@ import {
   type QuoteFormValues,
 } from '@/components/features/quotes/quote-form';
 import { QuoteStatusBadge } from '@/components/features/quotes/quote-status-badge';
-import { QuoteStatusTimeline } from '@/components/features/quotes/quote-status-timeline';
-import { QuotePreviewIframe } from '@/components/features/quotes/quote-preview-iframe';
 import { QuoteSendConfirm } from '@/components/features/quotes/quote-send-confirm';
 import { QuoteVersionConfirm } from '@/components/features/quotes/quote-version-confirm';
+import { computeQuoteTotals, formatEuro } from '@/lib/quotes/quote-totals';
 
-// Pitfall 5 / tRPC v11 inference gap — mirror ResearchRunRow pattern from
-// app/admin/prospects/[id]/page.tsx.
+// tRPC v11 inference gap — mirror ResearchRunRow pattern.
 type QuoteDetailRow = Prisma.QuoteGetPayload<{
   include: {
     lines: { orderBy: { position: 'asc' } };
@@ -45,27 +41,30 @@ type QuoteDetailRow = Prisma.QuoteGetPayload<{
   };
 }>;
 
-function TabButton({
-  active,
-  onClick,
-  children,
+function TotalsRow({
+  label,
+  value,
+  bold,
 }: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
+  label: string;
+  value: string;
+  bold?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        active
-          ? 'border-b-2 border-[#EBCB4B] pb-2 text-sm font-black text-[#040026]'
-          : 'pb-2 text-sm font-semibold text-slate-500 hover:text-[#040026]'
-      }
-    >
-      {children}
-    </button>
+    <div className="flex justify-between items-baseline">
+      <span
+        className={`text-[12px] uppercase tracking-[0.12em] ${bold ? 'text-[var(--color-ink)] font-medium' : 'text-[var(--color-muted-dark)]'}`}
+        style={{ fontFamily: 'var(--font-mono)' }}
+      >
+        {label}
+      </span>
+      <span
+        className={`tabular-nums ${bold ? 'text-[16px] font-medium text-[var(--color-ink)]' : 'text-[14px] text-[var(--color-ink)]'}`}
+        style={{ fontFamily: 'var(--font-mono)' }}
+      >
+        {value}
+      </span>
+    </div>
   );
 }
 
@@ -76,7 +75,6 @@ export default function QuoteDetailPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const utils = api.useUtils() as any;
 
-  const [tab, setTab] = useState<'details' | 'preview' | 'timeline'>('details');
   const [error, setError] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [draft, setDraft] = useState<QuoteFormValues | null>(null);
@@ -101,8 +99,18 @@ export default function QuoteDetailPage() {
     },
   });
 
-  // Seed the draft whenever the server row arrives/changes (uses updatedAt
-  // as the change signal so we don't reseed after a local edit).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const activeProposalMutation = (
+    api.quotes.setActiveProposal as any
+  ).useMutation({
+    onSuccess: () => {
+      utils.quotes?.get?.invalidate?.({ id });
+      utils.quotes?.list?.invalidate?.();
+    },
+  });
+
+  // Seed draft whenever the server row arrives/changes (updatedAt as change signal
+  // so we don't reseed after a local edit).
   useEffect(() => {
     if (!quote) return;
     setDraft({
@@ -135,7 +143,12 @@ export default function QuoteDetailPage() {
     [quote?.status],
   );
 
-  // beforeunload warning for uncommitted changes (O7)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isActiveProposal = (quote as any)?.isActiveProposal as
+    | boolean
+    | undefined;
+
+  // beforeunload warning for uncommitted changes
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (isDirty && !isReadOnly) {
@@ -152,11 +165,16 @@ export default function QuoteDetailPage() {
   }
   if (quoteQuery.error) {
     return (
-      <div className="glass-card p-10 text-red-600">
+      <div className="p-10 text-sm text-red-600">
         Fout: {String(quoteQuery.error.message)}
       </div>
     );
   }
+
+  const totals = computeQuoteTotals(
+    draft.lines.map((l) => ({ uren: l.uren, tarief: l.tarief })),
+    draft.btwPercentage,
+  );
 
   const handleSubmit = (values: QuoteFormValues) => {
     setError(null);
@@ -187,85 +205,189 @@ export default function QuoteDetailPage() {
   };
 
   return (
-    <div className="space-y-6 p-10">
-      <header className="space-y-3">
-        <Link
-          href={`/admin/prospects/${quote.prospect.id}`}
-          className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#040026]"
+    <div className="p-6 space-y-6">
+      {/* Back link */}
+      <Link
+        href={`/admin/prospects/${quote.prospect.id}`}
+        className="inline-flex items-center gap-1.5 hover:opacity-70 transition-opacity"
+        style={{ fontFamily: 'var(--font-mono)' }}
+      >
+        <ArrowLeft
+          className="h-3 w-3"
+          style={{ color: 'var(--color-muted)' }}
+        />
+        <span
+          className="text-[11px] uppercase tracking-[0.18em]"
+          style={{ color: 'var(--color-muted)' }}
         >
-          <ArrowLeft className="h-4 w-4" /> Terug naar{' '}
           {quote.prospect.companyName ?? quote.prospect.slug}
-        </Link>
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-black text-[#040026]">{quote.nummer}</h1>
+        </span>
+      </Link>
+
+      {/* Hero */}
+      <header className="space-y-2">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span
+            className="text-[24px] leading-none"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              color: 'var(--color-ink)',
+            }}
+          >
+            {quote.nummer}
+          </span>
           <QuoteStatusBadge status={quote.status} />
+          {isActiveProposal && (
+            <span
+              className="text-[11px] uppercase tracking-[0.18em]"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--color-gold)',
+              }}
+            >
+              Actief voorstel
+            </span>
+          )}
           {isDirty && !isReadOnly && (
-            <span className="text-xs font-bold text-amber-600">
-              Niet opgeslagen wijzigingen
+            <span
+              className="text-[11px] uppercase tracking-[0.14em]"
+              style={{ fontFamily: 'var(--font-mono)', color: '#b45309' }}
+            >
+              Niet opgeslagen
             </span>
           )}
         </div>
-        <p className="text-sm text-slate-500">{quote.onderwerp}</p>
+        <p className="text-[13px]" style={{ color: 'var(--color-muted)' }}>
+          {quote.onderwerp}
+        </p>
       </header>
 
       {error && (
-        <div className="glass-card border-l-4 border-red-500 p-6 text-sm text-red-700">
+        <div
+          className="border-l-2 p-4 text-[13px]"
+          style={{ borderColor: '#dc2626', color: '#dc2626' }}
+        >
           {error}
         </div>
       )}
 
-      {/* Acties slot — Verstuur (DRAFT) + Nieuwe versie (SENT/VIEWED). */}
-      <div
-        className="flex flex-wrap items-center gap-3"
-        data-testid="quote-actions-slot"
-      >
-        <QuoteSendConfirm
-          quoteId={quote.id}
-          status={quote.status}
-          lines={quote.lines.map((l) => ({ uren: l.uren, tarief: l.tarief }))}
-          btwPercentage={quote.btwPercentage}
-        />
-        <QuoteVersionConfirm quoteId={quote.id} status={quote.status} />
+      {/* Two-column grid */}
+      <div className="grid grid-cols-[1fr_280px] gap-8 items-start">
+        {/* Left: form + totals */}
+        <div className="space-y-8">
+          <QuoteForm
+            initial={draft}
+            mode="edit"
+            onSubmit={handleSubmit}
+            isReadOnly={isReadOnly}
+            isSubmitting={updateMutation.isPending}
+            error={error}
+          />
+
+          {/* Totals block */}
+          <div className="flex justify-end">
+            <div className="w-[280px] space-y-2">
+              <TotalsRow label="Subtotaal" value={formatEuro(totals.netto)} />
+              <TotalsRow
+                label={`BTW ${draft.btwPercentage}%`}
+                value={formatEuro(totals.btw)}
+              />
+              <div
+                className="border-t-2 pt-2"
+                style={{ borderColor: 'var(--color-gold)' }}
+              >
+                <TotalsRow
+                  label="Totaal incl. BTW"
+                  value={formatEuro(totals.bruto)}
+                  bold
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right sidebar */}
+        <div className="space-y-4">
+          {/* Prospect card */}
+          <div
+            className="p-4 space-y-1 border"
+            style={{ borderColor: 'var(--color-border, #e5e3da)' }}
+          >
+            <p
+              className="text-[10px] uppercase tracking-[0.18em] mb-2"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--color-muted)',
+              }}
+            >
+              Prospect
+            </p>
+            <Link
+              href={`/admin/prospects/${quote.prospect.id}`}
+              className="block text-[14px] font-medium hover:opacity-70 transition-opacity"
+              style={{ color: 'var(--color-ink)' }}
+            >
+              {quote.prospect.companyName ?? quote.prospect.slug}
+            </Link>
+          </div>
+
+          {/* Active proposal toggle */}
+          <div
+            className="p-4 border"
+            style={{ borderColor: 'var(--color-border, #e5e3da)' }}
+          >
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!isActiveProposal}
+                onChange={(e) =>
+                  activeProposalMutation.mutate({
+                    id: quote.id,
+                    isActiveProposal: e.target.checked,
+                  })
+                }
+                className="h-4 w-4 accent-[var(--color-gold)]"
+              />
+              <span
+                className="text-[12px] uppercase tracking-[0.14em]"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--color-ink)',
+                }}
+              >
+                Actief voorstel
+              </span>
+            </label>
+          </div>
+
+          {/* Preview button */}
+          {quote.prospect.readableSlug && (
+            <a
+              href={`/offerte/${quote.prospect.readableSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="admin-btn-secondary w-full flex items-center justify-center gap-2 text-[12px]"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Bekijk brochure
+            </a>
+          )}
+
+          {/* Actions */}
+          <div className="space-y-2" data-testid="quote-actions-slot">
+            <QuoteSendConfirm
+              quoteId={quote.id}
+              status={quote.status}
+              lines={quote.lines.map((l) => ({
+                uren: l.uren,
+                tarief: l.tarief,
+              }))}
+              btwPercentage={quote.btwPercentage}
+            />
+            <QuoteVersionConfirm quoteId={quote.id} status={quote.status} />
+          </div>
+        </div>
       </div>
-
-      <nav className="flex gap-4 border-b border-slate-200">
-        <TabButton active={tab === 'details'} onClick={() => setTab('details')}>
-          Details
-        </TabButton>
-        <TabButton active={tab === 'preview'} onClick={() => setTab('preview')}>
-          Voorbeeld
-        </TabButton>
-        <TabButton
-          active={tab === 'timeline'}
-          onClick={() => setTab('timeline')}
-        >
-          Tijdlijn
-        </TabButton>
-      </nav>
-
-      <section className={tab === 'details' ? '' : 'hidden'}>
-        <QuoteForm
-          initial={draft}
-          mode="edit"
-          onSubmit={handleSubmit}
-          isReadOnly={isReadOnly}
-          isSubmitting={updateMutation.isPending}
-          error={error}
-        />
-      </section>
-
-      <section className={tab === 'preview' ? '' : 'hidden'}>
-        <QuotePreviewIframe quoteId={quote.id} />
-      </section>
-
-      <section className={tab === 'timeline' ? '' : 'hidden'}>
-        <QuoteStatusTimeline
-          createdAt={quote.createdAt}
-          snapshotAt={quote.snapshotAt}
-          viewedAt={null}
-          acceptedAt={null}
-        />
-      </section>
     </div>
   );
 }
