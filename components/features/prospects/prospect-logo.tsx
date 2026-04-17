@@ -15,12 +15,10 @@ interface ProspectLogoProps {
 }
 
 /**
- * Three-stage logo cascade:
- *   1. Google Favicon API (clean 128px icon for most domains)
- *   2. Stored logoUrl with object-cover crop (handles banners/og:images)
- *   3. Initial-letter avatar fallback
+ * Two-stage logo: stored logoUrl → initial-letter avatar.
  *
- * Each stage falls through on load error.
+ * Uses object-cover + rounded crop so even banner/og:images
+ * render as clean square icons.
  */
 export function ProspectLogo({
   prospect,
@@ -28,39 +26,15 @@ export function ProspectLogo({
   shape = 'circle',
   className,
 }: ProspectLogoProps): React.ReactElement {
-  const [stage, setStage] = useState<'favicon' | 'stored' | 'initial'>(
-    'favicon',
-  );
+  const [failed, setFailed] = useState(false);
 
-  const shapeClass = shape === 'circle' ? 'rounded-full' : 'rounded-2xl';
+  const shapeClass = shape === 'circle' ? 'rounded-full' : 'rounded-xl';
   const sharedStyle: React.CSSProperties = {
     width: `${size}px`,
     height: `${size}px`,
   };
 
-  const faviconUrl = prospect.domain
-    ? `https://www.google.com/s2/favicons?domain=${prospect.domain}&sz=128`
-    : null;
-
-  // Determine what to show based on current stage
-  if (stage === 'favicon' && faviconUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={faviconUrl}
-        alt={prospect.companyName ?? prospect.domain ?? 'Prospect logo'}
-        width={size}
-        height={size}
-        loading="lazy"
-        onError={() => setStage(prospect.logoUrl ? 'stored' : 'initial')}
-        className={cn('object-contain bg-white', shapeClass, className)}
-        style={sharedStyle}
-        data-testid="prospect-logo-favicon"
-      />
-    );
-  }
-
-  if (stage !== 'initial' && prospect.logoUrl) {
+  if (prospect.logoUrl && !failed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
@@ -69,15 +43,14 @@ export function ProspectLogo({
         width={size}
         height={size}
         loading="lazy"
-        onError={() => setStage('initial')}
+        onError={() => setFailed(true)}
         className={cn('object-cover bg-white', shapeClass, className)}
         style={sharedStyle}
-        data-testid="prospect-logo-stored"
+        data-testid="prospect-logo-image"
       />
     );
   }
 
-  // Stage 3: initial letter avatar
   const initial =
     (prospect.companyName ?? prospect.domain ?? '?')
       .trim()
