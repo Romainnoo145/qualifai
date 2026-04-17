@@ -27,15 +27,15 @@
   --color-ink: #0a0a2e;
   --color-ink-deep: #040026;
   /* brochure container top — available for dark surfaces only */
-  --color-gold: #c79a1f;
-  /* admin primary CTA (ink-leaning) */
-  --color-gold-hi: #e4c33c;
+  --color-gold: #d4a017;
+  /* admin primary CTA — bright enough on white, not muddy */
+  --color-gold-hi: #ebcb4b;
   /* hero period, active sidebar indicator */
   --color-brand-indigo: #0a0a2e;
   /* alias to --color-ink for legacy components */
   --color-brand-yellow: #c79a1f;
   /* legacy alias — keep until all admin-btn-primary refs migrated */
-  --color-brand-yellow-dark: #a87f15;
+  --color-brand-yellow-dark: #b8900f;
 
   /* Text scale — cool neutral */
   --color-muted: #71717a;
