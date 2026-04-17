@@ -368,7 +368,6 @@
   }
 
   .admin-toggle-count {
-    font-family: var(--font-mono);
     padding: 0.125rem 0.375rem;
     font-size: 0.625rem;
     line-height: 1;
@@ -387,7 +386,6 @@
   /* ─────────────── Micro typography ─────────────── */
 
   .admin-eyebrow {
-    font-family: var(--font-mono);
     font-size: 0.625rem;
     font-weight: 500;
     letter-spacing: 0.14em;
@@ -420,7 +418,6 @@
     padding: 0 0.5rem;
     border-radius: var(--radius-xs);
     border: 1px solid;
-    font-family: var(--font-mono);
     font-size: 0.625rem;
     line-height: 1;
     font-weight: 500;
@@ -485,7 +482,6 @@
   }
 
   .status-badge {
-    font-family: var(--font-mono);
     font-size: 0.625rem;
     font-weight: 500;
     padding: 0.125rem 0.5rem;

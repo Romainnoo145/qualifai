@@ -160,7 +160,7 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
                     <p className="text-[13px] font-semibold text-[var(--color-ink)]">
                       {account.label}
                     </p>
-                    <p className="mt-0.5 font-mono text-[10px] tracking-[0.08em] text-[var(--color-muted)]">
+                    <p className="mt-0.5 text-[10px] tracking-[0.08em] text-[var(--color-muted)]">
                       {account.slug}
                     </p>
                   </div>
@@ -169,7 +169,7 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
               ))}
           </div>
           {loginError ? (
-            <p className="text-center font-mono text-[11px] text-[var(--color-brand-danger)]">
+            <p className="text-center text-[11px] text-[var(--color-brand-danger)]">
               {loginError}
             </p>
           ) : null}

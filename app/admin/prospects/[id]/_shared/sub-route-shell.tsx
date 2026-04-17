@@ -40,7 +40,6 @@ export function SubRouteShell({
           <Link
             href={`/admin/prospects/${id}`}
             className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-[var(--color-muted-dark)] hover:text-[var(--color-ink)] transition-colors"
-            style={{ fontFamily: 'var(--font-mono)' }}
           >
             <ArrowLeft className="h-3 w-3" />
             Terug naar dossier
@@ -78,7 +77,6 @@ export function SubRouteShell({
                       ? 'border-[var(--color-gold)] text-[var(--color-ink)] font-medium'
                       : 'border-transparent text-[var(--color-muted-dark)] hover:text-[var(--color-ink)]',
                   )}
-                  style={{ fontFamily: 'var(--font-mono)' }}
                 >
                   {tab.label}
                 </Link>
@@ -102,10 +100,7 @@ export function ComingSoonBlock({
 }) {
   return (
     <div className="max-w-2xl">
-      <span
-        className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-gold)]"
-        style={{ fontFamily: 'var(--font-mono)' }}
-      >
+      <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-gold)]">
         Volledige weergave volgt
       </span>
       <h2 className="mt-4 font-['Sora'] text-[32px] font-semibold leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)]">

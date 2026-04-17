@@ -66,7 +66,6 @@ export default function QuotesListPage() {
       >
         <p
           style={{
-            fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             color: '#c0392b',
             textTransform: 'uppercase',
@@ -91,7 +90,6 @@ export default function QuotesListPage() {
         <div className="space-y-1">
           <p
             style={{
-              fontFamily: 'var(--font-mono)',
               fontSize: '11px',
               textTransform: 'uppercase',
               letterSpacing: '0.18em',
@@ -127,7 +125,6 @@ export default function QuotesListPage() {
         >
           <p
             style={{
-              fontFamily: 'var(--font-mono)',
               fontSize: '11px',
               textTransform: 'uppercase',
               letterSpacing: '0.18em',
@@ -183,7 +180,6 @@ function QuoteSection({
       >
         <span
           style={{
-            fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             textTransform: 'uppercase',
             letterSpacing: '0.18em',
@@ -195,7 +191,6 @@ function QuoteSection({
         </span>
         <span
           style={{
-            fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             color: 'var(--color-muted)',
             letterSpacing: '0.12em',
@@ -230,7 +225,6 @@ function QuoteSection({
                     padding: '10px 20px',
                     textAlign:
                       col === 'Bedrag' || col === 'Datum' ? 'right' : 'left',
-                    fontFamily: 'var(--font-mono)',
                     fontSize: '10px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.18em',
@@ -280,7 +274,6 @@ function QuoteSection({
                       )}
                       <span
                         style={{
-                          fontFamily: 'var(--font-mono)',
                           fontSize: '12px',
                           fontWeight: 500,
                           color: 'var(--color-ink)',
@@ -351,7 +344,6 @@ function QuoteSection({
                     >
                       <span
                         style={{
-                          fontFamily: 'var(--font-mono)',
                           fontSize: '13px',
                           fontWeight: 600,
                           color: 'var(--color-ink)',
@@ -373,7 +365,6 @@ function QuoteSection({
                   >
                     <span
                       style={{
-                        fontFamily: 'var(--font-mono)',
                         fontSize: '11px',
                         color: 'var(--color-muted)',
                         letterSpacing: '0.06em',

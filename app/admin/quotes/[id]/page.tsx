@@ -54,13 +54,11 @@ function TotalsRow({
     <div className="flex justify-between items-baseline">
       <span
         className={`text-[12px] uppercase tracking-[0.12em] ${bold ? 'text-[var(--color-ink)] font-medium' : 'text-[var(--color-muted-dark)]'}`}
-        style={{ fontFamily: 'var(--font-mono)' }}
       >
         {label}
       </span>
       <span
         className={`tabular-nums ${bold ? 'text-[16px] font-medium text-[var(--color-ink)]' : 'text-[14px] text-[var(--color-ink)]'}`}
-        style={{ fontFamily: 'var(--font-mono)' }}
       >
         {value}
       </span>
@@ -99,7 +97,6 @@ export default function QuoteDetailPage() {
     },
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activeProposalMutation = (
     api.quotes as any
   ).setActiveProposal.useMutation({
@@ -210,7 +207,6 @@ export default function QuoteDetailPage() {
       <Link
         href={`/admin/prospects/${quote.prospect.id}`}
         className="inline-flex items-center gap-1.5 hover:opacity-70 transition-opacity"
-        style={{ fontFamily: 'var(--font-mono)' }}
       >
         <ArrowLeft
           className="h-3 w-3"
@@ -230,7 +226,6 @@ export default function QuoteDetailPage() {
           <span
             className="text-[24px] leading-none"
             style={{
-              fontFamily: 'var(--font-mono)',
               color: 'var(--color-ink)',
             }}
           >
@@ -241,7 +236,6 @@ export default function QuoteDetailPage() {
             <span
               className="text-[11px] uppercase tracking-[0.18em]"
               style={{
-                fontFamily: 'var(--font-mono)',
                 color: 'var(--color-gold)',
               }}
             >
@@ -251,7 +245,7 @@ export default function QuoteDetailPage() {
           {isDirty && !isReadOnly && (
             <span
               className="text-[11px] uppercase tracking-[0.14em]"
-              style={{ fontFamily: 'var(--font-mono)', color: '#b45309' }}
+              style={{ color: '#b45309' }}
             >
               Niet opgeslagen
             </span>
@@ -316,7 +310,6 @@ export default function QuoteDetailPage() {
             <p
               className="text-[10px] uppercase tracking-[0.18em] mb-2"
               style={{
-                fontFamily: 'var(--font-mono)',
                 color: 'var(--color-muted)',
               }}
             >
@@ -351,7 +344,6 @@ export default function QuoteDetailPage() {
               <span
                 className="text-[12px] uppercase tracking-[0.14em]"
                 style={{
-                  fontFamily: 'var(--font-mono)',
                   color: 'var(--color-ink)',
                 }}
               >

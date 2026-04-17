@@ -348,7 +348,7 @@ function ActionRow({
         {label}
       </span>
       {kbd ? (
-        <span className="font-mono text-[10px] font-medium text-[var(--color-muted)] px-1.5 py-0.5 rounded-[3px] border border-[var(--color-border-strong)] bg-[var(--color-background)]">
+        <span className="text-[10px] font-medium text-[var(--color-muted)] px-1.5 py-0.5 rounded-[3px] border border-[var(--color-border-strong)] bg-[var(--color-background)]">
           {kbd}
         </span>
       ) : null}
@@ -389,7 +389,7 @@ function ContactRow({
         </div>
       </div>
       {isPrimary ? (
-        <span className="font-mono text-[9px] text-[var(--color-tag-quality-text)] tracking-wider">
+        <span className="text-[9px] text-[var(--color-tag-quality-text)] tracking-wider">
           primair
         </span>
       ) : null}
@@ -402,7 +402,7 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
   const time = event.occurredAt.toLocaleTimeString('nl-NL', TIME_TZ);
   return (
     <article className="grid grid-cols-[64px_1fr_auto] gap-5 py-4 border-b border-[var(--color-border)] last:border-b-0">
-      <div className="font-mono text-[10px] font-medium tracking-[0.04em] text-[var(--color-muted)] pt-0.5">
+      <div className="text-[10px] font-medium tracking-[0.04em] text-[var(--color-muted)] pt-0.5">
         <span className="block font-semibold text-[var(--color-gold-hi)]">
           {date}
         </span>
@@ -418,7 +418,7 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
       </div>
       <span
         className={cn(
-          'self-start inline-flex items-center h-[20px] px-2 rounded-[4px] border font-mono text-[9px] font-medium tracking-[0.14em] uppercase whitespace-nowrap',
+          'self-start inline-flex items-center h-[20px] px-2 rounded-[4px] border text-[9px] font-medium tracking-[0.14em] uppercase whitespace-nowrap',
           TAG_CLASS[event.type],
         )}
       >
@@ -548,15 +548,15 @@ export default function ProspectDetail() {
       <div className="flex items-center gap-2 pb-3.5 mb-8 border-b border-[var(--color-border)]">
         <Link
           href="/admin/prospects"
-          className="inline-flex items-center gap-1.5 px-2 py-1 -mx-2 rounded-[5px] font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-colors"
+          className="inline-flex items-center gap-1.5 px-2 py-1 -mx-2 rounded-[5px] text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.75} />
           Companies
         </Link>
-        <span className="font-mono text-[10px] font-medium tracking-[0.14em] text-[var(--color-muted)]">
+        <span className="text-[10px] font-medium tracking-[0.14em] text-[var(--color-muted)]">
           /
         </span>
-        <span className="font-mono text-[10px] font-bold tracking-[0.14em] uppercase text-[var(--color-ink)]">
+        <span className="text-[10px] font-bold tracking-[0.14em] uppercase text-[var(--color-ink)]">
           {displayName}
         </span>
       </div>
@@ -564,7 +564,7 @@ export default function ProspectDetail() {
       {/* Hero */}
       <header className="grid grid-cols-[1fr_auto] gap-10 items-end pb-7 mb-9 border-b border-[var(--color-ink)]">
         <div>
-          <div className="flex flex-wrap items-center gap-6 font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--color-muted)] mb-5">
+          <div className="flex flex-wrap items-center gap-6 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--color-muted)] mb-5">
             <span className="text-[var(--color-gold)] font-semibold">
               COMPANY · {p.status ?? 'DRAFT'}
             </span>
@@ -719,7 +719,7 @@ export default function ProspectDetail() {
               </FactsRow>
             ) : null}
             {p.lastEnrichedAt ? (
-              <FactsRow k="Verrijkt" mono>
+              <FactsRow k="Verrijkt">
                 {new Date(p.lastEnrichedAt).toLocaleDateString('nl-NL')}
               </FactsRow>
             ) : null}
@@ -842,26 +842,13 @@ export default function ProspectDetail() {
 // Smaller inline primitives
 // ─────────────────────────────────────────────────────────────────────
 
-function FactsRow({
-  k,
-  children,
-  mono,
-}: {
-  k: string;
-  children: React.ReactNode;
-  mono?: boolean;
-}) {
+function FactsRow({ k, children }: { k: string; children: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[88px_1fr] gap-3 items-baseline">
-      <dt className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+      <dt className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
         {k}
       </dt>
-      <dd
-        className={cn(
-          'text-[12px] font-medium text-[var(--color-ink)] min-w-0',
-          mono && 'font-mono',
-        )}
-      >
+      <dd className="text-[12px] font-medium text-[var(--color-ink)] min-w-0 tabular-nums">
         {children}
       </dd>
     </div>
@@ -886,13 +873,11 @@ function DossierLink({
         {label}
       </span>
       {count != null ? (
-        <span className="font-mono text-[10px] text-[var(--color-muted)]">
+        <span className="text-[10px] text-[var(--color-muted)] tabular-nums">
           {count} items
         </span>
       ) : (
-        <span className="font-mono text-[10px] text-[var(--color-muted)]">
-          open →
-        </span>
+        <span className="text-[10px] text-[var(--color-muted)]">open →</span>
       )}
     </Link>
   );
