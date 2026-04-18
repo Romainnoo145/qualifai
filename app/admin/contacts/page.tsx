@@ -2,20 +2,10 @@
 
 import { api } from '@/components/providers';
 import Link from 'next/link';
-import { Users, Mail, Briefcase, Building2, ChevronRight } from 'lucide-react';
+import { Users, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { PageLoader } from '@/components/ui/page-loader';
-
-const outreachColors: Record<string, string> = {
-  NONE: 'bg-slate-100 text-slate-500',
-  QUEUED: 'bg-amber-50 text-amber-600',
-  EMAIL_SENT: 'bg-blue-50 text-blue-600',
-  OPENED: 'bg-cyan-50 text-cyan-600',
-  REPLIED: 'bg-purple-50 text-purple-600',
-  CONVERTED: 'bg-emerald-50 text-emerald-600',
-  OPTED_OUT: 'bg-red-50 text-red-500',
-};
 
 export default function ContactsPage() {
   const [search, setSearch] = useState('');
@@ -27,30 +17,29 @@ export default function ContactsPage() {
   });
 
   return (
-    <div className="space-y-10">
-      <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
-          Contacts
+    <div className="max-w-[1400px] space-y-10">
+      <div className="pb-6 border-b border-[var(--color-border)]">
+        <h1 className="text-[48px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
+          Contacts<span className="text-[var(--color-gold)]">.</span>
         </h1>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search Intelligence Database..."
-            className="w-full px-6 py-3.5 rounded-2xl border border-slate-100 bg-white text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
-          />
-        </div>
+      {/* Search bar */}
+      <div className="flex items-center gap-3 px-4 py-3 border border-[var(--color-border)] rounded-lg focus-within:border-[var(--color-ink)] transition-colors max-w-2xl">
+        <Search className="w-4 h-4 text-[var(--color-muted)] shrink-0" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Zoek op naam, email of bedrijf..."
+          className="flex-1 text-[14px] font-light text-[var(--color-ink)] bg-transparent border-none outline-none placeholder:text-[var(--color-border-strong)]"
+        />
         <select
           value={seniority}
           onChange={(e) => setSeniority(e.target.value)}
-          className="px-6 py-3.5 rounded-2xl border border-slate-100 bg-white text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all appearance-none"
+          className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--color-muted)] bg-transparent border-none outline-none appearance-none cursor-pointer"
         >
-          <option value="">All seniorities</option>
+          <option value="">Alle niveaus</option>
           <option value="C-Level">C-Level</option>
           <option value="VP">VP</option>
           <option value="Director">Director</option>
@@ -67,85 +56,89 @@ export default function ContactsPage() {
           description="Pulling the latest contact list."
         />
       ) : contacts.data?.contacts.length === 0 ? (
-        <div className="glass-card p-20 text-center rounded-[2.5rem]">
-          <Users className="w-16 h-16 text-slate-100 mx-auto mb-6" />
-          <p className="text-sm font-black text-[#040026] uppercase tracking-widest">
-            No nodes detected
+        <div className="py-20 text-center">
+          <Users className="w-12 h-12 text-[var(--color-border-strong)] mx-auto mb-4" />
+          <p className="text-[15px] font-medium text-[var(--color-ink)] mb-1">
+            Geen contacts
           </p>
-          <p className="text-xs font-bold text-slate-400 mt-2 leading-relaxed max-w-xs mx-auto">
-            Propagate research from company profiles to initialize node
-            discovery.
+          <p className="text-[13px] font-light text-[var(--color-muted)]">
+            Contacts verschijnen zodra research runs contact discovery
+            uitvoeren.
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <section>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+              {contacts.data?.contacts.length ?? 0} contacts
+            </span>
+            <span className="flex-1 h-px bg-[var(--color-border)]" />
+          </div>
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {(contacts.data?.contacts as any[])?.map((contact: any) => (
             <Link
               key={contact.id}
               href={`/admin/contacts/${contact.id}`}
-              className="glass-card glass-card-hover p-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between block group rounded-[2.5rem]"
+              className="flex items-center gap-5 py-4 border-b border-[var(--color-surface-2)] hover:pl-2 transition-all group"
             >
-              <div className="flex items-center gap-6">
-                <div className="w-14 h-14 rounded-2xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden group-hover:bg-[#040026] group-hover:border-[#040026] transition-all">
-                  <span className="text-sm font-black text-[#040026] group-hover:text-[#EBCB4B] transition-colors">
-                    {contact.firstName?.[0]}
-                    {contact.lastName?.[0]}
-                  </span>
-                </div>
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-lg font-black text-[#040026] tracking-tight">
-                      {contact.firstName} {contact.lastName}
-                    </span>
-                    <span
-                      className={cn(
-                        'text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-widest border',
-                        outreachColors[contact.outreachStatus]
-                          ?.replace('bg-', 'bg-')
-                          .replace('text-', 'text-') ??
-                          'bg-slate-50 text-slate-400 border-slate-100',
-                      )}
-                    >
-                      {contact.outreachStatus}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-4 text-[11px] font-bold text-slate-400 mt-2">
-                    {contact.jobTitle && (
-                      <span className="flex items-center gap-1.5">
-                        <Briefcase className="w-3.5 h-3.5 opacity-50" />
-                        {contact.jobTitle}
-                      </span>
-                    )}
-                    {contact.prospect && (
-                      <span className="flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 opacity-50" />
+              <div className="w-10 h-10 rounded-full bg-[var(--color-ink)] flex items-center justify-center shrink-0">
+                <span className="text-[10px] font-bold text-[var(--color-gold)]">
+                  {contact.firstName?.[0]}
+                  {contact.lastName?.[0]}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-[15px] font-medium text-[var(--color-ink)]">
+                  {contact.firstName} {contact.lastName}
+                </span>
+                <div className="flex items-center gap-2 mt-0.5 text-[11px] font-light text-[var(--color-muted)]">
+                  {contact.jobTitle && <span>{contact.jobTitle}</span>}
+                  {contact.prospect && (
+                    <>
+                      <span className="w-[3px] h-[3px] rounded-full bg-[var(--color-border-strong)]" />
+                      <span>
                         {contact.prospect.companyName ??
                           contact.prospect.domain}
                       </span>
-                    )}
-                    {contact.primaryEmail && (
-                      <span className="flex items-center gap-1.5">
-                        <Mail className="w-3.5 h-3.5 opacity-50" />
-                        {contact.primaryEmail}
-                      </span>
-                    )}
-                  </div>
+                    </>
+                  )}
+                  {contact.primaryEmail && (
+                    <>
+                      <span className="w-[3px] h-[3px] rounded-full bg-[var(--color-border-strong)]" />
+                      <span>{contact.primaryEmail}</span>
+                    </>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-4 shrink-0">
-                {contact.seniority && (
-                  <span className="text-[10px] px-4 py-1.5 rounded-xl bg-slate-50 text-slate-400 font-black uppercase tracking-widest border border-slate-100">
-                    {contact.seniority}
-                  </span>
+              {contact.seniority && (
+                <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--color-muted)]">
+                  {contact.seniority}
+                </span>
+              )}
+              <span
+                className={cn(
+                  'text-[10px] font-medium uppercase tracking-[0.06em]',
+                  contact.outreachStatus === 'NONE' &&
+                    'text-[var(--color-muted)]',
+                  contact.outreachStatus === 'CONVERTED' &&
+                    'text-[var(--color-brand-success)]',
+                  contact.outreachStatus === 'OPTED_OUT' &&
+                    'text-[var(--color-brand-danger)]',
+                  !['NONE', 'CONVERTED', 'OPTED_OUT'].includes(
+                    contact.outreachStatus,
+                  ) && 'text-[var(--color-ink)]',
                 )}
-                <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-                  <ChevronRight className="w-4 h-4 text-[#040026]" />
-                </div>
-              </div>
+              >
+                {contact.outreachStatus === 'NONE'
+                  ? ''
+                  : contact.outreachStatus?.replace(/_/g, ' ')}
+              </span>
+              <span className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-muted)] group-hover:bg-[var(--color-ink)] group-hover:text-[var(--color-gold)] group-hover:border-[var(--color-ink)] transition-all shrink-0 text-[12px]">
+                →
+              </span>
             </Link>
           ))}
-        </div>
+        </section>
       )}
     </div>
   );
