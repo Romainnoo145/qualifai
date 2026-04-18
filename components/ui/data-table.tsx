@@ -32,8 +32,11 @@ export function DataRow({ children, className, href, ...props }: DataRowProps) {
 
   if (href) {
     return (
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      <a href={href} className={cn(classes, 'no-underline')} {...(props as any)}>
+      <a
+        href={href}
+        className={cn(classes, 'no-underline')}
+        {...(props as any)}
+      >
         {children}
       </a>
     );
