@@ -6,6 +6,8 @@ import { Zap, Building2, Users, Check, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { PageLoader } from '@/components/ui/page-loader';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const signalTypeColors: Record<string, string> = {
   JOB_CHANGE: 'admin-state-info',
@@ -36,9 +38,7 @@ export default function SignalsPage() {
   return (
     <div className="space-y-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
-          Signals
-        </h1>
+        <PageHeader title="Signals" />
         <label className="admin-btn-primary cursor-pointer select-none">
           <input
             type="checkbox"
@@ -63,7 +63,7 @@ export default function SignalsPage() {
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="px-6 py-3.5 rounded-2xl border border-slate-100 bg-white text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all appearance-none"
+          className="input-minimal px-6 py-3.5 rounded-[var(--radius-md)] appearance-none"
         >
           <option value="">All Signal Categories</option>
           <option value="JOB_CHANGE">Job Change</option>
@@ -83,16 +83,11 @@ export default function SignalsPage() {
           description="Pulling the latest buying signals."
         />
       ) : signals.data?.signals.length === 0 ? (
-        <div className="glass-card p-20 text-center rounded-[2.5rem]">
-          <Zap className="w-16 h-16 text-slate-100 mx-auto mb-6" />
-          <p className="text-sm font-black text-[#040026] uppercase tracking-widest">
-            No signals intercepted
-          </p>
-          <p className="text-xs font-bold text-slate-400 mt-2 leading-relaxed max-w-xs mx-auto">
-            Propagate data discovery from individual profiles to initialize
-            market signal interception.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Zap className="w-16 h-16" />}
+          title="No signals intercepted"
+          description="Propagate data discovery from individual profiles to initialize market signal interception."
+        />
       ) : (
         <div className="space-y-4">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -113,13 +108,13 @@ export default function SignalsPage() {
                     >
                       {signal.signalType.replace(/_/g, ' ')}
                     </span>
-                    <span className="admin-eyebrow flex items-center gap-1.5 text-slate-400">
+                    <span className="admin-eyebrow flex items-center gap-1.5 text-[var(--color-muted)]">
                       <Clock className="w-3.5 h-3.5" />
                       Detected{' '}
                       {new Date(signal.detectedAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="text-lg font-black text-[#040026] tracking-tight group-hover:text-[#040026] transition-colors leading-[1.1]">
+                  <p className="text-lg font-bold text-[var(--color-ink)] tracking-tight transition-colors leading-[1.1]">
                     {signal.title}
                   </p>
                   {signal.description && (
@@ -131,7 +126,7 @@ export default function SignalsPage() {
                     {signal.prospect && (
                       <Link
                         href={`/admin/prospects/${signal.prospect.id}`}
-                        className="admin-eyebrow text-[#040026] hover:text-[#EBCB4B] flex items-center gap-2 transition-colors"
+                        className="admin-eyebrow text-[var(--color-ink)] hover:text-[var(--color-gold)] flex items-center gap-2 transition-colors"
                       >
                         <Building2 className="w-3.5 h-3.5 opacity-50" />
                         {signal.prospect.companyName ?? signal.prospect.domain}
@@ -140,7 +135,7 @@ export default function SignalsPage() {
                     {signal.contact && (
                       <Link
                         href={`/admin/contacts/${signal.contact.id}`}
-                        className="admin-eyebrow text-[#040026] hover:text-[#EBCB4B] flex items-center gap-2 transition-colors"
+                        className="admin-eyebrow text-[var(--color-ink)] hover:text-[var(--color-gold)] flex items-center gap-2 transition-colors"
                       >
                         <Users className="w-3.5 h-3.5 opacity-50" />
                         {signal.contact.firstName} {signal.contact.lastName}
