@@ -486,78 +486,90 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
   };
 
   return (
-    <div className="space-y-10">
-      <form
-        onSubmit={handleSearch}
-        className="glass-card p-10 rounded-[2.5rem] space-y-8"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">Company Name</label>
+    <div className="space-y-8">
+      <form onSubmit={handleSearch} className="space-y-5">
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+            Zoeken
+          </span>
+          <span className="flex-1 h-px bg-[var(--color-border)]" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+              Bedrijf
+            </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Stripe, OpenAI"
-              className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
+              className="input-minimal w-full px-3 py-2.5 rounded-md"
             />
           </div>
-          <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">Domain</label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+              Domein
+            </label>
             <input
               type="text"
               value={domain}
               onChange={(e) => setDomain(e.target.value)}
               placeholder="e.g. stripe.com"
-              className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
+              className="input-minimal w-full px-3 py-2.5 rounded-md"
             />
           </div>
-          <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">Sector</label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+              Sector
+            </label>
             <input
               type="text"
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
-              placeholder="b.v. marketingbureaus, webdesign"
-              className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
+              placeholder="b.v. marketingbureaus"
+              className="input-minimal w-full px-3 py-2.5 rounded-md"
             />
           </div>
-          <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">Land</label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+              Locatie
+            </label>
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="b.v. Amsterdam"
+              className="input-minimal w-full px-3 py-2.5 rounded-md"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+              Land
+            </label>
             <input
               type="text"
               value={country}
               onChange={(e) => setCountry(e.target.value)}
               placeholder="e.g. Netherlands"
-              className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
+              className="input-minimal w-full px-3 py-2.5 rounded-md"
             />
           </div>
-          <div className="space-y-2 md:col-span-2">
-            <label className="admin-eyebrow ml-1">Locatie</label>
-            <input
-              type="text"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="b.v. Amsterdam, Netherlands"
-              className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
-            />
+          <div className="flex items-end">
+            <button
+              type="submit"
+              disabled={search.isPending}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] bg-[var(--color-ink)] text-white border-none rounded-md w-full justify-center"
+            >
+              {search.isPending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Search className="w-3.5 h-3.5" />
+              )}
+              Zoeken
+            </button>
           </div>
         </div>
-        <button
-          type="submit"
-          disabled={search.isPending}
-          className="admin-btn-primary w-full sm:w-auto"
-        >
-          {search.isPending ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Searching...
-            </>
-          ) : (
-            <>
-              <Search className="w-4 h-4" /> Search Companies
-            </>
-          )}
-        </button>
       </form>
 
       {results !== null && (
@@ -738,73 +750,83 @@ function ContactSearch() {
   };
 
   return (
-    <div className="space-y-10">
-      <form
-        onSubmit={handleSearch}
-        className="glass-card p-10 rounded-[2.5rem] space-y-8"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">Job Title</label>
+    <div className="space-y-8">
+      <form onSubmit={handleSearch} className="space-y-5">
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+            Zoeken
+          </span>
+          <span className="flex-1 h-px bg-[var(--color-border)]" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+              Functie
+            </label>
             <input
               type="text"
               value={jobTitle}
               onChange={(e) => setJobTitle(e.target.value)}
-              placeholder="e.g. Chief Technical Officer"
-              className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
+              placeholder="e.g. CTO, Operations Manager"
+              className="input-minimal w-full px-3 py-2.5 rounded-md"
             />
           </div>
-          <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">Seniority</label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+              Seniority
+            </label>
             <select
               value={seniority}
               onChange={(e) => setSeniority(e.target.value)}
-              className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all appearance-none"
+              className="input-minimal w-full px-3 py-2.5 rounded-md appearance-none"
             >
-              <option value="">All Seniority Levels</option>
-              <option value="C-Level">C-Level Executive</option>
-              <option value="VP">Vice President</option>
-              <option value="Director">Director Level</option>
-              <option value="Manager">Management</option>
-              <option value="Senior">Senior Contributor</option>
+              <option value="">Alle niveaus</option>
+              <option value="C-Level">C-Level</option>
+              <option value="VP">VP</option>
+              <option value="Director">Director</option>
+              <option value="Manager">Manager</option>
+              <option value="Senior">Senior</option>
             </select>
           </div>
-          <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">Department</label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+              Afdeling
+            </label>
             <input
               type="text"
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
               placeholder="e.g. Engineering, Operations"
-              className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
+              className="input-minimal w-full px-3 py-2.5 rounded-md"
             />
           </div>
-          <div className="space-y-2">
-            <label className="admin-eyebrow ml-1">Company Domain</label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+              Bedrijf domein
+            </label>
             <input
               type="text"
               value={companyDomain}
               onChange={(e) => setCompanyDomain(e.target.value)}
               placeholder="e.g. acme.com"
-              className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
+              className="input-minimal w-full px-3 py-2.5 rounded-md"
             />
           </div>
+          <div className="flex items-end md:col-start-3">
+            <button
+              type="submit"
+              disabled={search.isPending}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] bg-[var(--color-ink)] text-white border-none rounded-md w-full justify-center"
+            >
+              {search.isPending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Search className="w-3.5 h-3.5" />
+              )}
+              Zoeken
+            </button>
+          </div>
         </div>
-        <button
-          type="submit"
-          disabled={search.isPending}
-          className="admin-btn-primary w-full sm:w-auto"
-        >
-          {search.isPending ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Searching...
-            </>
-          ) : (
-            <>
-              <Search className="w-4 h-4" /> Search Contacts
-            </>
-          )}
-        </button>
       </form>
 
       {results !== null && (
