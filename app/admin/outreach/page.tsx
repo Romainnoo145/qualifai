@@ -13,7 +13,6 @@ import {
   MessageSquare,
   Phone,
   Linkedin,
-  Settings,
   Save,
   Eye,
   EyeOff,
@@ -29,45 +28,49 @@ export default function OutreachPage() {
   const [view, setView] = useState<View>('queue');
 
   return (
-    <div className="space-y-10 animate-fade-in-up">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
-          Outreach
+    <div className="max-w-[1400px] space-y-10">
+      <div className="flex items-baseline justify-between pb-6 border-b border-[var(--color-border)]">
+        <h1 className="text-[48px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
+          Outreach<span className="text-[var(--color-gold)]">.</span>
         </h1>
         <ProcessSignalsButton />
       </div>
 
       {/* View toggle */}
-      <div className="overflow-x-auto">
-        <div className="admin-toggle-group w-max">
-          <button
-            onClick={() => setView('queue')}
-            className={cn(
-              'ui-tap ui-focus admin-toggle-btn',
-              view === 'queue' && 'admin-toggle-btn-active',
-            )}
-          >
-            <Mail className="w-4 h-4" /> Drafts Queue
-          </button>
-          <button
-            onClick={() => setView('sent')}
-            className={cn(
-              'ui-tap ui-focus admin-toggle-btn',
-              view === 'sent' && 'admin-toggle-btn-active',
-            )}
-          >
-            <History className="w-4 h-4" /> Sent History
-          </button>
-          <button
-            onClick={() => setView('settings')}
-            className={cn(
-              'ui-tap ui-focus admin-toggle-btn',
-              view === 'settings' && 'admin-toggle-btn-active',
-            )}
-          >
-            <Settings className="w-4 h-4" /> Instellingen
-          </button>
-        </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => setView('queue')}
+          className={cn(
+            'px-4 py-2 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
+            view === 'queue'
+              ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+              : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
+          )}
+        >
+          Drafts Queue
+        </button>
+        <button
+          onClick={() => setView('sent')}
+          className={cn(
+            'px-4 py-2 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
+            view === 'sent'
+              ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+              : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
+          )}
+        >
+          Sent History
+        </button>
+        <button
+          onClick={() => setView('settings')}
+          className={cn(
+            'px-4 py-2 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
+            view === 'settings'
+              ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+              : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
+          )}
+        >
+          Instellingen
+        </button>
       </div>
 
       {view === 'queue' ? (
@@ -94,7 +97,7 @@ function ProcessSignalsButton() {
     <button
       onClick={() => process.mutate()}
       disabled={process.isPending}
-      className="admin-btn-primary w-full sm:w-auto"
+      className="inline-flex items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] bg-[var(--color-ink)] text-white border-none rounded-md"
     >
       {process.isPending ? (
         <>
@@ -162,15 +165,12 @@ function ReminderSection() {
   };
 
   return (
-    <div className="rounded-2xl border border-indigo-100 bg-indigo-50/30 p-5 space-y-3">
-      <div className="flex items-center gap-2">
-        <Phone className="w-4 h-4 text-indigo-500" />
-        <h3 className="text-sm font-black text-[#040026] tracking-tight">
+    <div className="space-y-3 mb-6">
+      <div className="flex items-center gap-3">
+        <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
           Reminders
-        </h3>
-        <span className="admin-state-pill admin-state-neutral text-[10px]">
-          {items.length}
         </span>
+        <span className="flex-1 h-px bg-[var(--color-border)]" />
       </div>
       <div className="space-y-1.5">
         {items.map((item: any) => {
@@ -182,13 +182,13 @@ function ReminderSection() {
           return (
             <div
               key={item.id}
-              className="flex items-center gap-3 rounded-xl bg-white/60 border border-indigo-50 px-4 py-2.5"
+              className="flex items-center gap-3 py-3 border-b border-[var(--color-surface-2)]"
             >
               <Link
                 href={`/admin/contacts/${item.contact.id}`}
                 className="flex-1 min-w-0 flex items-center gap-3 hover:text-[#007AFF] transition-colors"
               >
-                <span className="text-xs font-black text-[#040026] truncate">
+                <span className="text-[13px] font-medium text-[var(--color-ink)] truncate">
                   {item.contact.firstName} {item.contact.lastName}
                 </span>
                 {item.contact.prospect && (
@@ -237,7 +237,7 @@ function ReminderSection() {
                     complete.mutate({ id: item.id });
                   }}
                   disabled={complete.isPending}
-                  className="ui-focus ui-tap inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-medium bg-transparent text-[var(--color-ink)] border border-[var(--color-border)] hover:border-[var(--color-ink)] transition-all disabled:opacity-50"
                 >
                   <Check className="w-3 h-3" /> Done
                 </button>
@@ -247,7 +247,7 @@ function ReminderSection() {
                     skip.mutate({ id: item.id });
                   }}
                   disabled={skip.isPending}
-                  className="ui-focus ui-tap inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all disabled:opacity-50"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-medium bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:text-[#b45a3b] hover:border-[#b45a3b] transition-all disabled:opacity-50"
                 >
                   <X className="w-3 h-3" /> Skip
                 </button>
@@ -358,12 +358,14 @@ function DraftQueue() {
 
   if (!queueData.drafts?.length) {
     return (
-      <div className="glass-card p-12 text-center">
-        <Mail className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-        <p className="text-sm font-black text-[#040026] uppercase tracking-widest mb-2">
+      <div className="py-20 text-center">
+        <Mail className="w-12 h-12 text-[var(--color-border-strong)] mx-auto mb-4" />
+        <p className="text-[15px] font-medium text-[var(--color-ink)] mb-1">
           Inbox leeg
         </p>
-        <p className="admin-meta-text">Geen concepten om te beoordelen.</p>
+        <p className="text-[13px] font-light text-[var(--color-muted)]">
+          Geen concepten om te beoordelen.
+        </p>
       </div>
     );
   }
@@ -371,15 +373,15 @@ function DraftQueue() {
   return (
     <div className="space-y-3">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-2">
-        <span className="text-xs font-bold text-slate-400">
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-[11px] font-light text-[var(--color-muted)]">
           {queueData.summary.total} concept
           {queueData.summary.total !== 1 ? 'en' : ''}
         </span>
         <button
           onClick={() => bulkApprove.mutate({ limit: 25 })}
           disabled={bulkApprove.isPending || queueData.summary.lowRisk === 0}
-          className="ui-tap inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] border border-[#EBCB4B] hover:bg-[#D4B43B] transition-all disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] disabled:opacity-50 transition-all"
         >
           {bulkApprove.isPending ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -393,12 +395,12 @@ function DraftQueue() {
       <ReminderSection />
 
       {/* Gmail-style inbox */}
-      <div className="glass-card rounded-2xl overflow-hidden divide-y divide-slate-100">
+      <div>
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {groupByDate(queueData.drafts as any[]).map((group) => (
           <div key={group.label}>
-            <div className="px-6 py-2 bg-slate-50/80 border-b border-slate-100">
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+            <div className="py-3 border-b border-[var(--color-surface-2)]">
+              <span className="text-[10px] font-bold text-[var(--color-gold)] uppercase tracking-[0.15em]">
                 {group.label}
               </span>
             </div>
@@ -427,12 +429,12 @@ function DraftQueue() {
                   <button
                     onClick={() => setExpandedId(isExpanded ? null : draft.id)}
                     className={cn(
-                      'w-full text-left px-6 py-4 flex items-center gap-4 hover:bg-slate-50/80 transition-colors',
-                      isExpanded && 'bg-slate-50/60',
+                      'w-full text-left py-3.5 flex items-center gap-4 hover:pl-1.5 transition-all',
+                      isExpanded && 'pl-1.5',
                     )}
                   >
                     {/* Company logo */}
-                    <div className="w-10 h-10 rounded-xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden shrink-0">
+                    <div className="w-9 h-9 rounded-[8px] bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center overflow-hidden shrink-0">
                       {draft.contact.prospect?.logoUrl ? (
                         <img
                           src={draft.contact.prospect.logoUrl}
@@ -440,7 +442,7 @@ function DraftQueue() {
                           className="w-5 h-5 object-contain"
                         />
                       ) : (
-                        <Building2 className="w-4 h-4 text-slate-200" />
+                        <Building2 className="w-3.5 h-3.5 text-[var(--color-border-strong)]" />
                       )}
                     </div>
 
@@ -449,21 +451,21 @@ function DraftQueue() {
                       <Link
                         href={`/admin/prospects/${draft.contact.prospect?.id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="text-sm font-black text-[#040026] truncate tracking-tight hover:text-[#007AFF] transition-colors"
+                        className="text-[13px] font-medium text-[var(--color-ink)] truncate hover:text-[var(--color-gold)] transition-colors"
                       >
                         {companyName}
                       </Link>
-                      <p className="text-[11px] text-slate-400 truncate">
+                      <p className="text-[11px] font-light text-[var(--color-muted)] truncate">
                         {toName}
                       </p>
                     </div>
 
                     {/* Subject + preview */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-[#040026] truncate">
+                      <p className="text-[13px] font-medium text-[var(--color-ink)] truncate">
                         {draft.subject}
                       </p>
-                      <p className="text-sm text-slate-400 truncate">
+                      <p className="text-[12px] font-light text-[var(--color-muted)] truncate">
                         {previewText}
                       </p>
                     </div>
@@ -472,17 +474,17 @@ function DraftQueue() {
                     <div className="flex items-center gap-2 shrink-0">
                       <span
                         className={cn(
-                          'text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0',
+                          'text-[9px] font-medium uppercase tracking-[0.08em] px-2 py-0.5 rounded border shrink-0',
                           kind === 'signal_draft'
-                            ? 'bg-purple-50 text-purple-600'
+                            ? 'bg-[var(--color-tag-outreach-bg)] text-[var(--color-tag-outreach-text)] border-[var(--color-tag-outreach-border)]'
                             : kind === 'cadence_draft'
-                              ? 'bg-blue-50 text-blue-600'
-                              : 'bg-slate-50 text-slate-400',
+                              ? 'bg-[var(--color-tag-run-bg)] text-[var(--color-tag-run-text)] border-[var(--color-tag-run-border)]'
+                              : 'bg-[var(--color-surface-2)] text-[var(--color-muted)] border-[var(--color-border)]',
                         )}
                       >
                         {kindLabel}
                       </span>
-                      <span className="text-[11px] font-bold text-slate-400 tabular-nums">
+                      <span className="text-[10px] font-medium text-[var(--color-muted)] tabular-nums">
                         {new Date(draft.createdAt).toLocaleDateString('nl-NL', {
                           day: 'numeric',
                           month: 'short',
@@ -493,32 +495,32 @@ function DraftQueue() {
 
                   {/* Expanded email view */}
                   {isExpanded && (
-                    <div className="bg-white border-t border-slate-100 px-6 py-6">
+                    <div className="py-6 border-b border-[var(--color-border)]">
                       {/* Email header */}
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
                         <div className="space-y-1.5">
-                          <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <span className="font-bold text-slate-400">
+                          <div className="flex items-center gap-2 text-[12px] text-[var(--color-muted)]">
+                            <span className="font-medium text-[var(--color-muted)]">
                               Van
                             </span>
-                            <span className="font-semibold text-[#040026]">
+                            <span className="font-medium text-[var(--color-ink)]">
                               Romano Kanters &lt;info@klarifai.nl&gt;
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <span className="font-bold text-slate-400">
+                          <div className="flex items-center gap-2 text-[12px] text-[var(--color-muted)]">
+                            <span className="font-medium text-[var(--color-muted)]">
                               Aan
                             </span>
-                            <span className="font-semibold text-[#040026]">
+                            <span className="font-medium text-[var(--color-ink)]">
                               {toName}
                               {toEmail ? ` <${toEmail}>` : ''}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <span className="font-bold text-slate-400">
+                          <div className="flex items-center gap-2 text-[12px] text-[var(--color-muted)]">
+                            <span className="font-medium text-[var(--color-muted)]">
                               Onderwerp
                             </span>
-                            <span className="font-semibold text-[#040026]">
+                            <span className="font-medium text-[var(--color-ink)]">
                               {draft.subject}
                             </span>
                           </div>
@@ -554,7 +556,7 @@ function DraftQueue() {
                           <button
                             onClick={() => approve.mutate({ id: draft.id })}
                             disabled={approve.isPending}
-                            className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] border border-[#EBCB4B] hover:bg-[#D4B43B] transition-all disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] transition-all disabled:opacity-50"
                           >
                             {approve.isPending ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -566,7 +568,7 @@ function DraftQueue() {
                           <button
                             onClick={() => reject.mutate({ id: draft.id })}
                             disabled={reject.isPending}
-                            className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white text-slate-500 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all disabled:opacity-50"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md text-[10px] font-medium uppercase tracking-[0.08em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:text-[#b45a3b] hover:border-[#b45a3b] transition-all disabled:opacity-50"
                           >
                             <X className="w-3.5 h-3.5" /> Verwijder
                           </button>
@@ -574,14 +576,14 @@ function DraftQueue() {
                       </div>
 
                       {/* Email body */}
-                      <div className="bg-[#FCFCFD] rounded-2xl p-6 border border-slate-100">
+                      <div className="max-w-[620px]">
                         {draft.bodyHtml ? (
                           <div
-                            className="text-sm text-slate-700 prose prose-sm max-w-none font-medium leading-relaxed"
+                            className="text-[14px] font-light text-[var(--color-muted-dark)] leading-[1.65] max-w-none"
                             dangerouslySetInnerHTML={{ __html: draft.bodyHtml }}
                           />
                         ) : (
-                          <pre className="text-sm text-slate-700 font-medium leading-relaxed whitespace-pre-wrap font-[inherit]">
+                          <pre className="text-[14px] font-light text-[var(--color-muted-dark)] leading-[1.65] whitespace-pre-wrap font-[inherit]">
                             {draft.bodyText}
                           </pre>
                         )}
@@ -618,12 +620,12 @@ function SentHistory() {
 
   if (logs.length === 0) {
     return (
-      <div className="glass-card p-12 text-center">
-        <History className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-        <p className="text-sm font-black text-[#040026] uppercase tracking-widest mb-2">
+      <div className="py-20 text-center">
+        <History className="w-12 h-12 text-[var(--color-border-strong)] mx-auto mb-4" />
+        <p className="text-[15px] font-medium text-[var(--color-ink)] mb-1">
           No outreach history yet
         </p>
-        <p className="admin-meta-text">
+        <p className="text-[13px] font-light text-[var(--color-muted)]">
           Verzonden interacties verschijnen hier zodra de eerste run live gaat.
         </p>
       </div>
@@ -635,7 +637,7 @@ function SentHistory() {
       {logs.map((log: any) => (
         <div
           key={log.id}
-          className="glass-card card-interactive p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-[var(--color-surface-2)]"
         >
           <div className="flex items-center gap-3">
             <div
@@ -648,7 +650,7 @@ function SentHistory() {
               }`}
             />
             <div>
-              <span className="text-sm font-black text-[#040026]">
+              <span className="text-[13px] font-medium text-[var(--color-ink)]">
                 {log.contact?.firstName} {log.contact?.lastName}
               </span>
               {log.contact?.prospect && (
@@ -774,10 +776,13 @@ function OutreachSettings() {
   return (
     <div className="space-y-4">
       {/* Email Identity */}
-      <div className="glass-card p-6 space-y-4">
-        <h3 className="text-sm font-black text-[#040026] uppercase tracking-widest">
-          Email Identiteit
-        </h3>
+      <div className="space-y-4 pb-8 border-b border-[var(--color-surface-2)]">
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+            Email Identiteit
+          </span>
+          <span className="flex-1 h-px bg-[var(--color-border)]" />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-bold text-slate-500 mb-1 block">
@@ -805,10 +810,13 @@ function OutreachSettings() {
       </div>
 
       {/* Outreach Style */}
-      <div className="glass-card p-6 space-y-4">
-        <h3 className="text-sm font-black text-[#040026] uppercase tracking-widest">
-          Outreach Stijl
-        </h3>
+      <div className="space-y-4 pb-8 border-b border-[var(--color-surface-2)]">
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+            Outreach Stijl
+          </span>
+          <span className="flex-1 h-px bg-[var(--color-border)]" />
+        </div>
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           {OUTREACH_STYLES.map((style) => (
             <div
@@ -820,18 +828,18 @@ function OutreachSettings() {
                 if (e.key === 'Enter' || e.key === ' ') setToneId(style.id);
               }}
               className={cn(
-                'ui-tap relative text-left rounded-xl border p-4 transition-all cursor-pointer',
+                'relative text-left rounded-md border p-4 transition-all cursor-pointer',
                 toneId === style.id
-                  ? 'border-[#EBCB4B] bg-[#EBCB4B]/5 ring-1 ring-[#EBCB4B]'
-                  : 'border-slate-100 bg-white hover:border-slate-200',
+                  ? 'border-[var(--color-ink)] bg-transparent'
+                  : 'border-[var(--color-border)] bg-transparent hover:border-[var(--color-border-strong)]',
               )}
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-sm font-black text-[#040026] tracking-tight">
+                  <p className="text-[13px] font-medium text-[var(--color-ink)]">
                     {style.label}
                   </p>
-                  <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+                  <p className="text-[11px] font-light text-[var(--color-muted)] mt-1 leading-snug">
                     {style.description}
                   </p>
                 </div>
@@ -860,14 +868,17 @@ function OutreachSettings() {
       </div>
 
       {/* Signature */}
-      <div className="glass-card p-6 space-y-4">
+      <div className="space-y-4 pb-8 border-b border-[var(--color-surface-2)]">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-black text-[#040026] uppercase tracking-widest">
-            Handtekening
-          </h3>
+          <div className="flex items-center gap-3 flex-1">
+            <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+              Handtekening
+            </span>
+            <span className="flex-1 h-px bg-[var(--color-border)]" />
+          </div>
           <button
             onClick={() => setShowPreview(!showPreview)}
-            className="ui-tap inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-[#040026] transition-colors"
+            className="inline-flex items-center gap-1.5 text-[10px] font-medium text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors ml-4"
           >
             {showPreview ? (
               <EyeOff className="w-3.5 h-3.5" />
@@ -879,8 +890,8 @@ function OutreachSettings() {
         </div>
 
         {showPreview ? (
-          <div className="bg-[#FCFCFD] rounded-2xl p-6 border border-slate-100">
-            <p className="text-xs font-bold text-slate-400 mb-3">
+          <div className="max-w-[620px]">
+            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)] mb-3">
               HTML Preview
             </p>
             <div
@@ -909,7 +920,7 @@ function OutreachSettings() {
         <button
           onClick={handleSave}
           disabled={update.isPending}
-          className="ui-tap inline-flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] border border-[#EBCB4B] hover:bg-[#D4B43B] transition-all disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-[10px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] transition-all disabled:opacity-50"
         >
           {update.isPending ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
