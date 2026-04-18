@@ -3,93 +3,76 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-type StatusType =
-  | 'DRAFT'
-  | 'ENRICHED'
-  | 'GENERATING'
-  | 'READY'
-  | 'SENT'
-  | 'VIEWED'
-  | 'ENGAGED'
-  | 'CONVERTED'
-  | 'ARCHIVED'
-  | 'LOW_RISK'
-  | 'NEEDS_REVIEW'
-  | 'BLOCKED';
-
 interface StatusBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  status: string | StatusType;
+  status: string;
+  label?: string; // optional override
 }
 
-const statusConfig: Record<string, { label: string; className: string }> = {
-  DRAFT: {
-    label: 'Draft',
-    className: 'bg-slate-50 text-slate-400 border-slate-100',
-  },
-  ENRICHED: {
-    label: 'Enriched',
-    className: 'bg-blue-50 text-blue-500 border-blue-100',
-  },
-  GENERATING: {
-    label: 'Generating',
-    className: 'bg-[#EBCB4B]/10 text-[#040026] border-[#EBCB4B]/20',
-  },
-  READY: {
-    label: 'Ready',
-    className: 'bg-emerald-50 text-emerald-500 border-emerald-100',
-  },
-  SENT: {
-    label: 'Sent',
-    className: 'bg-[#040026]/5 text-[#040026] border-[#040026]/10',
-  },
-  VIEWED: {
-    label: 'Viewed',
-    className: 'bg-cyan-50 text-cyan-500 border-cyan-100',
-  },
-  ENGAGED: {
-    label: 'Engaged',
-    className: 'bg-purple-50 text-purple-500 border-purple-100',
-  },
-  CONVERTED: {
-    label: 'Converted',
-    className: 'bg-[#EBCB4B] text-[#040026] border-[#EBCB4B]',
-  },
-  ARCHIVED: {
-    label: 'Archived',
-    className: 'bg-slate-50 text-slate-300 border-slate-100',
-  },
-  LOW_RISK: {
-    label: 'Low Risk',
-    className: 'bg-emerald-50 text-emerald-500 border-emerald-100',
-  },
-  NEEDS_REVIEW: {
-    label: 'Needs Review',
-    className: 'bg-[#EBCB4B]/10 text-[#040026] border-[#EBCB4B]/20',
-  },
-  BLOCKED: {
-    label: 'Blocked',
-    className: 'bg-red-50 text-red-500 border-red-100',
-  },
+const STATUS_CLASS_MAP: Record<string, string> = {
+  // Positive / green tint
+  READY: 'admin-state-success',
+  CONVERTED: 'admin-state-success',
+  ACCEPTED: 'admin-state-success',
+  VIEWED: 'admin-state-success',
+  COMPLETED: 'admin-state-success',
+  LOW_RISK: 'admin-state-success',
+  // Amber / pending
+  DRAFT: 'admin-state-warning',
+  SENT: 'admin-state-warning',
+  GENERATING: 'admin-state-warning',
+  NEEDS_REVIEW: 'admin-state-warning',
+  QUOTE_SENT: 'admin-state-warning',
+  EXPIRED: 'admin-state-warning',
+  // Red / negative
+  BLOCKED: 'admin-state-danger',
+  REJECTED: 'admin-state-danger',
+  FAILED: 'admin-state-danger',
+  // Neutral
+  ARCHIVED: 'admin-state-neutral',
+  ENRICHED: 'admin-state-neutral',
+  IMPORTED: 'admin-state-neutral',
+  // Info / active
+  ENGAGED: 'admin-state-info',
+  RESEARCHING: 'admin-state-info',
+  // Accent
+  OUTREACH: 'admin-state-accent',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  DRAFT: 'Concept',
+  SENT: 'Verstuurd',
+  VIEWED: 'Bekeken',
+  ACCEPTED: 'Geaccepteerd',
+  REJECTED: 'Afgewezen',
+  EXPIRED: 'Verlopen',
+  ARCHIVED: 'Gearchiveerd',
+  READY: 'Ready',
+  CONVERTED: 'Geconverteerd',
+  ENGAGED: 'Engaged',
+  ENRICHED: 'Enriched',
+  GENERATING: 'Bezig...',
+  IMPORTED: 'Imported',
+  RESEARCHING: 'Researching',
+  QUOTE_SENT: 'Offerte verstuurd',
+  BLOCKED: 'Geblokkeerd',
+  FAILED: 'Mislukt',
+  NEEDS_REVIEW: 'Review nodig',
+  LOW_RISK: 'Laag risico',
+  COMPLETED: 'Voltooid',
+  OUTREACH: 'Outreach',
 };
 
 const StatusBadge = React.forwardRef<HTMLSpanElement, StatusBadgeProps>(
-  ({ className, status, ...props }, ref) => {
-    const config = statusConfig[status] || {
-      label: status,
-      className: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
-    };
-
+  ({ className, status, label, ...props }, ref) => {
+    const stateClass = STATUS_CLASS_MAP[status] ?? 'admin-state-neutral';
+    const displayLabel = label ?? STATUS_LABELS[status] ?? status;
     return (
       <span
         ref={ref}
-        className={cn(
-          'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider',
-          config.className,
-          className,
-        )}
+        className={cn('admin-state-pill', stateClass, className)}
         {...props}
       >
-        {config.label}
+        {displayLabel}
       </span>
     );
   },
@@ -98,3 +81,4 @@ const StatusBadge = React.forwardRef<HTMLSpanElement, StatusBadgeProps>(
 StatusBadge.displayName = 'StatusBadge';
 
 export { StatusBadge };
+export type { StatusBadgeProps };
