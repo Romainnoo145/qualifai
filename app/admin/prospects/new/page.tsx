@@ -109,10 +109,10 @@ export default function NewProspect() {
   return (
     <div className="max-w-3xl mx-auto space-y-16 py-12">
       <div>
-        <h1 className="font-['Sora'] text-[32px] font-bold tracking-[-0.025em] text-[var(--color-ink)]">
+        <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
           Intelligence Onloading
         </h1>
-        <p className="text-sm font-bold text-[var(--color-muted)] mt-4 leading-relaxed">
+        <p className="text-sm font-bold text-slate-400 mt-4 leading-relaxed">
           Propagate your target domain to initialize deep environmental
           enrichment and generate absolute discovery workflows.
         </p>
@@ -121,7 +121,7 @@ export default function NewProspect() {
       {stage === 'done' && result ? (
         /* Success state */
         <div className="glass-card p-12 text-center space-y-10 rounded-[2.5rem]">
-          <div className="w-20 h-20 rounded-[var(--radius-lg)] bg-[var(--color-surface-2)] flex items-center justify-center mx-auto">
+          <div className="w-20 h-20 rounded-3xl bg-emerald-50 flex items-center justify-center mx-auto shadow-inner">
             {result.logoUrl ? (
               <img
                 src={result.logoUrl}
@@ -129,26 +129,26 @@ export default function NewProspect() {
                 className="w-11 h-11 object-contain"
               />
             ) : (
-              <Building2 className="w-9 h-9 text-[var(--color-brand-success)]" />
+              <Building2 className="w-9 h-9 text-emerald-500" />
             )}
           </div>
           <div>
-            <h2 className="font-['Sora'] text-[28px] font-bold tracking-[-0.025em] text-[var(--color-ink)]">
+            <h2 className="text-3xl font-black text-[#040026] tracking-tighter">
               {result.companyName ?? domain}&apos;s Engine is Live
             </h2>
-            <p className="text-sm font-bold text-[var(--color-muted)] mt-2">
+            <p className="text-sm font-bold text-slate-400 mt-2">
               High-fidelity discovery asset localized and ready for outreach.
             </p>
           </div>
 
-          <div className="flex items-center gap-4 bg-[var(--color-surface)] rounded-[var(--radius-md)] px-6 py-4 border border-[var(--color-border)]">
-            <code className="text-xs font-mono text-[var(--color-muted)] flex-1 text-left truncate">
+          <div className="flex items-center gap-4 bg-[#FCFCFD] rounded-2xl px-6 py-4 border border-slate-100">
+            <code className="text-xs font-mono text-slate-500 flex-1 text-left truncate">
               {typeof window !== 'undefined' ? window.location.origin : ''}
               {buildDiscoverPath(result)}
             </code>
             <button
               onClick={copyLink}
-              className="flex items-center gap-2 px-4 py-2 rounded-[var(--radius-md)] admin-eyebrow bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-2)] transition-all"
+              className="ui-tap flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white border border-slate-200 text-slate-500 hover:text-[#040026] hover:bg-slate-50 transition-all shadow-sm"
             >
               {copied ? (
                 <>
@@ -166,14 +166,14 @@ export default function NewProspect() {
             <a
               href={buildDiscoverPath(result)}
               target="_blank"
-              className="flex items-center justify-center gap-3 px-10 py-4 admin-btn-primary text-xs w-full sm:w-auto"
+              className="ui-tap flex items-center justify-center gap-3 px-10 py-4 btn-pill-yellow text-xs w-full sm:w-auto shadow-xl"
             >
               <ExternalLink className="w-4 h-4" />
               Preview Dashboard
             </a>
             <button
               onClick={() => router.push(`/admin/prospects/${result.id}`)}
-              className="flex items-center justify-center gap-3 px-10 py-4 rounded-[var(--radius-full)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-ink)] text-xs hover:bg-[var(--color-ink)] hover:text-white transition-all w-full sm:w-auto"
+              className="ui-tap flex items-center justify-center gap-3 px-10 py-4 btn-pill-secondary text-xs w-full sm:w-auto"
             >
               Edit Intelligence
               <ArrowRight className="w-4 h-4" />
@@ -193,7 +193,7 @@ export default function NewProspect() {
               setEnrichCountry('Nederland');
               setResult(null);
             }}
-            className="admin-eyebrow text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-all"
+            className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 hover:text-[#040026] transition-all"
           >
             Deploy Another Engine
           </button>
@@ -203,27 +203,27 @@ export default function NewProspect() {
         <form onSubmit={handleSubmit} className="space-y-10">
           <div className="glass-card p-10 space-y-8 rounded-[2.5rem]">
             <div className="space-y-3">
-              <label className="admin-eyebrow text-[var(--color-muted)] ml-1 block">
+              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
                 Corporate Domain
               </label>
               <div className="relative">
-                <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-muted)] pointer-events-none" />
+                <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 pointer-events-none" />
                 <input
                   type="text"
                   value={domain}
                   onChange={(e) => setDomain(e.target.value)}
                   placeholder="e.g. apple.com"
                   disabled={stage !== 'idle'}
-                  className="input-minimal w-full pl-12 pr-6 py-4 rounded-[var(--radius-md)]"
+                  className="w-full pl-12 pr-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
                   autoFocus
                 />
               </div>
             </div>
 
             <div className="space-y-3">
-              <label className="admin-eyebrow text-[var(--color-muted)] ml-1 block">
+              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
                 Tactical Intelligence{' '}
-                <span className="opacity-50">(Optional)</span>
+                <span className="opacity-50 text-slate-300">(Optional)</span>
               </label>
               <textarea
                 value={notes}
@@ -231,17 +231,17 @@ export default function NewProspect() {
                 placeholder="Specific context or situational constraints..."
                 disabled={stage !== 'idle'}
                 rows={4}
-                className="input-minimal w-full px-6 py-4 rounded-[var(--radius-md)] resize-none"
+                className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all resize-none placeholder:text-slate-300"
               />
             </div>
 
-            <details className="border border-[var(--color-border)] rounded-[var(--radius-md)] mt-4">
-              <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-[var(--color-muted-dark)] select-none hover:bg-[var(--color-surface-2)]">
+            <details className="border border-gray-200 rounded-lg mt-4">
+              <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-gray-700 select-none hover:bg-gray-50">
                 Optionele verrijking
               </summary>
               <div className="px-4 pb-4 pt-2 grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-[var(--color-muted-dark)] mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Bedrijfsnaam
                   </label>
                   <input
@@ -255,7 +255,7 @@ export default function NewProspect() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[var(--color-muted-dark)] mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Sector
                   </label>
                   <input
@@ -269,7 +269,7 @@ export default function NewProspect() {
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-[var(--color-muted-dark)] mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Omschrijving
                   </label>
                   <textarea
@@ -283,7 +283,7 @@ export default function NewProspect() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[var(--color-muted-dark)] mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Medewerkers
                   </label>
                   <select
@@ -303,7 +303,7 @@ export default function NewProspect() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[var(--color-muted-dark)] mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Stad
                   </label>
                   <input
@@ -317,7 +317,7 @@ export default function NewProspect() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[var(--color-muted-dark)] mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Land
                   </label>
                   <input
@@ -334,10 +334,8 @@ export default function NewProspect() {
           </div>
 
           {error && (
-            <div className="glass-card p-6 border-[#e0b8a8] bg-[#fef2f2]">
-              <p className="text-xs font-medium text-[var(--color-brand-danger)]">
-                {error}
-              </p>
+            <div className="glass-card p-6 border-red-100 bg-red-50/20 rounded-2xl">
+              <p className="text-xs font-bold text-red-500">{error}</p>
             </div>
           )}
 
@@ -346,19 +344,19 @@ export default function NewProspect() {
               <div className="flex items-center gap-5">
                 <Loader2 className="w-8 h-8 text-[#007AFF] animate-spin" />
                 <div>
-                  <p className="text-sm font-bold text-[var(--color-ink)]">
+                  <p className="text-sm font-black text-[#040026]">
                     {stageMessages[stage]}
                   </p>
-                  <p className="admin-eyebrow text-[var(--color-muted)] mt-1">
+                  <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
                     {stage === 'generating'
                       ? 'AI Construction in progress...'
                       : 'Syncing Environmental Data...'}
                   </p>
                 </div>
               </div>
-              <div className="mt-8 h-2 bg-[var(--color-surface-2)] rounded-full overflow-hidden border border-[var(--color-border)]">
+              <div className="mt-8 h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
                 <div
-                  className="h-full bg-[var(--color-ink)] transition-all duration-1000"
+                  className="h-full bg-[#040026] transition-all duration-1000 shadow-xl shadow-[#040026]/10"
                   style={{
                     width:
                       stage === 'creating'

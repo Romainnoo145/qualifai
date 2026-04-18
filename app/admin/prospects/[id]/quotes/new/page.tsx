@@ -108,14 +108,12 @@ export default function NewQuoteForProspectPage() {
       <header className="space-y-3">
         <Link
           href={`/admin/prospects/${id}`}
-          className="inline-flex items-center gap-2 text-sm text-[var(--color-muted)] hover:text-[var(--color-ink)]"
+          className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#040026]"
         >
           <ArrowLeft className="h-4 w-4" /> Terug naar prospect
         </Link>
-        <h1 className="font-['Sora'] text-[28px] font-bold tracking-[-0.025em] text-[var(--color-ink)]">
-          Nieuwe offerte
-        </h1>
-        <p className="text-sm text-[var(--color-muted)]">
+        <h1 className="text-3xl font-black text-[#040026]">Nieuwe offerte</h1>
+        <p className="text-sm text-slate-500">
           {prospectQuery.data?.companyName ?? 'Onbekende prospect'}
         </p>
       </header>

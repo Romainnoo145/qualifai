@@ -18,9 +18,6 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { PageLoader } from '@/components/ui/page-loader';
-import { PageHeader } from '@/components/ui/page-header';
-import { SectionHeading } from '@/components/ui/section-heading';
-import { EmptyState } from '@/components/ui/empty-state';
 
 // --- Helpers ---
 
@@ -94,9 +91,7 @@ function ProspectLogo({
   size?: 'sm' | 'md';
 }) {
   const sizeClasses =
-    size === 'sm'
-      ? 'w-10 h-10 rounded-[var(--radius-md)]'
-      : 'w-14 h-14 rounded-[var(--radius-lg)]';
+    size === 'sm' ? 'w-10 h-10 rounded-xl' : 'w-14 h-14 rounded-2xl';
   const imgClasses = size === 'sm' ? 'w-5 h-5' : 'w-8 h-8';
   const iconClasses = size === 'sm' ? 'w-4 h-4' : 'w-6 h-6';
 
@@ -104,7 +99,7 @@ function ProspectLogo({
     <div
       className={cn(
         sizeClasses,
-        'bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center overflow-hidden shrink-0',
+        'bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden shrink-0',
       )}
     >
       {logoUrl ? (
@@ -114,9 +109,7 @@ function ProspectLogo({
           className={cn(imgClasses, 'object-contain')}
         />
       ) : (
-        <Building2
-          className={cn(iconClasses, 'text-[var(--color-border-strong)]')}
-        />
+        <Building2 className={cn(iconClasses, 'text-slate-200')} />
       )}
     </div>
   );
@@ -134,22 +127,22 @@ const feedConfig: Record<
 > = {
   research_complete: {
     icon: Search,
-    dotColor: 'admin-state-success',
+    dotColor: 'bg-emerald-400',
     label: 'Research afgerond',
   },
   analysis_generated: {
     icon: Sparkles,
-    dotColor: 'admin-state-accent',
+    dotColor: 'bg-purple-400',
     label: 'Narrative analyse',
   },
   discover_visit: {
     icon: Eye,
-    dotColor: 'admin-state-info',
+    dotColor: 'bg-blue-400',
     label: 'Discover bezocht',
   },
   outreach_sent: {
     icon: Send,
-    dotColor: 'admin-state-warning',
+    dotColor: 'bg-amber-400',
     label: 'Outreach verstuurd',
   },
 };
@@ -168,12 +161,13 @@ function FeedRow({ item }: { item: FeedItem }) {
       <ProspectLogo logoUrl={item.logoUrl} />
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-[15px] font-bold text-[var(--color-ink)] tracking-[-0.01em] group-hover:text-[#007AFF] transition-all">
+          <span className="text-lg font-black text-[#040026] tracking-tighter group-hover:text-[#007AFF] transition-all">
             {item.prospectName}
           </span>
           <span
             className={cn(
-              'admin-state-pill admin-state-neutral inline-flex items-center gap-1.5',
+              'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-widest',
+              'bg-slate-50 border border-slate-100 text-slate-500',
             )}
           >
             <span className={cn('w-1.5 h-1.5 rounded-full', cfg.dotColor)} />
@@ -185,7 +179,7 @@ function FeedRow({ item }: { item: FeedItem }) {
           <span>{item.detail}</span>
         </div>
       </div>
-      <span className="text-[10px] font-medium text-[var(--color-muted)] shrink-0 tabular-nums">
+      <span className="text-[10px] font-bold text-slate-400 shrink-0 tabular-nums">
         {timeAgo(item.timestamp)}
       </span>
     </Link>
@@ -211,7 +205,7 @@ function DraftRow({
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href={`/admin/prospects/${draft.prospectId}`}
-              className="text-[15px] font-bold text-[var(--color-ink)] tracking-[-0.01em] hover:text-[#007AFF] transition-all"
+              className="text-lg font-black text-[#040026] tracking-tighter hover:text-[#007AFF] transition-all"
             >
               {draft.prospectName}
             </Link>
@@ -224,24 +218,24 @@ function DraftRow({
             <span className="truncate max-w-md">{draft.subject}</span>
           </div>
           {draft.preview && (
-            <p className="text-[10px] text-[var(--color-muted)] line-clamp-1 mt-0.5 max-w-lg">
+            <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5 max-w-lg">
               {draft.preview}
             </p>
           )}
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <span className="text-[10px] font-medium text-[var(--color-muted)] tabular-nums">
+        <span className="text-[10px] font-bold text-slate-400 tabular-nums">
           {timeAgo(draft.createdAt)}
         </span>
         <button
           onClick={() => onSend(draft.id)}
           disabled={isPending}
           className={cn(
-            'inline-flex items-center gap-2 px-5 py-2.5 rounded-[var(--radius-md)] text-[10px] font-bold uppercase tracking-[0.14em] border transition-all',
+            'ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all',
             isPending
-              ? 'bg-[var(--color-surface-2)] text-[var(--color-muted)] border-[var(--color-border)] cursor-not-allowed'
-              : 'admin-btn-primary',
+              ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+              : 'bg-[#EBCB4B] text-[#040026] border-[#EBCB4B] hover:bg-[#D4B43B]',
           )}
         >
           {isPending ? (
@@ -268,7 +262,7 @@ function ReplyRow({ reply }: { reply: Reply }) {
         <ProspectLogo logoUrl={reply.logoUrl} />
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-[15px] font-bold text-[var(--color-ink)] tracking-[-0.01em] group-hover:text-[#007AFF] transition-all">
+            <span className="text-lg font-black text-[#040026] tracking-tighter group-hover:text-[#007AFF] transition-all">
               {reply.prospectName}
             </span>
             {reply.contactName && (
@@ -280,13 +274,13 @@ function ReplyRow({ reply }: { reply: Reply }) {
             <span className="truncate max-w-md">{reply.subject}</span>
           </div>
           {reply.preview && (
-            <p className="text-[10px] text-[var(--color-muted)] line-clamp-1 mt-0.5 max-w-lg">
+            <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5 max-w-lg">
               {reply.preview}
             </p>
           )}
         </div>
       </div>
-      <span className="text-[10px] font-medium text-[var(--color-muted)] shrink-0 tabular-nums">
+      <span className="text-[10px] font-bold text-slate-400 shrink-0 tabular-nums">
         {timeAgo(reply.createdAt)}
       </span>
     </Link>
@@ -304,11 +298,11 @@ function ReadyProspectRow({ prospect }: { prospect: ReadyProspect }) {
       <ProspectLogo logoUrl={prospect.logoUrl} />
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-[15px] font-bold text-[var(--color-ink)] tracking-[-0.01em] group-hover:text-[#007AFF] transition-all">
+          <span className="text-lg font-black text-[#040026] tracking-tighter group-hover:text-[#007AFF] transition-all">
             {prospect.companyName}
           </span>
           {prospect.industry && (
-            <span className="admin-state-pill admin-state-neutral">
+            <span className="inline-block text-[9px] font-bold uppercase tracking-widest text-slate-500 bg-slate-50 border border-slate-100 px-2.5 py-0.5 rounded-lg">
               {prospect.industry}
             </span>
           )}
@@ -316,15 +310,41 @@ function ReadyProspectRow({ prospect }: { prospect: ReadyProspect }) {
         <div className="admin-meta-text flex items-center gap-3 mt-1">
           <Globe className="w-3.5 h-3.5" />
           <span>{prospect.domain}</span>
-          <span className="w-1 h-1 rounded-full bg-[var(--color-border-strong)]" />
+          <span className="w-1 h-1 rounded-full bg-slate-200" />
           <span>
             {prospect.contactCount}{' '}
             {prospect.contactCount === 1 ? 'contact' : 'contacts'}
           </span>
         </div>
       </div>
-      <span className="admin-btn-primary shrink-0">Start Outreach</span>
+      <span className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] hover:bg-[#D4B43B] transition-all border border-[#EBCB4B] shrink-0">
+        Start Outreach
+      </span>
     </Link>
+  );
+}
+
+// --- Section heading ---
+
+function SectionHeading({
+  icon: Icon,
+  label,
+  count,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  count: number;
+}) {
+  return (
+    <div className="flex items-center gap-2 mb-4">
+      <Icon className="w-4 h-4 text-slate-500" />
+      <h2 className="text-sm font-black text-[#040026] tracking-tight">
+        {label}
+      </h2>
+      <span className="bg-slate-100 rounded-full px-2.5 py-0.5 text-xs font-bold text-slate-500">
+        {count}
+      </span>
+    </div>
   );
 }
 
@@ -357,7 +377,7 @@ export default function AdminDashboard() {
 
   if (feed.error || actions.error) {
     return (
-      <div className="glass-card p-12 text-center text-[var(--color-brand-danger)] font-bold rounded-[var(--radius-lg)]">
+      <div className="glass-card p-12 text-center text-red-500 font-bold rounded-[2.5rem]">
         Dashboard kon niet laden. Controleer de verbinding.
       </div>
     );
@@ -379,17 +399,17 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-10">
       {/* Header */}
-      <PageHeader
-        title="Dashboard"
-        action={
-          (counts?.total ?? 0) > 0 ? (
-            <span className="admin-btn-secondary inline-flex items-center gap-2">
-              <Activity className="w-3.5 h-3.5" />
-              {counts?.total} {counts?.total === 1 ? 'actie' : 'acties'}
-            </span>
-          ) : undefined
-        }
-      />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
+          Dashboard
+        </h1>
+        {(counts?.total ?? 0) > 0 && (
+          <span className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] border border-[#EBCB4B]">
+            <Activity className="w-3.5 h-3.5" />
+            {counts?.total} {counts?.total === 1 ? 'actie' : 'acties'}
+          </span>
+        )}
+      </div>
 
       {/* View toggle */}
       <div className="overflow-x-auto">
@@ -397,7 +417,7 @@ export default function AdminDashboard() {
           <button
             onClick={() => setView('actions')}
             className={cn(
-              'admin-toggle-btn',
+              'ui-tap ui-focus admin-toggle-btn',
               view === 'actions' && 'admin-toggle-btn-active',
             )}
           >
@@ -409,7 +429,7 @@ export default function AdminDashboard() {
           <button
             onClick={() => setView('activity')}
             className={cn(
-              'admin-toggle-btn',
+              'ui-tap ui-focus admin-toggle-btn',
               view === 'activity' && 'admin-toggle-btn-active',
             )}
           >
@@ -425,20 +445,23 @@ export default function AdminDashboard() {
       {view === 'actions' && (
         <>
           {(counts?.total ?? 0) === 0 ? (
-            <EmptyState
-              icon={<CheckCircle2 className="w-12 h-12" />}
-              title="All caught up"
-              description="Geen openstaande acties."
-            />
+            <div className="glass-card p-12 text-center">
+              <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+              <h2 className="text-xl font-black text-[#040026] tracking-tight">
+                All caught up
+              </h2>
+              <p className="text-sm text-slate-400 mt-2">
+                Geen openstaande acties.
+              </p>
+            </div>
           ) : (
             <div className="space-y-8">
               {drafts.length > 0 && (
                 <section>
                   <SectionHeading
-                    icon={<Mail className="w-4 h-4" />}
+                    icon={Mail}
                     label="Concepten goed te keuren"
                     count={drafts.length}
-                    className="mb-4"
                   />
                   <div className="space-y-3">
                     {(drafts as Draft[]).map((draft) => (
@@ -456,10 +479,9 @@ export default function AdminDashboard() {
               {replies.length > 0 && (
                 <section>
                   <SectionHeading
-                    icon={<MessageSquare className="w-4 h-4" />}
+                    icon={MessageSquare}
                     label="Reacties te beantwoorden"
                     count={replies.length}
-                    className="mb-4"
                   />
                   <div className="space-y-3">
                     {(replies as Reply[]).map((reply) => (
@@ -472,10 +494,9 @@ export default function AdminDashboard() {
               {readyProspects.length > 0 && (
                 <section>
                   <SectionHeading
-                    icon={<Building2 className="w-4 h-4" />}
+                    icon={Building2}
                     label="Klaar voor outreach"
                     count={readyProspects.length}
-                    className="mb-4"
                   />
                   <div className="space-y-3">
                     {(readyProspects as ReadyProspect[]).map((prospect) => (
@@ -493,11 +514,15 @@ export default function AdminDashboard() {
       {view === 'activity' && (
         <section>
           {feedItems.length === 0 ? (
-            <EmptyState
-              icon={<Activity className="w-12 h-12" />}
-              title="Geen recente activiteit"
-              description="Activiteit van de afgelopen 14 dagen verschijnt hier."
-            />
+            <div className="glass-card p-12 text-center">
+              <Activity className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+              <p className="text-sm font-black text-[#040026] uppercase tracking-widest">
+                Geen recente activiteit
+              </p>
+              <p className="admin-meta-text mt-2">
+                Activiteit van de afgelopen 14 dagen verschijnt hier.
+              </p>
+            </div>
           ) : (
             <div className="space-y-3">
               {(feedItems as FeedItem[]).map((item) => (

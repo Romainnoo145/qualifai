@@ -42,8 +42,6 @@
   /* zinc-500 */
   --color-muted-dark: #52525b;
   /* zinc-600 */
-  --color-canvas: #fafafa;
-  --color-sidebar: #ffffff;
 
   /* Semantic (used narrowly — event tags in activity feed + states) */
   --color-brand-blue: #3d5f82;
@@ -158,9 +156,9 @@
     justify-content: center;
     gap: 0.5rem;
     border-radius: var(--radius-sm);
-    background: var(--color-ink);
-    color: var(--color-surface);
-    border: 1px solid var(--color-ink);
+    background: linear-gradient(180deg, #e1c33c 0%, #fdf97b 100%);
+    color: var(--color-ink);
+    border: 1px solid #e1c33c;
     font-size: 0.8125rem;
     font-weight: 500;
     letter-spacing: -0.005em;
@@ -171,8 +169,8 @@
   }
 
   .admin-btn-primary:hover {
-    background: var(--color-ink-deep);
-    border-color: var(--color-ink-deep);
+    background: linear-gradient(180deg, #d4b43b 0%, #f4e96e 100%);
+    border-color: #d4b43b;
   }
 
   .admin-btn-primary:disabled {

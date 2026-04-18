@@ -17,7 +17,6 @@ import {
   Info,
 } from 'lucide-react';
 import { PageLoader } from '@/components/ui/page-loader';
-import { EmptyState } from '@/components/ui/empty-state';
 
 type UseCase = {
   id: string;
@@ -187,7 +186,7 @@ export default function UseCasesPage() {
   const catalogLabel = isAtlantisProject ? 'RAG Documents' : 'Use Cases';
   const catalogItemLabel = isAtlantisProject ? 'RAG Document' : 'Use Case';
   const codebaseInputClass =
-    'input-minimal w-full px-4 py-2.5 rounded-[var(--radius-md)] text-sm';
+    'w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#040026]/5 focus:border-[#040026] transition-all';
 
   return (
     <div className="space-y-10">
@@ -195,13 +194,13 @@ export default function UseCasesPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-['Sora'] text-[28px] font-bold tracking-[-0.025em] text-[var(--color-ink)]">
+            <h1 className="text-3xl font-black tracking-tight text-[#040026]">
               {catalogLabel}
             </h1>
             {isCatalogReadOnly && (
               <button
                 type="button"
-                className="inline-flex items-center justify-center rounded-full text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
+                className="inline-flex items-center justify-center rounded-full text-slate-400 hover:text-[#040026] transition-colors"
                 title="Atlantis catalog is read-only and synced from RAG volumes."
                 aria-label="Catalog info"
               >
@@ -333,7 +332,7 @@ export default function UseCasesPage() {
       {/* Create form */}
       {showCreateForm && (
         <div className="glass-card p-6 space-y-4">
-          <h2 className="admin-eyebrow text-[var(--color-ink)] mb-0">
+          <h2 className="text-sm font-black text-[#040026] uppercase tracking-wider">
             New {catalogItemLabel}
           </h2>
           <UseCaseForm
@@ -357,14 +356,14 @@ export default function UseCasesPage() {
 
       {/* Empty state */}
       {!useCases.isLoading && list.length === 0 && (
-        <EmptyState
-          icon={<BookOpen className="w-10 h-10" />}
-          title={
-            isAtlantisProject
+        <div className="glass-card p-12 text-center rounded-[2.5rem]">
+          <BookOpen className="w-10 h-10 text-slate-200 mx-auto mb-4" />
+          <p className="text-sm font-medium text-slate-400">
+            {isAtlantisProject
               ? 'No Atlantis RAG documents yet. Sync from Atlantis volumes.'
-              : 'No use cases yet. Create one, import from Obsidian, or scan vault.'
-          }
-        />
+              : 'No use cases yet. Create one, import from Obsidian, or scan vault.'}
+          </p>
+        </div>
       )}
 
       {/* Use case list */}
@@ -374,7 +373,7 @@ export default function UseCasesPage() {
             <div key={uc.id} className="glass-card p-6">
               {editingId === uc.id ? (
                 <div className="space-y-4">
-                  <h3 className="admin-eyebrow text-[var(--color-ink)] mb-0">
+                  <h3 className="text-sm font-black text-[#040026] uppercase tracking-wider">
                     Edit {catalogItemLabel}
                   </h3>
                   <UseCaseForm
@@ -391,24 +390,24 @@ export default function UseCasesPage() {
                   {/* Title row */}
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-base font-bold text-[var(--color-ink)]">
+                      <span className="text-base font-black text-[#040026]">
                         {uc.title}
                       </span>
-                      <span className="admin-state-pill admin-state-info">
+                      <span className="inline-flex px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-50 text-blue-700">
                         {uc.category}
                       </span>
                       {uc.isShipped && (
-                        <span className="admin-state-pill admin-state-success">
+                        <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700">
                           Shipped
                         </span>
                       )}
                       {!uc.isActive && (
-                        <span className="admin-state-pill admin-state-danger">
+                        <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-red-50 text-red-500">
                           Inactive
                         </span>
                       )}
                       {uc._count.proofMatches > 0 && (
-                        <span className="admin-state-pill admin-state-neutral">
+                        <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-500">
                           {uc._count.proofMatches} matches
                         </span>
                       )}
@@ -439,18 +438,16 @@ export default function UseCasesPage() {
                   </div>
 
                   {/* Summary */}
-                  <p className="text-sm text-[var(--color-muted-dark)]">
-                    {uc.summary}
-                  </p>
+                  <p className="text-sm text-slate-600">{uc.summary}</p>
 
                   {/* Tags */}
                   {uc.tags.length > 0 && (
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <Tag className="w-3 h-3 text-[var(--color-muted)] shrink-0" />
+                      <Tag className="w-3 h-3 text-slate-300 shrink-0" />
                       {uc.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="admin-state-pill admin-state-neutral"
+                          className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600"
                         >
                           {tag}
                         </span>
@@ -462,10 +459,7 @@ export default function UseCasesPage() {
                   {uc.outcomes.length > 0 && (
                     <ul className="list-disc list-inside space-y-0.5 pl-1">
                       {uc.outcomes.map((outcome) => (
-                        <li
-                          key={outcome}
-                          className="text-xs text-[var(--color-muted)]"
-                        >
+                        <li key={outcome} className="text-xs text-slate-500">
                           {outcome}
                         </li>
                       ))}
@@ -481,7 +475,7 @@ export default function UseCasesPage() {
                           href={ref.startsWith('http') ? ref : undefined}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-brand-blue)] hover:underline"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
                         >
                           <ExternalLink className="w-3 h-3" />
                           {ref}
@@ -517,13 +511,13 @@ function UseCaseForm({
   isSaving: boolean;
 }) {
   const inputClass =
-    'input-minimal w-full px-4 py-3 rounded-[var(--radius-md)] text-sm';
+    'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#040026]/5 focus:border-[#040026] transition-all';
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="admin-eyebrow text-[var(--color-muted)] block">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
             Title
           </label>
           <input
@@ -534,7 +528,7 @@ function UseCaseForm({
           />
         </div>
         <div className="space-y-1">
-          <label className="admin-eyebrow text-[var(--color-muted)] block">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
             Category
           </label>
           <input
@@ -549,7 +543,7 @@ function UseCaseForm({
       </div>
 
       <div className="space-y-1">
-        <label className="admin-eyebrow text-[var(--color-muted)] block">
+        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
           Summary
         </label>
         <textarea
@@ -563,9 +557,9 @@ function UseCaseForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="admin-eyebrow text-[var(--color-muted)] block">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
             Tags{' '}
-            <span className="font-normal text-[var(--color-muted)]">
+            <span className="font-normal text-slate-400">
               (comma-separated)
             </span>
           </label>
@@ -577,9 +571,9 @@ function UseCaseForm({
           />
         </div>
         <div className="space-y-1">
-          <label className="admin-eyebrow text-[var(--color-muted)] block">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
             Outcomes{' '}
-            <span className="font-normal text-[var(--color-muted)]">
+            <span className="font-normal text-slate-400">
               (comma-separated)
             </span>
           </label>
@@ -596,9 +590,9 @@ function UseCaseForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="admin-eyebrow text-[var(--color-muted)] block">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
             Case Study Refs{' '}
-            <span className="font-normal text-[var(--color-muted)]">
+            <span className="font-normal text-slate-400">
               (comma-separated)
             </span>
           </label>
@@ -612,7 +606,7 @@ function UseCaseForm({
           />
         </div>
         <div className="space-y-1">
-          <label className="admin-eyebrow text-[var(--color-muted)] block">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
             External URL
           </label>
           <input
@@ -635,11 +629,11 @@ function UseCaseForm({
           onChange={(e) =>
             setForm((f) => ({ ...f, isShipped: e.target.checked }))
           }
-          className="rounded border-[var(--color-border-strong)]"
+          className="rounded border-slate-200"
         />
         <label
           htmlFor="isShipped"
-          className="text-sm font-medium text-[var(--color-muted-dark)]"
+          className="text-sm font-medium text-slate-600"
         >
           Shipped (service is live and available)
         </label>

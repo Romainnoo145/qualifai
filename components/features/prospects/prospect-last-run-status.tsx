@@ -47,7 +47,7 @@ export function ProspectLastRunStatus({
   if (prospect.lastAnalysisError && prospect.lastAnalysisAttemptedAt) {
     return (
       <div
-        className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-[#e0b8a8] bg-[#fef2f2] px-3.5 py-1.5 text-[12px] font-medium text-[var(--color-brand-danger)]"
+        className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3.5 py-1.5 text-[12px] font-semibold text-red-700"
         data-testid="last-run-status"
         data-state="error"
       >
@@ -69,7 +69,7 @@ export function ProspectLastRunStatus({
   ) {
     return (
       <div
-        className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-[var(--color-tag-quality-border)] bg-[var(--color-tag-quality-bg)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--color-tag-quality-text)]"
+        className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-1.5 text-[12px] font-semibold text-amber-800"
         data-testid="last-run-status"
         data-state="fallback"
         title={FRIENDLY_ERROR_GEMINI_FALLBACK}
@@ -94,10 +94,10 @@ export function ProspectLastRunStatus({
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-2 rounded-[var(--radius-full)] border px-3.5 py-1.5 text-[12px] font-medium',
+        'inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12px] font-semibold',
         isSuccess
-          ? 'border-[var(--color-tag-enrich-border)] bg-[var(--color-tag-enrich-bg)] text-[var(--color-tag-enrich-text)]'
-          : 'border-[var(--color-tag-quality-border)] bg-[var(--color-tag-quality-bg)] text-[var(--color-tag-quality-text)]',
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+          : 'border-amber-200 bg-amber-50 text-amber-700',
       )}
       data-testid="last-run-status"
       data-state={isSuccess ? 'success' : 'warning'}

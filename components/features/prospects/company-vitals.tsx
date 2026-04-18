@@ -20,9 +20,14 @@ export function CompanyVitals({ prospect, className }: CompanyVitalsProps) {
   const p = prospect;
 
   return (
-    <div className={cn('glass-card p-8 flex flex-col gap-10', className)}>
+    <div
+      className={cn(
+        'bg-[#FCFCFD] border border-[#F1F3F5] rounded-3xl p-8 flex flex-col gap-10',
+        className,
+      )}
+    >
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
+        <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
           {p.logo ? (
             <img
               src={p.logo}
@@ -30,20 +35,24 @@ export function CompanyVitals({ prospect, className }: CompanyVitalsProps) {
               className="w-7 h-7 object-contain rounded"
             />
           ) : (
-            <Building2 className="w-6 h-6 text-[var(--color-border-strong)]" />
+            <Building2 className="w-6 h-6 text-slate-300" />
           )}
         </div>
         <div>
-          <h3 className="text-sm font-bold text-[var(--color-ink)] tracking-tight">
+          <h3 className="text-sm font-bold text-[#040026] tracking-tight">
             {p.companyName}
           </h3>
-          <p className="admin-eyebrow">{p.domain}</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+            {p.domain}
+          </p>
         </div>
       </div>
 
       <div className="space-y-8">
         <div>
-          <p className="admin-eyebrow mb-4">Vitals</p>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
+            Vitals
+          </p>
           <div className="grid grid-cols-1 gap-5">
             <VitalItem icon={Globe} label="Industry" value={p.industry} />
             <VitalItem
@@ -66,12 +75,14 @@ export function CompanyVitals({ prospect, className }: CompanyVitalsProps) {
 
         {p.technologies?.length > 0 && (
           <div>
-            <p className="admin-eyebrow mb-4">Stack</p>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
+              Stack
+            </p>
             <div className="flex flex-wrap gap-2">
               {p.technologies.slice(0, 8).map((tech: string) => (
                 <span
                   key={tech}
-                  className="text-[10px] font-medium px-3 py-1 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-muted-dark)] rounded-[var(--radius-xs)]"
+                  className="text-[10px] font-bold px-3 py-1 bg-white border border-slate-100 text-slate-500 rounded-lg"
                 >
                   {tech}
                 </span>
@@ -81,10 +92,10 @@ export function CompanyVitals({ prospect, className }: CompanyVitalsProps) {
         )}
       </div>
 
-      <div className="pt-8 border-t border-[var(--color-border)] mt-auto">
+      <div className="pt-8 border-t border-slate-100 mt-auto">
         <Button
           variant="outline"
-          className="w-full h-11 rounded-[var(--radius-sm)] text-xs border-[var(--color-border-strong)] text-[var(--color-muted-dark)] hover:bg-[var(--color-surface-2)] font-medium"
+          className="w-full h-11 rounded-xl text-xs border-slate-200 text-slate-600 hover:bg-slate-50 font-bold"
           leftIcon={<ExternalLink className="w-3.5 h-3.5" />}
         >
           CRM Profile
@@ -107,12 +118,12 @@ function VitalItem({
   return (
     <div className="flex items-center justify-between group">
       <div className="flex items-center gap-3">
-        <Icon className="w-3.5 h-3.5 text-[var(--color-muted)] group-hover:text-[var(--color-muted-dark)] transition-colors" />
-        <span className="admin-eyebrow">{label}</span>
+        <Icon className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-colors" />
+        <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">
+          {label}
+        </span>
       </div>
-      <span className="text-[11px] text-[var(--color-ink)] font-bold">
-        {value}
-      </span>
+      <span className="text-[11px] text-[#040026] font-black">{value}</span>
     </div>
   );
 }

@@ -243,9 +243,6 @@ function AdminShell({
           />
         )}
         <item.icon className="h-[16px] w-[16px]" strokeWidth={1.75} />
-        <span className="pointer-events-none absolute left-full ml-3 hidden whitespace-nowrap rounded-[var(--radius-xs)] bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-surface)] opacity-0 transition-opacity group-hover:opacity-100 lg:block">
-          {item.label}
-        </span>
       </Link>
     );
   };
