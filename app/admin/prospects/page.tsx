@@ -3,12 +3,8 @@
 import { api } from '@/components/providers';
 import Link from 'next/link';
 import {
-  Globe,
   Building2,
-  ExternalLink,
-  FileText,
   Check,
-  Trash2,
   Users,
   Search,
   Loader2,
@@ -18,11 +14,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { QualityChip } from '@/components/features/prospects/quality-chip';
-import { PipelineChip } from '@/components/features/prospects/pipeline-chip';
 import { computePipelineStage, type PipelineStage } from '@/lib/pipeline-stage';
-import { buildDiscoverPath } from '@/lib/prospect-url';
-import { deepAnalysisStatus } from '@/lib/deep-analysis';
 import { PageLoader } from '@/components/ui/page-loader';
 import { ProspectLogo } from '@/components/features/prospects/prospect-logo';
 
@@ -76,45 +68,55 @@ export default function ProspectList() {
   const [view, setView] = useState<View>('all');
 
   return (
-    <div className="space-y-10">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
-          Prospects
+    <div className="max-w-[1400px] space-y-10">
+      {/* Header */}
+      <div className="flex items-baseline justify-between pb-6 border-b border-[var(--color-border)]">
+        <h1 className="text-[48px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
+          Prospects<span className="text-[var(--color-gold)]">.</span>
         </h1>
-        <Link href="/admin/prospects/new" className="admin-btn-primary">
+        <Link
+          href="/admin/prospects/new"
+          className="inline-flex items-center gap-2 px-6 py-2.5 text-[11px] font-medium uppercase tracking-[0.1em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] rounded-full"
+        >
           + New Prospect
         </Link>
       </div>
 
       {/* View toggle */}
       <div className="overflow-x-auto">
-        <div className="admin-toggle-group w-max">
+        <div className="flex gap-2 w-max">
           <button
             onClick={() => setView('all')}
             className={cn(
-              'ui-tap ui-focus admin-toggle-btn',
-              view === 'all' && 'admin-toggle-btn-active',
+              'px-4 py-2 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
+              view === 'all'
+                ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
             )}
           >
-            <Building2 className="w-4 h-4" /> All Companies
+            <Building2 className="w-3.5 h-3.5 inline mr-1.5" /> All Companies
           </button>
           <button
             onClick={() => setView('search-companies')}
             className={cn(
-              'ui-tap ui-focus admin-toggle-btn',
-              view === 'search-companies' && 'admin-toggle-btn-active',
+              'px-4 py-2 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
+              view === 'search-companies'
+                ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
             )}
           >
-            <Search className="w-4 h-4" /> Search Companies
+            <Search className="w-3.5 h-3.5 inline mr-1.5" /> Search Companies
           </button>
           <button
             onClick={() => setView('search-contacts')}
             className={cn(
-              'ui-tap ui-focus admin-toggle-btn',
-              view === 'search-contacts' && 'admin-toggle-btn-active',
+              'px-4 py-2 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
+              view === 'search-contacts'
+                ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
             )}
           >
-            <Users className="w-4 h-4" /> Search Contacts
+            <Users className="w-3.5 h-3.5 inline mr-1.5" /> Search Contacts
           </button>
         </div>
       </div>
@@ -130,17 +132,6 @@ export default function ProspectList() {
 
 function AllCompanies() {
   const prospects = api.admin.listProspects.useQuery();
-  const deleteMutation = api.admin.deleteProspect.useMutation({
-    onSuccess: () => prospects.refetch(),
-  });
-  const startResearchMutation = api.research.startRun.useMutation({
-    onSuccess: () => prospects.refetch(),
-    onSettled: () => setStartingResearch(null),
-  });
-  const [startingResearch, setStartingResearch] = useState<{
-    id: string;
-    mode: 'standard' | 'deep';
-  } | null>(null);
   const [stageFilter, setStageFilter] = useState<StageFilterKey>('all');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -210,6 +201,38 @@ function AllCompanies() {
     );
   }, [stageFilter, stagedProspects]);
 
+  // Group prospects by stage for A3 Editorial layout
+  const stageGroups = useMemo(() => {
+    const groups: { label: string; rows: typeof visibleProspects }[] = [];
+    const groupOrder = [
+      'Engaged',
+      'Booked',
+      'Sending',
+      'Ready',
+      'Reviewed',
+      'Researched',
+      'Researching',
+      'Imported',
+    ] as const;
+    for (const stage of groupOrder) {
+      const rows = visibleProspects.filter((r) => r.stage === stage);
+      if (rows.length > 0) {
+        const labels: Record<string, string> = {
+          Engaged: 'Engaged',
+          Booked: 'Booked',
+          Sending: 'Sending',
+          Ready: 'Klaar voor outreach',
+          Reviewed: 'Beoordeeld',
+          Researched: 'Onderzocht',
+          Researching: 'Bezig met onderzoek',
+          Imported: 'Geïmporteerd',
+        };
+        groups.push({ label: labels[stage] ?? stage, rows });
+      }
+    }
+    return groups;
+  }, [visibleProspects]);
+
   if (prospects.isLoading) {
     return (
       <PageLoader
@@ -221,15 +244,18 @@ function AllCompanies() {
 
   if (stagedProspects.length === 0) {
     return (
-      <div className="glass-card p-12 text-center">
-        <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-        <p className="text-sm font-black text-[#040026] uppercase tracking-widest mb-2">
+      <div className="py-20 text-center">
+        <Building2 className="w-12 h-12 text-[var(--color-border-strong)] mx-auto mb-4" />
+        <p className="text-[15px] font-medium text-[var(--color-ink)] mb-2">
           No prospects yet
         </p>
-        <p className="admin-meta-text mb-4">
+        <p className="text-[13px] font-light text-[var(--color-muted)] mb-6">
           Start met zoeken en importeer je eerste relevante company.
         </p>
-        <Link href="/admin/prospects/new" className="admin-btn-primary">
+        <Link
+          href="/admin/prospects/new"
+          className="inline-flex items-center gap-2 px-6 py-2.5 text-[11px] font-medium uppercase tracking-[0.1em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] rounded-full"
+        >
           <Plus className="w-3.5 h-3.5" />
           Create your first prospect
         </Link>
@@ -238,8 +264,9 @@ function AllCompanies() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="admin-toggle-group flex-wrap w-fit max-w-full">
+    <div className="space-y-8">
+      {/* Stage filter pills */}
+      <div className="flex gap-2 flex-wrap">
         {PIPELINE_FILTERS.map((filter) => {
           const count = stageFilterCounts[filter.key] ?? 0;
           return (
@@ -247,210 +274,135 @@ function AllCompanies() {
               key={filter.key}
               onClick={() => setStageFilter(filter.key)}
               className={cn(
-                'ui-tap ui-focus admin-toggle-btn admin-toggle-btn-sm',
-                stageFilter === filter.key && 'admin-toggle-btn-active',
+                'px-3.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
+                stageFilter === filter.key
+                  ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                  : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
               )}
             >
-              <span>{filter.label}</span>
-              <span className="admin-toggle-count">{count}</span>
+              {filter.label} <span className="ml-1 opacity-60">{count}</span>
             </button>
           );
         })}
       </div>
 
-      {}
-      {visibleProspects.map(({ prospect, stage }) => {
-        const deepStatus = deepAnalysisStatus(prospect.latestDeepResearchRun);
-        const hasCompletedResearch =
-          (prospect.researchStats?.completedRuns ?? 0) > 0;
-        const hasActiveResearch = (prospect.researchStats?.activeRuns ?? 0) > 0;
-        const canStartResearch =
-          !hasCompletedResearch &&
-          !hasActiveResearch &&
-          ['Imported', 'Ready'].includes(stage);
-        const canStartDeepResearch =
-          hasCompletedResearch &&
-          !hasActiveResearch &&
-          deepStatus !== 'completed';
-        const isStarting =
-          startResearchMutation.isPending &&
-          startingResearch?.id === prospect.id;
-        const isStartingDeep = isStarting && startingResearch?.mode === 'deep';
-        const deepSubtitle =
-          isStartingDeep || deepStatus === 'running'
-            ? 'Running now...'
-            : deepStatus === 'failed'
-              ? 'Failed · retry'
-              : 'Not run yet';
-        const deepStatusToneClass =
-          deepStatus === 'completed'
-            ? 'text-emerald-600'
-            : deepStatus === 'failed'
-              ? 'text-red-600'
-              : deepStatus === 'running'
-                ? 'text-cyan-600'
-                : 'text-slate-500';
-
-        return (
-          <div
-            key={prospect.id}
-            className="glass-card glass-card-hover p-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between group"
-          >
-            <div className="flex items-center gap-6">
-              <ProspectLogo
-                prospect={{
-                  logoUrl: prospect.logoUrl ?? null,
-                  domain: prospect.domain ?? null,
-                  companyName: prospect.companyName ?? null,
-                }}
-                size={56}
-                shape="rounded"
-                className="border border-slate-100 bg-[#FCFCFD] shadow-inner"
-              />
-              <div>
-                <div className="flex flex-wrap items-center gap-4">
-                  <Link
-                    href={`/admin/prospects/${prospect.id}`}
-                    className="text-xl font-black text-[#040026] tracking-tighter hover:text-[#007AFF] transition-all"
-                  >
-                    {prospect.companyName ?? prospect.domain}
-                  </Link>
-                  <PipelineChip stage={stage} />
-                  {(() => {
-                    const run = prospect.researchRuns?.[0];
-                    return (
-                      <QualityChip
-                        runId={run?.id ?? null}
-                        evidenceCount={run?._count.evidenceItems ?? 0}
-                        hypothesisCount={run?._count.workflowHypotheses ?? 0}
-                        qualityApproved={run?.qualityApproved ?? null}
-                        qualityReviewedAt={run?.qualityReviewedAt ?? null}
-                        summary={run?.summary}
-                      />
-                    );
-                  })()}
-                  {(prospect._count?.gateOverrideAudits ?? 0) > 0 && (
-                    <span className="admin-state-pill admin-state-warning">
-                      Bypassed
-                    </span>
-                  )}
-                </div>
-                <div className="admin-meta-text flex flex-wrap items-center gap-4 mt-2">
-                  <span className="flex items-center gap-2">
-                    <Globe className="w-3.5 h-3.5" /> {prospect.domain}
-                  </span>
-                  {prospect.industry && (
-                    <>
-                      <span className="w-1 h-1 rounded-full bg-slate-200" />
-                      <span>{prospect.industry}</span>
-                    </>
-                  )}
-                  {prospect._count.sessions > 0 && (
-                    <>
-                      <span className="w-1 h-1 rounded-full bg-slate-200" />
-                      <span className="text-[#007AFF]">
-                        {prospect._count.sessions} sessions
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              {canStartResearch && (
-                <button
-                  onClick={() => {
-                    setStartingResearch({
-                      id: prospect.id,
-                      mode: 'standard',
-                    });
-                    startResearchMutation.mutate({
-                      prospectId: prospect.id,
-                      deepCrawl: false,
-                    });
-                  }}
-                  disabled={isStarting || startResearchMutation.isPending}
-                  className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 disabled:opacity-50"
-                >
-                  {isStarting && !isStartingDeep ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Search className="w-3.5 h-3.5" />
-                  )}
-                  Start Research
-                </button>
-              )}
-              {canStartDeepResearch && (
-                <button
-                  onClick={() => {
-                    setStartingResearch({
-                      id: prospect.id,
-                      mode: 'deep',
-                    });
-                    startResearchMutation.mutate({
-                      prospectId: prospect.id,
-                      deepCrawl: true,
-                    });
-                  }}
-                  disabled={isStarting || startResearchMutation.isPending}
-                  className="ui-tap inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-[#040026] hover:text-white hover:border-[#040026] transition-all disabled:opacity-50"
-                >
-                  {isStartingDeep ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Search className="w-3.5 h-3.5" />
-                  )}
-                  <span className="flex flex-col items-start leading-tight text-left">
-                    <span className="text-[10px] font-black uppercase tracking-widest">
-                      Deep Analysis
-                    </span>
-                    <span
-                      className={cn(
-                        'text-[10px] font-semibold',
-                        deepStatusToneClass,
-                      )}
-                    >
-                      {deepSubtitle}
-                    </span>
-                  </span>
-                </button>
-              )}
-              <Link
-                href={`/admin/prospects/${prospect.id}`}
-                className="ui-tap flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] hover:bg-[#D4B43B] transition-all border border-[#EBCB4B]"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                Detail Card
-              </Link>
-              <button
-                onClick={() => {
-                  if (
-                    confirm(
-                      `Delete ${prospect.companyName ?? prospect.domain}?`,
-                    )
-                  )
-                    deleteMutation.mutate({ id: prospect.id });
-                }}
-                className="ui-tap p-2.5 rounded-xl bg-slate-50 text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-100 transition-all"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-              <Link
-                href={buildDiscoverPath(prospect)}
-                target="_blank"
-                aria-label="Open discover page"
-                className="ui-tap p-2.5 rounded-xl bg-slate-50 text-slate-400 hover:text-[#040026] hover:bg-slate-100 border border-slate-100 transition-all"
-              >
-                <ExternalLink className="w-5 h-5" />
-              </Link>
-            </div>
+      {/* Grouped by stage */}
+      {stageGroups.map((group) => (
+        <section key={group.label} className="space-y-0">
+          {/* Section header with extending line */}
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+              {group.label}
+            </span>
+            <span className="flex-1 h-px bg-[var(--color-border)]" />
           </div>
-        );
-      })}
+
+          {/* Prospect rows */}
+          {group.rows.map(({ prospect }) => {
+            const run = prospect.researchRuns?.[0];
+            const qualityLight = run
+              ? (() => {
+                  const summaryObj =
+                    run.summary &&
+                    typeof run.summary === 'object' &&
+                    !Array.isArray(run.summary)
+                      ? (run.summary as Record<string, unknown>)
+                      : null;
+                  const gate =
+                    summaryObj?.gate &&
+                    typeof summaryObj.gate === 'object' &&
+                    !Array.isArray(summaryObj.gate)
+                      ? (summaryObj.gate as Record<string, unknown>)
+                      : null;
+                  const conf =
+                    typeof gate?.averageConfidence === 'number'
+                      ? gate.averageConfidence
+                      : 0.65;
+                  const types =
+                    typeof gate?.sourceTypeCount === 'number'
+                      ? gate.sourceTypeCount
+                      : 1;
+                  if (
+                    run._count.evidenceItems >= 5 &&
+                    types >= 3 &&
+                    conf >= 0.55
+                  )
+                    return 'solid';
+                  if (run._count.evidenceItems >= 3) return 'limited';
+                  return 'thin';
+                })()
+              : null;
+
+            return (
+              <Link
+                key={prospect.id}
+                href={`/admin/prospects/${prospect.id}`}
+                className="flex items-center gap-6 py-5 border-b border-[var(--color-surface-2)] hover:pl-2 transition-all group"
+              >
+                <ProspectLogo
+                  prospect={{
+                    logoUrl: prospect.logoUrl ?? null,
+                    domain: prospect.domain ?? null,
+                    companyName: prospect.companyName ?? null,
+                  }}
+                  size={48}
+                  shape="rounded"
+                  className="border border-[var(--color-border)] bg-[var(--color-surface-2)]"
+                />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[17px] font-medium text-[var(--color-ink)] tracking-[-0.01em]">
+                    {prospect.companyName ?? prospect.domain}
+                  </span>
+                  <div className="flex items-center gap-2 mt-1 text-[12px] font-light text-[var(--color-muted)]">
+                    <span>{prospect.domain}</span>
+                    {prospect.industry && (
+                      <>
+                        <span className="w-[3px] h-[3px] rounded-full bg-[var(--color-border-strong)]" />
+                        <span>{prospect.industry}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quality as text */}
+                {qualityLight && (
+                  <span
+                    className={cn(
+                      'text-[12px] font-light min-w-[50px]',
+                      qualityLight === 'solid' &&
+                        'text-[var(--color-ink)] font-medium',
+                      qualityLight === 'limited' && 'text-[#b45a3b]',
+                      qualityLight === 'thin' &&
+                        'text-[var(--color-muted)] italic',
+                    )}
+                  >
+                    {qualityLight === 'solid'
+                      ? 'Solid'
+                      : qualityLight === 'limited'
+                        ? 'Limited'
+                        : 'Thin'}
+                  </span>
+                )}
+
+                {/* Sessions count in gold */}
+                {prospect._count.sessions > 0 && (
+                  <span className="text-[11px] font-medium text-[var(--color-gold)] tracking-[0.05em]">
+                    {prospect._count.sessions} sessions
+                  </span>
+                )}
+
+                {/* Arrow button */}
+                <span className="w-9 h-9 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-muted)] group-hover:bg-[var(--color-ink)] group-hover:text-[var(--color-gold)] group-hover:border-[var(--color-ink)] transition-all shrink-0">
+                  →
+                </span>
+              </Link>
+            );
+          })}
+        </section>
+      ))}
 
       {visibleProspects.length === 0 && (
-        <div className="glass-card p-10 rounded-[2rem] text-center text-sm font-bold text-slate-400">
+        <div className="py-16 text-center text-sm font-medium text-[var(--color-muted)]">
           Geen companies in deze filter.
         </div>
       )}
