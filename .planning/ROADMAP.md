@@ -152,6 +152,7 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 - [x] **Phase 60: Quote Schema Foundation** — Prisma schema, tRPC router, state machine, YAML import, foundation fixes (completed 2026-04-13)
 - [x] **Phase 61: Admin UI for Quotes** — Full quote management UI inside existing Qualifai admin shell (completed 2026-04-13)
+- [ ] **Phase 61.4: Admin Design System Sweep** — Apply DESIGN.md tokens across all admin pages (in progress)
 - [ ] **Phase 62: Client-Facing Voorstel + PDF Worker** — Prospect proposal page and Railway PDF worker service
 - [ ] **Phase 63: Contract Workflow** — Click-to-sign contract flow following accepted quote
 
@@ -203,16 +204,23 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 ---
 
-### Phase 61.4: Admin Design System Sweep — Apply cool SaaS design tokens across all 15 admin pages (INSERTED)
+### Phase 61.4: Admin Design System Sweep (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
+**Goal**: Every admin page uses DESIGN.md CSS variable tokens instead of hardcoded Tailwind colors — navy solid CTAs, unified status badges, sidebar hover tooltips, and 4 shared components (PageHeader, EmptyState, StatCard, SectionHeading) extracted from repeated patterns. Zero hardcoded `bg-slate-*`, `text-gray-*`, `font-black`, or `ui-tap` classes remain across the entire admin surface.
+
 **Depends on:** Phase 61
-**Plans:** 0 plans
+
+**Requirements**: TOKEN-SYNC, CTA-FIX, STATUS-UNIFY, COMPONENT-EXTRACT, SIDEBAR-HOVER, PAGE-SWEEP-A, PAGE-SWEEP-B, FEATURE-COMPONENT-SWEEP, VISUAL-VERIFY
+
+**Plans:** 5 plans
 
 Plans:
 
-- [ ] TBD (run /gsd:plan-phase 61.4 to break down)
+- [ ] 61.4-01-PLAN.md — Foundation: globals.css CTA fix + status-badge rewrite + button.tsx fix (TOKEN-SYNC, CTA-FIX, STATUS-UNIFY)
+- [ ] 61.4-02-PLAN.md — Component extraction: PageHeader, EmptyState, StatCard, SectionHeading (COMPONENT-EXTRACT)
+- [ ] 61.4-03-PLAN.md — Page sweep A: sidebar hover + dashboard + outreach + campaigns + settings (SIDEBAR-HOVER, PAGE-SWEEP-A)
+- [ ] 61.4-04-PLAN.md — Page sweep B: prospects + contacts + use-cases + signals + quotes (PAGE-SWEEP-B)
+- [ ] 61.4-05-PLAN.md — Feature component sweep + grep audit + visual verification (FEATURE-COMPONENT-SWEEP, VISUAL-VERIFY)
 
 ### Phase 61.1: Manual prospect flow polish (INSERTED)
 
@@ -255,7 +263,7 @@ Plans:
 **Why this exists** (discovered during Phase 61.1 smoke testing on Marfa, 2026-04-14):
 
 1. **Apollo 422 dead end** — Marfa is outside Apollo's coverage. `enrichCompany` throws, blocking the entire enrichment flow. There is no graceful fallback path.
-2. **Lo-res favicon problem** — small Dutch SMBs only ship a 16×16 .ico (Wix default). The DDG/Google fallback chain "works" but renders pixelated globes when upscaled to 56–64px in admin cards. Need a real logo source (og:image / apple-touch-icon).
+2. **Lo-res favicon problem** — small Dutch SMBs only ship a 16x16 .ico (Wix default). The DDG/Google fallback chain "works" but renders pixelated globes when upscaled to 56-64px in admin cards. Need a real logo source (og:image / apple-touch-icon).
 3. **Hollow detail card** — manual prospects skip 12+ Apollo-populated fields (companyName, industry, description, location, employees, revenue, founded, linkedinUrl, etc.). The detail page hero looks empty.
 4. **Evidence/Analysis pages parity unknown** — these pages may also break or look incomplete for manual prospects with NULL Apollo fields. Needs a render-fallback audit.
 
@@ -278,7 +286,7 @@ Plans:
 
 **Why this exists** (discovered during Phase 61.2 smoke test, 2026-04-14):
 
-- STB-kozijnen showed a broken/missing logo even though other prospects worked — because the browser-side cascade (ProspectLogo apollo→ddg→google→initial) was silently failing on 404-with-body responses from Google s2
+- STB-kozijnen showed a broken/missing logo even though other prospects worked — because the browser-side cascade (ProspectLogo apollo->ddg->google->initial) was silently failing on 404-with-body responses from Google s2
 - Marfa had to be manually psql'd to populate its logoUrl — no automated path existed for legacy prospects
 - Three separate call sites in admin.ts (createProspect, createAndProcess IIFE, enrichProspect no-coverage catch) each duplicated the `getHighResLogoUrl ?? getFaviconUrl` pattern with no shared validation
 
@@ -357,9 +365,10 @@ Plans:
 | 60. Quote Schema Foundation             | 5/5            | Complete    | 2026-04-13 |
 | 61. Admin UI for Quotes                 | 4/4            | Complete    | 2026-04-14 |
 | 61.1. Manual prospect flow polish       | 4/4            | Complete    | 2026-04-14 |
+| 61.4. Admin Design System Sweep         | 0/5            | In progress | -          |
 | 62. Client-Facing Voorstel + PDF Worker | 0/TBD          | Not started | -          |
 | 63. Contract Workflow                   | 0/TBD          | Not started | -          |
 
 ---
 
-_Roadmap last updated: 2026-04-13 — v9.0 roadmap created (Phases 60-63)_
+_Roadmap last updated: 2026-04-18 — Phase 61.4 planned (5 plans, 3 waves)_
