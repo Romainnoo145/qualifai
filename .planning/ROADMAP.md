@@ -203,6 +203,17 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 ---
 
+### Phase 61.4: Admin Design System Sweep — Apply cool SaaS design tokens across all 15 admin pages (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 61
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd:plan-phase 61.4 to break down)
+
 ### Phase 61.1: Manual prospect flow polish (INSERTED)
 
 **Goal**: Manual prospect creation produces a viable working prospect: every prospect has a visible logo (Apollo or favicon fallback), the master analyzer survives Gemini API blips via retry+backoff, Romano can retrigger any pipeline stage from the prospect detail page, and AI failures render as friendly messages instead of stack traces.
