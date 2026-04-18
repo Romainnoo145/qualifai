@@ -1,14 +1,7 @@
 'use client';
 
 import { api } from '@/components/providers';
-import {
-  CreditCard,
-  Building2,
-  Users,
-  Zap,
-  Download,
-  Loader2,
-} from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import {
   ADMIN_TOKEN_STORAGE_KEY,
@@ -68,143 +61,136 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-10">
-      <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
-        Settings
-      </h1>
+    <div className="max-w-[1400px] space-y-10">
+      <div className="pb-6 border-b border-[var(--color-border)]">
+        <h1 className="text-[48px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
+          Settings<span className="text-[var(--color-gold)]">.</span>
+        </h1>
+      </div>
 
-      {/* Credit usage */}
-      <div className="glass-card p-10 rounded-[2.5rem]">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 ml-1">
-          Usage Overview
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-8 bg-[#FCFCFD] rounded-3xl border border-slate-100 flex flex-col items-center justify-center space-y-3 shadow-inner">
-            <CreditCard className="w-5 h-5 text-slate-200" />
-            <p className="text-3xl font-black text-[#040026] tracking-tighter">
+      {/* Usage stats */}
+      <section>
+        <div className="flex items-center gap-3 mb-6">
+          <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+            Usage
+          </span>
+          <span className="flex-1 h-px bg-[var(--color-border)]" />
+        </div>
+        <div className="grid grid-cols-4 border-b border-[var(--color-ink)]">
+          <div className="py-5 pr-6">
+            <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
+              Credits
+            </span>
+            <p className="text-[32px] font-bold text-[var(--color-ink)] tracking-[-0.02em] leading-[1.1] mt-2">
               {stats.data?.creditsUsed ?? 0}
             </p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Credits Used
-            </p>
           </div>
-          <div className="p-8 bg-[#FCFCFD] rounded-3xl border border-slate-100 flex flex-col items-center justify-center space-y-3 shadow-inner">
-            <Building2 className="w-5 h-5 text-slate-200" />
-            <p className="text-3xl font-black text-[#040026] tracking-tighter">
+          <div className="py-5 px-6 border-l border-[var(--color-border)]">
+            <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
+              Companies
+            </span>
+            <p className="text-[32px] font-bold text-[var(--color-ink)] tracking-[-0.02em] leading-[1.1] mt-2">
               {stats.data?.total ?? 0}
             </p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Companies
-            </p>
           </div>
-          <div className="p-8 bg-[#FCFCFD] rounded-3xl border border-slate-100 flex flex-col items-center justify-center space-y-3 shadow-inner">
-            <Users className="w-5 h-5 text-slate-200" />
-            <p className="text-3xl font-black text-[#040026] tracking-tighter">
+          <div className="py-5 px-6 border-l border-[var(--color-border)]">
+            <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
+              Contacts
+            </span>
+            <p className="text-[32px] font-bold text-[var(--color-ink)] tracking-[-0.02em] leading-[1.1] mt-2">
               {stats.data?.totalContacts ?? 0}
             </p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Contacts
-            </p>
           </div>
-          <div className="p-8 bg-[#FCFCFD] rounded-3xl border border-slate-100 flex flex-col items-center justify-center space-y-3 shadow-inner">
-            <Zap className="w-5 h-5 text-slate-200" />
-            <p className="text-3xl font-black text-[#040026] tracking-tighter">
-              {stats.data?.totalSignals ?? 0}
-            </p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          <div className="py-5 pl-6 border-l border-[var(--color-border)]">
+            <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
               Signals
+            </span>
+            <p className="text-[32px] font-bold text-[var(--color-ink)] tracking-[-0.02em] leading-[1.1] mt-2">
+              {stats.data?.totalSignals ?? 0}
             </p>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Data Export */}
-      <div className="glass-card p-10 rounded-[2.5rem]">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 ml-1">
-          Data Export
-        </h2>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+      <section>
+        <div className="flex items-center gap-3 mb-6">
+          <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+            Data Export
+          </span>
+          <span className="flex-1 h-px bg-[var(--color-border)]" />
+        </div>
+        <div className="flex items-center gap-3">
           <button
             onClick={() => void downloadExport('companies')}
             disabled={exporting !== null}
-            className="flex items-center justify-center gap-3 px-8 py-4 btn-pill-secondary text-xs w-full sm:w-auto font-black uppercase tracking-widest disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] bg-transparent text-[var(--color-ink)] border border-[var(--color-border)] rounded-md hover:border-[var(--color-ink)] transition-all disabled:opacity-50"
           >
             {exporting === 'companies' ? (
-              <Loader2 className="w-4 h-4 opacity-50 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Download className="w-4 h-4 opacity-50" />
-            )}{' '}
+              <Download className="w-3.5 h-3.5" />
+            )}
             {exporting === 'companies' ? 'Exporting...' : 'Export Companies'}
           </button>
           <button
             onClick={() => void downloadExport('contacts')}
             disabled={exporting !== null}
-            className="flex items-center justify-center gap-3 px-8 py-4 btn-pill-secondary text-xs w-full sm:w-auto font-black uppercase tracking-widest disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] bg-transparent text-[var(--color-ink)] border border-[var(--color-border)] rounded-md hover:border-[var(--color-ink)] transition-all disabled:opacity-50"
           >
             {exporting === 'contacts' ? (
-              <Loader2 className="w-4 h-4 opacity-50 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Download className="w-4 h-4 opacity-50" />
-            )}{' '}
+              <Download className="w-3.5 h-3.5" />
+            )}
             {exporting === 'contacts' ? 'Exporting...' : 'Export Contacts'}
           </button>
         </div>
         {exportError && (
-          <p className="text-xs font-bold text-red-500 mt-4 ml-1">
+          <p className="text-[12px] font-medium text-[var(--color-brand-danger)] mt-3">
             {exportError}
           </p>
         )}
-        <p className="text-[10px] font-bold text-slate-300 mt-6 leading-relaxed max-w-sm ml-1">
+        <p className="text-[11px] font-light text-[var(--color-muted)] mt-4">
           Export enriched company and contact data as CSV.
         </p>
-      </div>
+      </section>
 
-      {/* Account info */}
-      <div className="glass-card p-10 rounded-[2.5rem]">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 ml-1">
-          System Info
-        </h2>
-        <div className="space-y-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-slate-50">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Platform
-            </span>
-            <span className="text-sm font-black text-[#040026]">Qualifai</span>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-slate-50">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Enrichment
-            </span>
-            <span className="text-sm font-black text-[#040026]">
-              Apollo Enrichment API
-            </span>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-slate-50">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              AI Model
-            </span>
-            <span className="text-sm font-black text-[#040026]">
-              Claude 3.5 Sonnet (Anthropic)
-            </span>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-slate-50">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Email Delivery
-            </span>
-            <span className="text-sm font-black text-[#040026]">Resend</span>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Scheduling
-            </span>
-            <span className="text-sm font-black text-[#040026]">
-              {process.env.NEXT_PUBLIC_CALCOM_BOOKING_URL
-                ? 'Cal.com Link Active'
-                : 'Not configured'}
-            </span>
-          </div>
+      {/* System Info */}
+      <section>
+        <div className="flex items-center gap-3 mb-6">
+          <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+            System
+          </span>
+          <span className="flex-1 h-px bg-[var(--color-border)]" />
         </div>
-      </div>
+        <div>
+          {[
+            ['Platform', 'Qualifai'],
+            ['Enrichment', 'Apollo Enrichment API'],
+            ['AI Model', 'Gemini 2.5 Pro'],
+            ['Email Delivery', 'Resend'],
+            [
+              'Scheduling',
+              process.env.NEXT_PUBLIC_CALCOM_BOOKING_URL
+                ? 'Cal.com Link Active'
+                : 'Not configured',
+            ],
+          ].map(([label, value], i, arr) => (
+            <div
+              key={label}
+              className={`flex items-center justify-between py-3 ${i < arr.length - 1 ? 'border-b border-[var(--color-surface-2)]' : ''}`}
+            >
+              <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                {label}
+              </span>
+              <span className="text-[13px] font-medium text-[var(--color-ink)]">
+                {value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
