@@ -602,13 +602,14 @@ function DraftQueue() {
 
 function SentHistory() {
   const history = api.outreach.getHistory.useQuery({ limit: 50 });
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (history.isLoading) {
     return (
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="glass-card p-6 animate-pulse">
-            <div className="h-5 bg-slate-200 rounded-xl w-64" />
+          <div key={i} className="py-4 animate-pulse">
+            <div className="h-5 bg-[var(--color-surface-2)] rounded w-64" />
           </div>
         ))}
       </div>
@@ -633,44 +634,106 @@ function SentHistory() {
   }
 
   return (
-    <div className="space-y-2">
-      {logs.map((log: any) => (
-        <div
-          key={log.id}
-          className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-[var(--color-surface-2)]"
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                log.status === 'sent'
-                  ? 'bg-emerald-400'
-                  : log.status === 'failed'
-                    ? 'bg-red-400'
-                    : 'bg-slate-300'
-              }`}
-            />
-            <div>
-              <span className="text-[13px] font-medium text-[var(--color-ink)]">
-                {log.contact?.firstName} {log.contact?.lastName}
-              </span>
-              {log.contact?.prospect && (
-                <span className="admin-meta-text ml-2">
-                  @ {log.contact.prospect.companyName}
-                </span>
+    <div>
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+          Verzonden
+        </span>
+        <span className="flex-1 h-px bg-[var(--color-border)]" />
+      </div>
+      {logs.map((log: any) => {
+        const isExpanded = expandedId === log.id;
+        const toName = [log.contact?.firstName, log.contact?.lastName]
+          .filter(Boolean)
+          .join(' ');
+        const toEmail = log.contact?.primaryEmail ?? '';
+        const companyName = log.contact?.prospect?.companyName ?? '';
+        const sentDate = new Date(log.createdAt);
+
+        return (
+          <div key={log.id}>
+            <button
+              onClick={() => setExpandedId(isExpanded ? null : log.id)}
+              className={cn(
+                'w-full text-left flex items-center gap-4 py-3.5 border-b border-[var(--color-surface-2)] hover:pl-1.5 transition-all',
+                isExpanded && 'pl-1.5',
               )}
-              <p className="admin-meta-text mt-0.5">{log.subject}</p>
-            </div>
+            >
+              <div
+                className={cn(
+                  'w-2 h-2 rounded-full shrink-0',
+                  log.status === 'sent'
+                    ? 'bg-[var(--color-brand-success)]'
+                    : log.status === 'failed'
+                      ? 'bg-[var(--color-brand-danger)]'
+                      : 'bg-[var(--color-border-strong)]',
+                )}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3">
+                  <span className="text-[13px] font-medium text-[var(--color-ink)]">
+                    {companyName || toName}
+                  </span>
+                  {companyName && toName && (
+                    <span className="text-[11px] font-light text-[var(--color-muted)]">
+                      {toName}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[12px] font-light text-[var(--color-muted)] truncate mt-0.5">
+                  {log.subject}
+                </p>
+              </div>
+              <span className="text-[10px] font-medium text-[var(--color-muted)] tabular-nums shrink-0">
+                {sentDate.toLocaleDateString('nl-NL', {
+                  day: 'numeric',
+                  month: 'short',
+                })}
+              </span>
+            </button>
+
+            {isExpanded && (
+              <div className="py-6 border-b border-[var(--color-border)]">
+                <div className="flex items-center gap-2 text-[12px] text-[var(--color-muted)] mb-4">
+                  <span className="font-medium">Aan:</span>
+                  <span className="font-medium text-[var(--color-ink)]">
+                    {toName}
+                    {toEmail ? ` <${toEmail}>` : ''}
+                  </span>
+                  <span className="ml-auto text-[10px] font-medium tabular-nums">
+                    {sentDate.toLocaleDateString('nl-NL')}{' '}
+                    {sentDate.toLocaleTimeString('nl-NL', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+                {log.subject && (
+                  <h3 className="text-[18px] font-medium text-[var(--color-ink)] tracking-[-0.01em] mb-4">
+                    {log.subject}
+                  </h3>
+                )}
+                <div className="max-w-[620px]">
+                  {log.bodyHtml ? (
+                    <div
+                      className="text-[14px] font-light text-[var(--color-muted-dark)] leading-[1.65]"
+                      dangerouslySetInnerHTML={{ __html: log.bodyHtml }}
+                    />
+                  ) : log.bodyText ? (
+                    <pre className="text-[14px] font-light text-[var(--color-muted-dark)] leading-[1.65] whitespace-pre-wrap font-[inherit]">
+                      {log.bodyText}
+                    </pre>
+                  ) : (
+                    <p className="text-[13px] font-light text-[var(--color-muted)] italic">
+                      Geen email body beschikbaar.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="admin-state-pill admin-state-neutral">
-              {log.type.replace(/_/g, ' ')}
-            </span>
-            <span className="admin-meta-text">
-              {new Date(log.createdAt).toLocaleDateString()}
-            </span>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
