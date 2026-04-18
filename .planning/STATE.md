@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: '60 / 61 / 61.1 / 61.2 / 61.3 all shipped. resolveLogoUrl pipeline unified three scattered call sites, ProspectLogo component simplified to 2-stage trust-the-DB, backfill script ran and populated 2 empty rows (marcore + stb-kozijnen) + re-validated 8 existing. Romano flagged meta-concern about lack of design spec / component system / uniform backend endpoints — Phase 62 is being restructured to start with /design-consultation skill before any implementation. Next action: run /design-consultation for admin prospect detail + client /voorstel pages as anchor surfaces.'
-stopped_at: Completed 61.4-04-PLAN.md
-last_updated: '2026-04-18T17:25:43.087Z'
+stopped_at: Completed 61.4-03-PLAN.md
+last_updated: '2026-04-18T17:26:12.640Z'
 last_activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
 progress:
   total_phases: 8
   completed_phases: 4
   total_plans: 22
-  completed_plans: 21
+  completed_plans: 22
 ---
 
 # Project State
@@ -121,6 +121,7 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 61.4-admin-design-system-sweep]: admin-btn-primary: navy solid (--color-ink) fill + white text — NOT gold gradient. Gold gradient reserved for btn-pill-\* brochure surface classes only
 - [Phase 61.4-admin-design-system-sweep]: StatusBadge uses admin-state-\* CSS classes as SSOT for all admin status rendering; QuoteStatusBadge is a re-export alias for backward compat
 - [Phase 61.4-04]: outreachColors maps use admin-state-_ class names; --color-brand-success/danger for semantic colors (not --color-state-_)
+- [Phase 61.4]: Sidebar tooltip uses bg-[var(--color-ink)] for max contrast; gold active indicator is 3px left-edge bar matching Linear sidebar pattern
 
 ### Pending Todos
 
@@ -141,8 +142,8 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-18T17:25:43.084Z
-Stopped at: Completed 61.4-04-PLAN.md
+Last session: 2026-04-18T17:26:12.638Z
+Stopped at: Completed 61.4-03-PLAN.md
 Resume command: `/gsd:execute-plan 62 01`
 
 ## Accumulated Context
