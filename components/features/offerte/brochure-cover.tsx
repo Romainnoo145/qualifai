@@ -30,6 +30,7 @@ const TEXT_MUTED_ON_NAVY = '#898999'; // klarifai.nl muted body colour
 const TOTAL_PAGES = 7;
 
 interface BrochureProspect {
+  id: string;
   companyName: string;
   logoUrl: string | null;
   domain: string | null;
@@ -39,6 +40,9 @@ export type BrochureQuote = {
   nummer: string;
   onderwerp: string;
   btwPercentage: number;
+  introductie: string | null;
+  uitdaging: string | null;
+  aanpak: string | null;
   lines: {
     fase: string;
     omschrijving: string;
@@ -86,6 +90,15 @@ export function BrochureCover({
     return () => window.removeEventListener('keydown', onKey);
   }, [handleNext, handleBack]);
 
+  useEffect(() => {
+    if (!prospect?.id) return;
+    fetch('/api/offerte/viewed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prospectId: prospect.id }),
+    }).catch(() => {});
+  }, [prospect?.id]);
+
   const progressLabel = `${String(currentPage + 1).padStart(2, '0')} / ${String(TOTAL_PAGES).padStart(2, '0')}`;
 
   if (currentPage === 0) {
@@ -122,6 +135,7 @@ export function BrochureCover({
         onBack={handleBack}
         progressLabel={progressLabel}
         prospect={prospect}
+        quote={quote ?? null}
       />
     );
   }
@@ -133,6 +147,7 @@ export function BrochureCover({
         onBack={handleBack}
         progressLabel={progressLabel}
         prospect={prospect}
+        quote={quote ?? null}
       />
     );
   }
@@ -260,11 +275,13 @@ function Uitdaging({
   onBack,
   progressLabel,
   prospect,
+  quote,
 }: {
   onNext: () => void;
   onBack: () => void;
   progressLabel: string;
   prospect: BrochureProspect;
+  quote: BrochureQuote;
 }) {
   const pillars = [
     {
@@ -362,72 +379,87 @@ function Uitdaging({
           </h1>
         </div>
 
-        {/* Pillar cards — 3-column horizontal grid */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '24px',
-            maxWidth: '1280px',
-          }}
-        >
-          {pillars.map((p) => (
-            <div
-              key={p.num}
-              style={{
-                border: `1px solid ${CONTAINER_BORDER}`,
-                background: CONTAINER_GRADIENT,
-                borderRadius: '16px',
-                padding: '32px 32px 36px',
-                display: 'grid',
-                // Fixed row rhythm: number (auto), title (reserve 2 lines),
-                // description (starts at the same Y on every card, grows to
-                // the bottom). This guarantees the description baselines line
-                // up across cards even when titles wrap differently.
-                gridTemplateRows: 'auto 2.5em 1fr',
-                rowGap: '16px',
-                minHeight: '180px',
-              }}
-            >
+        {/* Pillar cards — 3-column horizontal grid, or narrative text if quote provides it */}
+        {quote?.uitdaging ? (
+          <div
+            style={{
+              fontSize: '17px',
+              fontWeight: 300,
+              lineHeight: 1.6,
+              color: TEXT_MUTED_ON_NAVY,
+              maxWidth: '680px',
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {quote.uitdaging}
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '24px',
+              maxWidth: '1280px',
+            }}
+          >
+            {pillars.map((p) => (
               <div
+                key={p.num}
                 style={{
-                  fontSize: '44px',
-                  fontWeight: 700,
-                  lineHeight: 1,
-                  background: GOLD_GRADIENT,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  letterSpacing: '-0.02em',
+                  border: `1px solid ${CONTAINER_BORDER}`,
+                  background: CONTAINER_GRADIENT,
+                  borderRadius: '16px',
+                  padding: '32px 32px 36px',
+                  display: 'grid',
+                  // Fixed row rhythm: number (auto), title (reserve 2 lines),
+                  // description (starts at the same Y on every card, grows to
+                  // the bottom). This guarantees the description baselines line
+                  // up across cards even when titles wrap differently.
+                  gridTemplateRows: 'auto 2.5em 1fr',
+                  rowGap: '16px',
+                  minHeight: '180px',
                 }}
               >
-                {p.num}
+                <div
+                  style={{
+                    fontSize: '44px',
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    background: GOLD_GRADIENT,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  {p.num}
+                </div>
+                <div
+                  style={{
+                    fontSize: '20px',
+                    fontWeight: 500,
+                    color: TEXT_ON_NAVY,
+                    letterSpacing: '-0.01em',
+                    lineHeight: 1.25,
+                    alignSelf: 'start',
+                  }}
+                >
+                  {p.title}
+                </div>
+                <div
+                  style={{
+                    fontSize: '15px',
+                    fontWeight: 300,
+                    lineHeight: 1.55,
+                    color: TEXT_MUTED_ON_NAVY,
+                    alignSelf: 'start',
+                  }}
+                >
+                  {p.desc}
+                </div>
               </div>
-              <div
-                style={{
-                  fontSize: '20px',
-                  fontWeight: 500,
-                  color: TEXT_ON_NAVY,
-                  letterSpacing: '-0.01em',
-                  lineHeight: 1.25,
-                  alignSelf: 'start',
-                }}
-              >
-                {p.title}
-              </div>
-              <div
-                style={{
-                  fontSize: '15px',
-                  fontWeight: 300,
-                  lineHeight: 1.55,
-                  color: TEXT_MUTED_ON_NAVY,
-                  alignSelf: 'start',
-                }}
-              >
-                {p.desc}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <BackArrow onClick={onBack} />
@@ -445,11 +477,13 @@ function Aanpak({
   onBack,
   progressLabel,
   prospect,
+  quote,
 }: {
   onNext: () => void;
   onBack: () => void;
   progressLabel: string;
   prospect: BrochureProspect;
+  quote: BrochureQuote;
 }) {
   const phases = [
     {
@@ -547,105 +581,120 @@ function Aanpak({
           </span>
         </h1>
 
-        {/* Timeline — 4 phases connected by a gold gradient line */}
-        <div
-          style={{
-            position: 'relative',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '24px',
-            alignItems: 'start',
-            paddingTop: '40px',
-          }}
-        >
-          {/* Connecting line behind the numbered markers */}
+        {/* Timeline — 4 phases connected by a gold gradient line, or narrative text if quote provides it */}
+        {quote?.aanpak ? (
           <div
-            aria-hidden="true"
             style={{
-              position: 'absolute',
-              top: '72px',
-              left: 'calc(12.5% + 32px)',
-              right: 'calc(12.5% + 32px)',
-              height: '1px',
-              background:
-                'linear-gradient(90deg, rgba(225,195,60,0) 0%, rgba(225,195,60,0.7) 20%, rgba(253,249,123,0.9) 50%, rgba(225,195,60,0.7) 80%, rgba(225,195,60,0) 100%)',
-              zIndex: 0,
+              fontSize: '17px',
+              fontWeight: 300,
+              lineHeight: 1.6,
+              color: TEXT_MUTED_ON_NAVY,
+              maxWidth: '680px',
+              whiteSpace: 'pre-wrap',
             }}
-          />
-
-          {phases.map((phase) => (
+          >
+            {quote.aanpak}
+          </div>
+        ) : (
+          <div
+            style={{
+              position: 'relative',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '24px',
+              alignItems: 'start',
+              paddingTop: '40px',
+            }}
+          >
+            {/* Connecting line behind the numbered markers */}
             <div
-              key={phase.num}
+              aria-hidden="true"
               style={{
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                gap: '24px',
-                zIndex: 1,
+                position: 'absolute',
+                top: '72px',
+                left: 'calc(12.5% + 32px)',
+                right: 'calc(12.5% + 32px)',
+                height: '1px',
+                background:
+                  'linear-gradient(90deg, rgba(225,195,60,0) 0%, rgba(225,195,60,0.7) 20%, rgba(253,249,123,0.9) 50%, rgba(225,195,60,0.7) 80%, rgba(225,195,60,0) 100%)',
+                zIndex: 0,
               }}
-            >
-              {/* Numbered marker — Klarifai container gradient with gold number */}
+            />
+
+            {phases.map((phase) => (
               <div
+                key={phase.num}
                 style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '9999px',
-                  background: CONTAINER_GRADIENT,
-                  border: `1px solid ${CONTAINER_BORDER}`,
+                  position: 'relative',
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginLeft: '-8px',
-                  boxShadow: `0 0 0 6px ${NAVY}`,
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: '24px',
+                  zIndex: 1,
                 }}
               >
-                <span
+                {/* Numbered marker — Klarifai container gradient with gold number */}
+                <div
                   style={{
-                    fontSize: '22px',
-                    fontWeight: 700,
-                    background: GOLD_GRADIENT,
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    letterSpacing: '-0.01em',
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '9999px',
+                    background: CONTAINER_GRADIENT,
+                    border: `1px solid ${CONTAINER_BORDER}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginLeft: '-8px',
+                    boxShadow: `0 0 0 6px ${NAVY}`,
                   }}
                 >
-                  {phase.num}
-                </span>
-              </div>
+                  <span
+                    style={{
+                      fontSize: '22px',
+                      fontWeight: 700,
+                      background: GOLD_GRADIENT,
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {phase.num}
+                  </span>
+                </div>
 
-              {/* Phase title + subtitle */}
-              <div
-                style={{
-                  fontSize: '22px',
-                  fontWeight: 500,
-                  lineHeight: 1.2,
-                  letterSpacing: '-0.01em',
-                  color: TEXT_ON_NAVY,
-                }}
-              >
-                {phase.title}
-                <br />
-                <span style={{ color: TEXT_MUTED_ON_NAVY, fontWeight: 300 }}>
-                  {phase.subtitle}
-                </span>
-              </div>
+                {/* Phase title + subtitle */}
+                <div
+                  style={{
+                    fontSize: '22px',
+                    fontWeight: 500,
+                    lineHeight: 1.2,
+                    letterSpacing: '-0.01em',
+                    color: TEXT_ON_NAVY,
+                  }}
+                >
+                  {phase.title}
+                  <br />
+                  <span style={{ color: TEXT_MUTED_ON_NAVY, fontWeight: 300 }}>
+                    {phase.subtitle}
+                  </span>
+                </div>
 
-              {/* Phase description */}
-              <div
-                style={{
-                  fontSize: '14px',
-                  fontWeight: 300,
-                  lineHeight: 1.55,
-                  color: TEXT_MUTED_ON_NAVY,
-                  maxWidth: '260px',
-                }}
-              >
-                {phase.desc}
+                {/* Phase description */}
+                <div
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 300,
+                    lineHeight: 1.55,
+                    color: TEXT_MUTED_ON_NAVY,
+                    maxWidth: '260px',
+                  }}
+                >
+                  {phase.desc}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <BackArrow onClick={onBack} />

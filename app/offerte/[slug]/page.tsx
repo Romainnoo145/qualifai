@@ -51,6 +51,7 @@ export default async function OffertePage({
     <BrochureCover
       slug={slug}
       prospect={{
+        id: prospect.id,
         companyName: displayName,
         logoUrl: prospect.logoUrl ?? null,
         domain: prospect.domain ?? null,
@@ -61,6 +62,9 @@ export default async function OffertePage({
               nummer: activeQuote.nummer,
               onderwerp: activeQuote.onderwerp,
               btwPercentage: activeQuote.btwPercentage,
+              introductie: activeQuote.introductie ?? null,
+              uitdaging: activeQuote.uitdaging ?? null,
+              aanpak: activeQuote.aanpak ?? null,
               lines: activeQuote.lines.map((l) => ({
                 fase: l.fase,
                 omschrijving: l.omschrijving ?? '',
