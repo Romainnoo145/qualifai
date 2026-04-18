@@ -22,6 +22,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { PageLoader } from '@/components/ui/page-loader';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type View = 'queue' | 'sent' | 'settings';
 
@@ -30,12 +32,7 @@ export default function OutreachPage() {
 
   return (
     <div className="space-y-10 animate-fade-in-up">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
-          Outreach
-        </h1>
-        <ProcessSignalsButton />
-      </div>
+      <PageHeader title="Outreach" action={<ProcessSignalsButton />} />
 
       {/* View toggle */}
       <div className="overflow-x-auto">
@@ -43,7 +40,7 @@ export default function OutreachPage() {
           <button
             onClick={() => setView('queue')}
             className={cn(
-              'ui-tap ui-focus admin-toggle-btn',
+              'admin-toggle-btn',
               view === 'queue' && 'admin-toggle-btn-active',
             )}
           >
@@ -52,7 +49,7 @@ export default function OutreachPage() {
           <button
             onClick={() => setView('sent')}
             className={cn(
-              'ui-tap ui-focus admin-toggle-btn',
+              'admin-toggle-btn',
               view === 'sent' && 'admin-toggle-btn-active',
             )}
           >
@@ -61,7 +58,7 @@ export default function OutreachPage() {
           <button
             onClick={() => setView('settings')}
             className={cn(
-              'ui-tap ui-focus admin-toggle-btn',
+              'admin-toggle-btn',
               view === 'settings' && 'admin-toggle-btn-active',
             )}
           >
@@ -162,12 +159,10 @@ function ReminderSection() {
   };
 
   return (
-    <div className="rounded-2xl border border-indigo-100 bg-indigo-50/30 p-5 space-y-3">
+    <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-5 space-y-3">
       <div className="flex items-center gap-2">
-        <Phone className="w-4 h-4 text-indigo-500" />
-        <h3 className="text-sm font-black text-[#040026] tracking-tight">
-          Reminders
-        </h3>
+        <Phone className="w-4 h-4 text-[var(--color-muted)]" />
+        <h3 className="admin-eyebrow">Reminders</h3>
         <span className="admin-state-pill admin-state-neutral text-[10px]">
           {items.length}
         </span>
@@ -182,13 +177,13 @@ function ReminderSection() {
           return (
             <div
               key={item.id}
-              className="flex items-center gap-3 rounded-xl bg-white/60 border border-indigo-50 px-4 py-2.5"
+              className="flex items-center gap-3 rounded-[var(--radius-sm)] bg-[var(--color-surface)] border border-[var(--color-border)] px-4 py-2.5"
             >
               <Link
                 href={`/admin/contacts/${item.contact.id}`}
                 className="flex-1 min-w-0 flex items-center gap-3 hover:text-[#007AFF] transition-colors"
               >
-                <span className="text-xs font-black text-[#040026] truncate">
+                <span className="text-xs font-bold text-[var(--color-ink)] truncate">
                   {item.contact.firstName} {item.contact.lastName}
                 </span>
                 {item.contact.prospect && (
@@ -203,10 +198,10 @@ function ReminderSection() {
                 className={cn(
                   'admin-state-pill text-[10px] flex items-center gap-1',
                   item.channel === 'linkedin'
-                    ? 'bg-blue-50 text-blue-700'
+                    ? 'admin-state-info'
                     : item.channel === 'whatsapp'
-                      ? 'bg-green-50 text-green-700'
-                      : 'bg-slate-100 text-slate-600',
+                      ? 'admin-state-success'
+                      : 'admin-state-neutral',
                 )}
               >
                 {channelIcon(item.channel)}
@@ -237,7 +232,7 @@ function ReminderSection() {
                     complete.mutate({ id: item.id });
                   }}
                   disabled={complete.isPending}
-                  className="ui-focus ui-tap inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[var(--radius-sm)] text-[10px] font-bold admin-state-success hover:opacity-80 transition-all disabled:opacity-50"
                 >
                   <Check className="w-3 h-3" /> Done
                 </button>
@@ -247,7 +242,7 @@ function ReminderSection() {
                     skip.mutate({ id: item.id });
                   }}
                   disabled={skip.isPending}
-                  className="ui-focus ui-tap inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all disabled:opacity-50"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[var(--radius-sm)] text-[10px] font-bold admin-state-neutral hover:opacity-80 transition-all disabled:opacity-50"
                 >
                   <X className="w-3 h-3" /> Skip
                 </button>
@@ -358,13 +353,11 @@ function DraftQueue() {
 
   if (!queueData.drafts?.length) {
     return (
-      <div className="glass-card p-12 text-center">
-        <Mail className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-        <p className="text-sm font-black text-[#040026] uppercase tracking-widest mb-2">
-          Inbox leeg
-        </p>
-        <p className="admin-meta-text">Geen concepten om te beoordelen.</p>
-      </div>
+      <EmptyState
+        icon={<Mail className="w-12 h-12" />}
+        title="Inbox leeg"
+        description="Geen concepten om te beoordelen."
+      />
     );
   }
 
@@ -372,14 +365,14 @@ function DraftQueue() {
     <div className="space-y-3">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-2">
-        <span className="text-xs font-bold text-slate-400">
+        <span className="text-xs font-bold text-[var(--color-muted)]">
           {queueData.summary.total} concept
           {queueData.summary.total !== 1 ? 'en' : ''}
         </span>
         <button
           onClick={() => bulkApprove.mutate({ limit: 25 })}
           disabled={bulkApprove.isPending || queueData.summary.lowRisk === 0}
-          className="ui-tap inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] border border-[#EBCB4B] hover:bg-[#D4B43B] transition-all disabled:opacity-50"
+          className="admin-btn-primary disabled:opacity-50"
         >
           {bulkApprove.isPending ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -393,14 +386,12 @@ function DraftQueue() {
       <ReminderSection />
 
       {/* Gmail-style inbox */}
-      <div className="glass-card rounded-2xl overflow-hidden divide-y divide-slate-100">
+      <div className="glass-card rounded-[var(--radius-md)] overflow-hidden divide-y divide-[var(--color-border)]">
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {groupByDate(queueData.drafts as any[]).map((group) => (
           <div key={group.label}>
-            <div className="px-6 py-2 bg-slate-50/80 border-b border-slate-100">
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                {group.label}
-              </span>
+            <div className="px-6 py-2 bg-[var(--color-surface-2)] border-b border-[var(--color-border)]">
+              <span className="admin-eyebrow">{group.label}</span>
             </div>
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {group.items.map((draft: any) => {
@@ -427,12 +418,12 @@ function DraftQueue() {
                   <button
                     onClick={() => setExpandedId(isExpanded ? null : draft.id)}
                     className={cn(
-                      'w-full text-left px-6 py-4 flex items-center gap-4 hover:bg-slate-50/80 transition-colors',
-                      isExpanded && 'bg-slate-50/60',
+                      'w-full text-left px-6 py-4 flex items-center gap-4 hover:bg-[var(--color-surface-2)] transition-colors',
+                      isExpanded && 'bg-[var(--color-surface-2)]',
                     )}
                   >
                     {/* Company logo */}
-                    <div className="w-10 h-10 rounded-xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner overflow-hidden shrink-0">
+                    <div className="w-10 h-10 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center overflow-hidden shrink-0">
                       {draft.contact.prospect?.logoUrl ? (
                         <img
                           src={draft.contact.prospect.logoUrl}
@@ -440,7 +431,7 @@ function DraftQueue() {
                           className="w-5 h-5 object-contain"
                         />
                       ) : (
-                        <Building2 className="w-4 h-4 text-slate-200" />
+                        <Building2 className="w-4 h-4 text-[var(--color-border-strong)]" />
                       )}
                     </div>
 
@@ -449,21 +440,21 @@ function DraftQueue() {
                       <Link
                         href={`/admin/prospects/${draft.contact.prospect?.id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="text-sm font-black text-[#040026] truncate tracking-tight hover:text-[#007AFF] transition-colors"
+                        className="text-sm font-bold text-[var(--color-ink)] truncate tracking-tight hover:text-[#007AFF] transition-colors"
                       >
                         {companyName}
                       </Link>
-                      <p className="text-[11px] text-slate-400 truncate">
+                      <p className="text-[11px] text-[var(--color-muted)] truncate">
                         {toName}
                       </p>
                     </div>
 
                     {/* Subject + preview */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-[#040026] truncate">
+                      <p className="text-sm font-bold text-[var(--color-ink)] truncate">
                         {draft.subject}
                       </p>
-                      <p className="text-sm text-slate-400 truncate">
+                      <p className="text-sm text-[var(--color-muted)] truncate">
                         {previewText}
                       </p>
                     </div>
@@ -472,17 +463,17 @@ function DraftQueue() {
                     <div className="flex items-center gap-2 shrink-0">
                       <span
                         className={cn(
-                          'text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0',
+                          'admin-state-pill text-[9px] shrink-0',
                           kind === 'signal_draft'
-                            ? 'bg-purple-50 text-purple-600'
+                            ? 'admin-state-accent'
                             : kind === 'cadence_draft'
-                              ? 'bg-blue-50 text-blue-600'
-                              : 'bg-slate-50 text-slate-400',
+                              ? 'admin-state-info'
+                              : 'admin-state-neutral',
                         )}
                       >
                         {kindLabel}
                       </span>
-                      <span className="text-[11px] font-bold text-slate-400 tabular-nums">
+                      <span className="text-[11px] font-bold text-[var(--color-muted)] tabular-nums">
                         {new Date(draft.createdAt).toLocaleDateString('nl-NL', {
                           day: 'numeric',
                           month: 'short',
@@ -493,32 +484,32 @@ function DraftQueue() {
 
                   {/* Expanded email view */}
                   {isExpanded && (
-                    <div className="bg-white border-t border-slate-100 px-6 py-6">
+                    <div className="bg-[var(--color-surface)] border-t border-[var(--color-border)] px-6 py-6">
                       {/* Email header */}
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
                         <div className="space-y-1.5">
-                          <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <span className="font-bold text-slate-400">
+                          <div className="flex items-center gap-2 text-xs text-[var(--color-muted)]">
+                            <span className="font-bold text-[var(--color-muted)]">
                               Van
                             </span>
-                            <span className="font-semibold text-[#040026]">
+                            <span className="font-semibold text-[var(--color-ink)]">
                               Romano Kanters &lt;info@klarifai.nl&gt;
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <span className="font-bold text-slate-400">
+                          <div className="flex items-center gap-2 text-xs text-[var(--color-muted)]">
+                            <span className="font-bold text-[var(--color-muted)]">
                               Aan
                             </span>
-                            <span className="font-semibold text-[#040026]">
+                            <span className="font-semibold text-[var(--color-ink)]">
                               {toName}
                               {toEmail ? ` <${toEmail}>` : ''}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <span className="font-bold text-slate-400">
+                          <div className="flex items-center gap-2 text-xs text-[var(--color-muted)]">
+                            <span className="font-bold text-[var(--color-muted)]">
                               Onderwerp
                             </span>
-                            <span className="font-semibold text-[#040026]">
+                            <span className="font-semibold text-[var(--color-ink)]">
                               {draft.subject}
                             </span>
                           </div>
@@ -539,11 +530,11 @@ function DraftQueue() {
                             }}
                             disabled={regeneratingId === draft.id}
                             className={cn(
-                              'ui-tap inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all disabled:opacity-50',
+                              'inline-flex items-center gap-1.5 px-3 py-2.5 rounded-[var(--radius-md)] text-[10px] font-bold uppercase tracking-[0.14em] border transition-all disabled:opacity-50',
                               (draft.metadata as Record<string, unknown>)
                                 ?.language === 'en'
-                                ? 'bg-[#040026] text-white border-[#040026]'
-                                : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300',
+                                ? 'bg-[var(--color-ink)] text-[var(--color-surface)] border-[var(--color-ink)]'
+                                : 'bg-[var(--color-surface)] text-[var(--color-muted)] border-[var(--color-border-strong)] hover:border-[var(--color-border-strong)]',
                             )}
                           >
                             {regeneratingId === draft.id ? (
@@ -554,7 +545,7 @@ function DraftQueue() {
                           <button
                             onClick={() => approve.mutate({ id: draft.id })}
                             disabled={approve.isPending}
-                            className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] border border-[#EBCB4B] hover:bg-[#D4B43B] transition-all disabled:opacity-50"
+                            className="admin-btn-primary disabled:opacity-50"
                           >
                             {approve.isPending ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -566,7 +557,7 @@ function DraftQueue() {
                           <button
                             onClick={() => reject.mutate({ id: draft.id })}
                             disabled={reject.isPending}
-                            className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white text-slate-500 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all disabled:opacity-50"
+                            className="admin-btn-secondary disabled:opacity-50 hover:admin-state-danger"
                           >
                             <X className="w-3.5 h-3.5" /> Verwijder
                           </button>
@@ -574,14 +565,14 @@ function DraftQueue() {
                       </div>
 
                       {/* Email body */}
-                      <div className="bg-[#FCFCFD] rounded-2xl p-6 border border-slate-100">
+                      <div className="bg-[var(--color-surface-2)] rounded-[var(--radius-md)] p-6 border border-[var(--color-border)]">
                         {draft.bodyHtml ? (
                           <div
-                            className="text-sm text-slate-700 prose prose-sm max-w-none font-medium leading-relaxed"
+                            className="text-sm text-[var(--color-muted-dark)] prose prose-sm max-w-none font-medium leading-relaxed"
                             dangerouslySetInnerHTML={{ __html: draft.bodyHtml }}
                           />
                         ) : (
-                          <pre className="text-sm text-slate-700 font-medium leading-relaxed whitespace-pre-wrap font-[inherit]">
+                          <pre className="text-sm text-[var(--color-muted-dark)] font-medium leading-relaxed whitespace-pre-wrap font-[inherit]">
                             {draft.bodyText}
                           </pre>
                         )}
@@ -606,7 +597,7 @@ function SentHistory() {
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="glass-card p-6 animate-pulse">
-            <div className="h-5 bg-slate-200 rounded-xl w-64" />
+            <div className="h-5 bg-[var(--color-surface-2)] rounded-[var(--radius-md)] w-64" />
           </div>
         ))}
       </div>
@@ -618,15 +609,11 @@ function SentHistory() {
 
   if (logs.length === 0) {
     return (
-      <div className="glass-card p-12 text-center">
-        <History className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-        <p className="text-sm font-black text-[#040026] uppercase tracking-widest mb-2">
-          No outreach history yet
-        </p>
-        <p className="admin-meta-text">
-          Verzonden interacties verschijnen hier zodra de eerste run live gaat.
-        </p>
-      </div>
+      <EmptyState
+        icon={<History className="w-12 h-12" />}
+        title="No outreach history yet"
+        description="Verzonden interacties verschijnen hier zodra de eerste run live gaat."
+      />
     );
   }
 
@@ -641,14 +628,14 @@ function SentHistory() {
             <div
               className={`w-2 h-2 rounded-full ${
                 log.status === 'sent'
-                  ? 'bg-emerald-400'
+                  ? 'bg-[var(--color-tag-enrich-text)]'
                   : log.status === 'failed'
-                    ? 'bg-red-400'
-                    : 'bg-slate-300'
+                    ? 'bg-[var(--color-brand-danger)]'
+                    : 'bg-[var(--color-border-strong)]'
               }`}
             />
             <div>
-              <span className="text-sm font-black text-[#040026]">
+              <span className="text-sm font-bold text-[var(--color-ink)]">
                 {log.contact?.firstName} {log.contact?.lastName}
               </span>
               {log.contact?.prospect && (
@@ -775,12 +762,10 @@ function OutreachSettings() {
     <div className="space-y-4">
       {/* Email Identity */}
       <div className="glass-card p-6 space-y-4">
-        <h3 className="text-sm font-black text-[#040026] uppercase tracking-widest">
-          Email Identiteit
-        </h3>
+        <h3 className="admin-eyebrow">Email Identiteit</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-bold text-slate-500 mb-1 block">
+            <label className="text-xs font-bold text-[var(--color-muted-dark)] mb-1 block">
               Naam afzender
             </label>
             <input
@@ -791,7 +776,7 @@ function OutreachSettings() {
             />
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 mb-1 block">
+            <label className="text-xs font-bold text-[var(--color-muted-dark)] mb-1 block">
               Email adres
             </label>
             <input
@@ -806,9 +791,7 @@ function OutreachSettings() {
 
       {/* Outreach Style */}
       <div className="glass-card p-6 space-y-4">
-        <h3 className="text-sm font-black text-[#040026] uppercase tracking-widest">
-          Outreach Stijl
-        </h3>
+        <h3 className="admin-eyebrow">Outreach Stijl</h3>
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           {OUTREACH_STYLES.map((style) => (
             <div
@@ -820,18 +803,18 @@ function OutreachSettings() {
                 if (e.key === 'Enter' || e.key === ' ') setToneId(style.id);
               }}
               className={cn(
-                'ui-tap relative text-left rounded-xl border p-4 transition-all cursor-pointer',
+                'relative text-left rounded-[var(--radius-md)] border p-4 transition-all cursor-pointer',
                 toneId === style.id
-                  ? 'border-[#EBCB4B] bg-[#EBCB4B]/5 ring-1 ring-[#EBCB4B]'
-                  : 'border-slate-100 bg-white hover:border-slate-200',
+                  ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/5 ring-1 ring-[var(--color-gold)]'
+                  : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-strong)]',
               )}
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-sm font-black text-[#040026] tracking-tight">
+                  <p className="text-sm font-bold text-[var(--color-ink)] tracking-tight">
                     {style.label}
                   </p>
-                  <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+                  <p className="text-[11px] text-[var(--color-muted)] mt-1 leading-snug">
                     {style.description}
                   </p>
                 </div>
@@ -842,14 +825,14 @@ function OutreachSettings() {
                       expandedInfo === style.id ? null : style.id,
                     );
                   }}
-                  className="ui-tap shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"
+                  className="shrink-0 w-5 h-5 rounded-full bg-[var(--color-surface-2)] flex items-center justify-center hover:bg-[var(--color-border)] transition-colors"
                 >
-                  <Info className="w-3 h-3 text-slate-400" />
+                  <Info className="w-3 h-3 text-[var(--color-muted)]" />
                 </button>
               </div>
               {expandedInfo === style.id && (
-                <div className="mt-3 pt-3 border-t border-slate-100">
-                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
+                  <p className="text-[11px] text-[var(--color-muted-dark)] leading-relaxed">
                     {style.tone}
                   </p>
                 </div>
@@ -862,12 +845,10 @@ function OutreachSettings() {
       {/* Signature */}
       <div className="glass-card p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-black text-[#040026] uppercase tracking-widest">
-            Handtekening
-          </h3>
+          <h3 className="admin-eyebrow">Handtekening</h3>
           <button
             onClick={() => setShowPreview(!showPreview)}
-            className="ui-tap inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-[#040026] transition-colors"
+            className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
           >
             {showPreview ? (
               <EyeOff className="w-3.5 h-3.5" />
@@ -879,18 +860,18 @@ function OutreachSettings() {
         </div>
 
         {showPreview ? (
-          <div className="bg-[#FCFCFD] rounded-2xl p-6 border border-slate-100">
-            <p className="text-xs font-bold text-slate-400 mb-3">
+          <div className="bg-[var(--color-surface-2)] rounded-[var(--radius-md)] p-6 border border-[var(--color-border)]">
+            <p className="text-xs font-bold text-[var(--color-muted)] mb-3">
               HTML Preview
             </p>
             <div
-              className="text-sm text-slate-700 prose prose-sm max-w-none"
+              className="text-sm text-[var(--color-muted-dark)] prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{ __html: signatureHtml }}
             />
           </div>
         ) : (
           <div>
-            <label className="text-xs font-bold text-slate-500 mb-1 block">
+            <label className="text-xs font-bold text-[var(--color-muted-dark)] mb-1 block">
               HTML handtekening
             </label>
             <textarea
@@ -909,7 +890,7 @@ function OutreachSettings() {
         <button
           onClick={handleSave}
           disabled={update.isPending}
-          className="ui-tap inline-flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#EBCB4B] text-[#040026] border border-[#EBCB4B] hover:bg-[#D4B43B] transition-all disabled:opacity-50"
+          className="admin-btn-primary disabled:opacity-50"
         >
           {update.isPending ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -919,7 +900,7 @@ function OutreachSettings() {
           Opslaan
         </button>
         {saved && (
-          <span className="text-xs font-bold text-emerald-600 animate-fade-in-up">
+          <span className="text-xs font-bold text-[var(--color-tag-enrich-text)] animate-fade-in-up">
             Opgeslagen
           </span>
         )}

@@ -8,6 +8,7 @@ import { ArrowLeft, Building2, Plus, X, Loader2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { deepAnalysisStatus } from '@/lib/deep-analysis';
 import { PageLoader } from '@/components/ui/page-loader';
+import { EmptyState } from '@/components/ui/empty-state';
 
 type FunnelStage =
   | 'imported'
@@ -39,17 +40,17 @@ const STAGE_LABELS: Record<FunnelStage, string> = {
 };
 
 const STAGE_BADGE: Record<FunnelStage, string> = {
-  imported: 'bg-slate-100 text-slate-600',
-  researching: 'bg-cyan-50 text-cyan-700',
-  researched: 'bg-blue-50 text-blue-600',
-  approved: 'bg-indigo-50 text-indigo-600',
-  emailed: 'bg-amber-50 text-amber-600',
-  replied: 'bg-orange-50 text-orange-600',
-  booked: 'bg-emerald-50 text-emerald-600',
+  imported: 'admin-state-neutral',
+  researching: 'admin-state-info',
+  researched: 'admin-state-info',
+  approved: 'admin-state-accent',
+  emailed: 'admin-state-warning',
+  replied: 'admin-state-warning',
+  booked: 'admin-state-success',
 };
 
 const FUNNEL_STAGES: Array<{ key: FunnelStage; barColor: string }> = [
-  { key: 'imported', barColor: 'bg-slate-300' },
+  { key: 'imported', barColor: 'bg-[var(--color-border-strong)]' },
   { key: 'researching', barColor: 'bg-cyan-400' },
   { key: 'researched', barColor: 'bg-blue-400' },
   { key: 'approved', barColor: 'bg-indigo-400' },
@@ -62,20 +63,18 @@ function FunnelBar({ funnel }: { funnel: Record<FunnelStage, number> }) {
   const max = funnel.imported || 1;
   return (
     <div className="glass-card p-6 rounded-[2.5rem]">
-      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">
-        Funnel
-      </p>
+      <p className="admin-eyebrow mb-6">Funnel</p>
       <div className="grid w-full grid-cols-7 gap-4">
         {FUNNEL_STAGES.map(({ key, barColor }) => {
           const count = funnel[key];
           const widthPct = Math.max((count / max) * 100, 10);
           return (
             <div key={key} className="flex min-w-0 flex-col gap-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                {STAGE_LABELS[key]}
+              <p className="admin-eyebrow">{STAGE_LABELS[key]}</p>
+              <p className="text-2xl font-bold text-[var(--color-ink)]">
+                {count}
               </p>
-              <p className="text-2xl font-black text-[#040026]">{count}</p>
-              <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div className="h-2 rounded-full bg-[var(--color-surface-2)] overflow-hidden">
                 <div
                   className={cn('h-full rounded-full', barColor)}
                   style={{ width: `${widthPct}%` }}
@@ -152,12 +151,12 @@ function ProspectRow({
         ? 'text-red-600'
         : deepStatus === 'running'
           ? 'text-cyan-600'
-          : 'text-slate-500';
+          : 'text-[var(--color-muted)]';
 
   return (
     <div className="glass-card glass-card-hover p-5 flex items-center justify-between gap-4">
       <div className="flex items-center gap-4 min-w-0">
-        <div className="w-10 h-10 rounded-xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner shrink-0 overflow-hidden">
+        <div className="w-10 h-10 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center shrink-0 overflow-hidden">
           {prospect.logoUrl ? (
             <img
               src={prospect.logoUrl}
@@ -165,18 +164,18 @@ function ProspectRow({
               className="w-6 h-6 object-contain"
             />
           ) : (
-            <Building2 className="w-4 h-4 text-slate-200" />
+            <Building2 className="w-4 h-4 text-[var(--color-border-strong)]" />
           )}
         </div>
         <div className="min-w-0">
           <Link
             href={`/admin/prospects/${prospect.id}`}
-            className="text-sm font-black text-[#040026] tracking-tight hover:text-[#007AFF] transition-colors truncate block"
+            className="text-sm font-bold text-[var(--color-ink)] tracking-tight hover:text-[#007AFF] transition-colors truncate block"
           >
             {prospect.companyName ?? prospect.domain}
           </Link>
           {prospect.industry && (
-            <p className="text-xs text-slate-400 font-medium truncate">
+            <p className="text-xs text-[var(--color-muted)] font-medium truncate">
               {prospect.industry}
             </p>
           )}
@@ -185,7 +184,7 @@ function ProspectRow({
       <div className="flex items-center gap-3 shrink-0">
         <span
           className={cn(
-            'text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest',
+            'admin-state-pill text-[9px]',
             STAGE_BADGE[prospect.funnelStage],
           )}
         >
@@ -202,7 +201,7 @@ function ProspectRow({
               });
             }}
             disabled={startResearch.isPending}
-            className="ui-tap inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all disabled:opacity-50 text-[9px] font-black uppercase tracking-widest"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-sm)] admin-state-info hover:opacity-80 border border-transparent transition-all disabled:opacity-50 text-[9px] font-bold uppercase tracking-[0.14em]"
           >
             {startResearch.isPending && startMode !== 'deep' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -223,7 +222,7 @@ function ProspectRow({
               });
             }}
             disabled={startResearch.isPending}
-            className="ui-tap inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-[#040026] hover:text-white hover:border-[#040026] transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[var(--color-muted-dark)] hover:bg-[var(--color-ink)] hover:text-[var(--color-surface)] hover:border-[var(--color-ink)] transition-all disabled:opacity-50"
           >
             {startResearch.isPending && startMode === 'deep' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -231,7 +230,7 @@ function ProspectRow({
               <Search className="w-3.5 h-3.5" />
             )}
             <span className="flex flex-col items-start leading-tight text-left">
-              <span className="text-[9px] font-black uppercase tracking-widest">
+              <span className="text-[9px] font-bold uppercase tracking-[0.14em]">
                 Deep Analysis
               </span>
               <span
@@ -243,7 +242,7 @@ function ProspectRow({
           </button>
         )}
         {prospect.funnelStage === 'researching' && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-50 text-cyan-700 border border-cyan-200 text-[9px] font-black uppercase tracking-widest">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-sm)] admin-state-info text-[9px] font-bold uppercase tracking-[0.14em]">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
             Running
           </span>
@@ -262,7 +261,7 @@ function ProspectRow({
             }
           }}
           disabled={detach.isPending}
-          className="ui-tap p-1.5 rounded-lg bg-slate-50 text-slate-300 hover:text-red-500 hover:bg-red-50 border border-slate-100 transition-all disabled:opacity-50"
+          className="p-1.5 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] text-[var(--color-border-strong)] hover:text-[var(--color-brand-danger)] hover:bg-[var(--color-surface-2)] border border-[var(--color-border)] transition-all disabled:opacity-50"
         >
           {detach.isPending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -307,7 +306,7 @@ function AddProspectPanel({
       <select
         value={selectedId}
         onChange={(e) => setSelectedId(e.target.value)}
-        className="flex-1 px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
+        className="flex-1 px-4 py-2.5 input-minimal text-sm font-bold"
       >
         <option value="">Select a company…</option>
         {(allProspects.data?.prospects ?? []).map((p) => (
@@ -321,7 +320,7 @@ function AddProspectPanel({
           if (selectedId) attach.mutate({ campaignId, prospectId: selectedId });
         }}
         disabled={!selectedId || attach.isPending}
-        className="ui-tap inline-flex items-center gap-2 px-6 py-2.5 btn-pill-primary text-xs font-black uppercase tracking-widest disabled:opacity-50 shrink-0"
+        className="admin-btn-primary disabled:opacity-50 shrink-0"
       >
         {attach.isPending ? (
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -354,7 +353,7 @@ export default function CampaignDetailPage() {
   if (query.error || !query.data) {
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-6">
-        <p className="text-sm font-black text-slate-400 uppercase tracking-widest">
+        <p className="admin-eyebrow text-[var(--color-muted)]">
           Campaign not found
         </p>
         <Link
@@ -381,16 +380,16 @@ export default function CampaignDetailPage() {
       <div className="space-y-2">
         <Link
           href="/admin/campaigns"
-          className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#040026] transition-colors"
+          className="inline-flex items-center gap-2 admin-eyebrow text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Campaigns
         </Link>
-        <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
+        <h1 className="font-['Sora'] text-[32px] font-bold tracking-[-0.025em] text-[var(--color-ink)]">
           {campaign.name}
         </h1>
         {campaign.nicheKey && (
-          <p className="text-sm font-bold text-slate-400">
+          <p className="text-sm font-bold text-[var(--color-muted)] mt-1">
             {campaign.nicheKey}
           </p>
         )}
@@ -399,18 +398,14 @@ export default function CampaignDetailPage() {
       {/* Conversion Metrics */}
       <div className="flex gap-4">
         <div className="glass-card p-6 flex flex-col gap-2 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-            Response Rate
-          </p>
-          <p className="text-3xl font-black text-blue-600">
+          <p className="admin-eyebrow">Response Rate</p>
+          <p className="text-3xl font-bold text-[var(--color-tag-run-text)]">
             {metrics.responseRate.toFixed(1)}%
           </p>
         </div>
         <div className="glass-card p-6 flex flex-col gap-2 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-            Booking Rate
-          </p>
-          <p className="text-3xl font-black text-emerald-600">
+          <p className="admin-eyebrow">Booking Rate</p>
+          <p className="text-3xl font-bold text-[var(--color-tag-enrich-text)]">
             {metrics.bookingRate.toFixed(1)}%
           </p>
         </div>
@@ -423,24 +418,22 @@ export default function CampaignDetailPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Companies in Campaign
-            </p>
-            <span className="text-[9px] font-black px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 uppercase tracking-widest">
+            <p className="admin-eyebrow">Companies in Campaign</p>
+            <span className="admin-state-pill admin-state-neutral text-[9px]">
               {prospects.length}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Link
               href={`/admin/campaigns/new?campaignId=${id}`}
-              className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 btn-pill-primary text-[10px] font-black uppercase tracking-widest"
+              className="admin-btn-primary"
             >
               <Search className="w-4 h-4" />
               Search Prospects
             </Link>
             <button
               onClick={() => setShowAdd((v) => !v)}
-              className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 btn-pill-secondary text-[10px] font-black uppercase tracking-widest"
+              className="admin-btn-secondary"
             >
               {showAdd ? (
                 <>
@@ -460,12 +453,10 @@ export default function CampaignDetailPage() {
         )}
 
         {sortedProspects.length === 0 ? (
-          <div className="glass-card p-10 text-center rounded-[2.5rem]">
-            <Building2 className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-            <p className="text-sm font-black text-slate-400">
-              No companies in this campaign yet
-            </p>
-          </div>
+          <EmptyState
+            icon={<Building2 className="w-10 h-10" />}
+            title="No companies in this campaign yet"
+          />
         ) : (
           <div className="space-y-2">
             {sortedProspects.map((prospect) => (
