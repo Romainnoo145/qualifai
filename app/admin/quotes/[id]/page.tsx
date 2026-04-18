@@ -1,30 +1,26 @@
 'use client';
 
 /**
- * Quote detail — Editorial two-column layout.
+ * Quote detail — single-column notes → narrative → line items → actions flow.
  *
- * Left: QuoteForm + totals block.
- * Right sidebar: prospect card, active proposal toggle, preview link, actions.
- *
- * Read-only branching on `status !== 'DRAFT'`. Dirty tracking + beforeunload
- * warning only active for DRAFT edits.
+ * Read-only branching on `status !== 'DRAFT'`.
  */
 
 import type { Prisma } from '@prisma/client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Loader2, Mail } from 'lucide-react';
 import { api } from '@/components/providers';
 import { PageLoader } from '@/components/ui/page-loader';
-import {
-  QuoteForm,
-  type QuoteFormValues,
-} from '@/components/features/quotes/quote-form';
 import { QuoteStatusBadge } from '@/components/features/quotes/quote-status-badge';
-import { QuoteSendConfirm } from '@/components/features/quotes/quote-send-confirm';
 import { QuoteVersionConfirm } from '@/components/features/quotes/quote-version-confirm';
-import { computeQuoteTotals, formatEuro } from '@/lib/quotes/quote-totals';
+import { NarrativePreview } from '@/components/features/quotes/narrative-preview';
+import {
+  LineItemsEditor,
+  type LineItemDraft,
+} from '@/components/features/quotes/line-items-editor';
+import { EmailCompose } from '@/components/features/quotes/email-compose';
 
 // tRPC v11 inference gap — mirror ResearchRunRow pattern.
 type QuoteDetailRow = Prisma.QuoteGetPayload<{
@@ -41,27 +37,24 @@ type QuoteDetailRow = Prisma.QuoteGetPayload<{
   };
 }>;
 
-function TotalsRow({
-  label,
-  value,
-  bold,
-}: {
-  label: string;
-  value: string;
-  bold?: boolean;
-}) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex justify-between items-baseline">
-      <span
-        className={`text-[12px] uppercase tracking-[0.12em] ${bold ? 'text-[var(--color-ink)] font-medium' : 'text-[var(--color-muted-dark)]'}`}
-      >
-        {label}
-      </span>
-      <span
-        className={`tabular-nums ${bold ? 'text-[16px] font-medium text-[var(--color-ink)]' : 'text-[14px] text-[var(--color-ink)]'}`}
-      >
-        {value}
-      </span>
+    <p
+      className="text-[11px] uppercase tracking-[0.18em] mb-4"
+      style={{ color: 'var(--color-muted)' }}
+    >
+      {children}
+    </p>
+  );
+}
+
+function Block({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="rounded-xl p-6"
+      style={{ background: 'var(--color-surface-2)' }}
+    >
+      {children}
     </div>
   );
 }
@@ -73,14 +66,32 @@ export default function QuoteDetailPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const utils = api.useUtils() as any;
 
-  const [error, setError] = useState<string | null>(null);
-  const [isDirty, setIsDirty] = useState(false);
-  const [draft, setDraft] = useState<QuoteFormValues | null>(null);
+  const [notes, setNotes] = useState('');
+  const [lines, setLines] = useState<LineItemDraft[]>([]);
+  const [showEmailCompose, setShowEmailCompose] = useState(false);
+
+  // Narrative fields (editable inline via NarrativePreview)
+  const [introductie, setIntroductie] = useState('');
+  const [uitdaging, setUitdaging] = useState('');
+  const [aanpak, setAanpak] = useState('');
 
   // TODO: tRPC v11 inference gap — quotes.get
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const quoteQuery = (api.quotes.get as any).useQuery({ id });
   const quote = quoteQuery.data as QuoteDetailRow | undefined;
+
+  // TODO: tRPC v11 inference gap — quotes.updateNotes
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateNotesMutation = (api.quotes.updateNotes as any).useMutation();
+
+  // TODO: tRPC v11 inference gap — quotes.generateNarrative
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const generateMutation = (api.quotes.generateNarrative as any).useMutation({
+    onSuccess: () => {
+      utils.quotes?.get?.invalidate?.({ id });
+      utils.quotes?.list?.invalidate?.();
+    },
+  });
 
   // TODO: tRPC v11 inference gap — quotes.update
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,121 +99,94 @@ export default function QuoteDetailPage() {
     onSuccess: () => {
       utils.quotes?.get?.invalidate?.({ id });
       utils.quotes?.list?.invalidate?.();
-      setIsDirty(false);
-      setError(null);
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError: (err: any) => {
-      setError(err?.message ?? 'Kon offerte niet opslaan.');
     },
   });
 
-  const activeProposalMutation = (
-    api.quotes as any
-  ).setActiveProposal.useMutation({
-    onSuccess: () => {
-      utils.quotes?.get?.invalidate?.({ id });
-      utils.quotes?.list?.invalidate?.();
-    },
+  // TODO: tRPC v11 inference gap — quotes.setActiveProposal
+  const activeProposalMutation = (api.quotes as any).setActiveProposal // eslint-disable-line @typescript-eslint/no-explicit-any
+    .useMutation({
+      onSuccess: () => {
+        utils.quotes?.get?.invalidate?.({ id });
+        utils.quotes?.list?.invalidate?.();
+      },
+    });
+
+  // TODO: tRPC v11 inference gap — quotes.sendEmail (if available)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sendEmailMutation = (api.quotes as any).sendEmail?.useMutation?.({
+    onSuccess: () => setShowEmailCompose(false),
   });
 
-  // Seed draft whenever the server row arrives/changes (updatedAt as change signal
-  // so we don't reseed after a local edit).
+  // Seed local state when quote loads / changes (updatedAt as change signal).
   useEffect(() => {
     if (!quote) return;
-    setDraft({
-      nummer: quote.nummer,
-      datum: new Date(quote.datum).toISOString().slice(0, 10),
-      geldigTot: new Date(quote.geldigTot).toISOString().slice(0, 10),
-      onderwerp: quote.onderwerp,
-      tagline: quote.tagline ?? '',
-      introductie: quote.introductie ?? '',
-      uitdaging: quote.uitdaging ?? '',
-      aanpak: quote.aanpak ?? '',
-      btwPercentage: quote.btwPercentage,
-      scope: quote.scope ?? '',
-      buitenScope: quote.buitenScope ?? '',
-      lines: quote.lines.map((l) => ({
-        fase: l.fase,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const q = quote as any;
+    setNotes(q.meetingNotes ?? '');
+    setIntroductie(quote.introductie ?? '');
+    setUitdaging(quote.uitdaging ?? '');
+    setAanpak(quote.aanpak ?? '');
+    setLines(
+      quote.lines.map((l) => ({
         omschrijving: l.omschrijving ?? '',
-        oplevering: l.oplevering ?? '',
         uren: l.uren,
-        tarief: l.tarief, // SIGNED — preserve negative discount lines
+        tarief: l.tarief,
       })),
-    });
-    setIsDirty(false);
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quote?.updatedAt]);
 
-  const isReadOnly = useMemo(
-    () => (quote ? quote.status !== 'DRAFT' : true),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [quote?.status],
-  );
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isActiveProposal = (quote as any)?.isActiveProposal as
-    | boolean
-    | undefined;
-
-  // beforeunload warning for uncommitted changes
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (isDirty && !isReadOnly) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, [isDirty, isReadOnly]);
-
-  if (quoteQuery.isLoading || !quote || !draft) {
+  if (quoteQuery.isLoading || !quote) {
     return <PageLoader label="Offerte laden" description="Eén moment." />;
   }
   if (quoteQuery.error) {
     return (
-      <div className="p-10 text-sm text-red-600">
+      <div className="p-10 text-[13px]" style={{ color: '#dc2626' }}>
         Fout: {String(quoteQuery.error.message)}
       </div>
     );
   }
 
-  const totals = computeQuoteTotals(
-    draft.lines.map((l) => ({ uren: l.uren, tarief: l.tarief })),
-    draft.btwPercentage,
-  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const q = quote as any;
+  const isReadOnly = quote.status !== 'DRAFT';
+  const isActiveProposal = q.isActiveProposal as boolean | undefined;
+  const narrativeGeneratedAt = q.narrativeGeneratedAt as string | null;
+  const hasNarrative = !!(introductie || uitdaging || aanpak);
 
-  const handleSubmit = (values: QuoteFormValues) => {
-    setError(null);
-    setDraft(values);
-    setIsDirty(true);
+  const brochureUrl = quote.prospect.readableSlug
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/offerte/${quote.prospect.readableSlug}`
+    : '';
+
+  const handleNarrativeUpdate = (
+    field: 'introductie' | 'uitdaging' | 'aanpak',
+    value: string,
+  ) => {
+    if (field === 'introductie') setIntroductie(value);
+    if (field === 'uitdaging') setUitdaging(value);
+    if (field === 'aanpak') setAanpak(value);
     updateMutation.mutate({
       id: quote.id,
-      nummer: values.nummer,
-      datum: new Date(values.datum).toISOString(),
-      geldigTot: new Date(values.geldigTot).toISOString(),
-      onderwerp: values.onderwerp,
-      tagline: values.tagline || undefined,
-      introductie: values.introductie || undefined,
-      uitdaging: values.uitdaging || undefined,
-      aanpak: values.aanpak || undefined,
-      btwPercentage: values.btwPercentage,
-      scope: values.scope || undefined,
-      buitenScope: values.buitenScope || undefined,
-      lines: values.lines.map((l, idx) => ({
-        fase: l.fase,
+      introductie: field === 'introductie' ? value : introductie,
+      uitdaging: field === 'uitdaging' ? value : uitdaging,
+      aanpak: field === 'aanpak' ? value : aanpak,
+    });
+  };
+
+  const handleSaveLines = () => {
+    updateMutation.mutate({
+      id: quote.id,
+      lines: lines.map((l, idx) => ({
         omschrijving: l.omschrijving || undefined,
-        oplevering: l.oplevering || undefined,
         uren: l.uren,
-        tarief: l.tarief, // SIGNED — never clamp
+        tarief: l.tarief,
         position: idx,
       })),
     });
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 max-w-3xl space-y-6">
       {/* Back link */}
       <Link
         href={`/admin/prospects/${quote.prospect.id}`}
@@ -220,160 +204,158 @@ export default function QuoteDetailPage() {
         </span>
       </Link>
 
-      {/* Hero */}
+      {/* Header */}
       <header className="space-y-2">
         <div className="flex items-center gap-3 flex-wrap">
           <span
             className="text-[24px] leading-none"
-            style={{
-              color: 'var(--color-ink)',
-            }}
+            style={{ color: 'var(--color-ink)' }}
           >
             {quote.nummer}
           </span>
           <QuoteStatusBadge status={quote.status} />
-          {isActiveProposal && (
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!isActiveProposal}
+              onChange={(e) =>
+                activeProposalMutation.mutate({
+                  id: quote.id,
+                  active: e.target.checked,
+                })
+              }
+              className="h-3.5 w-3.5 accent-[var(--color-gold)]"
+            />
             <span
-              className="text-[11px] uppercase tracking-[0.18em]"
-              style={{
-                color: 'var(--color-gold)',
-              }}
+              className="text-[11px] uppercase tracking-[0.14em]"
+              style={{ color: 'var(--color-muted-dark)' }}
             >
               Actief voorstel
             </span>
-          )}
-          {isDirty && !isReadOnly && (
-            <span
-              className="text-[11px] uppercase tracking-[0.14em]"
-              style={{ color: '#b45309' }}
-            >
-              Niet opgeslagen
-            </span>
-          )}
+          </label>
         </div>
-        <p className="text-[13px]" style={{ color: 'var(--color-muted)' }}>
+        <p className="text-[15px]" style={{ color: 'var(--color-muted)' }}>
           {quote.onderwerp}
         </p>
       </header>
 
-      {error && (
-        <div
-          className="border-l-2 p-4 text-[13px]"
-          style={{ borderColor: '#dc2626', color: '#dc2626' }}
-        >
-          {error}
-        </div>
+      {/* Block 1: Meeting Notes */}
+      <Block>
+        <SectionLabel>Gespreksnotities</SectionLabel>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          onBlur={() =>
+            updateNotesMutation.mutate({ id: quote.id, meetingNotes: notes })
+          }
+          rows={6}
+          disabled={isReadOnly}
+          placeholder="Wat heb je besproken? Pijnpunten, context, concrete vragen — hoe meer, hoe beter."
+          className="input-minimal w-full text-[14px] leading-[1.6] resize-none"
+        />
+        {!isReadOnly && (
+          <div className="mt-4">
+            <button
+              type="button"
+              disabled={generateMutation.isPending || !notes.trim()}
+              onClick={() => generateMutation.mutate({ id: quote.id })}
+              className="admin-btn-primary inline-flex items-center gap-2"
+            >
+              {generateMutation.isPending && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              )}
+              {generateMutation.isPending
+                ? 'Genereren...'
+                : 'Genereer voorstel'}
+            </button>
+          </div>
+        )}
+      </Block>
+
+      {/* Block 2: Narrative Preview */}
+      {(hasNarrative || narrativeGeneratedAt) && (
+        <Block>
+          <SectionLabel>Narratief</SectionLabel>
+          <NarrativePreview
+            introductie={introductie}
+            uitdaging={uitdaging}
+            aanpak={aanpak}
+            isGenerated={!!narrativeGeneratedAt}
+            isReadOnly={isReadOnly}
+            onUpdate={handleNarrativeUpdate}
+          />
+        </Block>
       )}
 
-      {/* Two-column grid */}
-      <div className="grid grid-cols-[1fr_280px] gap-8 items-start">
-        {/* Left: form + totals */}
-        <div className="space-y-8">
-          <QuoteForm
-            initial={draft}
-            mode="edit"
-            onSubmit={handleSubmit}
-            isReadOnly={isReadOnly}
-            isSubmitting={updateMutation.isPending}
-            error={error}
-          />
-
-          {/* Totals block */}
-          <div className="flex justify-end">
-            <div className="w-[280px] space-y-2">
-              <TotalsRow label="Subtotaal" value={formatEuro(totals.netto)} />
-              <TotalsRow
-                label={`BTW ${draft.btwPercentage}%`}
-                value={formatEuro(totals.btw)}
-              />
-              <div
-                className="border-t-2 pt-2"
-                style={{ borderColor: 'var(--color-gold)' }}
-              >
-                <TotalsRow
-                  label="Totaal incl. BTW"
-                  value={formatEuro(totals.bruto)}
-                  bold
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right sidebar */}
-        <div className="space-y-4">
-          {/* Prospect card */}
-          <div className="p-4 space-y-1 rounded-xl bg-[var(--color-surface-2)]">
-            <p
-              className="text-[10px] uppercase tracking-[0.18em] mb-2"
-              style={{
-                color: 'var(--color-muted)',
-              }}
+      {/* Block 3: Line Items */}
+      <Block>
+        <SectionLabel>Regels</SectionLabel>
+        <LineItemsEditor
+          lines={lines}
+          btwPercentage={quote.btwPercentage}
+          isReadOnly={isReadOnly}
+          onChange={setLines}
+        />
+        {!isReadOnly && (
+          <div className="mt-5 flex justify-end">
+            <button
+              type="button"
+              disabled={updateMutation.isPending}
+              onClick={handleSaveLines}
+              className="admin-btn-secondary inline-flex items-center gap-2 text-[12px]"
             >
-              Prospect
-            </p>
-            <Link
-              href={`/admin/prospects/${quote.prospect.id}`}
-              className="block text-[14px] font-medium hover:opacity-70 transition-opacity"
-              style={{ color: 'var(--color-ink)' }}
-            >
-              {quote.prospect.companyName ?? quote.prospect.slug}
-            </Link>
+              {updateMutation.isPending ? 'Opslaan...' : 'Regels opslaan'}
+            </button>
           </div>
+        )}
+      </Block>
 
-          {/* Active proposal toggle */}
-          <div className="p-4 rounded-xl bg-[var(--color-surface-2)]">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={!!isActiveProposal}
-                onChange={(e) =>
-                  activeProposalMutation.mutate({
-                    id: quote.id,
-                    isActiveProposal: e.target.checked,
-                  })
-                }
-                className="h-4 w-4 accent-[var(--color-gold)]"
-              />
-              <span
-                className="text-[12px] uppercase tracking-[0.14em]"
-                style={{
-                  color: 'var(--color-ink)',
-                }}
-              >
-                Actief voorstel
-              </span>
-            </label>
-          </div>
-
-          {/* Preview button */}
+      {/* Block 4: Actions */}
+      <Block>
+        <SectionLabel>Acties</SectionLabel>
+        <div className="flex flex-wrap gap-3 items-center">
           {quote.prospect.readableSlug && (
-            <a
-              href={`/offerte/${quote.prospect.readableSlug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="admin-btn-secondary w-full flex items-center justify-center gap-2 text-[12px]"
+            <button
+              type="button"
+              onClick={() =>
+                window.open(`/offerte/${quote.prospect.readableSlug}`, '_blank')
+              }
+              className="admin-btn-secondary inline-flex items-center gap-2 text-[12px]"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Bekijk brochure
-            </a>
+            </button>
           )}
 
-          {/* Actions */}
-          <div className="space-y-2" data-testid="quote-actions-slot">
-            <QuoteSendConfirm
-              quoteId={quote.id}
-              status={quote.status}
-              lines={quote.lines.map((l) => ({
-                uren: l.uren,
-                tarief: l.tarief,
-              }))}
-              btwPercentage={quote.btwPercentage}
-            />
-            <QuoteVersionConfirm quoteId={quote.id} status={quote.status} />
-          </div>
+          {!isReadOnly && (
+            <button
+              type="button"
+              onClick={() => setShowEmailCompose((v) => !v)}
+              className="admin-btn-secondary inline-flex items-center gap-2 text-[12px]"
+            >
+              <Mail className="h-3.5 w-3.5" />
+              {showEmailCompose ? 'Annuleer email' : 'Email versturen'}
+            </button>
+          )}
+
+          <QuoteVersionConfirm quoteId={quote.id} status={quote.status} />
         </div>
-      </div>
+
+        {showEmailCompose && !isReadOnly && (
+          <div className="mt-6">
+            <EmailCompose
+              defaultTo={''}
+              defaultSubject={`Voorstel ${quote.nummer} — ${quote.onderwerp}`}
+              brochureUrl={brochureUrl}
+              isSubmitting={sendEmailMutation?.isPending ?? false}
+              onSend={(data) =>
+                sendEmailMutation?.mutate?.({ id: quote.id, ...data })
+              }
+              onCancel={() => setShowEmailCompose(false)}
+            />
+          </div>
+        )}
+      </Block>
     </div>
   );
 }
