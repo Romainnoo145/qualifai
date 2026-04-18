@@ -1,21 +1,16 @@
 /**
  * logo-pipeline.ts — Single source of truth for prospect logo resolution.
  *
- * Phase 61.3: replaces the ad-hoc `getHighResLogoUrl ?? getFaviconUrl` chains
- * that were scattered across createProspect / createAndProcess / enrichProspect.
- *
- * Given a domain (and optionally Apollo's logoUrl), returns the best validated
- * logo URL available, or null if nothing survives. Every candidate is HEAD-probed
- * for 200 + non-zero body before being returned, so the frontend never needs a
- * browser-side onError cascade — it can trust `prospect.logoUrl` as-is and fall
- * back to an initial-letter avatar when the column is null.
- *
  * Priority:
- *   1. Apollo logoUrl (if provided and HEAD-probes OK)
- *   2. Homepage og:image / twitter:image / apple-touch-icon / icon png (via og-logo)
- *   3. DuckDuckGo ip3 favicon (site-scraped, real 404 on misses)
- *   4. Google s2 favicon sz=128 (last resort, returns 404 on misses too)
+ *   1. Apollo logoUrl (ALWAYS FIRST — validated, consistent format, actual logos)
+ *   2. Homepage apple-touch-icon / favicon (via og-logo, icons-first)
+ *   3. DuckDuckGo ip3 favicon
+ *   4. Google s2 favicon sz=128
  *   5. null
+ *
+ * Apollo URLs (zenprospect-production.s3.amazonaws.com) are curated company
+ * logos in consistent format. They should ALWAYS be preferred over scraped
+ * favicons which vary wildly (Wix generic, Framer social cards, etc).
  */
 
 import { getHighResLogoUrl } from '@/lib/enrichment/og-logo';
