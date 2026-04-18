@@ -2,75 +2,86 @@
 
 import { api } from '@/components/providers';
 import Link from 'next/link';
-import { FolderKanban, Plus, ChevronRight } from 'lucide-react';
+import { FolderKanban, Plus } from 'lucide-react';
 import { PageLoader } from '@/components/ui/page-loader';
 
 export default function CampaignsPage() {
   const campaigns = api.campaigns.list.useQuery();
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
-          Campaigns
+    <div className="max-w-[1400px] space-y-10">
+      <div className="flex items-baseline justify-between pb-6 border-b border-[var(--color-border)]">
+        <h1 className="text-[48px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
+          Campaigns<span className="text-[var(--color-gold)]">.</span>
         </h1>
-        <Link href="/admin/campaigns/new" className="admin-btn-primary">
-          <Plus className="w-4 h-4" /> Create Campaign
+        <Link
+          href="/admin/campaigns/new"
+          className="inline-flex items-center gap-2 px-6 py-2.5 text-[11px] font-medium uppercase tracking-[0.1em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] rounded-full"
+        >
+          <Plus className="w-3.5 h-3.5" /> Create Campaign
         </Link>
       </div>
 
-      <div className="space-y-3">
-        {campaigns.isLoading && <PageLoader label="Loading campaigns" />}
+      {campaigns.isLoading && <PageLoader label="Loading campaigns" />}
 
-        {!campaigns.isLoading && (campaigns.data ?? []).length === 0 && (
-          <div className="glass-card p-12 text-center">
-            <FolderKanban className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-sm font-black text-[#040026] uppercase tracking-widest mb-2">
-              No campaigns yet
-            </p>
-            <p className="admin-meta-text mb-4">
-              Start met de campaign setup wizard.
-            </p>
-            <Link href="/admin/campaigns/new" className="admin-btn-primary">
-              <Plus className="w-3.5 h-3.5" />
-              Start Wizard
-            </Link>
-          </div>
-        )}
-
-        {(campaigns.data ?? []).map((campaign) => (
+      {!campaigns.isLoading && (campaigns.data ?? []).length === 0 && (
+        <div className="py-20 text-center">
+          <FolderKanban className="w-12 h-12 text-[var(--color-border-strong)] mx-auto mb-4" />
+          <p className="text-[15px] font-medium text-[var(--color-ink)] mb-1">
+            No campaigns yet
+          </p>
+          <p className="text-[13px] font-light text-[var(--color-muted)] mb-6">
+            Start met de campaign setup wizard.
+          </p>
           <Link
-            key={campaign.id}
-            href={`/admin/campaigns/${campaign.id}`}
-            className="glass-card glass-card-hover p-6 rounded-[2rem] group flex items-center justify-between gap-6"
+            href="/admin/campaigns/new"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-[11px] font-medium uppercase tracking-[0.1em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] rounded-full"
           >
-            <div className="flex items-center gap-5">
-              <div className="w-12 h-12 rounded-2xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner group-hover:bg-[#040026] group-hover:border-[#040026] transition-all shrink-0">
-                <FolderKanban className="w-5 h-5 text-[#040026] group-hover:text-[#EBCB4B] transition-colors" />
+            <Plus className="w-3.5 h-3.5" /> Start Wizard
+          </Link>
+        </div>
+      )}
+
+      {(campaigns.data ?? []).length > 0 && (
+        <section>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+              Actieve campaigns
+            </span>
+            <span className="flex-1 h-px bg-[var(--color-border)]" />
+          </div>
+          {(campaigns.data ?? []).map((campaign) => (
+            <Link
+              key={campaign.id}
+              href={`/admin/campaigns/${campaign.id}`}
+              className="flex items-center gap-5 py-4 border-b border-[var(--color-surface-2)] hover:pl-2 transition-all group"
+            >
+              <div className="w-10 h-10 rounded-[8px] bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center shrink-0 group-hover:bg-[var(--color-ink)] group-hover:border-[var(--color-ink)] transition-all">
+                <FolderKanban className="w-4 h-4 text-[var(--color-ink)] group-hover:text-[var(--color-gold)] transition-colors" />
               </div>
-              <div>
-                <p className="text-base font-black text-[#040026] tracking-tight">
+              <div className="flex-1 min-w-0">
+                <span className="text-[15px] font-medium text-[var(--color-ink)]">
                   {campaign.name}
-                </p>
+                </span>
                 {campaign.nicheKey && (
-                  <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                  <p className="text-[11px] font-light text-[var(--color-muted)] mt-0.5">
                     {campaign.nicheKey}
                   </p>
                 )}
               </div>
-            </div>
-            <div className="flex items-center gap-5 shrink-0">
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+              <span className="text-[11px] font-light text-[var(--color-muted)]">
                 {campaign._count.campaignProspects}{' '}
                 {campaign._count.campaignProspects === 1
                   ? 'company'
                   : 'companies'}
               </span>
-              <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#040026] transition-colors" />
-            </div>
-          </Link>
-        ))}
-      </div>
+              <span className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-muted)] group-hover:bg-[var(--color-ink)] group-hover:text-[var(--color-gold)] group-hover:border-[var(--color-ink)] transition-all shrink-0 text-[12px]">
+                →
+              </span>
+            </Link>
+          ))}
+        </section>
+      )}
     </div>
   );
 }
