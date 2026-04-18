@@ -1037,7 +1037,7 @@ export default function NewCampaignWizardPage() {
     return (
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center justify-between gap-4">
-          <h1 className="text-3xl font-black text-brand-indigo tracking-tighter">
+          <h1 className="font-['Sora'] text-[28px] font-bold tracking-[-0.025em] text-[var(--color-ink)]">
             Campaign not found
           </h1>
           <Link href="/admin/campaigns" className="admin-btn-secondary">
@@ -1058,25 +1058,22 @@ export default function NewCampaignWizardPage() {
     <div className="max-w-5xl mx-auto space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black text-brand-indigo tracking-tighter">
+          <h1 className="font-['Sora'] text-[32px] font-bold tracking-[-0.025em] text-[var(--color-ink)]">
             {isExistingCampaignMode ? 'Prospects toevoegen' : 'Nieuwe Campaign'}
           </h1>
-          <p className="text-sm font-bold text-slate-400 mt-2">
+          <p className="text-sm font-bold text-[var(--color-muted)] mt-2">
             {isExistingCampaignMode
               ? `Zoek en koppel prospects aan ${existingCampaignQuery.data?.name}.`
               : 'Kies doelgroep, haal prospects op en maak direct een werkende campaign.'}
           </p>
           {isExistingCampaignMode && atlantisPreset && (
-            <p className="text-xs font-bold text-slate-500 mt-1">
+            <p className="text-xs font-bold text-[var(--color-muted-dark)] mt-1">
               SPV preset geladen: {atlantisPreset.label} •{' '}
               {atlantisPreset.sector} • {atlantisPreset.countryValue}
             </p>
           )}
         </div>
-        <Link
-          href="/admin/campaigns"
-          className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-brand-indigo hover:bg-slate-100 border border-slate-100"
-        >
+        <Link href="/admin/campaigns" className="admin-btn-secondary">
           <ArrowLeft className="w-3.5 h-3.5" />
           Terug
         </Link>
@@ -1088,26 +1085,28 @@ export default function NewCampaignWizardPage() {
             <div key={item.id} className="flex items-center gap-2">
               <div
                 className={cn(
-                  'w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border',
+                  'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border',
                   step > item.id
-                    ? 'bg-white text-brand-yellow border-brand-yellow/70'
+                    ? 'bg-[var(--color-surface)] text-[var(--color-gold)] border-[var(--color-gold)]'
                     : step === item.id
-                      ? 'bg-brand-indigo text-brand-yellow border-brand-yellow/70'
-                      : 'bg-white text-brand-yellow/60 border-brand-yellow/40',
+                      ? 'bg-[var(--color-ink)] text-[var(--color-gold)] border-[var(--color-gold)]'
+                      : 'bg-[var(--color-surface)] text-[var(--color-muted)] border-[var(--color-border)]',
                 )}
               >
                 {step > item.id ? <Check className="w-4 h-4" /> : item.id + 1}
               </div>
               <span
                 className={cn(
-                  'text-xs font-black uppercase tracking-widest',
-                  step >= item.id ? 'text-brand-indigo' : 'text-slate-400',
+                  'text-xs font-bold uppercase tracking-[0.14em]',
+                  step >= item.id
+                    ? 'text-[var(--color-ink)]'
+                    : 'text-[var(--color-muted)]',
                 )}
               >
                 {item.label}
               </span>
               {item.id < STEPS.length - 1 && (
-                <div className="w-8 h-px bg-slate-200 mx-1" />
+                <div className="w-8 h-px bg-[var(--color-border)] mx-1" />
               )}
             </div>
           ))}
@@ -1116,11 +1115,9 @@ export default function NewCampaignWizardPage() {
         {step === 0 && (
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                Campaign naam
-              </label>
+              <label className="admin-eyebrow">Campaign naam</label>
               {isExistingCampaignMode ? (
-                <div className="w-full px-5 py-3.5 rounded-2xl border border-slate-100 bg-slate-100/60 text-sm font-bold text-brand-indigo">
+                <div className="w-full px-5 py-3.5 input-minimal text-sm font-bold bg-[var(--color-surface-2)]">
                   {effectiveCampaignName}
                 </div>
               ) : (
@@ -1131,11 +1128,11 @@ export default function NewCampaignWizardPage() {
                     setCampaignName(event.target.value);
                   }}
                   placeholder="Voorjaar doelgroep run"
-                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-brand-indigo focus:outline-none focus:ring-4 focus:ring-brand-yellow/10 focus:border-brand-yellow transition-all"
+                  className="w-full px-5 py-3.5 input-minimal text-sm font-bold"
                 />
               )}
               {isExistingCampaignMode && (
-                <p className="text-xs font-semibold text-slate-500">
+                <p className="text-xs font-semibold text-[var(--color-muted-dark)]">
                   Bestaande campaign modus: er wordt geen nieuwe campaign
                   aangemaakt.
                 </p>
@@ -1143,9 +1140,7 @@ export default function NewCampaignWizardPage() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                Doel
-              </p>
+              <p className="admin-eyebrow">Doel</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {sortedUseCases.map((item) => (
                   <ChoiceCard
@@ -1160,9 +1155,7 @@ export default function NewCampaignWizardPage() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                Beslisser Persona
-              </p>
+              <p className="admin-eyebrow">Beslisser Persona</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {sortedPersonaPresets.map((item) => (
                   <ChoiceCard
@@ -1178,15 +1171,13 @@ export default function NewCampaignWizardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Sector
-                </label>
+                <label className="admin-eyebrow">Sector</label>
                 <select
                   value={sector}
                   onChange={(event) =>
                     setSector(event.target.value as (typeof SECTORS)[number])
                   }
-                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-brand-indigo focus:outline-none focus:ring-4 focus:ring-brand-yellow/10 focus:border-brand-yellow transition-all"
+                  className="w-full px-5 py-3.5 input-minimal text-sm font-bold"
                 >
                   {sortedSectors.map((value) => (
                     <option key={value} value={value}>
@@ -1197,13 +1188,11 @@ export default function NewCampaignWizardPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Land
-                </label>
+                <label className="admin-eyebrow">Land</label>
                 <select
                   value={countryValue}
                   onChange={(event) => setCountryValue(event.target.value)}
-                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-brand-indigo focus:outline-none focus:ring-4 focus:ring-brand-yellow/10 focus:border-brand-yellow transition-all"
+                  className="w-full px-5 py-3.5 input-minimal text-sm font-bold"
                 >
                   {sortedCountryOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -1214,9 +1203,7 @@ export default function NewCampaignWizardPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Bedrijfsgrootte
-                </label>
+                <label className="admin-eyebrow">Bedrijfsgrootte</label>
                 <select
                   value={companySizeId}
                   onChange={(event) =>
@@ -1225,7 +1212,7 @@ export default function NewCampaignWizardPage() {
                         .value as (typeof COMPANY_SIZE_PRESETS)[number]['id'],
                     )
                   }
-                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-brand-indigo focus:outline-none focus:ring-4 focus:ring-brand-yellow/10 focus:border-brand-yellow transition-all"
+                  className="w-full px-5 py-3.5 input-minimal text-sm font-bold"
                 >
                   {COMPANY_SIZE_PRESETS.map((value) => (
                     <option key={value.id} value={value.id}>
@@ -1236,44 +1223,38 @@ export default function NewCampaignWizardPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-brand-yellow/40 bg-slate-50/70 p-4 space-y-3">
+            <div className="rounded-[var(--radius-md)] border border-[var(--color-gold)]/40 bg-[var(--color-surface-2)] p-4 space-y-3">
               <div className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-lg bg-white border border-brand-yellow/40 flex items-center justify-center shrink-0">
-                  <WandSparkles className="w-3.5 h-3.5 text-brand-indigo" />
+                <div className="w-7 h-7 rounded-[var(--radius-sm)] bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center shrink-0">
+                  <WandSparkles className="w-3.5 h-3.5 text-[var(--color-ink)]" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Doel
-                  </p>
-                  <p className="text-xs font-semibold text-slate-600 mt-0.5">
+                  <p className="admin-eyebrow">Doel</p>
+                  <p className="text-xs font-semibold text-[var(--color-muted-dark)] mt-0.5">
                     {getUseCaseLabel(selectedUseCase.id)}:{' '}
                     {getUseCaseStrategyNote(selectedUseCase.id)}.
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-lg bg-white border border-brand-yellow/40 flex items-center justify-center shrink-0">
-                  <Building2 className="w-3.5 h-3.5 text-brand-indigo" />
+                <div className="w-7 h-7 rounded-[var(--radius-sm)] bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center shrink-0">
+                  <Building2 className="w-3.5 h-3.5 text-[var(--color-ink)]" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Beslisser Persona
-                  </p>
-                  <p className="text-xs font-semibold text-slate-600 mt-0.5">
+                  <p className="admin-eyebrow">Beslisser Persona</p>
+                  <p className="text-xs font-semibold text-[var(--color-muted-dark)] mt-0.5">
                     We zoeken op {selectedPersona.label}.{' '}
                     {personaSearchConfig.note}.
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-lg bg-white border border-brand-yellow/40 flex items-center justify-center shrink-0">
-                  <Search className="w-3.5 h-3.5 text-brand-indigo" />
+                <div className="w-7 h-7 rounded-[var(--radius-sm)] bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center shrink-0">
+                  <Search className="w-3.5 h-3.5 text-[var(--color-ink)]" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Zoekrun
-                  </p>
-                  <p className="text-xs font-semibold text-slate-600 mt-0.5">
+                  <p className="admin-eyebrow">Zoekrun</p>
+                  <p className="text-xs font-semibold text-[var(--color-muted-dark)] mt-0.5">
                     Sector {sector} in {selectedCountry.label}, grootte{' '}
                     {selectedSize.label.toLowerCase()}.
                   </p>
@@ -1287,24 +1268,22 @@ export default function NewCampaignWizardPage() {
           <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Prospect zoekrun
-                </p>
-                <p className="text-xs font-semibold text-slate-500 mt-1">
+                <p className="admin-eyebrow">Prospect zoekrun</p>
+                <p className="text-xs font-semibold text-[var(--color-muted-dark)] mt-1">
                   Filter: {sector} in {selectedCountry.label},{' '}
                   {selectedSize.label.toLowerCase()}
                 </p>
-                <p className="text-xs font-semibold text-slate-500 mt-1">
+                <p className="text-xs font-semibold text-[var(--color-muted-dark)] mt-1">
                   Persona check: {selectedPersona.label}
                 </p>
-                <p className="text-xs font-semibold text-slate-500 mt-1">
+                <p className="text-xs font-semibold text-[var(--color-muted-dark)] mt-1">
                   Persona-config: {personaSearchConfig.note}
                 </p>
               </div>
               <button
                 onClick={handleSearch}
                 disabled={isSearching}
-                className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 btn-pill-primary border-brand-yellow/60 text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
+                className="admin-btn-primary disabled:opacity-50"
               >
                 {isSearching ? (
                   <>
@@ -1325,7 +1304,7 @@ export default function NewCampaignWizardPage() {
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-black text-amber-900">
+                    <p className="text-sm font-bold text-amber-900">
                       {guardrail.title}
                     </p>
                     <p className="text-xs font-bold text-amber-800 mt-1">
@@ -1354,7 +1333,7 @@ export default function NewCampaignWizardPage() {
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-black text-amber-900">
+                    <p className="text-sm font-bold text-amber-900">
                       {personaGuardrail.title}
                     </p>
                     <p className="text-xs font-bold text-amber-800 mt-1">
@@ -1372,24 +1351,24 @@ export default function NewCampaignWizardPage() {
 
             {hasSearched && (
               <>
-                <div className="space-y-3 p-4 rounded-2xl border border-slate-100 bg-slate-50/60">
+                <div className="space-y-3 p-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-2)]">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <label className="flex items-center gap-3 text-[10px] font-black text-slate-500 uppercase tracking-widest cursor-pointer">
+                    <label className="flex items-center gap-3 admin-eyebrow cursor-pointer">
                       <input
                         type="checkbox"
                         checked={allVisibleSelected}
                         onChange={toggleAllVisible}
-                        className="w-4 h-4 rounded accent-brand-indigo"
+                        className="w-4 h-4 rounded accent-[var(--color-ink)]"
                       />
                       {selectedDomains.size} geselecteerd van{' '}
                       {visibleResults.length}
                     </label>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <p className="admin-eyebrow text-[var(--color-muted)]">
                       Geen mail wordt nu verstuurd
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest cursor-pointer">
+                    <label className="flex items-center gap-2 admin-eyebrow cursor-pointer">
                       <input
                         type="checkbox"
                         checked={showOnlyPersonaMatches}
@@ -1397,20 +1376,18 @@ export default function NewCampaignWizardPage() {
                           setShowOnlyPersonaMatches(event.target.checked)
                         }
                         disabled={personaMatchDomains.size === 0}
-                        className="w-4 h-4 rounded accent-brand-indigo disabled:opacity-40"
+                        className="w-4 h-4 rounded accent-[var(--color-ink)] disabled:opacity-40"
                       />
                       Alleen decision-maker matches
                     </label>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    <p className="admin-eyebrow text-[var(--color-muted-dark)]">
                       {personaMatchDomains.size} van {results.length} bedrijven
                       met beslisser
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                      Match bron
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    <p className="admin-eyebrow">Match bron</p>
+                    <p className="admin-eyebrow text-[var(--color-muted-dark)]">
                       {personaMatchSource === 'real'
                         ? 'Apollo contacts'
                         : personaMatchSource === 'mock'
@@ -1419,7 +1396,7 @@ export default function NewCampaignWizardPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest cursor-pointer">
+                    <label className="flex items-center gap-2 admin-eyebrow cursor-pointer">
                       <input
                         type="checkbox"
                         checked={showRecommendedFirst}
@@ -1427,11 +1404,11 @@ export default function NewCampaignWizardPage() {
                           setShowRecommendedFirst(event.target.checked)
                         }
                         disabled={personaMatchDomains.size === 0}
-                        className="w-4 h-4 rounded accent-brand-indigo disabled:opacity-40"
+                        className="w-4 h-4 rounded accent-[var(--color-ink)] disabled:opacity-40"
                       />
                       Recommended eerst
                     </label>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    <p className="admin-eyebrow text-[var(--color-muted-dark)]">
                       Recommended: {personaMatchDomains.size}
                     </p>
                   </div>
@@ -1439,11 +1416,11 @@ export default function NewCampaignWizardPage() {
 
                 {visibleResults.length === 0 ? (
                   <div className="glass-card p-16 text-center rounded-[2rem]">
-                    <Building2 className="w-10 h-10 text-slate-200 mx-auto mb-4" />
-                    <p className="text-sm font-black text-brand-indigo">
+                    <Building2 className="w-10 h-10 text-[var(--color-border-strong)] mx-auto mb-4" />
+                    <p className="text-sm font-bold text-[var(--color-ink)]">
                       Geen resultaten gevonden
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-[var(--color-muted-dark)] mt-1">
                       Pas sector of land aan en probeer opnieuw.
                     </p>
                   </div>
@@ -1461,8 +1438,8 @@ export default function NewCampaignWizardPage() {
                         className={cn(
                           'w-full text-left p-4 rounded-2xl border transition-all',
                           selectedDomains.has(company.domain)
-                            ? 'border-brand-indigo bg-brand-indigo/[0.03]'
-                            : 'border-slate-100 bg-slate-50/40 hover:bg-slate-50',
+                            ? 'border-[var(--color-ink)] bg-[var(--color-ink)]/[0.03]'
+                            : 'border-[var(--color-border)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)]',
                         )}
                       >
                         <div className="flex items-center gap-4">
@@ -1470,9 +1447,9 @@ export default function NewCampaignWizardPage() {
                             type="checkbox"
                             readOnly
                             checked={selectedDomains.has(company.domain)}
-                            className="w-4 h-4 rounded accent-brand-indigo"
+                            className="w-4 h-4 rounded accent-[var(--color-ink)]"
                           />
-                          <div className="w-10 h-10 rounded-xl border border-slate-100 bg-white flex items-center justify-center overflow-hidden shrink-0">
+                          <div className="w-10 h-10 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] flex items-center justify-center overflow-hidden shrink-0">
                             {company.logoUrl ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
@@ -1481,25 +1458,25 @@ export default function NewCampaignWizardPage() {
                                 className="w-6 h-6 object-contain"
                               />
                             ) : (
-                              <Building2 className="w-4 h-4 text-slate-300" />
+                              <Building2 className="w-4 h-4 text-[var(--color-border-strong)]" />
                             )}
                           </div>
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-black text-brand-indigo truncate">
+                              <p className="text-sm font-bold text-[var(--color-ink)] truncate">
                                 {company.companyName ?? company.domain}
                               </p>
                               {personaMatchDomains.has(
                                 normalizeDomain(company.domain),
                               ) && (
-                                <span className="text-[9px] font-black px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 uppercase tracking-widest">
+                                <span className="admin-state-pill admin-state-success text-[9px]">
                                   {personaMatchSource === 'mock'
                                     ? 'Recommended (mock)'
                                     : 'Recommended'}
                                 </span>
                               )}
                             </div>
-                            <p className="text-[11px] text-slate-500 font-semibold truncate">
+                            <p className="text-[11px] text-[var(--color-muted-dark)] font-semibold truncate">
                               {company.domain}
                               {company.industry ? ` • ${company.industry}` : ''}
                               {company.employeeRange
@@ -1521,15 +1498,13 @@ export default function NewCampaignWizardPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Taal
-                </label>
+                <label className="admin-eyebrow">Taal</label>
                 <select
                   value={language}
                   onChange={(event) =>
                     setLanguage(event.target.value as 'nl' | 'en')
                   }
-                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-brand-indigo focus:outline-none focus:ring-4 focus:ring-brand-yellow/10 focus:border-brand-yellow transition-all"
+                  className="w-full px-5 py-3.5 input-minimal text-sm font-bold"
                 >
                   <option value="nl">Nederlands</option>
                   <option value="en">English</option>
@@ -1537,9 +1512,7 @@ export default function NewCampaignWizardPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Schrijfstijl
-                </label>
+                <label className="admin-eyebrow">Schrijfstijl</label>
                 <select
                   value={effectiveToneId}
                   onChange={(event) => {
@@ -1548,7 +1521,7 @@ export default function NewCampaignWizardPage() {
                       event.target.value as (typeof TONE_PRESETS)[number]['id'],
                     );
                   }}
-                  className="w-full px-5 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-brand-indigo focus:outline-none focus:ring-4 focus:ring-brand-yellow/10 focus:border-brand-yellow transition-all"
+                  className="w-full px-5 py-3.5 input-minimal text-sm font-bold"
                 >
                   {sortedTonePresets.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -1559,14 +1532,14 @@ export default function NewCampaignWizardPage() {
               </div>
             </div>
 
-            <label className="flex items-center justify-between gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50/50 cursor-pointer">
+            <label className="flex items-center justify-between gap-3 p-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-2)] cursor-pointer">
               <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-brand-indigo" />
+                <Shield className="w-4 h-4 text-[var(--color-ink)]" />
                 <div>
-                  <p className="text-sm font-bold text-brand-indigo">
+                  <p className="text-sm font-bold text-[var(--color-ink)]">
                     Kwaliteitscheck verplicht
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-[var(--color-muted)]">
                     Alleen acties toestaan als research sterk genoeg is.
                   </p>
                 </div>
@@ -1575,7 +1548,7 @@ export default function NewCampaignWizardPage() {
                 type="checkbox"
                 checked={strictGate}
                 onChange={(event) => setStrictGate(event.target.checked)}
-                className="h-4 w-4 accent-brand-indigo"
+                className="h-4 w-4 accent-[var(--color-ink)]"
               />
             </label>
           </div>
@@ -1583,11 +1556,9 @@ export default function NewCampaignWizardPage() {
 
         {step === 3 && (
           <div className="space-y-5">
-            <div className="flex items-center gap-2 text-brand-indigo">
+            <div className="flex items-center gap-2 text-[var(--color-ink)]">
               <WandSparkles className="w-4 h-4" />
-              <p className="text-xs font-black uppercase tracking-widest text-slate-400">
-                Controle
-              </p>
+              <p className="admin-eyebrow">Controle</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1627,14 +1598,14 @@ export default function NewCampaignWizardPage() {
               />
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-              <p className="text-xs font-semibold text-slate-600">
+            <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
+              <p className="text-xs font-semibold text-[var(--color-muted-dark)]">
                 {isExistingCampaignMode
                   ? 'Bij bevestigen worden geselecteerde bedrijven geimporteerd als prospects en gekoppeld aan deze bestaande campaign. Er worden nog geen e-mails verstuurd.'
                   : 'Bij aanmaken gebeurt het volgende: campaign wordt opgeslagen, geselecteerde bedrijven worden geimporteerd als prospects en direct gekoppeld aan deze campaign. Er worden nog geen e-mails verstuurd.'}
               </p>
               {runSummary && (
-                <p className="text-xs font-bold text-brand-indigo mt-3">
+                <p className="text-xs font-bold text-[var(--color-ink)] mt-3">
                   {runSummary}
                 </p>
               )}
@@ -1642,13 +1613,13 @@ export default function NewCampaignWizardPage() {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-between pt-4 border-t border-[var(--color-border)]">
           <button
             onClick={() =>
               setStep((current) => Math.max(0, current - 1) as WizardStepId)
             }
             disabled={step === 0 || isSubmitting}
-            className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-slate-50 text-slate-500 hover:text-brand-indigo hover:bg-slate-100 border border-slate-100 disabled:opacity-40"
+            className="admin-btn-secondary disabled:opacity-40"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Vorige
@@ -1663,7 +1634,7 @@ export default function NewCampaignWizardPage() {
                 )
               }
               disabled={!canGoNext || isSubmitting}
-              className="ui-tap inline-flex items-center gap-2 px-6 py-3 btn-pill-primary border-brand-yellow/60 text-xs font-black uppercase tracking-widest disabled:opacity-40"
+              className="admin-btn-primary disabled:opacity-40"
             >
               Volgende
               <ArrowRight className="w-4 h-4" />
@@ -1676,7 +1647,7 @@ export default function NewCampaignWizardPage() {
                 (!isExistingCampaignMode &&
                   effectiveCampaignName.trim().length < 3)
               }
-              className="ui-tap inline-flex items-center gap-2 px-6 py-3 btn-pill-primary border-brand-yellow/60 text-xs font-black uppercase tracking-widest disabled:opacity-40"
+              className="admin-btn-primary disabled:opacity-40"
             >
               {isSubmitting ? (
                 <>
@@ -1716,25 +1687,25 @@ function ChoiceCard({
       className={cn(
         'text-left rounded-2xl border p-4 transition-all',
         active
-          ? 'border-brand-yellow-dark bg-brand-yellow'
-          : 'border-brand-yellow/40 bg-slate-50/50 hover:bg-slate-50',
+          ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/10 ring-1 ring-[var(--color-gold)]'
+          : 'border-[var(--color-border)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)]',
       )}
     >
-      <p className="text-sm font-black text-brand-indigo tracking-tight">
+      <p className="text-sm font-bold text-[var(--color-ink)] tracking-tight">
         {title}
       </p>
-      <p className="text-xs font-semibold text-slate-500 mt-1">{description}</p>
+      <p className="text-xs font-semibold text-[var(--color-muted-dark)] mt-1">
+        {description}
+      </p>
     </button>
   );
 }
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-brand-yellow/35 bg-slate-50/60 p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-        {label}
-      </p>
-      <p className="text-sm font-bold text-brand-indigo mt-1">{value}</p>
+    <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
+      <p className="admin-eyebrow">{label}</p>
+      <p className="text-sm font-bold text-[var(--color-ink)] mt-1">{value}</p>
     </div>
   );
 }

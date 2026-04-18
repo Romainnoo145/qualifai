@@ -1,16 +1,14 @@
 'use client';
 
 import { api } from '@/components/providers';
-import {
-  CreditCard,
-  Building2,
-  Users,
-  Zap,
-  Download,
-  Loader2,
-} from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { useState } from 'react';
-import { ADMIN_TOKEN_STORAGE_KEY, normalizeAdminToken } from '@/lib/admin-token';
+import {
+  ADMIN_TOKEN_STORAGE_KEY,
+  normalizeAdminToken,
+} from '@/lib/admin-token';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatCard } from '@/components/ui/stat-card';
 
 export default function SettingsPage() {
   const stats = api.admin.getDashboardStats.useQuery();
@@ -66,65 +64,30 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-10">
-      <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
-        Settings
-      </h1>
+      <PageHeader title="Settings" />
 
       {/* Credit usage */}
       <div className="glass-card p-10 rounded-[2.5rem]">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 ml-1">
-          Usage Overview
-        </h2>
+        <h2 className="admin-eyebrow mb-8 ml-1">Usage Overview</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-8 bg-[#FCFCFD] rounded-3xl border border-slate-100 flex flex-col items-center justify-center space-y-3 shadow-inner">
-            <CreditCard className="w-5 h-5 text-slate-200" />
-            <p className="text-3xl font-black text-[#040026] tracking-tighter">
-              {stats.data?.creditsUsed ?? 0}
-            </p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Credits Used
-            </p>
-          </div>
-          <div className="p-8 bg-[#FCFCFD] rounded-3xl border border-slate-100 flex flex-col items-center justify-center space-y-3 shadow-inner">
-            <Building2 className="w-5 h-5 text-slate-200" />
-            <p className="text-3xl font-black text-[#040026] tracking-tighter">
-              {stats.data?.total ?? 0}
-            </p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Companies
-            </p>
-          </div>
-          <div className="p-8 bg-[#FCFCFD] rounded-3xl border border-slate-100 flex flex-col items-center justify-center space-y-3 shadow-inner">
-            <Users className="w-5 h-5 text-slate-200" />
-            <p className="text-3xl font-black text-[#040026] tracking-tighter">
-              {stats.data?.totalContacts ?? 0}
-            </p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Contacts
-            </p>
-          </div>
-          <div className="p-8 bg-[#FCFCFD] rounded-3xl border border-slate-100 flex flex-col items-center justify-center space-y-3 shadow-inner">
-            <Zap className="w-5 h-5 text-slate-200" />
-            <p className="text-3xl font-black text-[#040026] tracking-tighter">
-              {stats.data?.totalSignals ?? 0}
-            </p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Signals
-            </p>
-          </div>
+          <StatCard
+            eyebrow="Credits Used"
+            value={stats.data?.creditsUsed ?? 0}
+          />
+          <StatCard eyebrow="Companies" value={stats.data?.total ?? 0} />
+          <StatCard eyebrow="Contacts" value={stats.data?.totalContacts ?? 0} />
+          <StatCard eyebrow="Signals" value={stats.data?.totalSignals ?? 0} />
         </div>
       </div>
 
       {/* Data Export */}
       <div className="glass-card p-10 rounded-[2.5rem]">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 ml-1">
-          Data Export
-        </h2>
+        <h2 className="admin-eyebrow mb-8 ml-1">Data Export</h2>
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <button
             onClick={() => void downloadExport('companies')}
             disabled={exporting !== null}
-            className="flex items-center justify-center gap-3 px-8 py-4 btn-pill-secondary text-xs w-full sm:w-auto font-black uppercase tracking-widest disabled:opacity-50"
+            className="admin-btn-secondary w-full sm:w-auto disabled:opacity-50"
           >
             {exporting === 'companies' ? (
               <Loader2 className="w-4 h-4 opacity-50 animate-spin" />
@@ -136,7 +99,7 @@ export default function SettingsPage() {
           <button
             onClick={() => void downloadExport('contacts')}
             disabled={exporting !== null}
-            className="flex items-center justify-center gap-3 px-8 py-4 btn-pill-secondary text-xs w-full sm:w-auto font-black uppercase tracking-widest disabled:opacity-50"
+            className="admin-btn-secondary w-full sm:w-auto disabled:opacity-50"
           >
             {exporting === 'contacts' ? (
               <Loader2 className="w-4 h-4 opacity-50 animate-spin" />
@@ -147,54 +110,46 @@ export default function SettingsPage() {
           </button>
         </div>
         {exportError && (
-          <p className="text-xs font-bold text-red-500 mt-4 ml-1">
+          <p className="text-xs font-bold text-[var(--color-brand-danger)] mt-4 ml-1">
             {exportError}
           </p>
         )}
-        <p className="text-[10px] font-bold text-slate-300 mt-6 leading-relaxed max-w-sm ml-1">
+        <p className="admin-meta-text mt-6 leading-relaxed max-w-sm ml-1">
           Export enriched company and contact data as CSV.
         </p>
       </div>
 
       {/* Account info */}
       <div className="glass-card p-10 rounded-[2.5rem]">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-8 ml-1">
-          System Info
-        </h2>
+        <h2 className="admin-eyebrow mb-8 ml-1">System Info</h2>
         <div className="space-y-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-slate-50">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Platform
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-[var(--color-border)]">
+            <span className="admin-eyebrow">Platform</span>
+            <span className="text-sm font-bold text-[var(--color-ink)]">
+              Qualifai
             </span>
-            <span className="text-sm font-black text-[#040026]">Qualifai</span>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-slate-50">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Enrichment
-            </span>
-            <span className="text-sm font-black text-[#040026]">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-[var(--color-border)]">
+            <span className="admin-eyebrow">Enrichment</span>
+            <span className="text-sm font-bold text-[var(--color-ink)]">
               Apollo Enrichment API
             </span>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-slate-50">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              AI Model
-            </span>
-            <span className="text-sm font-black text-[#040026]">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-[var(--color-border)]">
+            <span className="admin-eyebrow">AI Model</span>
+            <span className="text-sm font-bold text-[var(--color-ink)]">
               Claude 3.5 Sonnet (Anthropic)
             </span>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-slate-50">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Email Delivery
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4 border-b border-[var(--color-border)]">
+            <span className="admin-eyebrow">Email Delivery</span>
+            <span className="text-sm font-bold text-[var(--color-ink)]">
+              Resend
             </span>
-            <span className="text-sm font-black text-[#040026]">Resend</span>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-4">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Scheduling
-            </span>
-            <span className="text-sm font-black text-[#040026]">
+            <span className="admin-eyebrow">Scheduling</span>
+            <span className="text-sm font-bold text-[var(--color-ink)]">
               {process.env.NEXT_PUBLIC_CALCOM_BOOKING_URL
                 ? 'Cal.com Link Active'
                 : 'Not configured'}
