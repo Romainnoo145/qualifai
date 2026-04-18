@@ -411,11 +411,12 @@ function AllCompanies() {
 }
 
 function CompanySearch({ onImported }: { onImported: () => void }) {
-  const [name, setName] = useState('');
-  const [domain, setDomain] = useState('');
+  const [query, setQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [industry, setIndustry] = useState('');
   const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
+  const [teamSize, setTeamSize] = useState('');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [results, setResults] = useState<any[] | null>(null);
   const [guardrail, setGuardrail] = useState<SearchGuardrail | null>(null);
@@ -444,12 +445,21 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    const q = query.trim();
+    const isDomain = q.includes('.');
+    const parsedSize = teamSize.match(/(\d+)\s*[-–]\s*(\d+)/);
     search.mutate({
-      companyName: name || undefined,
-      domain: domain || undefined,
+      companyName: !isDomain && q ? q : undefined,
+      domain: isDomain ? q : undefined,
       industries: industry ? [industry] : undefined,
       countries: country ? [country] : undefined,
       cities: city ? [city] : undefined,
+      ...(parsedSize
+        ? {
+            employeesMin: parseInt(parsedSize[1] ?? '0'),
+            employeesMax: parseInt(parsedSize[2] ?? '100'),
+          }
+        : {}),
     });
   };
 
@@ -486,90 +496,96 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
   };
 
   return (
-    <div className="space-y-8">
-      <form onSubmit={handleSearch} className="space-y-5">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
-            Zoeken
-          </span>
-          <span className="flex-1 h-px bg-[var(--color-border)]" />
+    <div className="space-y-6">
+      <form onSubmit={handleSearch} className="space-y-4">
+        {/* Search bar */}
+        <div className="flex items-center gap-3 px-4 py-3 border border-[var(--color-border)] rounded-lg focus-within:border-[var(--color-ink)] transition-colors">
+          <Search className="w-4 h-4 text-[var(--color-muted)] shrink-0" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Zoek op bedrijfsnaam of domein..."
+            className="flex-1 text-[14px] font-light text-[var(--color-ink)] bg-transparent border-none outline-none placeholder:text-[var(--color-border-strong)]"
+          />
+          <button
+            type="button"
+            onClick={() => setShowFilters(!showFilters)}
+            className={cn(
+              'text-[10px] font-medium uppercase tracking-[0.08em] px-3 py-1.5 rounded border transition-all',
+              showFilters
+                ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
+            )}
+          >
+            {showFilters ? '- Filters' : '+ Filters'}
+          </button>
+          <button
+            type="submit"
+            disabled={search.isPending}
+            className="inline-flex items-center gap-2 px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] bg-[var(--color-ink)] text-white rounded-md"
+          >
+            {search.isPending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              'Zoeken'
+            )}
+          </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
-              Bedrijf
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Stripe, OpenAI"
-              className="input-minimal w-full px-3 py-2.5 rounded-md"
-            />
+
+        {/* Expandable filters */}
+        {showFilters && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pb-4 border-b border-[var(--color-surface-2)]">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                Sector
+              </label>
+              <input
+                type="text"
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+                placeholder="b.v. marketingbureaus"
+                className="input-minimal w-full px-3 py-2 rounded-md text-[13px]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                Locatie
+              </label>
+              <input
+                type="text"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="b.v. Amsterdam"
+                className="input-minimal w-full px-3 py-2 rounded-md text-[13px]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                Land
+              </label>
+              <input
+                type="text"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="b.v. Netherlands"
+                className="input-minimal w-full px-3 py-2 rounded-md text-[13px]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                Team grootte
+              </label>
+              <input
+                type="text"
+                value={teamSize}
+                onChange={(e) => setTeamSize(e.target.value)}
+                placeholder="b.v. 5-50"
+                className="input-minimal w-full px-3 py-2 rounded-md text-[13px]"
+              />
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
-              Domein
-            </label>
-            <input
-              type="text"
-              value={domain}
-              onChange={(e) => setDomain(e.target.value)}
-              placeholder="e.g. stripe.com"
-              className="input-minimal w-full px-3 py-2.5 rounded-md"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
-              Sector
-            </label>
-            <input
-              type="text"
-              value={industry}
-              onChange={(e) => setIndustry(e.target.value)}
-              placeholder="b.v. marketingbureaus"
-              className="input-minimal w-full px-3 py-2.5 rounded-md"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
-              Locatie
-            </label>
-            <input
-              type="text"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="b.v. Amsterdam"
-              className="input-minimal w-full px-3 py-2.5 rounded-md"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
-              Land
-            </label>
-            <input
-              type="text"
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              placeholder="e.g. Netherlands"
-              className="input-minimal w-full px-3 py-2.5 rounded-md"
-            />
-          </div>
-          <div className="flex items-end">
-            <button
-              type="submit"
-              disabled={search.isPending}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] bg-[var(--color-ink)] text-white border-none rounded-md w-full justify-center"
-            >
-              {search.isPending ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Search className="w-3.5 h-3.5" />
-              )}
-              Zoeken
-            </button>
-          </div>
-        </div>
+        )}
       </form>
 
       {results !== null && (
@@ -722,7 +738,8 @@ function CompanySearch({ onImported }: { onImported: () => void }) {
 }
 
 function ContactSearch() {
-  const [jobTitle, setJobTitle] = useState('');
+  const [query, setQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [seniority, setSeniority] = useState('');
   const [department, setDepartment] = useState('');
   const [companyDomain, setCompanyDomain] = useState('');
@@ -742,7 +759,7 @@ function ContactSearch() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     search.mutate({
-      jobTitles: jobTitle ? [jobTitle] : undefined,
+      jobTitles: query.trim() ? [query.trim()] : undefined,
       seniorities: seniority ? [seniority] : undefined,
       departments: department ? [department] : undefined,
       companyDomains: companyDomain ? [companyDomain] : undefined,
@@ -750,83 +767,89 @@ function ContactSearch() {
   };
 
   return (
-    <div className="space-y-8">
-      <form onSubmit={handleSearch} className="space-y-5">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
-            Zoeken
-          </span>
-          <span className="flex-1 h-px bg-[var(--color-border)]" />
+    <div className="space-y-6">
+      <form onSubmit={handleSearch} className="space-y-4">
+        {/* Search bar */}
+        <div className="flex items-center gap-3 px-4 py-3 border border-[var(--color-border)] rounded-lg focus-within:border-[var(--color-ink)] transition-colors">
+          <Users className="w-4 h-4 text-[var(--color-muted)] shrink-0" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Zoek op functietitel..."
+            className="flex-1 text-[14px] font-light text-[var(--color-ink)] bg-transparent border-none outline-none placeholder:text-[var(--color-border-strong)]"
+          />
+          <button
+            type="button"
+            onClick={() => setShowFilters(!showFilters)}
+            className={cn(
+              'text-[10px] font-medium uppercase tracking-[0.08em] px-3 py-1.5 rounded border transition-all',
+              showFilters
+                ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
+            )}
+          >
+            {showFilters ? '- Filters' : '+ Filters'}
+          </button>
+          <button
+            type="submit"
+            disabled={search.isPending}
+            className="inline-flex items-center gap-2 px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] bg-[var(--color-ink)] text-white rounded-md"
+          >
+            {search.isPending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              'Zoeken'
+            )}
+          </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
-              Functie
-            </label>
-            <input
-              type="text"
-              value={jobTitle}
-              onChange={(e) => setJobTitle(e.target.value)}
-              placeholder="e.g. CTO, Operations Manager"
-              className="input-minimal w-full px-3 py-2.5 rounded-md"
-            />
+
+        {/* Expandable filters */}
+        {showFilters && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pb-4 border-b border-[var(--color-surface-2)]">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                Seniority
+              </label>
+              <select
+                value={seniority}
+                onChange={(e) => setSeniority(e.target.value)}
+                className="input-minimal w-full px-3 py-2 rounded-md text-[13px] appearance-none"
+              >
+                <option value="">Alle niveaus</option>
+                <option value="C-Level">C-Level</option>
+                <option value="VP">VP</option>
+                <option value="Director">Director</option>
+                <option value="Manager">Manager</option>
+                <option value="Senior">Senior</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                Afdeling
+              </label>
+              <input
+                type="text"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                placeholder="b.v. Engineering"
+                className="input-minimal w-full px-3 py-2 rounded-md text-[13px]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                Bedrijf domein
+              </label>
+              <input
+                type="text"
+                value={companyDomain}
+                onChange={(e) => setCompanyDomain(e.target.value)}
+                placeholder="b.v. acme.com"
+                className="input-minimal w-full px-3 py-2 rounded-md text-[13px]"
+              />
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
-              Seniority
-            </label>
-            <select
-              value={seniority}
-              onChange={(e) => setSeniority(e.target.value)}
-              className="input-minimal w-full px-3 py-2.5 rounded-md appearance-none"
-            >
-              <option value="">Alle niveaus</option>
-              <option value="C-Level">C-Level</option>
-              <option value="VP">VP</option>
-              <option value="Director">Director</option>
-              <option value="Manager">Manager</option>
-              <option value="Senior">Senior</option>
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
-              Afdeling
-            </label>
-            <input
-              type="text"
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              placeholder="e.g. Engineering, Operations"
-              className="input-minimal w-full px-3 py-2.5 rounded-md"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
-              Bedrijf domein
-            </label>
-            <input
-              type="text"
-              value={companyDomain}
-              onChange={(e) => setCompanyDomain(e.target.value)}
-              placeholder="e.g. acme.com"
-              className="input-minimal w-full px-3 py-2.5 rounded-md"
-            />
-          </div>
-          <div className="flex items-end md:col-start-3">
-            <button
-              type="submit"
-              disabled={search.isPending}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] bg-[var(--color-ink)] text-white border-none rounded-md w-full justify-center"
-            >
-              {search.isPending ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Search className="w-3.5 h-3.5" />
-              )}
-              Zoeken
-            </button>
-          </div>
-        </div>
+        )}
       </form>
 
       {results !== null && (
