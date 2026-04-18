@@ -3,7 +3,7 @@
 import type { Prisma } from '@prisma/client';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useMemo, useState, useSyncExternalStore } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ArrowLeft,
   Copy,
@@ -82,12 +82,6 @@ const TIME_TZ: Intl.DateTimeFormatOptions = {
   hour: '2-digit',
   minute: '2-digit',
 };
-
-// useSyncExternalStore subscription stub — the snapshot (`Date.now`) is
-// captured once at mount; we don't need to push updates.
-function subscribeNow(): () => void {
-  return () => {};
-}
 
 function formatNumber(n: number | null | undefined): string {
   if (n == null) return '—';
@@ -469,24 +463,19 @@ export default function ProspectDetail() {
     [events, feedFilter],
   );
 
-  // useSyncExternalStore reads system clock at mount without triggering
-  // react-hooks/purity; server snapshot keeps SSR output stable.
-  const now = useSyncExternalStore(
-    subscribeNow,
-    () => Date.now(),
-    () => 0,
-  );
+  // Capture "now" once at mount — stable across renders.
+  const [mountTime] = useState(() => Date.now());
   const runLabel = useMemo(() => {
-    if (!latestRun || now === 0) return '—';
+    if (!latestRun) return '—';
     const runDate = new Date(
       latestRun.completedAt ?? latestRun.createdAt,
     ).getTime();
-    const dayDelta = Math.ceil((runDate - now) / (1000 * 60 * 60 * 24));
+    const dayDelta = Math.ceil((runDate - mountTime) / (1000 * 60 * 60 * 24));
     return new Intl.RelativeTimeFormat('nl-NL', { numeric: 'auto' }).format(
       dayDelta,
       'day',
     );
-  }, [latestRun, now]);
+  }, [latestRun, mountTime]);
 
   const onCopyLink = () => {
     if (!p) return;
