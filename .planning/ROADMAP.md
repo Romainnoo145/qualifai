@@ -152,7 +152,7 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 - [x] **Phase 60: Quote Schema Foundation** — Prisma schema, tRPC router, state machine, YAML import, foundation fixes (completed 2026-04-13)
 - [x] **Phase 61: Admin UI for Quotes** — Full quote management UI inside existing Qualifai admin shell (completed 2026-04-13)
-- [ ] **Phase 61.4: Admin Design System Sweep** — Apply DESIGN.md tokens across all admin pages (in progress)
+- [x] **Phase 61.4: Admin Design System Sweep** — Apply DESIGN.md tokens across all admin pages (in progress) (completed 2026-04-18)
 - [ ] **Phase 62: Client-Facing Voorstel + PDF Worker** — Prospect proposal page and Railway PDF worker service
 - [ ] **Phase 63: Contract Workflow** — Click-to-sign contract flow following accepted quote
 
@@ -212,7 +212,7 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 **Requirements**: TOKEN-SYNC, CTA-FIX, STATUS-UNIFY, COMPONENT-EXTRACT, SIDEBAR-HOVER, PAGE-SWEEP-A, PAGE-SWEEP-B, FEATURE-COMPONENT-SWEEP, VISUAL-VERIFY
 
-**Plans:** 4/4 plans complete
+**Plans:** 5/5 plans complete
 
 Plans:
 
@@ -365,7 +365,7 @@ Plans:
 | 60. Quote Schema Foundation             | 5/5            | Complete    | 2026-04-13 |
 | 61. Admin UI for Quotes                 | 4/4            | Complete    | 2026-04-18 |
 | 61.1. Manual prospect flow polish       | 4/4            | Complete    | 2026-04-14 |
-| 61.4. Admin Design System Sweep         | 3/5            | In Progress |            |
+| 61.4. Admin Design System Sweep         | 5/5            | Complete    | 2026-04-18 |
 | 62. Client-Facing Voorstel + PDF Worker | 0/TBD          | Not started | -          |
 | 63. Contract Workflow                   | 0/TBD          | Not started | -          |
 
