@@ -31,8 +31,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       primary: 'btn-pill-primary',
       secondary: 'btn-pill-secondary',
       yellow: 'btn-pill-yellow',
-      ghost: 'hover:bg-slate-100 text-slate-500 hover:text-[#040026]',
-      outline: 'border border-slate-200 hover:bg-slate-50 text-slate-600',
+      ghost:
+        'hover:bg-[var(--color-surface-hover)] text-[var(--color-muted)] hover:text-[var(--color-ink)]',
+      outline:
+        'border border-[var(--color-border-strong)] hover:bg-[var(--color-surface-2)] text-[var(--color-muted-dark)]',
     };
 
     const sizes = {
@@ -47,7 +49,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={isLoading || disabled}
         className={cn(
-          'ui-tap ui-focus inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none rounded-full',
+          'inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none rounded-[var(--radius-sm)]',
           variants[variant],
           sizes[size],
           className,
