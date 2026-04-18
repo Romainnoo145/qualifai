@@ -237,12 +237,19 @@ function Eyebrow({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <span className={cn('admin-eyebrow', className)}>{children}</span>;
+  return (
+    <div className={cn('flex items-center gap-3', className)}>
+      <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+        {children}
+      </span>
+      <span className="flex-1 h-px bg-[var(--color-border)]" />
+    </div>
+  );
 }
 
 function HeroName({ name }: { name: string }) {
   return (
-    <h1 className="font-['Sora'] text-[clamp(56px,7vw,104px)] font-bold leading-[0.95] tracking-[-0.035em] text-[var(--color-ink)]">
+    <h1 className="font-['Sora'] text-[clamp(42px,6vw,72px)] font-bold leading-[1.05] tracking-[-0.025em] text-[var(--color-ink)]">
       {name}
       <span className="text-[var(--color-gold-hi)]">.</span>
     </h1>
@@ -266,7 +273,7 @@ function HeroBtn({
     paper:
       'bg-[var(--color-surface)] border-[var(--color-border-strong)] text-[var(--color-ink)] hover:border-[var(--color-ink)]',
     ink: 'bg-[var(--color-ink)] border-[var(--color-ink)] text-[var(--color-background)] hover:bg-[#1c1c44]',
-    gold: 'bg-[var(--color-gold)] border-[var(--color-gold)] text-[var(--color-ink)] hover:bg-[var(--color-brand-yellow-dark)] font-semibold',
+    gold: 'bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] border-[#e4c33c] text-[var(--color-ink)] hover:from-[#d4b43b] hover:to-[#f4e96e] font-medium rounded-full!',
   };
   return (
     <button
@@ -292,9 +299,11 @@ function MegaStat({
   goldDot?: boolean;
 }) {
   return (
-    <div className="px-7 py-6 border-r border-[var(--color-border)] last:border-r-0">
-      <Eyebrow>{label}</Eyebrow>
-      <div className="mt-3 font-['Sora'] text-[clamp(36px,3.4vw,52px)] font-bold leading-none tracking-[-0.035em] text-[var(--color-ink)]">
+    <div className="py-5 border-r border-[var(--color-border)] last:border-r-0 first:pl-0 pl-6 pr-6">
+      <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
+        {label}
+      </span>
+      <div className="mt-2 font-['Sora'] text-[32px] font-bold leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)]">
         {value}
         {goldDot ? (
           <span className="text-[var(--color-gold-hi)]">.</span>
@@ -321,11 +330,11 @@ function ActionRow({
   onClick?: () => void;
 }) {
   const base =
-    'flex w-full items-center justify-between gap-2 px-3 py-2.5 rounded-[6px] border text-[13px] font-medium transition-colors cursor-pointer';
+    'flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border text-[11px] font-medium uppercase tracking-[0.06em] transition-all cursor-pointer text-left';
   const variants = {
     paper:
-      'bg-[var(--color-surface)] border-[var(--color-border-strong)] text-[var(--color-ink)] hover:border-[var(--color-ink)]',
-    gold: 'bg-[var(--color-gold)] border-[var(--color-gold)] text-[var(--color-ink)] hover:bg-[var(--color-brand-yellow-dark)] font-semibold',
+      'bg-transparent border-[var(--color-border)] text-[var(--color-ink)] hover:border-[var(--color-ink)]',
+    gold: 'bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] border-[#e4c33c] text-[var(--color-ink)] hover:from-[#d4b43b] hover:to-[#f4e96e]',
   };
   return (
     <button
@@ -532,7 +541,7 @@ export default function ProspectDetail() {
         : null;
 
   return (
-    <div className="space-y-0 pb-20">
+    <div className="max-w-[1400px] space-y-0 pb-20">
       {/* Back line */}
       <div className="flex items-center gap-2 pb-3.5 mb-8 border-b border-[var(--color-border)]">
         <Link
@@ -553,14 +562,6 @@ export default function ProspectDetail() {
       {/* Hero */}
       <header className="grid grid-cols-[1fr_auto] gap-10 items-end pb-7 mb-9 border-b border-[var(--color-ink)]">
         <div>
-          <div className="flex flex-wrap items-center gap-6 text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--color-muted)] mb-5">
-            <span className="text-[var(--color-gold)] font-semibold">
-              COMPANY · {p.status ?? 'DRAFT'}
-            </span>
-            {p.industry ? <span>{p.industry.toUpperCase()}</span> : null}
-            {location ? <span>{location.toUpperCase()}</span> : null}
-            {p.foundedYear ? <span>EST {p.foundedYear}</span> : null}
-          </div>
           <HeroName name={displayName} />
           {p.description ? (
             <p className="mt-5 max-w-[620px] text-[16px] font-light leading-[1.55] text-[var(--color-muted-dark)]">
@@ -665,7 +666,7 @@ export default function ProspectDetail() {
       </section>
 
       {/* Main grid: facts · activity · actions */}
-      <div className="grid grid-cols-[280px_minmax(0,1fr)_260px] gap-10">
+      <div className="grid grid-cols-[260px_minmax(0,1fr)_240px] gap-10">
         {/* Left: facts */}
         <aside className="space-y-2">
           <Eyebrow>Feiten</Eyebrow>
@@ -728,28 +729,23 @@ export default function ProspectDetail() {
 
         {/* Center: activity */}
         <main>
-          <div className="flex items-baseline justify-between pb-3 mb-1 border-b border-[var(--color-border)]">
-            <h2 className="text-[13px] font-semibold text-[var(--color-ink)]">
-              Activity{' '}
-              <span className="font-normal text-[var(--color-muted)]">
-                · {events.length} events
-              </span>
-            </h2>
-            <div className="admin-toggle-group">
-              {FEED_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setFeedFilter(tab.id)}
-                  className={cn(
-                    'admin-toggle-btn admin-toggle-btn-sm',
-                    feedFilter === tab.id && 'admin-toggle-btn-active',
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+          <Eyebrow className="mb-4">Activiteit</Eyebrow>
+          <div className="flex gap-1.5 mb-5">
+            {FEED_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setFeedFilter(tab.id)}
+                className={cn(
+                  'px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded border transition-all',
+                  feedFilter === tab.id
+                    ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                    : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
           {visibleEvents.length === 0 ? (
             <p className="py-12 text-center text-[13px] text-[var(--color-muted)]">
