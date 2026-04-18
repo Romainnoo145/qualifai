@@ -193,7 +193,7 @@ export function QualityChip({
         ref={chipRef}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'admin-state-pill h-[1.375rem] whitespace-nowrap leading-none appearance-none transition-all ui-tap',
+          'admin-state-pill h-[1.375rem] whitespace-nowrap leading-none appearance-none transition-all',
           CHIP_COLORS[displayLight],
         )}
       >
@@ -204,10 +204,10 @@ export function QualityChip({
       {open && (
         <div
           ref={panelRef}
-          className="absolute left-0 top-[calc(100%+6px)] z-20 min-w-[220px] max-w-xs glass-card p-5 shadow-xl shadow-slate-200/60 space-y-4"
+          className="absolute left-0 top-[calc(100%+6px)] z-20 min-w-[220px] max-w-xs glass-card p-5 shadow-sm space-y-4"
         >
           {runQuery.isLoading ? (
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+            <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-muted)]">
               <Loader2 className="w-3.5 h-3.5 animate-spin" /> Laden...
             </div>
           ) : fullRun ? (
@@ -284,7 +284,7 @@ export function QualityChip({
                     {reasons.map((r) => (
                       <li
                         key={r}
-                        className="text-[10px] font-bold text-amber-600 flex items-start gap-1.5"
+                        className="text-[10px] font-medium text-[var(--color-tag-quality-text)] flex items-start gap-1.5"
                       >
                         <span className="shrink-0 mt-0.5">!</span>
                         {r}
@@ -296,7 +296,7 @@ export function QualityChip({
 
               {/* Review state */}
               {isReviewed && (
-                <div className="flex items-center gap-2 text-[10px] font-black text-emerald-600">
+                <div className="flex items-center gap-2 text-[10px] font-medium text-[var(--color-brand-success)]">
                   <Check className="w-3 h-3" />
                   Beoordeeld op {formatReviewedAt(qualityReviewedAt)}
                 </div>
@@ -304,13 +304,13 @@ export function QualityChip({
 
               {/* Amber warning */}
               {displayLight === 'amber' && !isReviewed && (
-                <p className="text-[10px] font-bold text-amber-600">
+                <p className="text-[10px] font-medium text-[var(--color-tag-quality-text)]">
                   Beperkt bewijs — toch doorgaan?
                 </p>
               )}
 
               {/* Action buttons */}
-              <div className="space-y-2 pt-1 border-t border-slate-100">
+              <div className="space-y-2 pt-1 border-t border-[var(--color-border)]">
                 {!isReviewed && (
                   <>
                     <ActionButton
@@ -353,14 +353,14 @@ export function QualityChip({
                 )}
 
                 {qualityApproved === false && (
-                  <p className="text-[10px] font-bold text-slate-400">
+                  <p className="text-[10px] font-medium text-[var(--color-muted)]">
                     Meer onderzoek nodig
                   </p>
                 )}
               </div>
             </>
           ) : (
-            <p className="text-xs font-bold text-slate-400">
+            <p className="text-xs font-medium text-[var(--color-muted)]">
               Geen rundata beschikbaar
             </p>
           )}
@@ -381,8 +381,12 @@ export function QualityChip({
 function BreakdownRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="text-[10px] font-bold text-slate-400">{label}</span>
-      <span className="text-[10px] font-black text-slate-700">{value}</span>
+      <span className="text-[10px] font-medium text-[var(--color-muted)]">
+        {label}
+      </span>
+      <span className="text-[10px] font-bold text-[var(--color-ink)]">
+        {value}
+      </span>
     </div>
   );
 }
@@ -401,18 +405,18 @@ function ActionButton({
   variant?: 'primary' | 'amber' | 'ghost';
 }) {
   const styles = {
-    primary: 'bg-[#040026] text-white hover:bg-[#1E1E4A] disabled:opacity-50',
+    primary: 'admin-btn-primary text-[10px]',
     amber:
-      'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 disabled:opacity-50',
+      'bg-[var(--color-tag-quality-bg)] text-[var(--color-tag-quality-text)] border border-[var(--color-tag-quality-border)] hover:opacity-90 disabled:opacity-50',
     ghost:
-      'bg-slate-50 text-slate-600 border border-slate-100 hover:bg-slate-100 disabled:opacity-50',
+      'bg-[var(--color-surface-2)] text-[var(--color-muted-dark)] border border-[var(--color-border)] hover:border-[var(--color-border-strong)] disabled:opacity-50',
   };
   return (
     <button
       onClick={onClick}
       disabled={loading}
       className={cn(
-        'ui-tap w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all',
+        'w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-[10px] font-medium uppercase tracking-wide transition-all',
         styles[variant],
       )}
     >

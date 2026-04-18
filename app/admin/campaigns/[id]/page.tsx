@@ -51,12 +51,12 @@ const STAGE_BADGE: Record<FunnelStage, string> = {
 
 const FUNNEL_STAGES: Array<{ key: FunnelStage; barColor: string }> = [
   { key: 'imported', barColor: 'bg-[var(--color-border-strong)]' },
-  { key: 'researching', barColor: 'bg-cyan-400' },
-  { key: 'researched', barColor: 'bg-blue-400' },
-  { key: 'approved', barColor: 'bg-indigo-400' },
-  { key: 'emailed', barColor: 'bg-amber-400' },
-  { key: 'replied', barColor: 'bg-orange-400' },
-  { key: 'booked', barColor: 'bg-emerald-500' },
+  { key: 'researching', barColor: 'bg-[var(--color-tag-run-text)]' },
+  { key: 'researched', barColor: 'bg-[var(--color-brand-blue)]' },
+  { key: 'approved', barColor: 'bg-[var(--color-tag-outreach-text)]' },
+  { key: 'emailed', barColor: 'bg-[var(--color-tag-quality-text)]' },
+  { key: 'replied', barColor: 'bg-[var(--color-gold)]' },
+  { key: 'booked', barColor: 'bg-[var(--color-brand-success)]' },
 ];
 
 function FunnelBar({ funnel }: { funnel: Record<FunnelStage, number> }) {

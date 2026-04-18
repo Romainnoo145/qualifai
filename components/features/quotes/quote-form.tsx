@@ -94,9 +94,7 @@ export function QuoteForm({
       <div className="glass-card space-y-6 p-10">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <label className="space-y-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-              Nummer
-            </span>
+            <span className="admin-eyebrow">Nummer</span>
             <input
               aria-label="Nummer"
               className="input-minimal"
@@ -106,9 +104,7 @@ export function QuoteForm({
             />
           </label>
           <label className="space-y-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-              Datum
-            </span>
+            <span className="admin-eyebrow">Datum</span>
             <input
               aria-label="Datum"
               type="date"
@@ -119,9 +115,7 @@ export function QuoteForm({
             />
           </label>
           <label className="space-y-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-              Geldig tot
-            </span>
+            <span className="admin-eyebrow">Geldig tot</span>
             <input
               aria-label="Geldig tot"
               type="date"
@@ -134,9 +128,7 @@ export function QuoteForm({
         </div>
 
         <label className="block space-y-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-            Onderwerp
-          </span>
+          <span className="admin-eyebrow">Onderwerp</span>
           <input
             aria-label="Onderwerp"
             className="input-minimal"
@@ -151,9 +143,7 @@ export function QuoteForm({
       {/* Narrative fields */}
       <div className="glass-card space-y-6 p-10">
         <label className="block space-y-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-            Tagline
-          </span>
+          <span className="admin-eyebrow">Tagline</span>
           <input
             aria-label="Tagline"
             className="input-minimal"
@@ -164,9 +154,7 @@ export function QuoteForm({
           />
         </label>
         <label className="block space-y-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-            Introductie
-          </span>
+          <span className="admin-eyebrow">Introductie</span>
           <textarea
             aria-label="Introductie"
             rows={5}
@@ -178,9 +166,7 @@ export function QuoteForm({
           />
         </label>
         <label className="block space-y-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-            Uitdaging
-          </span>
+          <span className="admin-eyebrow">Uitdaging</span>
           <textarea
             aria-label="Uitdaging"
             rows={5}
@@ -192,9 +178,7 @@ export function QuoteForm({
           />
         </label>
         <label className="block space-y-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-            Aanpak
-          </span>
+          <span className="admin-eyebrow">Aanpak</span>
           <textarea
             aria-label="Aanpak"
             rows={5}
@@ -209,7 +193,9 @@ export function QuoteForm({
 
       {/* Line items */}
       <div className="glass-card space-y-6 p-10">
-        <h2 className="text-sm font-black text-[#040026]">Investering</h2>
+        <h2 className="text-sm font-bold text-[var(--color-ink)]">
+          Investering
+        </h2>
         <QuoteLineList
           lines={values.lines}
           onChange={(next) => update('lines', next)}
@@ -220,9 +206,7 @@ export function QuoteForm({
       {/* Scope + BTW */}
       <div className="glass-card space-y-6 p-10">
         <label className="block space-y-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-            Scope
-          </span>
+          <span className="admin-eyebrow">Scope</span>
           <textarea
             aria-label="Scope"
             rows={4}
@@ -234,9 +218,7 @@ export function QuoteForm({
           />
         </label>
         <label className="block space-y-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-            Buiten scope
-          </span>
+          <span className="admin-eyebrow">Buiten scope</span>
           <textarea
             aria-label="Buiten scope"
             rows={4}
@@ -248,9 +230,7 @@ export function QuoteForm({
           />
         </label>
         <label className="block space-y-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-            BTW percentage
-          </span>
+          <span className="admin-eyebrow">BTW percentage</span>
           <input
             aria-label="BTW percentage"
             type="number"
@@ -275,7 +255,7 @@ export function QuoteForm({
 
       {/* Submit row or read-only message */}
       {isReadOnly ? (
-        <p className="text-xs font-bold text-slate-500">
+        <p className="text-xs font-medium text-[var(--color-muted-dark)]">
           Deze offerte is verstuurd en kan niet meer bewerkt worden. Maak een
           nieuwe versie om aanpassingen door te voeren.
         </p>

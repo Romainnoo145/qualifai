@@ -1300,18 +1300,18 @@ export default function NewCampaignWizardPage() {
             </div>
 
             {guardrail && (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-5 py-4">
+              <div className="rounded-[var(--radius-md)] border border-[var(--color-tag-quality-border)] bg-[var(--color-tag-quality-bg)] px-5 py-4">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-4 h-4 text-[var(--color-tag-quality-text)] shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-bold text-amber-900">
+                    <p className="text-sm font-bold text-[var(--color-tag-quality-text)]">
                       {guardrail.title}
                     </p>
-                    <p className="text-xs font-bold text-amber-800 mt-1">
+                    <p className="text-xs font-medium text-[var(--color-tag-quality-text)] mt-1">
                       {guardrail.message}
                     </p>
                     {guardrail.recommendation && (
-                      <p className="text-xs font-semibold text-amber-700 mt-1">
+                      <p className="text-xs font-medium text-[var(--color-tag-quality-text)] mt-1">
                         {guardrail.recommendation}
                       </p>
                     )}
@@ -1321,26 +1321,26 @@ export default function NewCampaignWizardPage() {
             )}
 
             {searchFilterNote && (
-              <div className="rounded-2xl border border-blue-200 bg-blue-50/70 px-5 py-4">
-                <p className="text-xs font-bold text-blue-800">
+              <div className="rounded-[var(--radius-md)] border border-[var(--color-tag-run-border)] bg-[var(--color-tag-run-bg)] px-5 py-4">
+                <p className="text-xs font-medium text-[var(--color-tag-run-text)]">
                   {searchFilterNote}
                 </p>
               </div>
             )}
 
             {personaGuardrail && (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-5 py-4">
+              <div className="rounded-[var(--radius-md)] border border-[var(--color-tag-quality-border)] bg-[var(--color-tag-quality-bg)] px-5 py-4">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-4 h-4 text-[var(--color-tag-quality-text)] shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-bold text-amber-900">
+                    <p className="text-sm font-bold text-[var(--color-tag-quality-text)]">
                       {personaGuardrail.title}
                     </p>
-                    <p className="text-xs font-bold text-amber-800 mt-1">
+                    <p className="text-xs font-medium text-[var(--color-tag-quality-text)] mt-1">
                       {personaGuardrail.message}
                     </p>
                     {personaGuardrail.recommendation && (
-                      <p className="text-xs font-semibold text-amber-700 mt-1">
+                      <p className="text-xs font-medium text-[var(--color-tag-quality-text)] mt-1">
                         {personaGuardrail.recommendation}
                       </p>
                     )}

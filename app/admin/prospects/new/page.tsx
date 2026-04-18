@@ -334,8 +334,10 @@ export default function NewProspect() {
           </div>
 
           {error && (
-            <div className="glass-card p-6 border-red-100 bg-red-50/20 rounded-2xl">
-              <p className="text-xs font-bold text-red-500">{error}</p>
+            <div className="glass-card p-6 border-[#e0b8a8] bg-[#fef2f2]">
+              <p className="text-xs font-medium text-[var(--color-brand-danger)]">
+                {error}
+              </p>
             </div>
           )}
 

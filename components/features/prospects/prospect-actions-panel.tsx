@@ -120,27 +120,33 @@ export function ProspectActionsPanel({
   };
 
   const buttonBase =
-    'ui-tap flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm border transition-all';
+    'flex items-center gap-2 px-5 py-2.5 rounded-[var(--radius-sm)] text-[10px] font-medium uppercase tracking-wide border transition-all';
 
   const buttonClassFor = (key: ActionKey): string => {
     const state = states[key];
     if (state === 'loading')
       return cn(
         buttonBase,
-        'bg-slate-50 text-slate-400 border-slate-200 cursor-wait',
+        'bg-[var(--color-surface-2)] text-[var(--color-muted)] border-[var(--color-border)] cursor-wait',
       );
     if (state === 'success')
       return cn(
         buttonBase,
-        'bg-emerald-50 text-emerald-700 border-emerald-200',
+        'bg-[var(--color-tag-enrich-bg)] text-[var(--color-tag-enrich-text)] border-[var(--color-tag-enrich-border)]',
       );
     if (state === 'fallback')
-      return cn(buttonBase, 'bg-amber-50 text-amber-800 border-amber-300');
+      return cn(
+        buttonBase,
+        'bg-[var(--color-tag-quality-bg)] text-[var(--color-tag-quality-text)] border-[var(--color-tag-quality-border)]',
+      );
     if (state === 'error')
-      return cn(buttonBase, 'bg-red-50 text-red-700 border-red-300');
+      return cn(
+        buttonBase,
+        'bg-[#fef2f2] text-[var(--color-brand-danger)] border-[#e0b8a8]',
+      );
     return cn(
       buttonBase,
-      'bg-slate-50 text-slate-600 hover:text-[#040026] hover:bg-[#EBCB4B]/20 border-slate-200',
+      'bg-[var(--color-surface-2)] text-[var(--color-muted-dark)] hover:text-[var(--color-ink)] hover:border-[var(--color-border-strong)] border-[var(--color-border)]',
     );
   };
 
@@ -149,9 +155,7 @@ export function ProspectActionsPanel({
       className="glass-card p-6 space-y-3"
       data-testid="prospect-actions-panel"
     >
-      <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">
-        Acties
-      </h3>
+      <h3 className="admin-eyebrow">Acties</h3>
       <div className="flex flex-wrap gap-3">
         {(['enrich', 'research', 'analyse'] as const).map((key) => {
           const state = states[key];
@@ -182,7 +186,7 @@ export function ProspectActionsPanel({
       </div>
       {fallbackMessage && (
         <div
-          className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3"
+          className="text-sm text-[var(--color-tag-quality-text)] bg-[var(--color-tag-quality-bg)] border border-[var(--color-tag-quality-border)] rounded-[var(--radius-md)] px-4 py-3"
           role="status"
           data-testid="action-fallback"
         >
@@ -191,7 +195,7 @@ export function ProspectActionsPanel({
       )}
       {errorMessage && (
         <div
-          className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3"
+          className="text-sm text-[var(--color-brand-danger)] bg-[#fef2f2] border border-[#e0b8a8] rounded-[var(--radius-md)] px-4 py-3"
           role="alert"
           data-testid="action-error"
           data-error-key={lastErrorKey ?? ''}
