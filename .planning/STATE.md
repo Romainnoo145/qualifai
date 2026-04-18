@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: '60 / 61 / 61.1 / 61.2 / 61.3 all shipped. resolveLogoUrl pipeline unified three scattered call sites, ProspectLogo component simplified to 2-stage trust-the-DB, backfill script ran and populated 2 empty rows (marcore + stb-kozijnen) + re-validated 8 existing. Romano flagged meta-concern about lack of design spec / component system / uniform backend endpoints — Phase 62 is being restructured to start with /design-consultation skill before any implementation. Next action: run /design-consultation for admin prospect detail + client /voorstel pages as anchor surfaces.'
-stopped_at: Phase 61.4 context gathered
-last_updated: '2026-04-18T14:51:59.922Z'
+stopped_at: Completed 61.4-02-PLAN.md
+last_updated: '2026-04-18T17:12:13.967Z'
 last_activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
 progress:
   total_phases: 8
   completed_phases: 4
-  total_plans: 17
-  completed_plans: 18
+  total_plans: 22
+  completed_plans: 19
 ---
 
 # Project State
@@ -116,6 +116,8 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 61.2]: og-logo IIFE in createAndProcess is a net-new addition (the mutation had no favicon IIFE before Plan 03) — createProspect still has its own favicon-only IIFE unchanged
 - [Phase 61.2]: ProspectEnrichmentBadge: amber pill uses title= attribute for tooltip, returns null when all fields populated
 - [Phase 61.2]: Detail page null guard audit confirmed existing guards sufficient — no fixes needed
+- [Phase 61.4]: DataRow supports optional href prop to handle both clickable and non-clickable rows in single component
+- [Phase 61.4]: StatCard uses text-data CSS class for tabular-nums (avoids Tailwind font-variant-numeric utilities)
 
 ### Pending Todos
 
@@ -136,8 +138,8 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-18T14:51:59.919Z
-Stopped at: Phase 61.4 context gathered
+Last session: 2026-04-18T17:12:13.965Z
+Stopped at: Completed 61.4-02-PLAN.md
 Resume command: `/gsd:execute-plan 62 01`
 
 ## Accumulated Context
