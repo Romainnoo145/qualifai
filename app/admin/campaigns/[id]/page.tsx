@@ -48,38 +48,56 @@ const FUNNEL_STAGES: Array<{ key: FunnelStage; barColor: string }> = [
   { key: 'booked', barColor: 'bg-emerald-500' },
 ];
 
-function FunnelBar({ funnel }: { funnel: Record<FunnelStage, number> }) {
+function FunnelBar({
+  funnel,
+  activeStage,
+  onStageClick,
+}: {
+  funnel: Record<FunnelStage, number>;
+  activeStage: FunnelStage | null;
+  onStageClick: (stage: FunnelStage | null) => void;
+}) {
   const max = funnel.imported || 1;
   return (
-    <div className="pb-8 border-b border-[var(--color-surface-2)]">
-      <div className="flex items-center gap-3 mb-6">
-        <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
-          Funnel
-        </span>
-        <span className="flex-1 h-px bg-[var(--color-border)]" />
-      </div>
-      <div className="grid w-full grid-cols-7 gap-4">
-        {FUNNEL_STAGES.map(({ key, barColor }) => {
-          const count = funnel[key];
-          const widthPct = Math.max((count / max) * 100, 10);
-          return (
-            <div key={key} className="flex min-w-0 flex-col gap-2">
-              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
-                {STAGE_LABELS[key]}
-              </p>
-              <p className="text-[24px] font-bold text-[var(--color-ink)]">
-                {count}
-              </p>
-              <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div
-                  className={cn('h-full rounded-full', barColor)}
-                  style={{ width: `${widthPct}%` }}
-                />
-              </div>
+    <div className="grid w-full grid-cols-7 border-b border-[var(--color-ink)] mb-10">
+      {FUNNEL_STAGES.map(({ key }) => {
+        const count = funnel[key];
+        const widthPct = Math.max((count / max) * 100, 10);
+        const isActive = activeStage === key;
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onStageClick(isActive ? null : key)}
+            className={cn(
+              'flex min-w-0 flex-col gap-2 py-4 px-3 text-left transition-all cursor-pointer',
+              'first:pl-0 last:pr-0',
+              '[&+&]:border-l [&+&]:border-[var(--color-border)]',
+              isActive && 'bg-[var(--color-ink)]/[0.02]',
+            )}
+          >
+            <p
+              className={cn(
+                'text-[9px] font-medium uppercase tracking-[0.12em]',
+                isActive
+                  ? 'text-[var(--color-ink)]'
+                  : 'text-[var(--color-muted)]',
+              )}
+            >
+              {STAGE_LABELS[key]}
+            </p>
+            <p className="text-[28px] font-bold text-[var(--color-ink)] leading-[1.1]">
+              {count}
+            </p>
+            <div className="h-[3px] bg-[var(--color-border)] rounded-full overflow-hidden mt-1">
+              <div
+                className="h-full bg-[var(--color-ink)] rounded-full transition-all"
+                style={{ width: `${widthPct}%` }}
+              />
             </div>
-          );
-        })}
-      </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -329,6 +347,7 @@ export default function CampaignDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const [showAdd, setShowAdd] = useState(false);
+  const [stageFilter, setStageFilter] = useState<FunnelStage | null>(null);
 
   const query = api.campaigns.getWithFunnelData.useQuery({ id });
 
@@ -343,15 +362,15 @@ export default function CampaignDetailPage() {
 
   if (query.error || !query.data) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 gap-6">
-        <p className="text-sm font-black text-slate-400 uppercase tracking-widest">
+      <div className="py-20 text-center">
+        <p className="text-[15px] font-medium text-[var(--color-ink)] mb-2">
           Campaign not found
         </p>
         <Link
           href="/admin/campaigns"
-          className="text-sm font-semibold text-[#007AFF] hover:underline"
+          className="text-[13px] font-medium text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
         >
-          Back to Campaigns
+          &larr; Terug naar Campaigns
         </Link>
       </div>
     );
@@ -359,11 +378,13 @@ export default function CampaignDetailPage() {
 
   const { campaign, prospects, funnel, metrics } = query.data;
 
-  const sortedProspects = [...prospects].sort((a, b) => {
-    const aRank = STAGE_ORDER.indexOf(a.funnelStage as FunnelStage);
-    const bRank = STAGE_ORDER.indexOf(b.funnelStage as FunnelStage);
-    return aRank - bRank;
-  });
+  const sortedProspects = [...prospects]
+    .filter((p) => !stageFilter || p.funnelStage === stageFilter)
+    .sort((a, b) => {
+      const aRank = STAGE_ORDER.indexOf(a.funnelStage as FunnelStage);
+      const bRank = STAGE_ORDER.indexOf(b.funnelStage as FunnelStage);
+      return aRank - bRank;
+    });
 
   return (
     <div className="max-w-[1400px] space-y-10">
@@ -395,51 +416,55 @@ export default function CampaignDetailPage() {
         )}
       </div>
 
-      {/* Conversion Metrics */}
-      <div className="flex gap-4">
-        <div className="glass-card p-6 flex flex-col gap-2 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-            Response Rate
-          </p>
-          <p className="text-3xl font-black text-blue-600">
+      {/* Conversion Metrics — flat inline */}
+      <div className="flex gap-6 mb-8">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[18px] font-bold text-[var(--color-ink)]">
             {metrics.responseRate.toFixed(1)}%
-          </p>
+          </span>
+          <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+            Response rate
+          </span>
         </div>
-        <div className="glass-card p-6 flex flex-col gap-2 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-            Booking Rate
-          </p>
-          <p className="text-3xl font-black text-emerald-600">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[18px] font-bold text-[var(--color-ink)]">
             {metrics.bookingRate.toFixed(1)}%
-          </p>
+          </span>
+          <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+            Booking rate
+          </span>
         </div>
       </div>
 
-      {/* Funnel Visualization */}
-      <FunnelBar funnel={funnel as Record<FunnelStage, number>} />
+      {/* Funnel — clickable stages filter the prospect list */}
+      <FunnelBar
+        funnel={funnel as Record<FunnelStage, number>}
+        activeStage={stageFilter}
+        onStageClick={setStageFilter}
+      />
 
       {/* Prospect Table */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              Companies in Campaign
-            </p>
-            <span className="text-[9px] font-black px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 uppercase tracking-widest">
-              {prospects.length}
+            <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+              {stageFilter
+                ? `${STAGE_LABELS[stageFilter]} (${sortedProspects.length})`
+                : `${prospects.length} companies`}
             </span>
+            <span className="flex-1 h-px bg-[var(--color-border)]" />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-4">
             <Link
               href={`/admin/campaigns/new?campaignId=${id}`}
-              className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 btn-pill-primary text-[10px] font-black uppercase tracking-widest"
+              className="inline-flex items-center gap-2 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.08em] bg-[var(--color-ink)] text-white rounded-md"
             >
-              <Search className="w-4 h-4" />
+              <Search className="w-3.5 h-3.5" />
               Search Prospects
             </Link>
             <button
               onClick={() => setShowAdd((v) => !v)}
-              className="ui-tap inline-flex items-center gap-2 px-5 py-2.5 btn-pill-secondary text-[10px] font-black uppercase tracking-widest"
+              className="inline-flex items-center gap-2 px-4 py-2 text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] rounded-md hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all"
             >
               {showAdd ? (
                 <>
@@ -459,10 +484,12 @@ export default function CampaignDetailPage() {
         )}
 
         {sortedProspects.length === 0 ? (
-          <div className="glass-card p-10 text-center rounded-[2.5rem]">
-            <Building2 className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-            <p className="text-sm font-black text-slate-400">
-              No companies in this campaign yet
+          <div className="py-16 text-center">
+            <Building2 className="w-10 h-10 text-[var(--color-border-strong)] mx-auto mb-3" />
+            <p className="text-[13px] font-light text-[var(--color-muted)]">
+              {stageFilter
+                ? `Geen companies met stage "${STAGE_LABELS[stageFilter]}"`
+                : 'Nog geen companies in deze campaign'}
             </p>
           </div>
         ) : (
