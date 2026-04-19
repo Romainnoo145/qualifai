@@ -38,16 +38,6 @@ const STAGE_LABELS: Record<FunnelStage, string> = {
   booked: 'Booked',
 };
 
-const STAGE_BADGE: Record<FunnelStage, string> = {
-  imported: 'bg-slate-100 text-slate-600',
-  researching: 'bg-cyan-50 text-cyan-700',
-  researched: 'bg-blue-50 text-blue-600',
-  approved: 'bg-indigo-50 text-indigo-600',
-  emailed: 'bg-amber-50 text-amber-600',
-  replied: 'bg-orange-50 text-orange-600',
-  booked: 'bg-emerald-50 text-emerald-600',
-};
-
 const FUNNEL_STAGES: Array<{ key: FunnelStage; barColor: string }> = [
   { key: 'imported', barColor: 'bg-slate-300' },
   { key: 'researching', barColor: 'bg-cyan-400' },
@@ -61,20 +51,25 @@ const FUNNEL_STAGES: Array<{ key: FunnelStage; barColor: string }> = [
 function FunnelBar({ funnel }: { funnel: Record<FunnelStage, number> }) {
   const max = funnel.imported || 1;
   return (
-    <div className="glass-card p-6 rounded-[2.5rem]">
-      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">
-        Funnel
-      </p>
+    <div className="pb-8 border-b border-[var(--color-surface-2)]">
+      <div className="flex items-center gap-3 mb-6">
+        <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+          Funnel
+        </span>
+        <span className="flex-1 h-px bg-[var(--color-border)]" />
+      </div>
       <div className="grid w-full grid-cols-7 gap-4">
         {FUNNEL_STAGES.map(({ key, barColor }) => {
           const count = funnel[key];
           const widthPct = Math.max((count / max) * 100, 10);
           return (
             <div key={key} className="flex min-w-0 flex-col gap-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
                 {STAGE_LABELS[key]}
               </p>
-              <p className="text-2xl font-black text-[#040026]">{count}</p>
+              <p className="text-[24px] font-bold text-[var(--color-ink)]">
+                {count}
+              </p>
               <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
                 <div
                   className={cn('h-full rounded-full', barColor)}
@@ -155,9 +150,9 @@ function ProspectRow({
           : 'text-slate-500';
 
   return (
-    <div className="glass-card glass-card-hover p-5 flex items-center justify-between gap-4">
+    <div className="flex items-center justify-between gap-4 py-4 border-b border-[var(--color-surface-2)]">
       <div className="flex items-center gap-4 min-w-0">
-        <div className="w-10 h-10 rounded-xl bg-[#FCFCFD] border border-slate-100 flex items-center justify-center shadow-inner shrink-0 overflow-hidden">
+        <div className="w-10 h-10 rounded-[8px] bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center shrink-0 overflow-hidden">
           {prospect.logoUrl ? (
             <img
               src={prospect.logoUrl}
@@ -165,30 +160,25 @@ function ProspectRow({
               className="w-6 h-6 object-contain"
             />
           ) : (
-            <Building2 className="w-4 h-4 text-slate-200" />
+            <Building2 className="w-4 h-4 text-[var(--color-border-strong)]" />
           )}
         </div>
         <div className="min-w-0">
           <Link
             href={`/admin/prospects/${prospect.id}`}
-            className="text-sm font-black text-[#040026] tracking-tight hover:text-[#007AFF] transition-colors truncate block"
+            className="text-[14px] font-medium text-[var(--color-ink)] hover:text-[var(--color-gold)] transition-colors truncate block"
           >
             {prospect.companyName ?? prospect.domain}
           </Link>
           {prospect.industry && (
-            <p className="text-xs text-slate-400 font-medium truncate">
+            <p className="text-[11px] font-light text-[var(--color-muted)] truncate">
               {prospect.industry}
             </p>
           )}
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <span
-          className={cn(
-            'text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest',
-            STAGE_BADGE[prospect.funnelStage],
-          )}
-        >
+        <span className="text-[10px] font-medium uppercase tracking-[0.06em] text-[var(--color-muted)]">
           {STAGE_LABELS[prospect.funnelStage]}
         </span>
         {canStartResearch && (
@@ -303,13 +293,13 @@ function AddProspectPanel({
   });
 
   return (
-    <div className="glass-card p-5 rounded-[2rem] flex items-center gap-3">
+    <div className="flex items-center gap-3 py-4">
       <select
         value={selectedId}
         onChange={(e) => setSelectedId(e.target.value)}
-        className="flex-1 px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
+        className="input-minimal flex-1 px-3 py-2.5 rounded-md text-[13px] appearance-none"
       >
-        <option value="">Select a company…</option>
+        <option value="">Selecteer een bedrijf...</option>
         {(allProspects.data?.prospects ?? []).map((p) => (
           <option key={p.id} value={p.id}>
             {p.companyName ?? p.domain}
@@ -321,7 +311,7 @@ function AddProspectPanel({
           if (selectedId) attach.mutate({ campaignId, prospectId: selectedId });
         }}
         disabled={!selectedId || attach.isPending}
-        className="ui-tap inline-flex items-center gap-2 px-6 py-2.5 btn-pill-primary text-xs font-black uppercase tracking-widest disabled:opacity-50 shrink-0"
+        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-[11px] font-medium uppercase tracking-[0.08em] bg-[var(--color-ink)] text-white disabled:opacity-50 shrink-0"
       >
         {attach.isPending ? (
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -376,21 +366,30 @@ export default function CampaignDetailPage() {
   });
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="space-y-2">
+    <div className="max-w-[1400px] space-y-10">
+      {/* Back line */}
+      <div className="flex items-center gap-2 pb-4 border-b border-[var(--color-border)]">
         <Link
           href="/admin/campaigns"
-          className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#040026] transition-colors"
+          className="inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
           Campaigns
         </Link>
-        <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
+        <span className="text-[10px] text-[var(--color-border-strong)]">/</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink)]">
           {campaign.name}
+        </span>
+      </div>
+
+      {/* Header */}
+      <div className="pb-6 border-b border-[var(--color-ink)]">
+        <h1 className="text-[clamp(32px,5vw,48px)] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
+          {campaign.name}
+          <span className="text-[var(--color-gold)]">.</span>
         </h1>
         {campaign.nicheKey && (
-          <p className="text-sm font-bold text-slate-400">
+          <p className="text-[14px] font-light text-[var(--color-muted)] mt-2">
             {campaign.nicheKey}
           </p>
         )}
