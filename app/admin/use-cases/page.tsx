@@ -9,12 +9,10 @@ import {
   Trash2,
   Upload,
   Loader2,
-  Tag,
   ExternalLink,
   FolderSearch,
   CodeXml,
   ChevronDown,
-  Info,
 } from 'lucide-react';
 import { PageLoader } from '@/components/ui/page-loader';
 
@@ -189,27 +187,42 @@ export default function UseCasesPage() {
     'w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#040026]/5 focus:border-[#040026] transition-all';
 
   return (
-    <div className="space-y-10">
+    <div className="max-w-[1400px] space-y-10">
       {/* Page header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-black tracking-tight text-[#040026]">
-              {catalogLabel}
-            </h1>
-            {isCatalogReadOnly && (
+      <div className="flex items-baseline justify-between pb-6 border-b border-[var(--color-border)]">
+        <h1 className="text-[48px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
+          {catalogLabel}
+          <span className="text-[var(--color-gold)]">.</span>
+        </h1>
+        <div className="flex items-center gap-2">
+          {showKlarifaiImportActions && (
+            <>
               <button
-                type="button"
-                className="inline-flex items-center justify-center rounded-full text-slate-400 hover:text-[#040026] transition-colors"
-                title="Atlantis catalog is read-only and synced from RAG volumes."
-                aria-label="Catalog info"
+                onClick={() => importMutation.mutate()}
+                disabled={importMutation.isPending}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all disabled:opacity-50"
               >
-                <Info className="w-4 h-4" />
+                {importMutation.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Upload className="w-3.5 h-3.5" />
+                )}
+                {importMutation.isPending ? 'Importing...' : 'Import Obsidian'}
               </button>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-3 sm:self-start">
+              <button
+                onClick={() => vaultImportMutation.mutate()}
+                disabled={vaultImportMutation.isPending}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all disabled:opacity-50"
+              >
+                {vaultImportMutation.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <FolderSearch className="w-3.5 h-3.5" />
+                )}
+                {vaultImportMutation.isPending ? 'Scanning...' : 'Scan Vault'}
+              </button>
+            </>
+          )}
           {!isCatalogReadOnly && (
             <button
               onClick={() => {
@@ -217,55 +230,17 @@ export default function UseCasesPage() {
                 setEditingId(null);
                 setForm(emptyForm);
               }}
-              className="admin-btn-primary"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.1em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] rounded-full"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               New {catalogItemLabel}
             </button>
-          )}
-          {showKlarifaiImportActions && (
-            <>
-              <button
-                onClick={() => importMutation.mutate()}
-                disabled={importMutation.isPending}
-                className="admin-btn-secondary"
-              >
-                {importMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Importing...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4" />
-                    Import from Obsidian
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => vaultImportMutation.mutate()}
-                disabled={vaultImportMutation.isPending}
-                className="admin-btn-secondary"
-              >
-                {vaultImportMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Scanning...
-                  </>
-                ) : (
-                  <>
-                    <FolderSearch className="w-4 h-4" />
-                    Scan Vault
-                  </>
-                )}
-              </button>
-            </>
           )}
           {isAtlantisProject && (
             <button
               onClick={() => atlantisImportMutation.mutate()}
               disabled={atlantisImportMutation.isPending}
-              className="admin-btn-primary"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-[11px] font-medium uppercase tracking-[0.08em] bg-[var(--color-ink)] text-white disabled:opacity-50"
             >
               {atlantisImportMutation.isPending ? (
                 <>
@@ -283,10 +258,10 @@ export default function UseCasesPage() {
         </div>
       </div>
       {showKlarifaiImportActions && (
-        <div className="glass-card p-4 sm:p-5 space-y-3">
+        <div className="space-y-3">
           <button
             onClick={() => setShowCodebaseForm((prev) => !prev)}
-            className="admin-btn-secondary"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all"
           >
             <ChevronDown
               className={`w-4 h-4 transition-transform ${showCodebaseForm ? 'rotate-180' : ''}`}
@@ -356,9 +331,9 @@ export default function UseCasesPage() {
 
       {/* Empty state */}
       {!useCases.isLoading && list.length === 0 && (
-        <div className="glass-card p-12 text-center rounded-[2.5rem]">
-          <BookOpen className="w-10 h-10 text-slate-200 mx-auto mb-4" />
-          <p className="text-sm font-medium text-slate-400">
+        <div className="py-20 text-center">
+          <BookOpen className="w-12 h-12 text-[var(--color-border-strong)] mx-auto mb-4" />
+          <p className="text-[13px] font-light text-[var(--color-muted)]">
             {isAtlantisProject
               ? 'No Atlantis RAG documents yet. Sync from Atlantis volumes.'
               : 'No use cases yet. Create one, import from Obsidian, or scan vault.'}
@@ -368,14 +343,29 @@ export default function UseCasesPage() {
 
       {/* Use case list */}
       {list.length > 0 && (
-        <div className="space-y-4">
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+              {list.length}{' '}
+              {list.length === 1
+                ? catalogItemLabel.toLowerCase()
+                : `${catalogLabel.toLowerCase()}`}
+            </span>
+            <span className="flex-1 h-px bg-[var(--color-border)]" />
+          </div>
           {list.map((uc) => (
-            <div key={uc.id} className="glass-card p-6">
+            <div
+              key={uc.id}
+              className="py-5 border-b border-[var(--color-surface-2)]"
+            >
               {editingId === uc.id ? (
                 <div className="space-y-4">
-                  <h3 className="text-sm font-black text-[#040026] uppercase tracking-wider">
-                    Edit {catalogItemLabel}
-                  </h3>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)]">
+                      Edit {catalogItemLabel}
+                    </span>
+                    <span className="flex-1 h-px bg-[var(--color-border)]" />
+                  </div>
                   <UseCaseForm
                     form={form}
                     setForm={setForm}
@@ -386,39 +376,40 @@ export default function UseCasesPage() {
                   />
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {/* Title row */}
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-base font-black text-[#040026]">
-                        {uc.title}
-                      </span>
-                      <span className="inline-flex px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-50 text-blue-700">
-                        {uc.category}
-                      </span>
-                      {uc.isShipped && (
-                        <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700">
-                          Shipped
+                <div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[17px] font-medium text-[var(--color-ink)] tracking-[-0.01em]">
+                          {uc.title}
                         </span>
-                      )}
-                      {!uc.isActive && (
-                        <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-red-50 text-red-500">
-                          Inactive
+                        <span className="text-[9px] font-medium uppercase tracking-[0.08em] px-2 py-0.5 rounded border border-[var(--color-border)] text-[var(--color-muted)]">
+                          {uc.category}
                         </span>
-                      )}
-                      {uc._count.proofMatches > 0 && (
-                        <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-500">
-                          {uc._count.proofMatches} matches
-                        </span>
-                      )}
+                        {uc.isShipped && (
+                          <span className="text-[9px] font-medium uppercase tracking-[0.06em] text-[var(--color-brand-success)]">
+                            Shipped
+                          </span>
+                        )}
+                        {!uc.isActive && (
+                          <span className="text-[9px] font-medium uppercase tracking-[0.06em] text-[var(--color-brand-danger)]">
+                            Inactive
+                          </span>
+                        )}
+                        {uc._count.proofMatches > 0 && (
+                          <span className="text-[10px] font-light text-[var(--color-muted)]">
+                            {uc._count.proofMatches} matches
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {!isCatalogReadOnly && (
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           onClick={() => startEdit(uc)}
-                          className="admin-btn-secondary admin-btn-sm"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all"
                         >
-                          <Pencil className="w-3.5 h-3.5" />
+                          <Pencil className="w-3 h-3" />
                           Edit
                         </button>
                         <button
@@ -428,26 +419,25 @@ export default function UseCasesPage() {
                             }
                           }}
                           disabled={deleteMutation.isPending}
-                          className="admin-btn-danger admin-btn-sm"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[#b45a3b] hover:text-[#b45a3b] transition-all disabled:opacity-50"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3 h-3" />
                           Delete
                         </button>
                       </div>
                     )}
                   </div>
 
-                  {/* Summary */}
-                  <p className="text-sm text-slate-600">{uc.summary}</p>
+                  <p className="text-[13px] font-light text-[var(--color-muted)] mt-2 leading-[1.55] max-w-[700px]">
+                    {uc.summary}
+                  </p>
 
-                  {/* Tags */}
                   {uc.tags.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <Tag className="w-3 h-3 text-slate-300 shrink-0" />
+                    <div className="flex flex-wrap gap-1.5 mt-2">
                       {uc.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600"
+                          className="text-[10px] font-light text-[var(--color-muted)] px-2 py-0.5 rounded bg-[var(--color-surface-2)]"
                         >
                           {tag}
                         </span>
@@ -455,27 +445,28 @@ export default function UseCasesPage() {
                     </div>
                   )}
 
-                  {/* Outcomes */}
                   {uc.outcomes.length > 0 && (
-                    <ul className="list-disc list-inside space-y-0.5 pl-1">
+                    <ul className="list-disc list-inside mt-2 pl-1">
                       {uc.outcomes.map((outcome) => (
-                        <li key={outcome} className="text-xs text-slate-500">
+                        <li
+                          key={outcome}
+                          className="text-[12px] font-light text-[var(--color-muted)]"
+                        >
                           {outcome}
                         </li>
                       ))}
                     </ul>
                   )}
 
-                  {/* Case study refs */}
                   {uc.caseStudyRefs.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap gap-3 mt-2">
                       {uc.caseStudyRefs.map((ref) => (
                         <a
                           key={ref}
                           href={ref.startsWith('http') ? ref : undefined}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
+                          className="text-[11px] font-medium text-[var(--color-ink)] border-b border-[var(--color-border-strong)] hover:border-[var(--color-ink)] transition-colors inline-flex items-center gap-1"
                         >
                           <ExternalLink className="w-3 h-3" />
                           {ref}
@@ -510,14 +501,13 @@ function UseCaseForm({
   onCancel: () => void;
   isSaving: boolean;
 }) {
-  const inputClass =
-    'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#040026]/5 focus:border-[#040026] transition-all';
+  const inputClass = 'input-minimal w-full px-3 py-2.5 rounded-md text-[13px]';
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+          <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
             Title
           </label>
           <input
@@ -528,7 +518,7 @@ function UseCaseForm({
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+          <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
             Category
           </label>
           <input
@@ -557,7 +547,7 @@ function UseCaseForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+          <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
             Tags{' '}
             <span className="font-normal text-slate-400">
               (comma-separated)
@@ -571,7 +561,7 @@ function UseCaseForm({
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+          <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
             Outcomes{' '}
             <span className="font-normal text-slate-400">
               (comma-separated)
@@ -590,7 +580,7 @@ function UseCaseForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+          <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
             Case Study Refs{' '}
             <span className="font-normal text-slate-400">
               (comma-separated)
@@ -606,7 +596,7 @@ function UseCaseForm({
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+          <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
             External URL
           </label>
           <input
@@ -648,18 +638,21 @@ function UseCaseForm({
             form.summary.trim().length < 10 ||
             form.category.trim().length < 2
           }
-          className="admin-btn-primary"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] disabled:opacity-50"
         >
           {isSaving ? (
             <span className="inline-flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
               Saving...
             </span>
           ) : (
             `Save ${itemLabel}`
           )}
         </button>
-        <button onClick={onCancel} className="admin-btn-secondary">
+        <button
+          onClick={onCancel}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all"
+        >
           Cancel
         </button>
       </div>
