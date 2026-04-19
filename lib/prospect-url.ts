@@ -45,7 +45,7 @@ export function buildDiscoverSlug(ref: DiscoverProspectRef): string {
 }
 
 export function buildDiscoverPath(ref: DiscoverProspectRef): string {
-  return `/discover/${buildDiscoverSlug(ref)}`;
+  return `/analyse/${buildDiscoverSlug(ref)}`;
 }
 
 export function buildDiscoverUrl(

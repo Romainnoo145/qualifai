@@ -40,7 +40,7 @@ vi.mock('@/lib/cadence/engine', () => ({
 vi.mock('@/lib/prospect-url', () => ({
   buildDiscoverUrl: vi
     .fn()
-    .mockReturnValue('https://qualifai.example.com/discover/test'),
+    .mockReturnValue('https://qualifai.example.com/analyse/test'),
 }));
 
 // Mock generate-outreach AI calls

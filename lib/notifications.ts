@@ -35,7 +35,7 @@ export async function notifyAdmin({
 
   const bodies: Record<string, string> = {
     first_view: `<h2>${companyName} is viewing their Qualifai walkthrough</h2>
-      <p>They just opened <a href="${appUrl}/discover/${slug}">their personalized flow</a>.</p>
+      <p>They just opened <a href="${appUrl}/analyse/${slug}">their personalized flow</a>.</p>
       <p>Check the <a href="${appUrl}/admin/prospects/${prospectId}">admin panel</a> for live session tracking.</p>`,
     pdf_download: `<h2>${companyName} downloaded their AI report PDF</h2>
       <p>Strong engagement signal — they want to share it internally.</p>

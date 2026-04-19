@@ -36,7 +36,7 @@ vi.mock('@/lib/cadence/engine', () => ({
 }));
 
 vi.mock('@/lib/prospect-url', () => ({
-  buildDiscoverUrl: vi.fn().mockReturnValue('https://example.com/discover/x'),
+  buildDiscoverUrl: vi.fn().mockReturnValue('https://example.com/analyse/x'),
 }));
 
 vi.mock('@/lib/ai/generate-outreach', () => ({
