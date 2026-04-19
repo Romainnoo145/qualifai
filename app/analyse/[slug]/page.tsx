@@ -1,4 +1,5 @@
 import { DashboardClient } from '@/components/public/prospect-dashboard-client';
+import { AnalyseBrochure } from '@/components/features/analyse/analyse-brochure';
 import type {
   NarrativeAnalysis,
   KlarifaiNarrativeAnalysis,
@@ -396,78 +397,50 @@ export default async function DiscoverPage({ params }: Props) {
         }).format(prospectAnalysis.createdAt)
       : null;
 
-  if (prospect.project.projectType === 'ATLANTIS' && narrativeAnalysis) {
+  // Compute research stats for cover overlay
+  const researchStats = {
+    bronnen: evidenceItemsForDiscover.length,
+    signalen: evidenceItemsForDiscover.length,
+    inzichten: (
+      narrativeAnalysis?.sections ??
+      klarifaiNarrativeAnalysis?.sections ??
+      []
+    ).length,
+  };
+
+  const analysis = narrativeAnalysis ?? klarifaiNarrativeAnalysis;
+
+  if (analysis) {
+    const isAtlantis = prospect.project.projectType === 'ATLANTIS';
+    const recommendations =
+      isAtlantis && narrativeAnalysis
+        ? narrativeAnalysis.spvRecommendations
+        : (klarifaiNarrativeAnalysis?.useCaseRecommendations ?? []);
+
     return (
-      <DashboardClient
-        {...dashboardProps}
-        narrativeAnalysis={narrativeAnalysis}
-        analysisDate={analysisDateLabel}
+      <AnalyseBrochure
+        slug={prospect.slug}
+        prospect={{
+          id: prospect.id,
+          companyName: dashboardProps.companyName,
+          domain: prospect.domain,
+        }}
+        sections={analysis.sections}
+        recommendations={recommendations}
+        recommendationType={isAtlantis ? 'spv' : 'usecase'}
+        researchStats={researchStats}
+        bookingUrl={dashboardProps.bookingUrl}
+        contactEmail={dashboardProps.contactEmail}
+        phoneNumber={dashboardProps.phoneNumber}
       />
     );
   }
 
-  if (prospect.project.projectType === 'ATLANTIS') {
-    const brandName = prospect.project.brandName ?? prospect.project.name;
-    const brandMark = brandName.charAt(0).toUpperCase();
-    return (
-      <div className="min-h-screen bg-[#F8F9FA] flex flex-col font-sans">
-        {/* Header — matches AtlantisDiscoverClient shell */}
-        <header className="sticky top-0 z-50 bg-[#F8F9FA]/80 backdrop-blur-3xl border-b border-black/5">
-          <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-4">
-            <div className="w-9 h-9 rounded-2xl bg-[#040026] flex items-center justify-center shadow-lg shadow-[#040026]/10">
-              <span className="text-[#EBCB4B] font-black text-xs">
-                {brandMark}
-              </span>
-            </div>
-            <span className="text-md font-black text-[#040026] tracking-tighter">
-              {dashboardProps.companyName}
-            </span>
-          </div>
-          <div className="h-0.5 bg-slate-100" />
-        </header>
-
-        {/* Content */}
-        <main className="flex-1 flex items-center justify-center px-6">
-          <div className="max-w-lg text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-[#040026]/5 mb-8">
-              <svg
-                className="w-7 h-7 text-[#040026]/40 animate-pulse"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z"
-                />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-black text-[#040026] tracking-tight mb-3">
-              Uw partnership analyse wordt voorbereid
-            </h1>
-            <p className="text-sm leading-relaxed text-slate-500 max-w-sm mx-auto">
-              Wij analyseren de strategische mogelijkheden voor{' '}
-              {dashboardProps.companyName}. U ontvangt bericht zodra uw
-              persoonlijke analyse gereed is.
-            </p>
-          </div>
-        </main>
-
-        {/* Footer */}
-        <footer className="py-6 text-center">
-          <span className="text-[10px] uppercase tracking-widest text-slate-300 font-medium">
-            {brandName}
-          </span>
-        </footer>
-      </div>
-    );
-  }
-
+  // Fallback: prospects without analysis-v2 get the old DashboardClient
   return (
     <DashboardClient
       {...dashboardProps}
+      narrativeAnalysis={narrativeAnalysis}
       klarifaiNarrativeAnalysis={klarifaiNarrativeAnalysis}
       analysisDate={analysisDateLabel}
     />
