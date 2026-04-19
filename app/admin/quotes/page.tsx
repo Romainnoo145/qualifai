@@ -64,24 +64,22 @@ export default function QuotesListPage() {
   const rows = allRows.filter((r) => matchesFilter(r.status, filter));
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-[1400px] space-y-10">
       {/* Header */}
-      <header className="flex items-end justify-between gap-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-[var(--color-ink)]">
-            Offertes
-          </h1>
-          <p className="mt-1 text-[13px] text-[var(--color-muted)]">
-            {allRows.length} offerte{allRows.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <Link href="/admin/prospects" className="admin-btn-primary">
+      <div className="flex items-baseline justify-between pb-6 border-b border-[var(--color-border)]">
+        <h1 className="text-[48px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
+          Offertes<span className="text-[var(--color-gold)]">.</span>
+        </h1>
+        <Link
+          href="/admin/prospects"
+          className="inline-flex items-center gap-2 px-6 py-2.5 text-[11px] font-medium uppercase tracking-[0.1em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] rounded-full"
+        >
           + Nieuwe offerte
         </Link>
-      </header>
+      </div>
 
       {/* Filter pills */}
-      <div className="flex gap-1.5">
+      <div className="flex gap-2">
         {FILTERS.map((f) => {
           const count =
             f.key === 'ALL'
@@ -93,14 +91,14 @@ export default function QuotesListPage() {
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                'rounded-lg px-3 py-1.5 text-[13px] transition-colors',
+                'px-3.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
                 filter === f.key
-                  ? 'bg-[var(--color-ink)] text-white font-medium'
-                  : 'text-[var(--color-muted-dark)] hover:bg-[var(--color-surface-2)]',
+                  ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                  : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
               )}
             >
               {f.label}
-              <span className="ml-1.5 text-[11px] opacity-60">{count}</span>
+              <span className="ml-1 opacity-60">{count}</span>
             </button>
           );
         })}
@@ -108,7 +106,7 @@ export default function QuotesListPage() {
 
       {/* Table */}
       {rows.length === 0 ? (
-        <p className="py-12 text-center text-[13px] text-[var(--color-muted)]">
+        <p className="py-16 text-center text-[13px] font-light text-[var(--color-muted)]">
           Geen offertes met deze filter.
         </p>
       ) : (

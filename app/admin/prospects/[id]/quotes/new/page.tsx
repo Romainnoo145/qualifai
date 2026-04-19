@@ -104,22 +104,27 @@ export default function NewQuoteForProspectPage() {
   };
 
   return (
-    <div className="space-y-8 p-10">
-      <header className="space-y-3">
+    <div className="max-w-[1400px] space-y-8">
+      <div className="flex items-center gap-2 pb-4 border-b border-[var(--color-border)]">
         <Link
           href={`/admin/prospects/${id}`}
-          className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#040026]"
+          className="inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" /> Terug naar prospect
+          <ArrowLeft className="h-3.5 w-3.5" />
+          {prospectQuery.data?.companyName ?? 'Prospect'}
         </Link>
-        <h1 className="text-3xl font-black text-[#040026]">Nieuwe offerte</h1>
-        <p className="text-sm text-slate-500">
-          {prospectQuery.data?.companyName ?? 'Onbekende prospect'}
-        </p>
-      </header>
+        <span className="text-[10px] text-[var(--color-border-strong)]">/</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink)]">
+          Nieuwe offerte
+        </span>
+      </div>
+
+      <h1 className="text-[32px] font-bold text-[var(--color-ink)] tracking-[-0.02em]">
+        Nieuwe offerte<span className="text-[var(--color-gold)]">.</span>
+      </h1>
 
       {error && (
-        <div className="glass-card border-l-4 border-red-500 p-6 text-sm text-red-700">
+        <div className="py-3 text-[13px] font-medium text-[var(--color-brand-danger)]">
           {error}
         </div>
       )}

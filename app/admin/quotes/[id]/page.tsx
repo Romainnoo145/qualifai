@@ -39,21 +39,18 @@ type QuoteDetailRow = Prisma.QuoteGetPayload<{
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p
-      className="text-[11px] uppercase tracking-[0.18em] mb-4"
-      style={{ color: 'var(--color-muted)' }}
-    >
-      {children}
-    </p>
+    <div className="flex items-center gap-3 mb-4">
+      <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+        {children}
+      </span>
+      <span className="flex-1 h-px bg-[var(--color-border)]" />
+    </div>
   );
 }
 
 function Block({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className="rounded-xl p-6"
-      style={{ background: 'var(--color-surface-2)' }}
-    >
+    <div className="pb-8 border-b border-[var(--color-surface-2)]">
       {children}
     </div>
   );
@@ -186,33 +183,29 @@ export default function QuoteDetailPage() {
   };
 
   return (
-    <div className="p-6 max-w-3xl space-y-6">
+    <div className="max-w-[1400px] space-y-8">
       {/* Back link */}
-      <Link
-        href={`/admin/prospects/${quote.prospect.id}`}
-        className="inline-flex items-center gap-1.5 hover:opacity-70 transition-opacity"
-      >
-        <ArrowLeft
-          className="h-3 w-3"
-          style={{ color: 'var(--color-muted)' }}
-        />
-        <span
-          className="text-[11px] uppercase tracking-[0.18em]"
-          style={{ color: 'var(--color-muted)' }}
+      <div className="flex items-center gap-2 pb-4 border-b border-[var(--color-border)]">
+        <Link
+          href={`/admin/prospects/${quote.prospect.id}`}
+          className="inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
         >
+          <ArrowLeft className="h-3.5 w-3.5" />
           {quote.prospect.companyName ?? quote.prospect.slug}
+        </Link>
+        <span className="text-[10px] text-[var(--color-border-strong)]">/</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink)]">
+          {quote.nummer}
         </span>
-      </Link>
+      </div>
 
       {/* Header */}
       <header className="space-y-2">
         <div className="flex items-center gap-3 flex-wrap">
-          <span
-            className="text-[24px] leading-none"
-            style={{ color: 'var(--color-ink)' }}
-          >
+          <h1 className="text-[32px] font-bold text-[var(--color-ink)] tracking-[-0.02em] leading-none">
             {quote.nummer}
-          </span>
+            <span className="text-[var(--color-gold)]">.</span>
+          </h1>
           <QuoteStatusBadge status={quote.status} />
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -259,7 +252,7 @@ export default function QuoteDetailPage() {
               type="button"
               disabled={generateMutation.isPending || !notes.trim()}
               onClick={() => generateMutation.mutate({ id: quote.id })}
-              className="admin-btn-primary inline-flex items-center gap-2"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] disabled:opacity-50"
             >
               {generateMutation.isPending && (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -302,7 +295,7 @@ export default function QuoteDetailPage() {
               type="button"
               disabled={updateMutation.isPending}
               onClick={handleSaveLines}
-              className="admin-btn-secondary inline-flex items-center gap-2 text-[12px]"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-ink)] border border-[var(--color-border)] hover:border-[var(--color-ink)] transition-all disabled:opacity-50"
             >
               {updateMutation.isPending ? 'Opslaan...' : 'Regels opslaan'}
             </button>
@@ -320,7 +313,7 @@ export default function QuoteDetailPage() {
               onClick={() =>
                 window.open(`/offerte/${quote.prospect.readableSlug}`, '_blank')
               }
-              className="admin-btn-secondary inline-flex items-center gap-2 text-[12px]"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-ink)] border border-[var(--color-border)] hover:border-[var(--color-ink)] transition-all disabled:opacity-50"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Bekijk brochure
@@ -331,7 +324,7 @@ export default function QuoteDetailPage() {
             <button
               type="button"
               onClick={() => setShowEmailCompose((v) => !v)}
-              className="admin-btn-secondary inline-flex items-center gap-2 text-[12px]"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-ink)] border border-[var(--color-border)] hover:border-[var(--color-ink)] transition-all disabled:opacity-50"
             >
               <Mail className="h-3.5 w-3.5" />
               {showEmailCompose ? 'Annuleer email' : 'Email versturen'}
