@@ -1092,43 +1092,56 @@ export default function NewCampaignWizardPage() {
         )}
       </div>
 
-      <div className="p-8 rounded-lg space-y-8">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="space-y-8">
+        {/* Step indicator — tab bar */}
+        <div className="grid grid-cols-4 border-b border-[var(--color-ink)]">
           {STEPS.map((item) => (
-            <div key={item.id} className="flex items-center gap-2">
-              <div
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                if (step > item.id) setStep(item.id);
+              }}
+              className={cn(
+                'py-4 text-center transition-all relative',
+                '[&+&]:border-l [&+&]:border-[var(--color-border)]',
+                step > item.id && 'cursor-pointer',
+                step <= item.id && step !== item.id && 'cursor-default',
+              )}
+            >
+              <p
                 className={cn(
-                  'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border',
-                  step > item.id
-                    ? 'bg-white text-[var(--color-gold)] border-[var(--color-gold)]/70'
-                    : step === item.id
-                      ? 'bg-[var(--color-ink)] text-[var(--color-gold)] border-[var(--color-gold)]/70'
-                      : 'bg-white text-[var(--color-gold)]/60 border-[var(--color-gold)]/40',
+                  'text-[10px] font-medium uppercase tracking-[0.12em]',
+                  step === item.id
+                    ? 'text-[var(--color-gold)]'
+                    : step > item.id
+                      ? 'text-[var(--color-ink)]'
+                      : 'text-[var(--color-muted)]',
                 )}
               >
-                {step > item.id ? <Check className="w-4 h-4" /> : item.id + 1}
-              </div>
-              <span
+                {String(item.id + 1).padStart(2, '0')}
+              </p>
+              <p
                 className={cn(
-                  'text-xs font-bold uppercase tracking-[0.1em]',
+                  'text-[12px] font-medium mt-0.5',
                   step >= item.id
                     ? 'text-[var(--color-ink)]'
                     : 'text-[var(--color-muted)]',
                 )}
               >
                 {item.label}
-              </span>
-              {item.id < STEPS.length - 1 && (
-                <div className="w-8 h-px bg-[var(--color-border)] mx-1" />
+              </p>
+              {step === item.id && (
+                <span className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-[var(--color-ink)]" />
               )}
-            </div>
+            </button>
           ))}
         </div>
 
         {step === 0 && (
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+              <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
                 Campaign naam
               </label>
               {isExistingCampaignMode ? (
@@ -1143,7 +1156,7 @@ export default function NewCampaignWizardPage() {
                     setCampaignName(event.target.value);
                   }}
                   placeholder="Voorjaar doelgroep run"
-                  className="w-full px-5 py-3.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/50 text-sm font-bold text-[var(--color-ink)] focus:outline-none focus:ring-4 focus:ring-[var(--color-gold)]/10 focus:border-[var(--color-gold)] transition-all"
+                  className="input-minimal w-full px-3 py-2.5 rounded-md text-[13px]"
                 />
               )}
               {isExistingCampaignMode && (
@@ -1155,7 +1168,7 @@ export default function NewCampaignWizardPage() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+              <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
                 Doel
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1172,7 +1185,7 @@ export default function NewCampaignWizardPage() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+              <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
                 Beslisser Persona
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1190,7 +1203,7 @@ export default function NewCampaignWizardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
                   Sector
                 </label>
                 <select
@@ -1198,7 +1211,7 @@ export default function NewCampaignWizardPage() {
                   onChange={(event) =>
                     setSector(event.target.value as (typeof SECTORS)[number])
                   }
-                  className="w-full px-5 py-3.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/50 text-sm font-bold text-[var(--color-ink)] focus:outline-none focus:ring-4 focus:ring-[var(--color-gold)]/10 focus:border-[var(--color-gold)] transition-all"
+                  className="input-minimal w-full px-3 py-2.5 rounded-md text-[13px]"
                 >
                   {sortedSectors.map((value) => (
                     <option key={value} value={value}>
@@ -1209,13 +1222,13 @@ export default function NewCampaignWizardPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
                   Land
                 </label>
                 <select
                   value={countryValue}
                   onChange={(event) => setCountryValue(event.target.value)}
-                  className="w-full px-5 py-3.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/50 text-sm font-bold text-[var(--color-ink)] focus:outline-none focus:ring-4 focus:ring-[var(--color-gold)]/10 focus:border-[var(--color-gold)] transition-all"
+                  className="input-minimal w-full px-3 py-2.5 rounded-md text-[13px]"
                 >
                   {sortedCountryOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -1226,7 +1239,7 @@ export default function NewCampaignWizardPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
                   Bedrijfsgrootte
                 </label>
                 <select
@@ -1237,7 +1250,7 @@ export default function NewCampaignWizardPage() {
                         .value as (typeof COMPANY_SIZE_PRESETS)[number]['id'],
                     )
                   }
-                  className="w-full px-5 py-3.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/50 text-sm font-bold text-[var(--color-ink)] focus:outline-none focus:ring-4 focus:ring-[var(--color-gold)]/10 focus:border-[var(--color-gold)] transition-all"
+                  className="input-minimal w-full px-3 py-2.5 rounded-md text-[13px]"
                 >
                   {COMPANY_SIZE_PRESETS.map((value) => (
                     <option key={value.id} value={value.id}>
@@ -1254,7 +1267,7 @@ export default function NewCampaignWizardPage() {
                   <WandSparkles className="w-3.5 h-3.5 text-[var(--color-ink)]" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
                     Doel
                   </p>
                   <p className="text-xs font-semibold text-[var(--color-muted-dark)] mt-0.5">
@@ -1268,7 +1281,7 @@ export default function NewCampaignWizardPage() {
                   <Building2 className="w-3.5 h-3.5 text-[var(--color-ink)]" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
                     Beslisser Persona
                   </p>
                   <p className="text-xs font-semibold text-[var(--color-muted-dark)] mt-0.5">
@@ -1282,7 +1295,7 @@ export default function NewCampaignWizardPage() {
                   <Search className="w-3.5 h-3.5 text-[var(--color-ink)]" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
                     Zoekrun
                   </p>
                   <p className="text-xs font-semibold text-[var(--color-muted-dark)] mt-0.5">
@@ -1299,7 +1312,7 @@ export default function NewCampaignWizardPage() {
           <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
                   Prospect zoekrun
                 </p>
                 <p className="text-xs font-semibold text-[var(--color-muted)] mt-1">
@@ -1533,7 +1546,7 @@ export default function NewCampaignWizardPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
                   Taal
                 </label>
                 <select
@@ -1541,7 +1554,7 @@ export default function NewCampaignWizardPage() {
                   onChange={(event) =>
                     setLanguage(event.target.value as 'nl' | 'en')
                   }
-                  className="w-full px-5 py-3.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/50 text-sm font-bold text-[var(--color-ink)] focus:outline-none focus:ring-4 focus:ring-[var(--color-gold)]/10 focus:border-[var(--color-gold)] transition-all"
+                  className="input-minimal w-full px-3 py-2.5 rounded-md text-[13px]"
                 >
                   <option value="nl">Nederlands</option>
                   <option value="en">English</option>
@@ -1549,7 +1562,7 @@ export default function NewCampaignWizardPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
                   Schrijfstijl
                 </label>
                 <select
@@ -1560,7 +1573,7 @@ export default function NewCampaignWizardPage() {
                       event.target.value as (typeof TONE_PRESETS)[number]['id'],
                     );
                   }}
-                  className="w-full px-5 py-3.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)]/50 text-sm font-bold text-[var(--color-ink)] focus:outline-none focus:ring-4 focus:ring-[var(--color-gold)]/10 focus:border-[var(--color-gold)] transition-all"
+                  className="input-minimal w-full px-3 py-2.5 rounded-md text-[13px]"
                 >
                   {sortedTonePresets.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -1654,13 +1667,13 @@ export default function NewCampaignWizardPage() {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-4 border-t border-[var(--color-border)]">
+        <div className="flex items-center justify-between pt-8 mt-10 border-t border-[var(--color-border)]">
           <button
             onClick={() =>
               setStep((current) => Math.max(0, current - 1) as WizardStepId)
             }
             disabled={step === 0 || isSubmitting}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-[0.1em] bg-[var(--color-surface-2)] text-[var(--color-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-2)] border border-[var(--color-border)] disabled:opacity-40"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-[10px] font-medium uppercase tracking-[0.08em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all disabled:opacity-40"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Vorige
@@ -1675,10 +1688,10 @@ export default function NewCampaignWizardPage() {
                 )
               }
               disabled={!canGoNext || isSubmitting}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] text-xs font-bold uppercase tracking-[0.1em] disabled:opacity-40"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-md text-[11px] font-medium uppercase tracking-[0.08em] bg-[var(--color-ink)] text-white disabled:opacity-40"
             >
               Volgende
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           ) : (
             <button
@@ -1688,7 +1701,7 @@ export default function NewCampaignWizardPage() {
                 (!isExistingCampaignMode &&
                   effectiveCampaignName.trim().length < 3)
               }
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] text-xs font-bold uppercase tracking-[0.1em] disabled:opacity-40"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-[11px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] disabled:opacity-40"
             >
               {isSubmitting ? (
                 <>
@@ -1728,14 +1741,24 @@ function ChoiceCard({
       className={cn(
         'text-left rounded-md border p-4 transition-all',
         active
-          ? 'border-[var(--color-gold)] bg-[var(--color-gold)]'
-          : 'border-[var(--color-gold)]/40 bg-[var(--color-surface-2)]/50 hover:bg-[var(--color-surface-2)]',
+          ? 'border-[var(--color-ink)] bg-[var(--color-ink)]'
+          : 'border-[var(--color-border)] bg-transparent hover:border-[var(--color-ink)]',
       )}
     >
-      <p className="text-sm font-bold text-[var(--color-ink)] tracking-tight">
+      <p
+        className={cn(
+          'text-[13px] font-medium tracking-tight',
+          active ? 'text-[var(--color-gold)]' : 'text-[var(--color-ink)]',
+        )}
+      >
         {title}
       </p>
-      <p className="text-xs font-semibold text-[var(--color-muted)] mt-1">
+      <p
+        className={cn(
+          'text-[11px] font-light mt-1',
+          active ? 'text-white/50' : 'text-[var(--color-muted)]',
+        )}
+      >
         {description}
       </p>
     </button>
@@ -1744,11 +1767,13 @@ function ChoiceCard({
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[var(--color-gold)]/35 bg-[var(--color-surface-2)]/60 p-4">
-      <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--color-muted)]">
+    <div className="flex items-center justify-between py-3 border-b border-[var(--color-surface-2)]">
+      <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
         {label}
-      </p>
-      <p className="text-sm font-bold text-[var(--color-ink)] mt-1">{value}</p>
+      </span>
+      <span className="text-[13px] font-medium text-[var(--color-ink)]">
+        {value}
+      </span>
     </div>
   );
 }
