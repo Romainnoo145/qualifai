@@ -7,16 +7,6 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { PageLoader } from '@/components/ui/page-loader';
 
-const signalTypeColors: Record<string, string> = {
-  JOB_CHANGE: 'admin-state-info',
-  PROMOTION: 'admin-state-accent',
-  NEW_JOB_LISTING: 'admin-state-info',
-  HEADCOUNT_GROWTH: 'admin-state-success',
-  FUNDING_EVENT: 'admin-state-warning',
-  TECHNOLOGY_ADOPTION: 'admin-state-info',
-  INTENT_TOPIC: 'admin-state-warning',
-};
-
 export default function SignalsPage() {
   const [typeFilter, setTypeFilter] = useState('');
   const [showProcessed, setShowProcessed] = useState(false);
@@ -34,47 +24,37 @@ export default function SignalsPage() {
   });
 
   return (
-    <div className="space-y-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
-          Signals
+    <div className="max-w-[1400px] space-y-10">
+      <div className="flex items-baseline justify-between pb-6 border-b border-[var(--color-border)]">
+        <h1 className="text-[48px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
+          Signals<span className="text-[var(--color-gold)]">.</span>
         </h1>
-        <label className="admin-btn-primary cursor-pointer select-none">
+        <label className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--color-muted)] cursor-pointer select-none">
           <input
             type="checkbox"
             checked={showProcessed}
             onChange={(e) => setShowProcessed(e.target.checked)}
-            className="sr-only"
+            className="w-3.5 h-3.5 rounded accent-[var(--color-ink)]"
           />
-          <span
-            className={cn(
-              'inline-flex h-4 w-4 items-center justify-center rounded-md border',
-              showProcessed
-                ? 'border-[#040026] bg-[#040026]'
-                : 'border-[#040026]/20 bg-[#F3DB7B]',
-            )}
-          />
-          Show processed
+          Toon verwerkt
         </label>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="px-6 py-3.5 rounded-2xl border border-slate-100 bg-white text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all appearance-none"
-        >
-          <option value="">All Signal Categories</option>
-          <option value="JOB_CHANGE">Job Change</option>
-          <option value="PROMOTION">Promotion</option>
-          <option value="NEW_JOB_LISTING">New Job Listing</option>
-          <option value="HEADCOUNT_GROWTH">Headcount Growth</option>
-          <option value="FUNDING_EVENT">Funding Event</option>
-          <option value="TECHNOLOGY_ADOPTION">Technology Adoption</option>
-          <option value="INTENT_TOPIC">Intent Topic</option>
-        </select>
-      </div>
+      {/* Filter */}
+      <select
+        value={typeFilter}
+        onChange={(e) => setTypeFilter(e.target.value)}
+        className="input-minimal px-3 py-2 rounded-md text-[13px] appearance-none max-w-xs"
+      >
+        <option value="">Alle categorieën</option>
+        <option value="JOB_CHANGE">Job Change</option>
+        <option value="PROMOTION">Promotion</option>
+        <option value="NEW_JOB_LISTING">New Job Listing</option>
+        <option value="HEADCOUNT_GROWTH">Headcount Growth</option>
+        <option value="FUNDING_EVENT">Funding Event</option>
+        <option value="TECHNOLOGY_ADOPTION">Technology Adoption</option>
+        <option value="INTENT_TOPIC">Intent Topic</option>
+      </select>
 
       {/* Signal feed */}
       {signals.isLoading ? (
@@ -83,66 +63,71 @@ export default function SignalsPage() {
           description="Pulling the latest buying signals."
         />
       ) : signals.data?.signals.length === 0 ? (
-        <div className="glass-card p-20 text-center rounded-[2.5rem]">
-          <Zap className="w-16 h-16 text-slate-100 mx-auto mb-6" />
-          <p className="text-sm font-black text-[#040026] uppercase tracking-widest">
-            No signals intercepted
+        <div className="py-20 text-center">
+          <Zap className="w-12 h-12 text-[var(--color-border-strong)] mx-auto mb-4" />
+          <p className="text-[15px] font-medium text-[var(--color-ink)] mb-1">
+            Geen signals
           </p>
-          <p className="text-xs font-bold text-slate-400 mt-2 leading-relaxed max-w-xs mx-auto">
-            Propagate data discovery from individual profiles to initialize
-            market signal interception.
+          <p className="text-[13px] font-light text-[var(--color-muted)]">
+            Signals verschijnen zodra research runs market intelligence
+            oppikken.
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <section>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+              {signals.data?.signals.length ?? 0} signals
+            </span>
+            <span className="flex-1 h-px bg-[var(--color-border)]" />
+          </div>
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {(signals.data?.signals as any[])?.map((signal: any) => (
             <div
               key={signal.id}
-              className={`glass-card p-8 rounded-[2.5rem] transition-all ${signal.isProcessed ? 'opacity-40 grayscale group' : 'group hover:border-[#EBCB4B]/20'}`}
+              className={cn(
+                'py-5 border-b border-[var(--color-surface-2)] transition-all',
+                signal.isProcessed && 'opacity-40',
+              )}
             >
-              <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex-1 space-y-3">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span
-                      className={cn(
-                        'admin-state-pill',
-                        signalTypeColors[signal.signalType] ??
-                          'admin-state-neutral',
-                      )}
-                    >
+              <div className="flex items-start gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <span className="text-[9px] font-medium uppercase tracking-[0.08em] px-2 py-0.5 rounded border border-[var(--color-border)] text-[var(--color-muted)]">
                       {signal.signalType.replace(/_/g, ' ')}
                     </span>
-                    <span className="admin-eyebrow flex items-center gap-1.5 text-slate-400">
-                      <Clock className="w-3.5 h-3.5" />
-                      Detected{' '}
-                      {new Date(signal.detectedAt).toLocaleDateString()}
+                    <span className="text-[10px] font-light text-[var(--color-muted)] flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {new Date(signal.detectedAt).toLocaleDateString('nl-NL', {
+                        day: 'numeric',
+                        month: 'short',
+                      })}
                     </span>
                   </div>
-                  <p className="text-lg font-black text-[#040026] tracking-tight group-hover:text-[#040026] transition-colors leading-[1.1]">
+                  <p className="text-[15px] font-medium text-[var(--color-ink)] leading-snug">
                     {signal.title}
                   </p>
                   {signal.description && (
-                    <p className="admin-meta-text leading-relaxed max-w-2xl">
+                    <p className="text-[13px] font-light text-[var(--color-muted)] mt-1 max-w-2xl leading-relaxed">
                       {signal.description}
                     </p>
                   )}
-                  <div className="flex flex-wrap items-center gap-4 pt-2">
+                  <div className="flex flex-wrap items-center gap-4 mt-2">
                     {signal.prospect && (
                       <Link
                         href={`/admin/prospects/${signal.prospect.id}`}
-                        className="admin-eyebrow text-[#040026] hover:text-[#EBCB4B] flex items-center gap-2 transition-colors"
+                        className="text-[11px] font-medium text-[var(--color-ink)] hover:text-[var(--color-gold)] flex items-center gap-1.5 transition-colors"
                       >
-                        <Building2 className="w-3.5 h-3.5 opacity-50" />
+                        <Building2 className="w-3 h-3" />
                         {signal.prospect.companyName ?? signal.prospect.domain}
                       </Link>
                     )}
                     {signal.contact && (
                       <Link
                         href={`/admin/contacts/${signal.contact.id}`}
-                        className="admin-eyebrow text-[#040026] hover:text-[#EBCB4B] flex items-center gap-2 transition-colors"
+                        className="text-[11px] font-medium text-[var(--color-ink)] hover:text-[var(--color-gold)] flex items-center gap-1.5 transition-colors"
                       >
-                        <Users className="w-3.5 h-3.5 opacity-50" />
+                        <Users className="w-3 h-3" />
                         {signal.contact.firstName} {signal.contact.lastName}
                       </Link>
                     )}
@@ -151,16 +136,16 @@ export default function SignalsPage() {
                 {!signal.isProcessed && (
                   <button
                     onClick={() => markProcessed.mutate({ id: signal.id })}
-                    className="admin-btn-icon admin-btn-icon-success"
-                    title="Mark as processed"
+                    className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-muted)] hover:bg-[var(--color-ink)] hover:text-[var(--color-gold)] hover:border-[var(--color-ink)] transition-all shrink-0"
+                    title="Markeer als verwerkt"
                   >
-                    <Check className="w-5 h-5" />
+                    <Check className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
             </div>
           ))}
-        </div>
+        </section>
       )}
     </div>
   );
