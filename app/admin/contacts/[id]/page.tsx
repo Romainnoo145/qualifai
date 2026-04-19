@@ -17,7 +17,6 @@ import {
 import { cn } from '@/lib/utils';
 import { PageLoader } from '@/components/ui/page-loader';
 
-// TERM-02: OutreachType enum values mapped to plain-language labels
 const OUTREACH_TYPE_LABELS: Record<string, string> = {
   INTRO_EMAIL: 'Intro Email',
   WIZARD_LINK: 'Dashboard Link',
@@ -26,17 +25,6 @@ const OUTREACH_TYPE_LABELS: Record<string, string> = {
   SIGNAL_TRIGGERED: 'Signal-triggered',
 };
 
-const outreachColors: Record<string, string> = {
-  NONE: 'bg-slate-100 text-slate-500',
-  QUEUED: 'bg-amber-50 text-amber-600',
-  EMAIL_SENT: 'bg-blue-50 text-blue-600',
-  OPENED: 'bg-cyan-50 text-cyan-600',
-  REPLIED: 'bg-purple-50 text-purple-600',
-  CONVERTED: 'bg-emerald-50 text-emerald-600',
-  OPTED_OUT: 'bg-red-50 text-red-500',
-};
-
-// TERM-02: outreachStatus enum values mapped to plain-language labels
 const OUTREACH_STATUS_LABELS: Record<string, string> = {
   NONE: 'No Outreach',
   QUEUED: 'Queued',
@@ -46,6 +34,17 @@ const OUTREACH_STATUS_LABELS: Record<string, string> = {
   CONVERTED: 'Converted',
   OPTED_OUT: 'Opted Out',
 };
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+        {children}
+      </span>
+      <span className="flex-1 h-px bg-[var(--color-border)]" />
+    </div>
+  );
+}
 
 export default function ContactDetail() {
   const params = useParams();
@@ -63,8 +62,10 @@ export default function ContactDetail() {
 
   if (!contact.data) {
     return (
-      <div className="glass-card p-12 text-center">
-        <p className="text-slate-500">Contact not found</p>
+      <div className="py-20 text-center">
+        <p className="text-[13px] font-light text-[var(--color-muted)]">
+          Contact not found
+        </p>
       </div>
     );
   }
@@ -73,257 +74,266 @@ export default function ContactDetail() {
   const c = contact.data as any;
 
   return (
-    <div className="space-y-12">
-      {/* Header */}
-      <div className="flex flex-col gap-8">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/admin/contacts"
-            className="ui-tap w-10 h-10 flex items-center justify-center rounded-full bg-white border border-slate-100 text-slate-400 hover:text-[#040026] transition-all shadow-sm"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div className="px-4 py-1.5 rounded-full bg-[#040026]/5 text-[#040026] border border-[#040026]/10">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-              Contact Profile
+    <div className="max-w-[1400px] space-y-10">
+      {/* Back line */}
+      <div className="flex items-center gap-2 pb-4 border-b border-[var(--color-border)]">
+        <Link
+          href="/admin/contacts"
+          className="inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Contacts
+        </Link>
+        <span className="text-[10px] text-[var(--color-border-strong)]">/</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink)]">
+          {c.firstName} {c.lastName}
+        </span>
+      </div>
+
+      {/* Hero */}
+      <header className="flex items-start justify-between pb-8 border-b border-[var(--color-ink)]">
+        <div className="flex items-center gap-6">
+          <div className="w-16 h-16 rounded-full bg-[var(--color-ink)] flex items-center justify-center shrink-0">
+            <span className="text-lg font-bold text-[var(--color-gold)]">
+              {c.firstName?.[0]}
+              {c.lastName?.[0]}
+            </span>
+          </div>
+          <div>
+            <h1 className="text-[clamp(28px,4vw,42px)] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
+              {c.firstName} {c.lastName}
+              <span className="text-[var(--color-gold)]">.</span>
+            </h1>
+            {c.jobTitle && (
+              <p className="text-[16px] font-light text-[var(--color-muted)] mt-1">
+                {c.jobTitle}
+              </p>
+            )}
+            <span
+              className={cn(
+                'inline-block mt-2 text-[10px] font-medium uppercase tracking-[0.06em]',
+                c.outreachStatus === 'NONE' && 'text-[var(--color-muted)]',
+                c.outreachStatus === 'CONVERTED' &&
+                  'text-[var(--color-brand-success)]',
+                c.outreachStatus === 'OPTED_OUT' &&
+                  'text-[var(--color-brand-danger)]',
+                !['NONE', 'CONVERTED', 'OPTED_OUT'].includes(
+                  c.outreachStatus,
+                ) && 'text-[var(--color-ink)]',
+              )}
+            >
+              {OUTREACH_STATUS_LABELS[c.outreachStatus] ?? c.outreachStatus}
             </span>
           </div>
         </div>
+        {c.prospect && (
+          <Link
+            href={`/admin/prospects/${c.prospect.id}`}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-[11px] font-medium uppercase tracking-[0.08em] bg-transparent text-[var(--color-ink)] border border-[var(--color-border)] hover:border-[var(--color-ink)] transition-all"
+          >
+            Bekijk prospect
+          </Link>
+        )}
+      </header>
 
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-          <div className="flex items-center gap-8">
-            <div className="w-20 h-20 rounded-[2rem] bg-white border border-slate-100 flex items-center justify-center shadow-inner group-hover:bg-[#040026] transition-all">
-              <span className="text-2xl font-black text-[#040026]">
-                {c.firstName?.[0]}
-                {c.lastName?.[0]}
-              </span>
+      {/* 2-column: info + signals */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10">
+        <div className="space-y-10">
+          {/* Contact Info */}
+          <section>
+            <SectionLabel>Gegevens</SectionLabel>
+            <div className="space-y-0">
+              {[
+                {
+                  icon: Briefcase,
+                  label: c.seniority,
+                  show: !!c.seniority,
+                },
+                {
+                  icon: Building2,
+                  label: c.department,
+                  show: !!c.department,
+                },
+                {
+                  icon: Mail,
+                  label: c.primaryEmail,
+                  href: c.primaryEmail ? `mailto:${c.primaryEmail}` : undefined,
+                  show: !!c.primaryEmail,
+                },
+                {
+                  icon: Phone,
+                  label: c.primaryPhone,
+                  show: !!c.primaryPhone,
+                },
+                {
+                  icon: MapPin,
+                  label: [c.city, c.state, c.country]
+                    .filter(Boolean)
+                    .join(', '),
+                  show: !!(c.city || c.country),
+                },
+                {
+                  icon: Linkedin,
+                  label: 'LinkedIn',
+                  href: c.linkedinUrl,
+                  show: !!c.linkedinUrl,
+                },
+              ]
+                .filter((r) => r.show)
+                .map((row) => {
+                  const Icon = row.icon;
+                  return (
+                    <div
+                      key={row.label}
+                      className="flex items-center gap-3 py-3 border-b border-[var(--color-surface-2)]"
+                    >
+                      <Icon className="w-3.5 h-3.5 text-[var(--color-muted)]" />
+                      {row.href ? (
+                        <a
+                          href={row.href}
+                          target={
+                            row.href.startsWith('mailto') ? undefined : '_blank'
+                          }
+                          rel="noopener noreferrer"
+                          className="text-[13px] font-medium text-[var(--color-ink)] border-b border-[var(--color-border-strong)] hover:border-[var(--color-ink)] transition-colors"
+                        >
+                          {row.label}
+                        </a>
+                      ) : (
+                        <span className="text-[13px] font-medium text-[var(--color-ink)]">
+                          {row.label}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-4 mb-2">
-                <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
-                  {c.firstName} {c.lastName}
-                </h1>
-                <span
-                  className={cn(
-                    'text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest border',
-                    outreachColors[c.outreachStatus]
-                      ?.replace('bg-', 'bg-')
-                      .replace('text-', 'text-') ??
-                      'bg-slate-50 text-slate-400 border-slate-100',
-                  )}
-                >
-                  {/* TERM-02: outreachStatus displayed as plain label */}
-                  {OUTREACH_STATUS_LABELS[c.outreachStatus] ?? c.outreachStatus}
-                </span>
-              </div>
-              {c.jobTitle && (
-                <p className="text-xl font-bold text-slate-400 tracking-tight">
-                  {c.jobTitle}
-                </p>
-              )}
-            </div>
-          </div>
+          </section>
 
-          <div className="flex items-center gap-4">
-            <a
-              href={`/admin/prospects/${c.prospect?.id}`}
-              className="ui-tap px-8 py-3 btn-pill-primary text-xs"
-            >
-              View Prospect
-            </a>
-            {/* Queue Call / Queue LinkedIn buttons removed in 46-02 — cadence handles follow-ups */}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Contact Info */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="glass-card p-6">
-            <h2 className="text-sm font-semibold text-slate-900 mb-4">
-              Contact Info
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {c.seniority && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Briefcase className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-600">{c.seniority}</span>
-                </div>
-              )}
-              {c.department && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Building2 className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-600">{c.department}</span>
-                </div>
-              )}
-              {c.primaryEmail && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="w-4 h-4 text-slate-400" />
-                  <a
-                    href={`mailto:${c.primaryEmail}`}
-                    className="text-klarifai-blue hover:underline"
-                  >
-                    {c.primaryEmail}
-                  </a>
-                </div>
-              )}
-              {c.primaryPhone && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-600">{c.primaryPhone}</span>
-                </div>
-              )}
-              {(c.city || c.country) && (
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-600">
-                    {[c.city, c.state, c.country].filter(Boolean).join(', ')}
-                  </span>
-                </div>
-              )}
-              {c.linkedinUrl && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Linkedin className="w-4 h-4 text-slate-400" />
-                  <a
-                    href={c.linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-klarifai-blue hover:underline"
-                  >
-                    LinkedIn Profile
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Company info */}
+          {/* Company */}
           {c.prospect && (
-            <div className="glass-card p-6">
-              <h2 className="text-sm font-semibold text-slate-900 mb-3">
-                Company
-              </h2>
+            <section>
+              <SectionLabel>Bedrijf</SectionLabel>
               <Link
                 href={`/admin/prospects/${c.prospect.id}`}
-                className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                className="flex items-center gap-4 py-4 border-b border-[var(--color-surface-2)] hover:pl-2 transition-all group"
               >
-                {c.prospect.logoUrl ? (
-                  <img
-                    src={c.prospect.logoUrl}
-                    alt=""
-                    className="w-8 h-8 rounded-lg object-cover"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center">
-                    <Building2 className="w-4 h-4 text-slate-400" />
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium text-slate-900">
-                    {c.prospect.companyName ?? c.prospect.domain}
-                  </p>
-                  <p className="text-xs text-slate-400">{c.prospect.domain}</p>
+                <div className="w-10 h-10 rounded-[8px] bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center shrink-0 overflow-hidden">
+                  {c.prospect.logoUrl ? (
+                    <img
+                      src={c.prospect.logoUrl}
+                      alt=""
+                      className="w-6 h-6 object-contain"
+                    />
+                  ) : (
+                    <Building2 className="w-4 h-4 text-[var(--color-border-strong)]" />
+                  )}
                 </div>
+                <div>
+                  <span className="text-[15px] font-medium text-[var(--color-ink)]">
+                    {c.prospect.companyName ?? c.prospect.domain}
+                  </span>
+                  <p className="text-[11px] font-light text-[var(--color-muted)]">
+                    {c.prospect.domain}
+                  </p>
+                </div>
+                <span className="ml-auto w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-muted)] group-hover:bg-[var(--color-ink)] group-hover:text-[var(--color-gold)] group-hover:border-[var(--color-ink)] transition-all shrink-0 text-[12px]">
+                  →
+                </span>
               </Link>
-            </div>
+            </section>
           )}
 
-          {/* Outreach Log */}
-          <div className="glass-card p-6">
-            <h2 className="text-sm font-semibold text-slate-900 mb-4">
-              Outreach History
-            </h2>
+          {/* Outreach History */}
+          <section>
+            <SectionLabel>Outreach History</SectionLabel>
             {c.outreachLogs?.length > 0 ? (
-              <div className="space-y-3">
+              <div>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {c.outreachLogs.map((log: any) => (
                   <div
                     key={log.id}
-                    className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between py-2 border-b border-slate-100 last:border-0"
+                    className="flex items-center justify-between py-3 border-b border-[var(--color-surface-2)]"
                   >
                     <div>
-                      <span className="text-sm font-medium text-slate-700">
-                        {/* TERM-02: OutreachType displayed as plain label */}
+                      <span className="text-[13px] font-medium text-[var(--color-ink)]">
                         {OUTREACH_TYPE_LABELS[log.type] ?? log.type}
                       </span>
                       {log.subject && (
-                        <span className="text-xs text-slate-400 ml-2">
+                        <span className="text-[12px] font-light text-[var(--color-muted)] ml-2">
                           {log.subject}
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-slate-500">
-                        {log.status}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        {new Date(log.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
+                    <span className="text-[10px] font-medium text-[var(--color-muted)] tabular-nums">
+                      {new Date(log.createdAt).toLocaleDateString('nl-NL', {
+                        day: 'numeric',
+                        month: 'short',
+                      })}
+                    </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 text-center py-4">
-                No outreach yet
+              <p className="py-8 text-center text-[13px] font-light text-[var(--color-muted)]">
+                Geen outreach history.
               </p>
             )}
-          </div>
+          </section>
         </div>
 
         {/* Signals sidebar */}
-        <div className="space-y-6">
-          <div className="glass-card p-6">
-            <h2 className="text-sm font-semibold text-slate-900 mb-4">
-              Signals
-            </h2>
+        <aside className="space-y-10">
+          <section>
+            <SectionLabel>Signals</SectionLabel>
             {c.signals?.length > 0 ? (
-              <div className="space-y-3">
+              <div>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {c.signals.map((signal: any) => (
-                  <div key={signal.id} className="p-3 bg-slate-50 rounded-lg">
+                  <div
+                    key={signal.id}
+                    className="py-4 border-b border-[var(--color-surface-2)]"
+                  >
                     <div className="flex items-center gap-2 mb-1">
-                      <Zap className="w-3 h-3 text-klarifai-yellow-dark" />
-                      <span className="text-xs font-medium text-slate-600">
-                        {/* TERM-02: signalType formatted as plain label */}
-                        {signal.signalType
-                          .replace(/_/g, ' ')
-                          .replace(
-                            /\w\S*/g,
-                            (w: string) =>
-                              w.charAt(0).toUpperCase() +
-                              w.slice(1).toLowerCase(),
-                          )}
+                      <Zap className="w-3 h-3 text-[var(--color-gold)]" />
+                      <span className="text-[9px] font-medium uppercase tracking-[0.08em] text-[var(--color-muted)]">
+                        {signal.signalType.replace(/_/g, ' ')}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-700">{signal.title}</p>
+                    <p className="text-[13px] font-medium text-[var(--color-ink)]">
+                      {signal.title}
+                    </p>
                     {signal.description && (
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="text-[12px] font-light text-[var(--color-muted)] mt-1">
                         {signal.description}
                       </p>
                     )}
-                    <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
+                    <p className="text-[10px] font-light text-[var(--color-muted)] mt-2 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {new Date(signal.detectedAt).toLocaleDateString()}
+                      {new Date(signal.detectedAt).toLocaleDateString('nl-NL', {
+                        day: 'numeric',
+                        month: 'short',
+                      })}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 text-center py-4">
-                No signals detected
+              <p className="py-8 text-center text-[13px] font-light text-[var(--color-muted)]">
+                Geen signals.
               </p>
             )}
-          </div>
+          </section>
 
-          {/* Notes */}
           {c.outreachNotes && (
-            <div className="glass-card p-6">
-              <h2 className="text-sm font-semibold text-slate-900 mb-2">
-                Notes
-              </h2>
-              <p className="text-sm text-slate-600">{c.outreachNotes}</p>
-            </div>
+            <section>
+              <SectionLabel>Notities</SectionLabel>
+              <p className="text-[13px] font-light text-[var(--color-muted-dark)] leading-relaxed">
+                {c.outreachNotes}
+              </p>
+            </section>
           )}
-        </div>
+        </aside>
       </div>
     </div>
   );
