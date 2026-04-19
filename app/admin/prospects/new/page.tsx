@@ -11,8 +11,10 @@ import {
   ExternalLink,
   ArrowRight,
   Building2,
+  ArrowLeft,
 } from 'lucide-react';
 import { buildDiscoverPath } from '@/lib/prospect-url';
+import Link from 'next/link';
 
 type ProcessStage = 'idle' | 'creating' | 'enriching' | 'generating' | 'done';
 
@@ -26,6 +28,7 @@ export default function NewProspect() {
   const [enrichEmployeeRange, setEnrichEmployeeRange] = useState('');
   const [enrichCity, setEnrichCity] = useState('');
   const [enrichCountry, setEnrichCountry] = useState('Nederland');
+  const [showExtra, setShowExtra] = useState(false);
   const [stage, setStage] = useState<ProcessStage>('idle');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{
@@ -42,10 +45,10 @@ export default function NewProspect() {
     onMutate: () => {
       setStage('creating');
       setError(null);
-      // Simulate stage progression for UX
       setTimeout(() => setStage('enriching'), 1500);
       setTimeout(() => setStage('generating'), 4000);
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSuccess: (data: any) => {
       setStage('done');
       setResult({
@@ -56,6 +59,7 @@ export default function NewProspect() {
         logoUrl: data.logoUrl ?? null,
       });
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
       setError(err.message);
       setStage('idle');
@@ -100,83 +104,99 @@ export default function NewProspect() {
 
   const stageMessages: Record<ProcessStage, string> = {
     idle: '',
-    creating: 'Creating prospect...',
-    enriching: 'Enriching company data via Apollo...',
-    generating: 'Generating personalized AI content...',
-    done: 'Wizard ready!',
+    creating: 'Prospect aanmaken...',
+    enriching: 'Bedrijfsdata verrijken via Apollo...',
+    generating: 'AI content genereren...',
+    done: 'Klaar!',
   };
 
+  const labelClass =
+    'text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]';
+  const inputClass = 'input-minimal w-full px-3 py-2.5 rounded-md text-[13px]';
+
   return (
-    <div className="max-w-3xl mx-auto space-y-16 py-12">
-      <div>
-        <h1 className="text-4xl font-black text-[#040026] tracking-tighter">
-          Intelligence Onloading
-        </h1>
-        <p className="text-sm font-bold text-slate-400 mt-4 leading-relaxed">
-          Propagate your target domain to initialize deep environmental
-          enrichment and generate absolute discovery workflows.
-        </p>
+    <div className="max-w-[1400px] space-y-10">
+      {/* Back line */}
+      <div className="flex items-center gap-2 pb-4 border-b border-[var(--color-border)]">
+        <Link
+          href="/admin/prospects"
+          className="inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Prospects
+        </Link>
+        <span className="text-[10px] text-[var(--color-border-strong)]">/</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-ink)]">
+          Nieuw
+        </span>
       </div>
+
+      <h1 className="text-[48px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
+        Nieuwe prospect<span className="text-[var(--color-gold)]">.</span>
+      </h1>
 
       {stage === 'done' && result ? (
         /* Success state */
-        <div className="glass-card p-12 text-center space-y-10 rounded-[2.5rem]">
-          <div className="w-20 h-20 rounded-3xl bg-emerald-50 flex items-center justify-center mx-auto shadow-inner">
-            {result.logoUrl ? (
-              <img
-                src={result.logoUrl}
-                alt={`${result.companyName ?? domain} logo`}
-                className="w-11 h-11 object-contain"
-              />
-            ) : (
-              <Building2 className="w-9 h-9 text-emerald-500" />
-            )}
-          </div>
-          <div>
-            <h2 className="text-3xl font-black text-[#040026] tracking-tighter">
-              {result.companyName ?? domain}&apos;s Engine is Live
-            </h2>
-            <p className="text-sm font-bold text-slate-400 mt-2">
-              High-fidelity discovery asset localized and ready for outreach.
-            </p>
+        <div className="space-y-8 max-w-2xl">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 rounded-[12px] bg-[var(--color-surface-2)] border border-[var(--color-border)] flex items-center justify-center overflow-hidden">
+              {result.logoUrl ? (
+                <img
+                  src={result.logoUrl}
+                  alt=""
+                  className="w-8 h-8 object-contain"
+                />
+              ) : (
+                <Building2 className="w-6 h-6 text-[var(--color-border-strong)]" />
+              )}
+            </div>
+            <div>
+              <h2 className="text-[24px] font-bold text-[var(--color-ink)] tracking-[-0.02em]">
+                {result.companyName ?? domain}
+                <span className="text-[var(--color-gold)]">.</span>
+              </h2>
+              <p className="text-[13px] font-light text-[var(--color-muted)]">
+                Prospect aangemaakt en verrijkt.
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4 bg-[#FCFCFD] rounded-2xl px-6 py-4 border border-slate-100">
-            <code className="text-xs font-mono text-slate-500 flex-1 text-left truncate">
+          <div className="flex items-center gap-3 px-4 py-3 border border-[var(--color-border)] rounded-lg">
+            <code className="text-[12px] font-light text-[var(--color-muted)] flex-1 truncate">
               {typeof window !== 'undefined' ? window.location.origin : ''}
               {buildDiscoverPath(result)}
             </code>
             <button
               onClick={copyLink}
-              className="ui-tap flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white border border-slate-200 text-slate-500 hover:text-[#040026] hover:bg-slate-50 transition-all shadow-sm"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-ink)] border border-[var(--color-border)] hover:border-[var(--color-ink)] transition-all"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5" /> Copied
+                  <Check className="w-3 h-3" /> Gekopieerd
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5" /> Share Asset
+                  <Copy className="w-3 h-3" /> Kopieer
                 </>
               )}
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-4">
+          <div className="flex gap-3">
             <a
               href={buildDiscoverPath(result)}
               target="_blank"
-              className="ui-tap flex items-center justify-center gap-3 px-10 py-4 btn-pill-yellow text-xs w-full sm:w-auto shadow-xl"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-[11px] font-medium uppercase tracking-[0.08em] bg-transparent text-[var(--color-ink)] border border-[var(--color-border)] hover:border-[var(--color-ink)] transition-all"
             >
-              <ExternalLink className="w-4 h-4" />
-              Preview Dashboard
+              <ExternalLink className="w-3.5 h-3.5" />
+              Preview
             </a>
             <button
               onClick={() => router.push(`/admin/prospects/${result.id}`)}
-              className="ui-tap flex items-center justify-center gap-3 px-10 py-4 btn-pill-secondary text-xs w-full sm:w-auto"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c]"
             >
-              Edit Intelligence
-              <ArrowRight className="w-4 h-4" />
+              Bekijk prospect
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -191,181 +211,150 @@ export default function NewProspect() {
               setEnrichEmployeeRange('');
               setEnrichCity('');
               setEnrichCountry('Nederland');
+              setShowExtra(false);
               setResult(null);
             }}
-            className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 hover:text-[#040026] transition-all"
+            className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
           >
-            Deploy Another Engine
+            Nog een prospect toevoegen
           </button>
         </div>
       ) : (
         /* Form state */
-        <form onSubmit={handleSubmit} className="space-y-10">
-          <div className="glass-card p-10 space-y-8 rounded-[2.5rem]">
-            <div className="space-y-3">
-              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
-                Corporate Domain
-              </label>
+        <form onSubmit={handleSubmit} className="space-y-8 max-w-2xl">
+          <div className="space-y-5">
+            <div className="space-y-1.5">
+              <label className={labelClass}>Domein</label>
               <div className="relative">
-                <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 pointer-events-none" />
+                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-muted)] pointer-events-none" />
                 <input
                   type="text"
                   value={domain}
                   onChange={(e) => setDomain(e.target.value)}
-                  placeholder="e.g. apple.com"
+                  placeholder="e.g. stripe.com"
                   disabled={stage !== 'idle'}
-                  className="w-full pl-12 pr-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all"
+                  className={`${inputClass} pl-9`}
                   autoFocus
                 />
               </div>
             </div>
 
-            <div className="space-y-3">
-              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">
-                Tactical Intelligence{' '}
-                <span className="opacity-50 text-slate-300">(Optional)</span>
+            <div className="space-y-1.5">
+              <label className={labelClass}>
+                Notities <span className="opacity-50">(optioneel)</span>
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Specific context or situational constraints..."
+                placeholder="Context, pijnpunten, specifieke situatie..."
                 disabled={stage !== 'idle'}
-                rows={4}
-                className="w-full px-6 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-[#040026] focus:outline-none focus:ring-4 focus:ring-[#EBCB4B]/10 focus:border-[#EBCB4B] transition-all resize-none placeholder:text-slate-300"
+                rows={3}
+                className={`${inputClass} resize-none`}
               />
             </div>
 
-            <details className="border border-gray-200 rounded-lg mt-4">
-              <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-gray-700 select-none hover:bg-gray-50">
-                Optionele verrijking
-              </summary>
-              <div className="px-4 pb-4 pt-2 grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Bedrijfsnaam
-                  </label>
+            <button
+              type="button"
+              onClick={() => setShowExtra(!showExtra)}
+              className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
+            >
+              {showExtra ? '- Minder velden' : '+ Optionele verrijking'}
+            </button>
+
+            {showExtra && (
+              <div className="grid grid-cols-2 gap-4 pb-4 border-b border-[var(--color-surface-2)]">
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Bedrijfsnaam</label>
                   <input
                     type="text"
                     value={enrichCompanyName}
                     onChange={(e) => setEnrichCompanyName(e.target.value)}
-                    placeholder="bijv. Marfa Design Studio"
-                    className="input-minimal w-full"
-                    maxLength={200}
+                    placeholder="bijv. Marfa Design"
+                    className={inputClass}
                     disabled={stage !== 'idle'}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Sector
-                  </label>
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Sector</label>
                   <input
                     type="text"
                     value={enrichIndustry}
                     onChange={(e) => setEnrichIndustry(e.target.value)}
                     placeholder="bijv. Grafisch ontwerp"
-                    className="input-minimal w-full"
-                    maxLength={100}
+                    className={inputClass}
                     disabled={stage !== 'idle'}
                   />
                 </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Omschrijving
-                  </label>
+                <div className="col-span-2 space-y-1.5">
+                  <label className={labelClass}>Omschrijving</label>
                   <textarea
                     value={enrichDescription}
                     onChange={(e) => setEnrichDescription(e.target.value)}
-                    placeholder="Korte omschrijving van het bedrijf..."
-                    className="input-minimal w-full"
-                    rows={3}
-                    maxLength={500}
+                    placeholder="Korte omschrijving..."
+                    className={`${inputClass} resize-none`}
+                    rows={2}
                     disabled={stage !== 'idle'}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Medewerkers
-                  </label>
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Medewerkers</label>
                   <select
                     value={enrichEmployeeRange}
                     onChange={(e) => setEnrichEmployeeRange(e.target.value)}
-                    className="input-minimal w-full"
+                    className={`${inputClass} appearance-none`}
                     disabled={stage !== 'idle'}
                   >
-                    <option value="">— kies een range —</option>
-                    <option value="1-10">1–10</option>
-                    <option value="11-50">11–50</option>
-                    <option value="51-200">51–200</option>
-                    <option value="201-500">201–500</option>
-                    <option value="501-1000">501–1.000</option>
-                    <option value="1001-5000">1.001–5.000</option>
+                    <option value="">— kies —</option>
+                    <option value="1-10">1-10</option>
+                    <option value="11-50">11-50</option>
+                    <option value="51-200">51-200</option>
+                    <option value="201-500">201-500</option>
+                    <option value="501-1000">501-1.000</option>
+                    <option value="1001-5000">1.001-5.000</option>
                     <option value="5001+">5.001+</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Stad
-                  </label>
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Stad</label>
                   <input
                     type="text"
                     value={enrichCity}
                     onChange={(e) => setEnrichCity(e.target.value)}
                     placeholder="bijv. Amsterdam"
-                    className="input-minimal w-full"
-                    maxLength={100}
-                    disabled={stage !== 'idle'}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Land
-                  </label>
-                  <input
-                    type="text"
-                    value={enrichCountry}
-                    onChange={(e) => setEnrichCountry(e.target.value)}
-                    className="input-minimal w-full"
-                    maxLength={100}
+                    className={inputClass}
                     disabled={stage !== 'idle'}
                   />
                 </div>
               </div>
-            </details>
+            )}
           </div>
 
           {error && (
-            <div className="glass-card p-6 border-red-100 bg-red-50/20 rounded-2xl">
-              <p className="text-xs font-bold text-red-500">{error}</p>
-            </div>
+            <p className="text-[13px] font-medium text-[var(--color-brand-danger)]">
+              {error}
+            </p>
           )}
 
           {stage !== 'idle' && stage !== 'done' && (
-            <div className="glass-card p-10 rounded-[2.5rem]">
-              <div className="flex items-center gap-5">
-                <Loader2 className="w-8 h-8 text-[#007AFF] animate-spin" />
-                <div>
-                  <p className="text-sm font-black text-[#040026]">
-                    {stageMessages[stage]}
-                  </p>
-                  <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
-                    {stage === 'generating'
-                      ? 'AI Construction in progress...'
-                      : 'Syncing Environmental Data...'}
-                  </p>
+            <div className="flex items-center gap-4 py-6 border-b border-[var(--color-surface-2)]">
+              <Loader2 className="w-5 h-5 text-[var(--color-ink)] animate-spin" />
+              <div>
+                <p className="text-[14px] font-medium text-[var(--color-ink)]">
+                  {stageMessages[stage]}
+                </p>
+                <div className="mt-2 h-1 w-48 bg-[var(--color-surface-2)] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[var(--color-ink)] transition-all duration-1000"
+                    style={{
+                      width:
+                        stage === 'creating'
+                          ? '20%'
+                          : stage === 'enriching'
+                            ? '40%'
+                            : '85%',
+                    }}
+                  />
                 </div>
-              </div>
-              <div className="mt-8 h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
-                <div
-                  className="h-full bg-[#040026] transition-all duration-1000 shadow-xl shadow-[#040026]/10"
-                  style={{
-                    width:
-                      stage === 'creating'
-                        ? '20%'
-                        : stage === 'enriching'
-                          ? '40%'
-                          : '85%',
-                  }}
-                />
               </div>
             </div>
           )}
@@ -373,11 +362,9 @@ export default function NewProspect() {
           <button
             type="submit"
             disabled={stage !== 'idle' || !domain.trim()}
-            className="w-full py-5 btn-pill-primary text-xs tracking-[0.1em] shadow-2xl shadow-[#040026]/10"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-[11px] font-medium uppercase tracking-[0.1em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] disabled:opacity-50"
           >
-            {stage === 'idle'
-              ? 'Propagate Engine Deployment'
-              : 'System Initializing...'}
+            {stage === 'idle' ? 'Prospect aanmaken' : 'Bezig...'}
           </button>
         </form>
       )}
