@@ -47,6 +47,19 @@ export default function QuotesListPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const list = (api.quotes.list as any).useQuery(undefined);
   const [filter, setFilter] = useState<Filter>('ALL');
+  const [sortKey, setSortKey] = useState<
+    'nummer' | 'bedrijf' | 'bedrag' | 'datum'
+  >('datum');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const toggleSort = (key: typeof sortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'datum' ? 'desc' : 'asc');
+    }
+  };
 
   if (list.isLoading) {
     return <PageLoader label="Offertes laden" description="Eén moment." />;
@@ -110,71 +123,113 @@ export default function QuotesListPage() {
           Geen offertes met deze filter.
         </p>
       ) : (
-        <table className="w-full text-[13px]">
-          <thead>
-            <tr className="border-b border-[var(--color-border)] text-left">
-              {[
-                'Nummer',
-                'Bedrijf',
-                'Onderwerp',
-                'Status',
-                'Bedrag',
-                'Datum',
-              ].map((col) => (
-                <th
-                  key={col}
-                  className={cn(
-                    'pb-2 pr-4 text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)]',
-                    (col === 'Bedrag' || col === 'Datum') && 'text-right',
-                  )}
-                >
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => {
-              const totals = computeQuoteTotals(r.lines, r.btwPercentage);
+        (() => {
+          const sorted = [...rows].sort((a, b) => {
+            const dir = sortDir === 'asc' ? 1 : -1;
+            if (sortKey === 'nummer')
+              return dir * a.nummer.localeCompare(b.nummer);
+            if (sortKey === 'bedrijf')
               return (
-                <tr
-                  key={r.id}
-                  className="border-b border-[var(--color-border)] hover:bg-[var(--color-surface-2)] transition-colors"
-                >
-                  <td className="py-3 pr-4">
-                    <Link
-                      href={`/admin/quotes/${r.id}`}
-                      className="inline-flex items-center gap-2 font-medium text-[var(--color-ink)] hover:underline"
-                    >
-                      {r.isActiveProposal && (
-                        <span
-                          className="h-1.5 w-1.5 rounded-full bg-[var(--color-gold)]"
-                          title="Actief voorstel"
-                        />
-                      )}
-                      {r.nummer}
-                    </Link>
-                  </td>
-                  <td className="py-3 pr-4 text-[var(--color-muted-dark)]">
-                    {r.prospect.companyName ?? r.prospect.slug}
-                  </td>
-                  <td className="py-3 pr-4 text-[var(--color-muted-dark)] max-w-[260px] truncate">
-                    {r.onderwerp}
-                  </td>
-                  <td className="py-3 pr-4">
-                    <QuoteStatusBadge status={r.status} />
-                  </td>
-                  <td className="py-3 pr-4 text-right font-medium text-[var(--color-ink)] tabular-nums">
-                    {formatEuro(totals.bruto)}
-                  </td>
-                  <td className="py-3 text-right text-[var(--color-muted)] tabular-nums text-[12px]">
-                    {new Date(r.createdAt).toLocaleDateString('nl-NL')}
-                  </td>
-                </tr>
+                dir *
+                (a.prospect.companyName ?? '').localeCompare(
+                  b.prospect.companyName ?? '',
+                )
               );
-            })}
-          </tbody>
-        </table>
+            if (sortKey === 'bedrag') {
+              const ta = computeQuoteTotals(a.lines, a.btwPercentage).bruto;
+              const tb = computeQuoteTotals(b.lines, b.btwPercentage).bruto;
+              return dir * (ta - tb);
+            }
+            return (
+              dir *
+              (new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime())
+            );
+          });
+
+          const SortHeader = ({
+            label,
+            col,
+            right,
+          }: {
+            label: string;
+            col: typeof sortKey;
+            right?: boolean;
+          }) => (
+            <th
+              className={cn(
+                'pb-2 pr-4 text-[10px] font-medium uppercase tracking-[0.1em] cursor-pointer select-none transition-colors hover:text-[var(--color-ink)]',
+                sortKey === col
+                  ? 'text-[var(--color-ink)]'
+                  : 'text-[var(--color-muted)]',
+                right && 'text-right',
+              )}
+              onClick={() => toggleSort(col)}
+            >
+              {label} {sortKey === col && (sortDir === 'asc' ? '↑' : '↓')}
+            </th>
+          );
+
+          return (
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="border-b border-[var(--color-ink)] text-left">
+                  <SortHeader label="Nummer" col="nummer" />
+                  <SortHeader label="Bedrijf" col="bedrijf" />
+                  <th className="pb-2 pr-4 text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                    Onderwerp
+                  </th>
+                  <th className="pb-2 pr-4 text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+                    Status
+                  </th>
+                  <SortHeader label="Bedrag" col="bedrag" right />
+                  <SortHeader label="Datum" col="datum" right />
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.map((r) => {
+                  const totals = computeQuoteTotals(r.lines, r.btwPercentage);
+                  return (
+                    <tr
+                      key={r.id}
+                      onClick={() =>
+                        (window.location.href = `/admin/quotes/${r.id}`)
+                      }
+                      className="border-b border-[var(--color-surface-2)] hover:pl-1 hover:bg-[var(--color-surface-2)]/50 transition-all cursor-pointer"
+                    >
+                      <td className="py-3.5 pr-4">
+                        <span className="inline-flex items-center gap-2 font-medium text-[var(--color-ink)]">
+                          {r.isActiveProposal && (
+                            <span
+                              className="h-1.5 w-1.5 rounded-full bg-[var(--color-gold)]"
+                              title="Actief voorstel"
+                            />
+                          )}
+                          {r.nummer}
+                        </span>
+                      </td>
+                      <td className="py-3.5 pr-4 text-[var(--color-muted-dark)]">
+                        {r.prospect.companyName ?? r.prospect.slug}
+                      </td>
+                      <td className="py-3.5 pr-4 text-[var(--color-muted-dark)] max-w-[260px] truncate">
+                        {r.onderwerp}
+                      </td>
+                      <td className="py-3.5 pr-4">
+                        <QuoteStatusBadge status={r.status} />
+                      </td>
+                      <td className="py-3.5 pr-4 text-right font-medium text-[var(--color-ink)] tabular-nums">
+                        {formatEuro(totals.bruto)}
+                      </td>
+                      <td className="py-3.5 text-right text-[var(--color-muted)] tabular-nums text-[12px]">
+                        {new Date(r.createdAt).toLocaleDateString('nl-NL')}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          );
+        })()
       )}
     </div>
   );
