@@ -152,7 +152,7 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 - [x] **Phase 60: Quote Schema Foundation** — Prisma schema, tRPC router, state machine, YAML import, foundation fixes (completed 2026-04-13)
 - [x] **Phase 61: Admin UI for Quotes** — Full quote management UI inside existing Qualifai admin shell (completed 2026-04-13)
-- [ ] **Phase 61.4: Admin Design System Sweep** — Apply DESIGN.md tokens across all admin pages (in progress)
+- [ ] **Phase 61.4: Admin Design System Sweep** — QA fix sweep: backend wiring, prompt engineering, visual polish (in progress)
 - [ ] **Phase 62: Client-Facing Voorstel + PDF Worker** — Prospect proposal page and Railway PDF worker service
 - [ ] **Phase 63: Contract Workflow** — Click-to-sign contract flow following accepted quote
 
@@ -206,21 +206,19 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 ### Phase 61.4: Admin Design System Sweep (INSERTED)
 
-**Goal**: Every admin page uses DESIGN.md CSS variable tokens instead of hardcoded Tailwind colors — navy solid CTAs, unified status badges, sidebar hover tooltips, and 4 shared components (PageHeader, EmptyState, StatCard, SectionHeading) extracted from repeated patterns. Zero hardcoded `bg-slate-*`, `text-gray-*`, `font-black`, or `ui-tap` classes remain across the entire admin surface.
+**Goal**: Fix 13 QA issues found during full-app QA sweep (2026-04-20) across three tracks: backend wiring (dead buttons/links), prompt engineering (visual-first brochure content), and visual/UX polish (truncated text, missing company names). Design token sweep itself is complete (14 commits, 2026-04-19/20).
 
 **Depends on:** Phase 61
 
 **Requirements**: TOKEN-SYNC, CTA-FIX, STATUS-UNIFY, COMPONENT-EXTRACT, SIDEBAR-HOVER, PAGE-SWEEP-A, PAGE-SWEEP-B, FEATURE-COMPONENT-SWEEP, VISUAL-VERIFY
 
-**Plans:** 5 plans
+**Plans:** 3 plans
 
 Plans:
 
-- [ ] 61.4-01-PLAN.md — Foundation: globals.css CTA fix + status-badge rewrite + button.tsx fix (TOKEN-SYNC, CTA-FIX, STATUS-UNIFY)
-- [ ] 61.4-02-PLAN.md — Component extraction: PageHeader, EmptyState, StatCard, SectionHeading (COMPONENT-EXTRACT)
-- [ ] 61.4-03-PLAN.md — Page sweep A: sidebar hover + dashboard + outreach + campaigns + settings (SIDEBAR-HOVER, PAGE-SWEEP-A)
-- [ ] 61.4-04-PLAN.md — Page sweep B: prospects + contacts + use-cases + signals + quotes (PAGE-SWEEP-B)
-- [ ] 61.4-05-PLAN.md — Feature component sweep + grep audit + visual verification (FEATURE-COMPONENT-SWEEP, VISUAL-VERIFY)
+- [ ] 61.4-01-PLAN.md — Backend wiring: Start voorstel button, dossier sidebar links, dashboard Start Outreach (PAGE-SWEEP-A, PAGE-SWEEP-B, SIDEBAR-HOVER, FEATURE-COMPONENT-SWEEP)
+- [ ] 61.4-02-PLAN.md — Prompt engineering: NarrativeSection visual data types, master prompt update, brochure visual rendering, evidence count fix (TOKEN-SYNC, COMPONENT-EXTRACT, STATUS-UNIFY)
+- [ ] 61.4-03-PLAN.md — Visual polish: offerte BrandChrome companyName, cover text truncation, visual verification checkpoint (CTA-FIX, VISUAL-VERIFY)
 
 ### Phase 61.1: Manual prospect flow polish (INSERTED)
 
@@ -365,10 +363,10 @@ Plans:
 | 60. Quote Schema Foundation             | 5/5            | Complete    | 2026-04-13 |
 | 61. Admin UI for Quotes                 | 4/4            | Complete    | 2026-04-14 |
 | 61.1. Manual prospect flow polish       | 4/4            | Complete    | 2026-04-14 |
-| 61.4. Admin Design System Sweep         | 0/5            | In progress | -          |
+| 61.4. Admin Design System Sweep         | 0/3            | In progress | -          |
 | 62. Client-Facing Voorstel + PDF Worker | 0/TBD          | Not started | -          |
 | 63. Contract Workflow                   | 0/TBD          | Not started | -          |
 
 ---
 
-_Roadmap last updated: 2026-04-18 — Phase 61.4 planned (5 plans, 3 waves)_
+_Roadmap last updated: 2026-04-20 — Phase 61.4 replanned (3 plans, 2 waves) — QA fix sweep after design token migration_
