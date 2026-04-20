@@ -1,196 +1,248 @@
-# Feature Research
+# Feature Landscape — Evidence Pipeline Overhaul
 
-**Domain:** Unified outreach pipeline with signal detection — B2B sales engine add-on to Qualifai
-**Researched:** 2026-03-16
-**Confidence:** HIGH (first-party codebase analysis)
-
----
-
-## Context: What Already Exists (v8.0 Starting Point)
-
-Before mapping new features, this is the current split that v8.0 must unify:
-
-| System                          | Location                                        | What it does                                                        | Gap                                                                                       |
-| ------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `generateIntroEmail()`          | `outreach.ts` router, `automation/processor.ts` | AI email generation via Gemini Flash                                | Only appears in draft queue (OutreachLog), not in prospect detail Outreach Preview        |
-| WorkflowLossMap template engine | `assets.ts` router, `workflow-engine.ts`        | Template-based email from loss map markdown                         | Prospect detail Outreach Preview shows this; draft queue does not                         |
-| OutreachSequence + OutreachStep | `cadence/engine.ts`                             | Multi-touch cadence tracking                                        | Steps created with `bodyText: ''` placeholder — copy generation is deferred to cron sweep |
-| Draft queue                     | `/admin/outreach` page                          | OutreachLog status=draft inbox                                      | Only shows AI-generated logs; template-based outreach is invisible here                   |
-| Signal model                    | `prisma/schema.prisma`                          | 7 SignalTypes defined; `isProcessed` flag; FK to Prospect + Contact | Signal table is always empty — no code writes to it                                       |
-| Research refresh cron           | `lib/research-refresh.ts`                       | Re-runs evidence collection every 14 days                           | No diff comparison between runs, no Signal creation                                       |
-| Automation rules                | `lib/automation/rules.ts`                       | 3 rules: JOB_CHANGE, PROMOTION, HEADCOUNT_GROWTH                    | Rules fire on Signals that never exist                                                    |
+**Domain:** Evidence quality pipeline for B2B sales prospecting AI (Qualifai v10.0)
+**Researched:** 2026-04-20
+**Confidence:** HIGH (first-party codebase analysis + verified external patterns)
 
 ---
 
-## Feature Landscape
+## Context: What Already Exists vs. What This Milestone Adds
 
-### Table Stakes (Users Expect These)
+### Already built and working (do not redesign)
 
-Features the admin expects to exist in a unified pipeline. Missing these makes the system feel broken.
+- 8-source scraping pipeline (Scrapling stealth + Crawl4AI browser rendering)
+- AI scoring formula: `sourceWeight*0.30 + relevance*0.45 + depth*0.25` via Gemini Flash
+- Static source weights (REVIEWS 0.90, LINKEDIN 0.88, NEWS/CAREERS 0.85, REGISTRY 0.80, WEBSITE 0.65)
+- URL-level deduplication in `source-discovery.ts`
+- HTTP 4xx/5xx skip in the Scrapling stealth path
+- `looksLikeCrawled404()` heuristic for Crawl4AI path
+- `inferSourceType()` pattern matching (vacatures, werken-bij, etc.)
+- Traffic-light quality gate (GREEN/AMBER/RED) with soft override and audit trail
+- Use case matching (`matchProofs`) split into a separate Gemini Flash call
+- Sector-aware use case fetching (15 sector-matched + 5 cross-sector)
 
-| Feature                                                | Why Expected                                                                           | Complexity | Notes                                                                                                                    |
-| ------------------------------------------------------ | -------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Single draft queue showing all outreach types          | One place to review and send; currently two disconnected systems                       | MEDIUM     | After cleanup, all emails are OutreachLog records — `getDecisionInbox` stays as-is                                       |
-| Prospect detail links to pending drafts                | Admin clicks a prospect, expects to see what drafts are waiting for that prospect      | LOW        | Add draft count badge + link from OutreachPreviewSection to `/admin/outreach?prospectId=X`                               |
-| Draft queue links back to prospect                     | Admin sees a draft, knows which company/contact without navigating away                | LOW        | Already implemented — `draft.contact.prospect` is in `getDecisionInbox` query; confirm UI renders the link               |
-| AI follow-up appears in queue automatically after send | After approving step 1, step 2 should appear in draft queue within the scheduled delay | MEDIUM     | `processDueCadenceSteps()` exists but defers copy generation; fix: generate copy at step creation in `evaluateCadence()` |
-| Follow-up threads correctly                            | Re: subject line, brief reference to previous email                                    | LOW        | `buildFollowUpPrompt` already accepts `previousSubject` and threads — already implemented                                |
-| Draft regenerate button                                | Admin wants to retry or switch language on a draft                                     | LOW        | Already exists in draft queue UI (`regenerateDraft` mutation + EN/NL toggle)                                             |
+### The problems this milestone fixes (real numbers)
 
-### Differentiators (Competitive Advantage)
+- STB-kozijnen: 233 evidence items, ~60% estimated duplicates, only 60 arbitrary items sent to AI
+- Mujjo: 427 evidence items at same structural problem
+- Masterprompt doing: narrative writing + visual data selection + citation threading + JSON structuring simultaneously
+- visualType/visualData spec (~30 lines of JSON schema) frequently wrong or hallucinated
+- `buildLegacyPrompt` (~260 lines) has zero callers — dead code in production
+- Crawl4AI path: no HTTP status check before storing items — still leaks 404 content
+- Fallback drafts: when stealth fails AND browser budget exhausted, creates EvidenceItem with URL and no content
+- `confidenceScore` is static per sourceType, not content-quality based
 
-Features that make this pipeline meaningfully smarter than manual follow-up.
+---
 
-| Feature                                | Value Proposition                                                                                                                                   | Complexity | Notes                                                                                                                                                     |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Signal detection from evidence diffs   | After each research refresh, detect new job listings / headcount changes / tech adoptions from EvidenceItem deltas — without third-party data feeds | HIGH       | New `lib/signal-detector.ts`: compare latest two ResearchRuns per prospect; classify EvidenceItem delta by workflowTag + sourceType; write Signal records |
-| Signals automatically create drafts    | Detected signal immediately triggers AI draft via `processSignal()` — admin only reviews                                                            | MEDIUM     | `processSignal()` already works end-to-end; gap is upstream Signal creation. Fix detection, drafts flow automatically                                     |
-| Evidence-backed follow-up emails       | Follow-ups reference actual research findings ("uw vacature voor Operations Manager…") not generic check-ins                                        | HIGH       | `OutreachContext` only has company/contact basics today; needs ProspectAnalysis narrative or top EvidenceItems injected into `buildFollowUpPrompt()`      |
-| Signal-to-draft traceability           | Each draft shows what signal triggered it — admin understands why the email exists                                                                  | LOW        | `metadata.signalId` already stored on OutreachLog in `processSignal()`; add signal type badge in draft queue UI                                           |
-| Unified outreach timeline per prospect | Prospect detail shows all sent emails (intro + follow-ups + signal-triggered) in one chronological view                                             | MEDIUM     | Extend sequences.list or add separate OutreachLog history query; show with sentAt timestamps                                                              |
+## Table Stakes
 
-### Anti-Features (Commonly Requested, Often Problematic)
+Features that must be in this milestone. Missing = the overhaul is incomplete.
 
-| Feature                                  | Why Requested                                         | Why Problematic                                                                                                                                       | Alternative                                                                                                                        |
-| ---------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Auto-send without approval               | Maximum automation, remove bottleneck                 | GDPR / anti-spam risk for NL/BE; one bad draft damages brand; already ruled out in PROJECT.md "Out of Scope"                                          | Bulk approve button already exists for batch review of low-risk drafts                                                             |
-| Signal detection from third-party APIs   | More signals = more coverage                          | Apollo plan limits already hit; data freshness complexity; duplicates what the evidence pipeline already collects for free                            | Use EvidenceItem diffs from existing 8-source pipeline — already paid for, runs every 14 days                                      |
-| Real-time signal detection               | Instant reaction to company changes                   | Infrastructure complexity; no NL/BE webhook providers for headcount/job data                                                                          | 14-day cron is sufficient for B2B sales cycle; signal age is not critical at 7–50 prospects                                        |
-| Separate signal management UI            | Dedicated page for signal rules and detection history | Signals page exists but Signal table is empty and admin never visits it; another nav item increases surface area                                      | Signal type label on each draft in the unified queue provides sufficient context                                                   |
-| Keep WorkflowLossMap email template path | "Why delete what works?"                              | Two parallel email systems create confusion; the template path is not evidence-backed; it produces lower-quality outreach than `generateIntroEmail()` | Replace with `generateIntroEmail()` everywhere; loss map PDF stays (valuable asset), email fields on WorkflowLossMap model go away |
+| Feature                                            | Why Required                                                                                  | Complexity | Notes                                                                                                                        |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Crawl4AI 404 fix**                               | Stealth path fixed, browser path still leaks                                                  | Low        | Add HTTP status check parallel to stealth path; Crawl4AI returns response metadata                                           |
+| **Fallback draft suppression**                     | Items with no content stored as EvidenceItem pollute every query                              | Low        | Add `hasContent` guard before `createEvidenceItem` in `research-executor.ts`                                                 |
+| **Content deduplication at ingestion**             | Same page from sitemap + SERP + default paths = 3 identical items                             | Medium     | Hash-based exact dedup first, then similarity threshold for near-dupes                                                       |
+| **Content-quality relevance score per item**       | Static sourceType weights give all WEBSITE items 0.65 regardless of content                   | Medium     | Gemini Flash binary/ternary classification per item at ingestion — not a full scoring call                                   |
+| **Drop sub-threshold items before storing**        | Garbage in, garbage out — irrelevant items currently stored and passed to AI                  | Low        | Threshold check after relevance score; don't store items that fail                                                           |
+| **Pre-rank evidence set for masterprompt**         | `.slice(0, 60)` by sourceType weight is arbitrary — 173 items ignored with no guarantee       | Medium     | Pre-compute ranked set at analysis time, pass top 20 best items (not top 60 by static weight)                                |
+| **Delete dead v1 prompt**                          | 260 lines of `buildLegacyPrompt` with no callers clutters the file                            | Trivial    | Delete, update exports, run typecheck                                                                                        |
+| **Remove visualType/visualData from masterprompt** | Gemini frequently ignores or gets the schema wrong when combined with narrative generation    | Medium     | Separate downstream Gemini Flash call per section — input: section body + source citations → output: visualType + visualData |
+| **Simplify masterprompt JSON output schema**       | Current schema includes spvRecommendations, visualType, visualData, citations all in one pass | Low        | Output: `{ openingHook, executiveSummary, sections[{id, title, body, punchline, citations}] }` — no visual fields            |
+
+---
+
+## Differentiators
+
+Features that improve output quality significantly but are not blocking.
+
+| Feature                                                   | Value Proposition                                                                                     | Complexity | Notes                                                                                                 |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------- |
+| **Source diversity enforcement in top-20 selection**      | Pure relevance ranking can over-select from one source type (e.g., 15 WEBSITE items)                  | Medium     | Group by sourceType, apply per-source caps before final ranking — MMR-lite without embeddings         |
+| **Cookie banner / boilerplate filter at ingestion**       | Cookie consent text, privacy policy boilerplate, and "over ons" generic text stored as evidence noise | Low        | Keyword heuristic filter: Dutch cookie/privacy/GDPR patterns + minimum informational density check    |
+| **Snippet quality signal (length + information density)** | Current threshold is `>500 chars` — cookie banners pass this easily                                   | Low        | Add information density check: ratio of unique tokens to total tokens; filter items where ratio < 0.4 |
+| **Content hash stored on EvidenceItem**                   | Enables future re-dedup runs, change detection, and diff-based signal generation                      | Low        | Store SHA-256 of normalized snippet on `EvidenceItem`; add DB column                                  |
+| **Evidence set summary pre-computed for masterprompt**    | Instead of raw items, pass a structured summary: N items per sourceType, themes found                 | Medium     | Intermediate summarization step using Gemini Flash before masterprompt; reduces prompt size by 40-60% |
+
+---
+
+## Anti-Features
+
+Features to explicitly NOT build in this milestone.
+
+| Anti-Feature                                | Why Avoid                                                                                                                                | What to Do Instead                                                                                                              |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Semantic/embedding-based deduplication**  | Requires vector similarity search infrastructure not present in this stack; overkill for 20-400 item sets                                | Use SHA-256 hash of normalized text for exact dedup + Jaccard coefficient on shingled text for near-dedup; no embeddings needed |
+| **Re-ranker model or fine-tuned scorer**    | LLM-as-reranker costs $25-30/1000 queries for pointwise scoring; purpose-built rerankers (BGE, Cohere) outperform LLMs on NDCG@10 anyway | Use existing Gemini Flash binary classification (relevant/not-relevant) at ingestion — cheap, sufficient                        |
+| **Real-time evidence quality UI**           | Admin dossier page already shows evidence grouped by sourceType; adding quality overlays is scope creep                                  | Surface the content-quality score as a numeric field on existing evidence admin page — no new page                              |
+| **Global minimum evidence count hard gate** | Already validated that Dutch SMBs have thin web presence; hard blocking makes system unusable                                            | The existing AMBER soft-gate + quality score average handles this — don't add new hard blocking                                 |
+| **Rewrite the scraping infrastructure**     | Scrapling + Crawl4AI work well (83+ items for Nedri); the problem is post-scraping filtering                                             | Fix the funnel, not the sources                                                                                                 |
+| **Parallel masterprompt calls per section** | Tempting to parallelize section generation for speed, but coherence between sections requires a single context                           | Keep one narrative generation call; split only the downstream visual data extraction into parallel Flash calls                  |
 
 ---
 
 ## Feature Dependencies
 
 ```
-[Signal Detection from Evidence Diffs]
-    └──requires──> [Research Refresh Cron] (exists, runs every 14 days)
-    └──requires──> [EvidenceItem with researchRunId FK] (exists in schema)
-    └──writes──> [Signal records] (model exists, table empty)
-        └──triggers via cron or callback──> [processSignal()] (exists in automation/processor.ts)
-            └──writes──> [OutreachLog status=draft]
-                └──appears in──> [Unified Draft Queue]
+Crawl4AI 404 fix → can ship independently
+Fallback draft suppression → can ship independently
+Delete dead v1 prompt → can ship independently (no dependencies)
 
-[AI Follow-Up Cadence]
-    └──requires──> [OutreachSequence with SENT step] (exists)
-    └──triggered by──> [evaluateCadence() after send] (exists — called in approveDraft mutation)
-    └──generates copy via──> [generateFollowUp()] (exists)
-    └──writes──> [OutreachLog status=draft with FOLLOW_UP type]
-        └──appears in──> [Unified Draft Queue]
+Content-quality relevance score per item
+  → requires: Gemini Flash call at ingestion point in web-evidence-adapter.ts
+  → unlocks: Drop sub-threshold items before storing
 
-[Unified Draft Queue]
-    └──currently shows──> INTRO_EMAIL + FOLLOW_UP + SIGNAL_TRIGGERED OutreachLog records
-    └──currently missing──> WorkflowLossMap email path (resolved by cleanup removing template path)
-    └──enhanced by──> Signal type badge on triggered drafts
-    └──enhanced by──> Prospect link on each draft row (already present, confirm rendering)
+Drop sub-threshold items before storing
+  → requires: Content-quality relevance score
+  → unlocks: Pre-rank evidence set for masterprompt (cleaner input)
 
-[Prospect Detail Outreach Status]
-    └──requires──> [OutreachSequence.status] (exists)
-    └──requires──> [OutreachLog count query for pending drafts] (new query needed)
-    └──enhances via──> link to /admin/outreach?prospectId=X
-    └──currently broken by──> OutreachPreviewSection showing WorkflowLossMap template, not AI drafts
+Content deduplication at ingestion
+  → requires: Hash normalization on EvidenceItem (trivial schema change)
+  → can run in parallel with relevance scoring
+  → unlocks: Pre-rank evidence set (fewer items to rank)
 
-[Evidence-Backed Follow-Ups]
-    └──requires──> [AI Follow-Up Cadence working] (P1)
-    └──requires──> [ProspectAnalysis narrative or top EvidenceItems available at cadence time]
-    └──requires──> [buildFollowUpPrompt() updated to accept evidence block]
+Pre-rank evidence set for masterprompt (top 20)
+  → requires: Content-quality relevance score + deduplication both complete
+  → this is the gate that unlocks masterprompt simplification
+
+Remove visualType/visualData from masterprompt
+  → requires: Simplified masterprompt schema (delete visual fields from output)
+  → unlocks: Separate downstream visual data call
+
+Simplify masterprompt JSON output schema
+  → requires: Remove visualType/visualData
+  → can ship before downstream visual call is built (discover page needs update)
+
+Source diversity enforcement in top-20
+  → requires: Pre-rank evidence set mechanism
+  → nice-to-have, not blocking
+
+Cookie banner / boilerplate filter
+  → can ship at ingestion alongside relevance scoring
+  → reduces load on Gemini Flash relevance call
 ```
 
-### Dependency Notes
+---
 
-- **Signal detection is the unblocking feature**: Everything downstream (automation rules, signal drafts) already works. The Signal table being empty is the single failure point for the entire automation layer.
-- **Dead code cleanup is a prerequisite for clarity**: `createWorkflowLossMapDraft()` in `workflow-engine.ts`, `emailSubject/emailBodyHtml/emailBodyText` on `WorkflowLossMap`, and `assets.queueOutreachDraft` mutation all represent the template path. Remove before building new email features in the same files to avoid confusion and regression risk.
-- **Follow-up copy generation must move earlier**: Current flow is `evaluateCadence()` creates step with empty body → cron sweeps → `processDueCadenceSteps()` generates copy. Risk: cron delay, reply between creation and sweep. Fix: generate copy inline in `evaluateCadence()`.
-- **Evidence-backed follow-ups depend on P1 follow-up fix**: Must confirm follow-up cadence works end-to-end with real data before adding evidence enrichment to prompts.
+## Stream Breakdown (Implementation Order)
+
+### Stream 1: Funnel Fixes (Fast wins first)
+
+1. Delete dead v1 prompt (trivial)
+2. Crawl4AI HTTP status check (Low)
+3. Fallback draft suppression (Low)
+4. Cookie/boilerplate heuristic filter (Low)
+5. Content deduplication — exact hash + near-dedup (Medium)
+
+### Stream 2: Relevance Scoring at Ingestion
+
+6. Gemini Flash relevance classification per item (Medium)
+7. Drop sub-threshold items before storing (Low — depends on 6)
+8. Store content hash on EvidenceItem (Low)
+
+### Stream 3: Masterprompt Simplification
+
+9. Pre-rank top-20 evidence set with source diversity cap (Medium — depends on 5+7)
+10. Remove visualType/visualData from masterprompt output schema (Low)
+11. Simplify masterprompt JSON output (Low)
+12. Separate downstream Gemini Flash call for visual data per section (Medium)
+
+### Stream 4: E2E Validation
+
+13. Re-run full pipeline for STB-kozijnen and Mujjo with new filtering
+14. Before/after comparison of evidence count and output narrative quality
+15. Verify discover page renders correctly with simplified analysis output
 
 ---
 
-## MVP Definition
+## Complexity Assessment
 
-### Launch With (v8.0)
+### Content Deduplication — Chosen Approach
 
-Minimum set to make the unified pipeline real. All six items are required; none can be deferred.
+**Exact dedup (SHA-256 on normalized text):** Hash the snippet after lowercasing, stripping whitespace and HTML entities. Check against existing hashes in the same `prospectId` partition. O(1) lookup.
 
-- [ ] **Dead code cleanup** — Remove WorkflowLossMap email fields + template path. ~300–500 LOC deleted. This is the first phase: clears the path for everything else.
-- [ ] **Signal detection from evidence diffs** — `lib/signal-detector.ts`: compare latest two ResearchRuns per prospect, classify EvidenceItem deltas by sourceType/workflowTag into SignalTypes (NEW_JOB_LISTING, HEADCOUNT_GROWTH, TECHNOLOGY_ADOPTION, FUNDING_EVENT). Write Signal records with idempotency guard. Called from research refresh completion.
-- [ ] **Signal-to-draft pipeline closes** — After signal written, `processSignal()` fires (via cron or callback). Drafts appear in queue. "Process Signals" button on outreach page tests this manually.
-- [ ] **Unified draft queue (all types visible)** — Confirm `getDecisionInbox` returns all three types: INTRO_EMAIL, FOLLOW_UP, SIGNAL_TRIGGERED. Add type badge on each draft row. After template cleanup, this should work without query changes.
-- [ ] **Prospect detail outreach status** — Replace WorkflowLossMap-centric OutreachPreviewSection content with AI-centric view: current sequence status chip, pending draft count, link to outreach queue.
-- [ ] **AI follow-up copy generated at sequence step creation** — Move `generateFollowUp()` call from `processDueCadenceSteps()` into `evaluateCadence()`. Follow-up body is ready when step is created, not deferred.
+**Near-dedup (Jaccard on 5-shingles):** Split text into overlapping 5-word windows, compute Jaccard similarity between candidate and existing items. If Jaccard > 0.7, discard the new item. No external dependency — pure TypeScript. For 20-400 item sets this runs in milliseconds.
 
-### Add After Validation (v8.1)
+**Why not MinHash/LSH:** MinHash/LSH is designed for trillion-scale datasets. At 20-400 items per prospect, naive O(n²) Jaccard comparison over shingled sets is faster and simpler with no infrastructure cost.
 
-Add once v8.0 pipeline is verified with real signals and real follow-ups in production.
+**Why not semantic/embedding dedup:** Requires vector search infrastructure not in the current stack. Content-level dedup (same page scraped twice) is solved by Jaccard — semantic dedup (two different pages making the same point) is a nice-to-have, not a table stake.
 
-- [ ] **Evidence-backed follow-up prompts** — Pass ProspectAnalysis narrative (or top 5 EvidenceItems) into `buildFollowUpPrompt()`. Follow-ups reference real findings instead of generic "following up."
-- [ ] **Signal detail badge on draft row** — Show triggering signal type and title on SIGNAL_TRIGGERED drafts in the queue.
-- [ ] **Per-prospect outreach timeline** — In prospect detail, show sent emails chronologically with sent dates and reply status.
+### Relevance Scoring at Ingestion — Chosen Approach
 
-### Future Consideration (v9+)
+**Gemini Flash binary classification:** Single call per item, prompt: "Is dit fragment nuttig voor het analyseren van workflow-problemen bij een bedrijf? Antwoord: JA of NEE." Cost at Gemini 2.5 Flash-lite ($0.10/M input): ~50 tokens per item × 400 items = 20k tokens = $0.002 per prospect. Negligible.
 
-Defer until v8.0 pipeline has processed real signals and the admin has validated the oversight model.
+**Why not a reranker model:** Purpose-built rerankers (BGE-reranker-v2, Cohere Rerank) outperform Gemini Flash on NDCG@10 (0.74 vs 0.68) but require a separate service deployment. For binary keep/drop classification (not ranking), Gemini Flash is sufficient.
 
-- [ ] **Configurable automation rules in UI** — Currently hardcoded in `lib/automation/rules.ts`. DB-backed rules make sense at 3+ users or when rules need frequent adjustment.
-- [ ] **Signal confidence scoring** — Not all EvidenceItem deltas are equal. Scoring signals at detection time (e.g., using aiRelevance from EvidenceItem) gives the admin prioritized signal feed.
-- [ ] **Multi-prospect signal batching** — Useful at 50+ prospects when multiple companies trigger the same signal type in one refresh cycle.
+**Threshold:** Items scoring below relevance threshold are dropped before storage, not after. This keeps the DB clean rather than storing then filtering at query time.
 
----
+### Evidence Ranking for Masterprompt — Chosen Approach
 
-## Feature Prioritization Matrix
+**Top-N with source diversity caps:** Select top 20 items by combined score (existing `confidenceScore` + new content-quality score), but cap per sourceType: max 5 WEBSITE, max 4 REVIEWS, max 3 LINKEDIN, max 3 CAREERS, max 3 NEWS, max 2 REGISTRY. This prevents any single source from dominating context even when that source has the most items.
 
-| Feature                              | User Value                     | Implementation Cost        | Priority                                      |
-| ------------------------------------ | ------------------------------ | -------------------------- | --------------------------------------------- |
-| Dead code cleanup                    | MEDIUM (clarity, reduces risk) | LOW (delete)               | P1 — do first                                 |
-| Signal detection from evidence diffs | HIGH                           | HIGH                       | P1 — unblocks all automation                  |
-| AI follow-up copy fix                | HIGH                           | LOW                        | P1 — current cadence has placeholder body bug |
-| Unified draft queue (all types)      | HIGH                           | LOW (after cleanup)        | P1                                            |
-| Signal-to-draft automation closes    | HIGH                           | LOW (depends on detection) | P1                                            |
-| Prospect detail outreach status      | MEDIUM                         | LOW                        | P1                                            |
-| Evidence-backed follow-up prompts    | HIGH                           | MEDIUM                     | P2                                            |
-| Signal badge on draft                | LOW                            | LOW                        | P2                                            |
-| Per-prospect outreach history        | MEDIUM                         | MEDIUM                     | P2                                            |
-| Configurable automation rules        | LOW                            | HIGH                       | P3                                            |
+**Why not MMR (Maximal Marginal Relevance):** MMR requires embedding vectors to compute inter-document similarity. The source diversity caps achieve the same goal (diverse, non-redundant context) without embeddings, at zero cost.
+
+**Top 20 not top 60:** Research consistently shows LLMs degrade with more context chunks. Top-100 hurts accuracy even with long context windows. 20 high-quality items with 300-char snippets = ~6k chars — well within Gemini Flash's sweet spot for reliable JSON generation.
+
+### Prompt Decomposition — Chosen Approach
+
+**Split visualType/visualData into a downstream call:** Narrative generation (creative, long-form) and visual data extraction (structured, factual) require different output modes from the LLM. Combining them in one prompt forces the model into inconsistent behavior — it tries to write flowing narrative AND generate structured JSON simultaneously.
+
+**Pattern:** Masterprompt generates `{openingHook, executiveSummary, sections[{id, title, body, punchline, citations}]}`. Then, for each section, a separate Gemini Flash call receives the section body + citations and returns `{visualType, visualData}`. These section calls can run in parallel (Promise.all) since they have no inter-dependencies.
+
+**Why not per-section parallel narrative generation:** Sections need coherence — they reference each other, build on themes, avoid repetition. This requires a single shared context. Only the visual extraction step is truly independent per section.
 
 ---
 
-## Complexity Notes by Feature
+## MVP Recommendation
 
-### Signal Detection (HIGH)
+Build in this order for fastest path to clean output:
 
-The diff algorithm must handle non-deduplicated evidence items:
+**Phase 1 (fastest wins, no AI calls):**
 
-- EvidenceItems are fresh extractions per run — cannot diff by item ID.
-- Diff by: `sourceType` count changes + `workflowTag` content patterns between run N and run N-1.
-- NEW_JOB_LISTING: CAREERS source items count increased, or snippets contain hiring keywords ("vacatur", "wij zoeken", "hiring").
-- HEADCOUNT_GROWTH: LINKEDIN items mention employee count growth, or NEWS items mention expansion.
-- TECHNOLOGY_ADOPTION: WEBSITE/NEWS items mention new tool/platform adoption not in prior run.
-- FUNDING_EVENT: NEWS items mention funding round keywords.
-- Idempotency: check `Signal` table for `(prospectId, signalType)` before inserting, scoped to the same run pair. Or add unique constraint on `(prospectId, signalType, metadata.runId)`.
+- Delete dead v1 prompt
+- Crawl4AI HTTP status check
+- Fallback draft suppression
+- Cookie/boilerplate heuristic filter
+- Content deduplication (hash + Jaccard)
 
-### Unified Draft Queue (MEDIUM then LOW after cleanup)
+**Phase 2 (quality gate at ingestion):**
 
-- Before cleanup: two separate email systems; merging them requires routing or query union.
-- After cleanup: all emails are OutreachLog records with status=draft — queue requires no changes to the data layer.
-- The complexity is in the cleanup phase, not the queue phase.
+- Gemini Flash relevance classification per item
+- Drop sub-threshold items before storing
 
-### AI Follow-Up Copy Fix (LOW)
+**Phase 3 (masterprompt simplification):**
 
-- Move `generateFollowUp()` call from `processDueCadenceSteps()` into `evaluateCadence()`.
-- `evaluateCadence()` already loads `sequence.contact` and `sequence.prospect` — all context needed is available.
-- `processDueCadenceSteps()` becomes a simpler "find due steps, promote to QUEUED" sweep without copy generation.
-- Net result: no more empty `bodyText` in draft queue for follow-ups.
+- Pre-rank top-20 with source diversity caps
+- Remove visualType/visualData from masterprompt
+- Simplify output schema
+
+**Phase 4 (restore visual layer):**
+
+- Downstream per-section Gemini Flash call for visual data
+- Update discover page to handle sections without visualType/visualData gracefully
+
+**Phase 5 (validation):**
+
+- Re-run STB-kozijnen (target: <80 evidence items, >80% relevant)
+- Re-run Mujjo (target: <150 items)
+- Compare narrative quality before/after
+
+**Defer:**
+
+- Evidence set pre-summarization (reduces prompt size further, nice-to-have)
+- Content hash storage on EvidenceItem (useful for future signal detection, not blocking)
+- Source diversity enforcement (Phase 3 can ship without it; add in Phase 3 if time allows)
 
 ---
 
 ## Sources
 
-- First-party codebase: `lib/automation/processor.ts`, `lib/cadence/engine.ts`, `lib/research-refresh.ts`, `lib/ai/generate-outreach.ts`, `lib/ai/outreach-prompts.ts`, `lib/automation/rules.ts`, `server/routers/assets.ts`, `server/routers/outreach.ts`
-- Schema: `prisma/schema.prisma` — Signal, OutreachLog, OutreachStep, EvidenceItem, ResearchRun, WorkflowLossMap models
-- UI: `app/admin/outreach/page.tsx`, `components/features/prospects/outreach-preview-section.tsx`, `app/admin/signals/page.tsx`
-- Project context: `.planning/PROJECT.md` v8.0 milestone definition
-
----
-
-_Feature research for: Qualifai v8.0 Unified Outreach Pipeline_
-_Researched: 2026-03-16_
+- First-party codebase: `lib/web-evidence-adapter.ts`, `lib/analysis/master-prompt.ts`, `lib/enrichment/` (HIGH confidence)
+- First-party problem analysis: `.planning/phases/62-evidence-pipeline-overhaul/.continue-here.md` (HIGH confidence)
+- SimHash/near-dedup: [Google SimHash paper](https://research.google.com/pubs/archive/33026.pdf), [near-duplicate detection blog](https://naman.so/blog/simhash-web-crawl-caching) (MEDIUM confidence)
+- LLM context window research: [ICLR 2025 Long-context LLMs meet RAG](https://proceedings.iclr.cc/paper_files/paper/2025/file/5df5b1f121c915d8bdd00db6aac20827-Paper-Conference.pdf), [Neo4j Advanced RAG](https://neo4j.com/blog/genai/advanced-rag-techniques/) (HIGH confidence)
+- LLM reranker benchmarks: [ZeroEntropy LLM as reranker](https://zeroentropy.dev/articles/llm-as-reranker-guide/) (MEDIUM confidence)
+- MMR for evidence diversity: [Elastic MMR](https://www.elastic.co/search-labs/blog/maximum-marginal-relevance-diversify-results), [Full Stack Retrieval MMR](https://community.fullstackretrieval.com/retrieval-methods/maximum-marginal-relevance) (HIGH confidence)
+- Prompt decomposition: [DecomP paper](https://openreview.net/forum?id=_nGgzQjzaRy), [LearnPrompting decomposition](https://learnprompting.org/docs/advanced/decomposition/decomp) (HIGH confidence)
+- Cookie banner detection: [Apify cookie modal blocking](https://blog.apify.com/how-to-block-cookie-modals/), [CHI 2025 GDPR cookie analysis](https://dl.acm.org/doi/10.1145/3706598.3713648) (MEDIUM confidence)
+- Gemini Flash pricing: [Galileo Gemini 2.5 Flash Lite overview](https://galileo.ai/model-hub/gemini-2-5-flash-lite-overview) (MEDIUM confidence — verify current pricing before billing estimates)
