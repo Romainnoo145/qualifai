@@ -584,6 +584,19 @@ model ProofMatch {
   @@index([useCaseId])
 }
 
+enum UseCaseSector {
+  BOUW
+  INSTALLATIE
+  ONDERHOUD
+  PRODUCTIE
+  LOGISTIEK
+  ZORG
+  BOUW_DIENSTEN
+  ZAKELIJK
+  ACCOUNTANCY
+  ENERGIE
+}
+
 model UseCase {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -592,6 +605,7 @@ model UseCase {
   title         String
   summary       String
   category      String
+  sector        UseCaseSector?
   outcomes      String[]
   tags          String[]
   caseStudyRefs String[]
@@ -607,6 +621,7 @@ model UseCase {
 
   @@index([isActive, isShipped])
   @@index([category])
+  @@index([sector])
   @@index([projectId, updatedAt])
   @@index([projectId, sourceRef])
 }
