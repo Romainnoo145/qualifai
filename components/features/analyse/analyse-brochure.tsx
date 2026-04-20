@@ -297,7 +297,7 @@ export function AnalyseBrochure({
           style={{
             position: 'absolute',
             inset: 0,
-            padding: '120px 72px 128px',
+            padding: '120px 72px 160px',
             fontFamily: 'var(--font-sora), sans-serif',
             color: TEXT_ON_NAVY,
             zIndex: 1,
@@ -342,7 +342,7 @@ export function AnalyseBrochure({
             inset: 0,
             display: 'grid',
             gridTemplateRows: 'auto auto 1fr',
-            padding: '120px 72px 128px',
+            padding: '120px 72px 160px',
             fontFamily: 'var(--font-sora), sans-serif',
             color: TEXT_ON_NAVY,
             zIndex: 1,
@@ -664,10 +664,19 @@ function GoldDot() {
   );
 }
 
-function Narrative({ paragraphs }: { paragraphs: string[] }) {
+function Narrative({
+  paragraphs,
+  maxParagraphs = 2,
+  maxCharsPerParagraph = 280,
+}: {
+  paragraphs: string[];
+  maxParagraphs?: number;
+  maxCharsPerParagraph?: number;
+}) {
+  const limited = paragraphs.slice(0, maxParagraphs);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {paragraphs.map((p, i) => (
+      {limited.map((p, i) => (
         <p
           key={i}
           style={{
@@ -678,7 +687,7 @@ function Narrative({ paragraphs }: { paragraphs: string[] }) {
             margin: 0,
           }}
         >
-          {p}
+          {truncate(p, maxCharsPerParagraph)}
         </p>
       ))}
     </div>
@@ -738,25 +747,43 @@ function StatRow({ value, label }: { value: number; label: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Derive insight cards from body paragraphs */
+function truncate(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.lastIndexOf(' ', max);
+  return text.slice(0, cut > 0 ? cut : max) + '...';
+}
+
 function deriveInsights(body: string): { title: string; desc: string }[] {
   const paragraphs = body.split('\n\n').filter(Boolean);
   return paragraphs.slice(0, 3).map((p) => {
     const firstDot = p.indexOf('. ');
-    if (firstDot > 0 && firstDot < 120) {
-      return { title: p.slice(0, firstDot + 1), desc: p.slice(firstDot + 2) };
+    if (firstDot > 0 && firstDot < 80) {
+      return {
+        title: p.slice(0, firstDot + 1),
+        desc: truncate(p.slice(firstDot + 2), 100),
+      };
     }
-    return { title: p.slice(0, 60) + '...', desc: p };
+    return { title: truncate(p, 50), desc: truncate(p, 100) };
   });
 }
 
-/** Derive pillars from body paragraphs */
+/** Derive pillars from body paragraphs — short title + max 2 lines desc */
 function derivePillars(body: string): { title: string; desc: string }[] {
   const paragraphs = body.split('\n\n').filter(Boolean);
   return paragraphs.slice(0, 3).map((p) => {
-    const words = p.split(' ');
-    const titleWords = words.slice(0, 5).join(' ');
-    const descWords = words.slice(5).join(' ');
-    return { title: titleWords, desc: descWords || p };
+    // Title: first sentence or first ~6 words
+    const firstDot = p.indexOf('. ');
+    let title: string;
+    let rest: string;
+    if (firstDot > 0 && firstDot < 60) {
+      title = p.slice(0, firstDot + 1);
+      rest = p.slice(firstDot + 2);
+    } else {
+      const words = p.split(' ');
+      title = words.slice(0, 6).join(' ');
+      rest = words.slice(6).join(' ');
+    }
+    return { title: truncate(title, 50), desc: truncate(rest || p, 120) };
   });
 }
 
