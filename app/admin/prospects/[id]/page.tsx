@@ -43,13 +43,7 @@ type ResearchRunRow = Prisma.ResearchRunGetPayload<{
   };
 }>;
 
-type EventType =
-  | 'ENRICH'
-  | 'QUALITY'
-  | 'RUN'
-  | 'QUOTE'
-  | 'OUTREACH'
-  | 'EVIDENCE';
+type EventType = 'ENRICH' | 'QUALITY' | 'RUN' | 'QUOTE' | 'OUTREACH';
 
 type ActivityEvent = {
   id: string;
@@ -69,8 +63,6 @@ const TAG_CLASS: Record<EventType, string> = {
     'bg-[var(--color-surface-2)] text-[var(--color-foreground)] border-[var(--color-border-strong)]',
   OUTREACH:
     'bg-[var(--color-tag-outreach-bg)] text-[var(--color-tag-outreach-text)] border-[var(--color-tag-outreach-border)]',
-  EVIDENCE:
-    'bg-[var(--color-tag-evidence-bg)] text-[var(--color-tag-evidence-text)] border-[var(--color-tag-evidence-border)]',
 };
 
 const DATE_TZ: Intl.DateTimeFormatOptions = {
@@ -221,6 +213,7 @@ type ProspectShape = Record<string, unknown> & {
   slug: string;
   readableSlug: string | null;
   lastEnrichedAt: Date | null;
+  _count?: { evidenceItems: number };
   contacts?: Array<{
     id: string;
     firstName: string | null;
@@ -442,10 +435,11 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
 // Main component
 // ─────────────────────────────────────────────────────────────────────
 
-const FEED_TABS: { id: 'ALL' | EventType; label: string }[] = [
+const ALL_FEED_TABS: { id: 'ALL' | EventType; label: string }[] = [
   { id: 'ALL', label: 'Alles' },
-  { id: 'EVIDENCE', label: 'Evidence' },
   { id: 'RUN', label: 'Runs' },
+  { id: 'ENRICH', label: 'Enrichment' },
+  { id: 'QUALITY', label: 'Kwaliteit' },
   { id: 'OUTREACH', label: 'Outreach' },
   { id: 'QUOTE', label: 'Offertes' },
 ];
@@ -506,6 +500,19 @@ export default function ProspectDetail() {
     [events, feedFilter],
   );
 
+  // Only show tabs that have at least one event (ALL always visible)
+  const eventTypes = useMemo(
+    () => new Set(events.map((e) => e.type)),
+    [events],
+  );
+  const feedTabs = useMemo(
+    () =>
+      ALL_FEED_TABS.filter(
+        (tab) => tab.id === 'ALL' || eventTypes.has(tab.id as EventType),
+      ),
+    [eventTypes],
+  );
+
   // Capture "now" once at mount — stable across renders.
   const [mountTime] = useState(() => Date.now());
   const runLabel = useMemo(() => {
@@ -563,7 +570,8 @@ export default function ProspectDetail() {
   // the signal surfaced on this page. Score itself comes from evidence items
   // (aggregated in a future admin.getProspectActivity procedure).
   const qualityApproved = latestRun?.qualityApproved === true;
-  const evidenceCount = latestRun?._count?.evidenceItems ?? 0;
+  // Single source of truth: DB count on prospect, not derived from runs
+  const evidenceCount = p._count?.evidenceItems ?? 0;
 
   const displayName = p.companyName ?? p.domain ?? 'Prospect';
   const location = [p.city, p.country].filter(Boolean).join(', ') || null;
@@ -785,10 +793,12 @@ export default function ProspectDetail() {
               <DossierLink
                 href={`/admin/prospects/${id}/outreach`}
                 label="Outreach"
+                disabled
               />
               <DossierLink
                 href={`/admin/prospects/${id}/resultaten`}
                 label="Resultaten"
+                disabled
               />
             </div>
           </div>
@@ -798,7 +808,7 @@ export default function ProspectDetail() {
         <main>
           <Eyebrow className="mb-4">Activiteit</Eyebrow>
           <div className="flex gap-1.5 mb-5">
-            {FEED_TABS.map((tab) => (
+            {feedTabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
@@ -925,11 +935,25 @@ function DossierLink({
   href,
   label,
   count,
+  disabled,
 }: {
   href: string;
   label: string;
   count?: number;
+  disabled?: boolean;
 }) {
+  if (disabled) {
+    return (
+      <div className="flex flex-col gap-1 p-3 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface)] opacity-40 cursor-not-allowed">
+        <span className="text-[12px] font-semibold text-[var(--color-muted)]">
+          {label}
+        </span>
+        <span className="text-[10px] text-[var(--color-muted)]">
+          binnenkort
+        </span>
+      </div>
+    );
+  }
   return (
     <Link
       href={href}

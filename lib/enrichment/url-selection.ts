@@ -124,6 +124,8 @@ const EVERGREEN_PATH_HINTS = [
   '/team',
   '/careers',
   '/werken-bij',
+  '/vacatures',
+  '/werkenbij',
 ];
 
 const EVERGREEN_SELECTION_RATIO = 0.2;
@@ -197,7 +199,10 @@ function buildContextTokens(input?: UrlSelectionInput['context']): Set<string> {
   return new Set(tokens);
 }
 
-function relevanceBonus(url: string, contextTokens: Set<string>): {
+function relevanceBonus(
+  url: string,
+  contextTokens: Set<string>,
+): {
   bonus: number;
   matches: number;
 } {
@@ -365,7 +370,9 @@ function seedGuessPenalty(source: CandidateSource, url: string): number {
   return -0.18;
 }
 
-export function selectResearchUrls(input: UrlSelectionInput): UrlSelectionResult {
+export function selectResearchUrls(
+  input: UrlSelectionInput,
+): UrlSelectionResult {
   const topN = Math.max(1, input.topN ?? 60);
   const contextTokens = buildContextTokens(input.context);
 
@@ -423,7 +430,10 @@ export function selectResearchUrls(input: UrlSelectionInput): UrlSelectionResult
   });
 
   const segmentCap = Math.max(1, Math.floor(topN * 0.35));
-  const evergreenCap = Math.max(2, Math.floor(topN * EVERGREEN_SELECTION_RATIO));
+  const evergreenCap = Math.max(
+    2,
+    Math.floor(topN * EVERGREEN_SELECTION_RATIO),
+  );
   const segmentCounts = new Map<string, number>();
   let evergreenCount = 0;
 
@@ -488,16 +498,18 @@ export function selectResearchUrls(input: UrlSelectionInput): UrlSelectionResult
     if (isEvergreenUrl(candidate.url)) evergreenCount += 1;
   }
 
-  const selectedWithRank: ScoredSelectedUrl[] = selected.map((candidate, idx) => ({
-    url: candidate.url,
-    source: candidate.source,
-    lastmod: candidate.lastmod ?? null,
-    topSegment: candidate.topSegment,
-    pathDepth: candidate.pathDepth,
-    rank: idx + 1,
-    score: candidate.score,
-    relevanceMatches: candidate.relevanceMatches,
-  }));
+  const selectedWithRank: ScoredSelectedUrl[] = selected.map(
+    (candidate, idx) => ({
+      url: candidate.url,
+      source: candidate.source,
+      lastmod: candidate.lastmod ?? null,
+      topSegment: candidate.topSegment,
+      pathDepth: candidate.pathDepth,
+      rank: idx + 1,
+      score: candidate.score,
+      relevanceMatches: candidate.relevanceMatches,
+    }),
+  );
 
   const selectedBySource: Record<string, number> = {};
   const selectedBySegment: Record<string, number> = {};

@@ -189,7 +189,13 @@ function average(values: number[]): number {
 
 export function inferSourceType(url: string): EvidenceSourceType {
   const lowered = url.toLowerCase();
-  if (lowered.includes('/careers') || lowered.includes('/jobs'))
+  if (
+    lowered.includes('/careers') ||
+    lowered.includes('/jobs') ||
+    lowered.includes('/vacatures') ||
+    lowered.includes('/werken-bij') ||
+    lowered.includes('/werkenbij')
+  )
     return 'CAREERS';
   if (lowered.includes('/docs') || lowered.includes('/documentation'))
     return 'DOCS';

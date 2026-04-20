@@ -873,7 +873,14 @@ export const adminRouter = router({
             orderBy: { createdAt: 'desc' },
             take: 20,
           },
-          _count: { select: { sessions: true, contacts: true, signals: true } },
+          _count: {
+            select: {
+              sessions: true,
+              contacts: true,
+              signals: true,
+              evidenceItems: true,
+            },
+          },
         },
       });
     }),
@@ -1717,5 +1724,65 @@ export const adminRouter = router({
         },
       });
       return updated;
+    }),
+
+  // ─── Evidence & Analysis dossier queries ─────────────────────────────
+
+  listEvidence: projectAdminProcedure
+    .input(z.object({ prospectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Verify prospect belongs to project
+      await ctx.db.prospect.findFirstOrThrow({
+        where: { id: input.prospectId, projectId: ctx.projectId },
+        select: { id: true },
+      });
+
+      const items = await ctx.db.evidenceItem.findMany({
+        where: { prospectId: input.prospectId },
+        orderBy: [{ sourceType: 'asc' }, { confidenceScore: 'desc' }],
+        select: {
+          id: true,
+          sourceType: true,
+          sourceUrl: true,
+          title: true,
+          snippet: true,
+          confidenceScore: true,
+          workflowTag: true,
+          createdAt: true,
+        },
+      });
+
+      // Group by sourceType
+      const grouped: Record<string, typeof items> = {};
+      for (const item of items) {
+        const key = item.sourceType;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(item);
+      }
+
+      return { items, grouped, total: items.length };
+    }),
+
+  getAnalysis: projectAdminProcedure
+    .input(z.object({ prospectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Verify prospect belongs to project
+      await ctx.db.prospect.findFirstOrThrow({
+        where: { id: input.prospectId, projectId: ctx.projectId },
+        select: { id: true },
+      });
+
+      return ctx.db.prospectAnalysis.findFirst({
+        where: { prospectId: input.prospectId },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          version: true,
+          content: true,
+          modelUsed: true,
+          createdAt: true,
+          inputSnapshot: true,
+        },
+      });
     }),
 });

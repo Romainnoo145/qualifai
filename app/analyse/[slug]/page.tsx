@@ -210,6 +210,7 @@ export default async function DiscoverPage({ params }: Props) {
       status: true,
       lushaRawData: true,
       lastEnrichedAt: true,
+      _count: { select: { evidenceItems: true } },
       workflowHypotheses: {
         where: { status: { in: ['ACCEPTED', 'PENDING', 'DRAFT'] } },
         orderBy: { confidenceScore: 'desc' },
@@ -360,7 +361,7 @@ export default async function DiscoverPage({ params }: Props) {
         : latestRun?.qualityApproved === false
           ? 'Kwaliteitscheck in review'
           : null,
-    evidenceCount: evidenceItemsForDiscover.length,
+    evidenceCount: prospect._count.evidenceItems,
     sourceTypeCount,
     diagnosticsWarningCount,
   };
@@ -397,9 +398,9 @@ export default async function DiscoverPage({ params }: Props) {
         }).format(prospectAnalysis.createdAt)
       : null;
 
-  // Compute research stats for cover overlay
+  // Compute research stats for cover overlay — use DB count as single source
   const researchStats = {
-    bronnen: rawEvidenceItems.length,
+    bronnen: prospect._count.evidenceItems,
     brontypen: sourceTypeCount,
     inzichten: (
       narrativeAnalysis?.sections ??
