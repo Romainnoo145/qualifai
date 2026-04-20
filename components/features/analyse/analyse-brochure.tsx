@@ -48,6 +48,29 @@ interface AnalyseBrochureProps {
 // Main export
 // ─────────────────────────────────────────────────────────────────────────────
 
+const RESPONSIVE_STYLES = `
+  @media (max-width: 1024px) {
+    .analyse-page { padding: 100px 48px 110px !important; }
+    .analyse-split { grid-template-columns: 1fr 1fr !important; gap: 36px !important; }
+    .analyse-pillars-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .analyse-kansen-grid { grid-template-columns: 1fr 1fr !important; }
+  }
+  @media (max-width: 768px) {
+    .analyse-main {
+      position: relative !important;
+      overflow-y: auto !important;
+      min-height: 100vh !important;
+    }
+    .analyse-page { padding: 88px 24px 120px !important; }
+    .analyse-split { grid-template-columns: 1fr !important; gap: 24px !important; }
+    .analyse-pillars-grid { grid-template-columns: 1fr !important; }
+    .analyse-kansen-grid { grid-template-columns: 1fr !important; }
+    .analyse-hero { font-size: 28px !important; }
+    .analyse-hero-mega { font-size: 36px !important; }
+    .analyse-cta-row { flex-direction: column !important; }
+  }
+`;
+
 export function AnalyseBrochure({
   slug: _slug,
   prospect,
@@ -127,7 +150,8 @@ export function AnalyseBrochure({
   // ── Page 0: Cover ──
   if (currentPage === 0) {
     return (
-      <main style={pageBase}>
+      <main className="analyse-main" style={pageBase}>
+        <style dangerouslySetInnerHTML={{ __html: RESPONSIVE_STYLES }} />
         <video
           ref={videoRef}
           autoPlay
@@ -218,12 +242,17 @@ export function AnalyseBrochure({
     const pageNum = String(currentPage + 1).padStart(2, '0');
 
     return (
-      <main style={{ ...pageBase, backgroundColor: NAVY }}>
+      <main
+        className="analyse-main"
+        style={{ ...pageBase, backgroundColor: NAVY }}
+      >
+        <style dangerouslySetInnerHTML={{ __html: RESPONSIVE_STYLES }} />
         <GeometricBackdrop />
         <BrandChrome />
         <ProgressIndicator label={progressLabel} />
 
         <div
+          className="analyse-page"
           style={{
             position: 'absolute',
             inset: 0,
@@ -256,12 +285,17 @@ export function AnalyseBrochure({
     const pageNum = String(currentPage + 1).padStart(2, '0');
 
     return (
-      <main style={{ ...pageBase, backgroundColor: NAVY }}>
+      <main
+        className="analyse-main"
+        style={{ ...pageBase, backgroundColor: NAVY }}
+      >
+        <style dangerouslySetInnerHTML={{ __html: RESPONSIVE_STYLES }} />
         <GeometricBackdrop />
         <BrandChrome />
         <ProgressIndicator label={progressLabel} />
 
         <div
+          className="analyse-page"
           style={{
             position: 'absolute',
             inset: 0,
@@ -281,6 +315,7 @@ export function AnalyseBrochure({
           />
 
           <div
+            className="analyse-kansen-grid"
             style={{
               display: 'grid',
               gridTemplateColumns:
@@ -310,12 +345,17 @@ export function AnalyseBrochure({
 
   // ── Contact page (terminal) ──
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
+    <main
+      className="analyse-main"
+      style={{ ...pageBase, backgroundColor: NAVY }}
+    >
+      <style dangerouslySetInnerHTML={{ __html: RESPONSIVE_STYLES }} />
       <GeometricBackdrop />
       <BrandChrome />
       <ProgressIndicator label={progressLabel} />
 
       <div
+        className="analyse-page"
         style={{
           position: 'absolute',
           inset: 0,
@@ -377,6 +417,7 @@ export function AnalyseBrochure({
 
         {/* Action buttons */}
         <div
+          className="analyse-cta-row"
           style={{
             display: 'flex',
             gap: '16px',
@@ -722,6 +763,7 @@ function SectionSplit({
       <HeroHeading title={section.title} />
 
       <div
+        className="analyse-split"
         style={{
           display: 'grid',
           gridTemplateColumns: '1.4fr 1fr',
@@ -848,6 +890,7 @@ function SectionPillars({
 
       {/* 3 pillar cards */}
       <div
+        className="analyse-pillars-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
@@ -956,6 +999,7 @@ function SectionQuote({
       <HeroHeading title={section.title} />
 
       <div
+        className="analyse-split"
         style={{
           display: 'grid',
           gridTemplateColumns: '1.4fr 1fr',
