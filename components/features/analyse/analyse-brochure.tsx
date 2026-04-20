@@ -235,7 +235,7 @@ export function AnalyseBrochure({
         <div
           style={{
             position: 'absolute',
-            right: '20%',
+            right: '15%',
             bottom: '30%',
             fontFamily: 'var(--font-sora), sans-serif',
             zIndex: 10,
@@ -258,26 +258,20 @@ export function AnalyseBrochure({
               alignItems: 'baseline',
             }}
           >
-            <span style={{ ...statNumberStyle, justifySelf: 'end' }}>
-              {researchStats.bronnen}
-            </span>
-            <span style={statLabelStyle}>
+            <span style={{ ...statLabelStyle, justifySelf: 'end' }}>
               {'B\u2009R\u2009O\u2009N\u2009N\u2009E\u2009N'}
             </span>
+            <span style={statNumberStyle}>{researchStats.bronnen}</span>
 
-            <span style={{ ...statNumberStyle, justifySelf: 'end' }}>
-              {researchStats.brontypen}
-            </span>
-            <span style={statLabelStyle}>
+            <span style={{ ...statLabelStyle, justifySelf: 'end' }}>
               {'B\u2009R\u2009O\u2009N\u2009T\u2009Y\u2009P\u2009E\u2009N'}
             </span>
+            <span style={statNumberStyle}>{researchStats.brontypen}</span>
 
-            <span style={{ ...statNumberStyle, justifySelf: 'end' }}>
-              {researchStats.inzichten}
-            </span>
-            <span style={statLabelStyle}>
+            <span style={{ ...statLabelStyle, justifySelf: 'end' }}>
               {'I\u2009N\u2009Z\u2009I\u2009C\u2009H\u2009T\u2009E\u2009N'}
             </span>
+            <span style={statNumberStyle}>{researchStats.inzichten}</span>
           </div>
         </div>
 
