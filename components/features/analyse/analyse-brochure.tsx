@@ -213,50 +213,39 @@ export function AnalyseBrochure({
         <BrandChrome />
         <ProgressIndicator label={progressLabel} />
 
-        {/* Dynamic overlay — right of header, above the video's gold line */}
+        {/* Dynamic overlay — positioned where video keywords were:
+            right side, above the gold line (~75% height), no own divider */}
         <div
           style={{
             position: 'absolute',
-            right: '72px',
-            top: '50%',
-            transform: overlayVisible
-              ? 'translateY(-70%)'
-              : 'translateY(-70%) translateX(12px)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
+            right: '10%',
+            bottom: '30%',
             fontFamily: 'var(--font-sora), sans-serif',
             zIndex: 10,
             opacity: overlayVisible ? 1 : 0,
+            transform: overlayVisible ? 'translateY(0)' : 'translateY(8px)',
             transition: 'opacity 800ms ease-out, transform 800ms ease-out',
             pointerEvents: overlayVisible ? 'auto' : 'none',
-            textAlign: 'right',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: '12px',
           }}
         >
-          {/* Research stats — above the divider line */}
+          {/* Stats — large, right-aligned, above the video's gold line */}
           <StatRow value={researchStats.bronnen} label="BRONNEN" />
           <StatRow value={researchStats.brontypen} label="BRONTYPEN" />
           <StatRow value={researchStats.inzichten} label="INZICHTEN" />
 
-          {/* Divider — aligns with the video's gold line */}
+          {/* Company name — below the video's gold line (no own divider) */}
           <div
             style={{
-              width: '100%',
-              height: '1px',
-              background: `linear-gradient(90deg, transparent, ${GOLD_MID})`,
-              marginTop: '4px',
-              marginBottom: '4px',
-            }}
-          />
-
-          {/* Company name — only thing below the line */}
-          <div
-            style={{
-              fontSize: '14px',
+              fontSize: '13px',
               fontWeight: 500,
               color: TEXT_ON_NAVY,
-              letterSpacing: '0.15em',
+              letterSpacing: '0.2em',
               textTransform: 'uppercase' as const,
+              marginTop: '28px',
             }}
           >
             {prospect.companyName}
@@ -715,28 +704,27 @@ function StatRow({ value, label }: { value: number; label: string }) {
         display: 'flex',
         alignItems: 'baseline',
         justifyContent: 'flex-end',
-        gap: '16px',
+        gap: '18px',
       }}
     >
       <span
         style={{
-          fontSize: '28px',
+          fontSize: 'clamp(28px, 3.5vw, 44px)',
           fontWeight: 700,
           ...goldGradientText,
           letterSpacing: '-0.02em',
           fontVariantNumeric: 'tabular-nums',
-          minWidth: '48px',
-          textAlign: 'right',
+          lineHeight: 1,
         }}
       >
         {value}
       </span>
       <span
         style={{
-          fontSize: '11px',
+          fontSize: 'clamp(11px, 1.2vw, 15px)',
           fontWeight: 500,
           color: TEXT_ON_NAVY,
-          letterSpacing: '0.12em',
+          letterSpacing: '0.15em',
         }}
       >
         {spaced}
