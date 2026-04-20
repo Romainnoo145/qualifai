@@ -299,11 +299,11 @@ function MegaStat({
   goldDot?: boolean;
 }) {
   return (
-    <div className="py-5 border-r border-[var(--color-border)] last:border-r-0 first:pl-0 pl-6 pr-6">
+    <div className="py-3 border-r border-[var(--color-border)] last:border-r-0 first:pl-0 pl-5 pr-5">
       <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
         {label}
       </span>
-      <div className="mt-2 font-['Sora'] text-[32px] font-bold leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)]">
+      <div className="mt-1.5 font-['Sora'] text-[26px] font-bold leading-[1.15] tracking-[-0.02em] text-[var(--color-ink)]">
         {value}
         {goldDot ? (
           <span className="text-[var(--color-gold-hi)]">.</span>
@@ -543,7 +543,7 @@ export default function ProspectDetail() {
   return (
     <div className="max-w-[1400px] space-y-0 pb-20">
       {/* Back line */}
-      <div className="flex items-center gap-2 pb-3.5 mb-8 border-b border-[var(--color-border)]">
+      <div className="flex items-center gap-2 pb-3.5 mb-5 border-b border-[var(--color-border)]">
         <Link
           href="/admin/prospects"
           className="inline-flex items-center gap-1.5 px-2 py-1 -mx-2 rounded-[5px] text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--color-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-colors"
@@ -560,15 +560,15 @@ export default function ProspectDetail() {
       </div>
 
       {/* Hero */}
-      <header className="grid grid-cols-[1fr_auto] gap-10 items-end pb-7 mb-9 border-b border-[var(--color-ink)]">
+      <header className="grid grid-cols-[1fr_auto] gap-10 items-end pb-5 mb-5">
         <div>
           <HeroName name={displayName} />
           {p.description ? (
-            <p className="mt-5 max-w-[620px] text-[16px] font-light leading-[1.55] text-[var(--color-muted-dark)]">
+            <p className="mt-5 text-[15px] font-light leading-[1.55] text-[var(--color-muted-dark)]">
               {p.description}
             </p>
           ) : (
-            <p className="mt-5 max-w-[620px] text-[16px] font-light leading-[1.55] text-[var(--color-muted)]">
+            <p className="mt-5 text-[15px] font-light leading-[1.55] text-[var(--color-muted)]">
               Geen beschrijving beschikbaar.{' '}
               <button
                 type="button"
@@ -606,7 +606,7 @@ export default function ProspectDetail() {
       </header>
 
       {/* Mega-stat bar */}
-      <section className="grid grid-cols-[repeat(4,minmax(0,1fr))] border-b border-[var(--color-ink)] mb-10">
+      <section className="grid grid-cols-[repeat(4,minmax(0,1fr))] border-t border-b border-[var(--color-ink)] mb-10">
         <MegaStat
           label="Stage"
           value={
