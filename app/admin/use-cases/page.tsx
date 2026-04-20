@@ -2,25 +2,17 @@
 
 import { useState } from 'react';
 import { api } from '@/components/providers';
-import {
-  BookOpen,
-  Plus,
-  Pencil,
-  Trash2,
-  Upload,
-  Loader2,
-  ExternalLink,
-  FolderSearch,
-  CodeXml,
-  ChevronDown,
-} from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { PageLoader } from '@/components/ui/page-loader';
+import { SECTOR_LABELS } from '@/lib/constants/sectors';
+import type { UseCaseSector } from '@prisma/client';
 
 type UseCase = {
   id: string;
   title: string;
   summary: string;
   category: string;
+  sector: UseCaseSector | null;
   outcomes: string[];
   tags: string[];
   caseStudyRefs: string[];
@@ -30,20 +22,19 @@ type UseCase = {
   sourceRef: string | null;
   createdAt: string | Date;
   updatedAt: string | Date;
-  _count: {
-    proofMatches: number;
-  };
+  _count: { proofMatches: number };
 };
+
+const SECTORS = Object.entries(SECTOR_LABELS) as [UseCaseSector, string][];
 
 const emptyForm = {
   title: '',
   summary: '',
   category: '',
+  sector: '' as UseCaseSector | '',
   outcomes: '',
   tags: '',
-  caseStudyRefs: '',
   isShipped: true,
-  externalUrl: '',
 };
 
 function splitCsv(value: string): string[] {
@@ -54,16 +45,18 @@ function splitCsv(value: string): string[] {
 }
 
 export default function UseCasesPage() {
+  const [selectedSector, setSelectedSector] = useState<UseCaseSector | null>(
+    null,
+  );
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showCodebaseForm, setShowCodebaseForm] = useState(false);
-  const [codebasePath, setCodebasePath] = useState('');
   const [form, setForm] = useState(emptyForm);
 
   const utils = api.useUtils();
 
-  const useCases = api.useCases.list.useQuery();
-  const activeProjectQuery = api.projects.listSpvsForActiveProject.useQuery();
+  const useCases = api.useCases.list.useQuery(
+    selectedSector ? { sector: selectedSector } : undefined,
+  );
 
   const createMutation = api.useCases.create.useMutation({
     onSuccess: async () => {
@@ -87,54 +80,6 @@ export default function UseCasesPage() {
     },
   });
 
-  const importMutation = api.useCases.importFromObsidian.useMutation({
-    onSuccess: async (data) => {
-      await utils.useCases.list.invalidate();
-      let message = `Created ${data.created} use cases, skipped ${data.skipped} duplicates.`;
-      if (data.errors.length > 0) {
-        message += `\n\nErrors:\n${data.errors.join('\n')}`;
-      }
-      window.alert(message);
-    },
-  });
-
-  const vaultImportMutation = api.useCases.importFromVault.useMutation({
-    onSuccess: async (data) => {
-      await utils.useCases.list.invalidate();
-      let message = `Scanned ${data.filesScanned} files. Created ${data.created} use cases, skipped ${data.skipped} duplicates.`;
-      if (data.errors.length > 0) {
-        message += `\n\nErrors:\n${data.errors.join('\n')}`;
-      }
-      window.alert(message);
-    },
-  });
-
-  const codebaseImportMutation = api.useCases.importFromCodebase.useMutation({
-    onSuccess: async (data) => {
-      await utils.useCases.list.invalidate();
-      let message = `Analyzed ${data.projectName} (${data.filesAnalyzed} files). Created ${data.created} use cases, skipped ${data.skipped} duplicates.`;
-      if (data.errors.length > 0) {
-        message += `\n\nErrors:\n${data.errors.join('\n')}`;
-      }
-      window.alert(message);
-    },
-  });
-
-  const atlantisImportMutation =
-    api.useCases.importFromAtlantisVolumes.useMutation({
-      onSuccess: async (data) => {
-        await utils.useCases.list.invalidate();
-        let message = `Scanned ${data.filesScanned} files. Created ${data.created}, updated ${'updated' in data && typeof data.updated === 'number' ? data.updated : 0}, skipped ${data.skipped}.`;
-        if ('scannedPath' in data && typeof data.scannedPath === 'string') {
-          message += `\nPath: ${data.scannedPath}`;
-        }
-        if (data.errors.length > 0) {
-          message += `\n\nErrors:\n${data.errors.join('\n')}`;
-        }
-        window.alert(message);
-      },
-    });
-
   function startEdit(uc: UseCase) {
     setEditingId(uc.id);
     setShowCreateForm(false);
@@ -142,11 +87,10 @@ export default function UseCasesPage() {
       title: uc.title,
       summary: uc.summary,
       category: uc.category,
+      sector: uc.sector ?? '',
       outcomes: uc.outcomes.join(', '),
       tags: uc.tags.join(', '),
-      caseStudyRefs: uc.caseStudyRefs.join(', '),
       isShipped: uc.isShipped,
-      externalUrl: uc.externalUrl ?? '',
     });
   }
 
@@ -161,11 +105,10 @@ export default function UseCasesPage() {
       title: form.title,
       summary: form.summary,
       category: form.category,
+      sector: form.sector || undefined,
       outcomes: splitCsv(form.outcomes),
       tags: splitCsv(form.tags),
-      caseStudyRefs: splitCsv(form.caseStudyRefs),
       isShipped: form.isShipped,
-      externalUrl: form.externalUrl,
     };
 
     if (editingId) {
@@ -177,143 +120,57 @@ export default function UseCasesPage() {
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const list = (useCases.data ?? []) as UseCase[];
-  const activeProject = activeProjectQuery.data?.project;
-  const isAtlantisProject = activeProject?.projectType === 'ATLANTIS';
-  const isCatalogReadOnly = isAtlantisProject;
-  const showKlarifaiImportActions = !isAtlantisProject;
-  const catalogLabel = isAtlantisProject ? 'RAG Documents' : 'Use Cases';
-  const catalogItemLabel = isAtlantisProject ? 'RAG Document' : 'Use Case';
-  const codebaseInputClass =
-    'w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#040026]/5 focus:border-[#040026] transition-all';
+
+  // Group by sector for "Alle" view
+  const grouped = SECTORS.reduce(
+    (acc, [key, label]) => {
+      const items = list.filter((uc) => uc.sector === key);
+      if (items.length > 0) acc.push({ key, label, items });
+      return acc;
+    },
+    [] as { key: UseCaseSector; label: string; items: UseCase[] }[],
+  );
+  const uncategorized = list.filter((uc) => !uc.sector);
+  const sectorCounts = SECTORS.map(([key]) => ({
+    key,
+    count: list.filter((uc) => uc.sector === key).length,
+  }));
 
   return (
-    <div className="max-w-[1400px] space-y-10">
-      {/* Page header */}
-      <div className="flex items-baseline justify-between pb-6 border-b border-[var(--color-border)]">
-        <h1 className="text-[48px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
-          {catalogLabel}
-          <span className="text-[var(--color-gold)]">.</span>
-        </h1>
-        <div className="flex items-center gap-2">
-          {showKlarifaiImportActions && (
-            <>
-              <button
-                onClick={() => importMutation.mutate()}
-                disabled={importMutation.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all disabled:opacity-50"
-              >
-                {importMutation.isPending ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Upload className="w-3.5 h-3.5" />
-                )}
-                {importMutation.isPending ? 'Importing...' : 'Import Obsidian'}
-              </button>
-              <button
-                onClick={() => vaultImportMutation.mutate()}
-                disabled={vaultImportMutation.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all disabled:opacity-50"
-              >
-                {vaultImportMutation.isPending ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <FolderSearch className="w-3.5 h-3.5" />
-                )}
-                {vaultImportMutation.isPending ? 'Scanning...' : 'Scan Vault'}
-              </button>
-            </>
-          )}
-          {!isCatalogReadOnly && (
-            <button
-              onClick={() => {
-                setShowCreateForm(true);
-                setEditingId(null);
-                setForm(emptyForm);
-              }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.1em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] rounded-full"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              New {catalogItemLabel}
-            </button>
-          )}
-          {isAtlantisProject && (
-            <button
-              onClick={() => atlantisImportMutation.mutate()}
-              disabled={atlantisImportMutation.isPending}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-[11px] font-medium uppercase tracking-[0.08em] bg-[var(--color-ink)] text-white disabled:opacity-50"
-            >
-              {atlantisImportMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Importing Atlantis...
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4" />
-                  Sync Atlantis Volumes
-                </>
-              )}
-            </button>
-          )}
+    <div className="max-w-[1400px] space-y-6">
+      {/* Header */}
+      <div className="flex items-baseline justify-between pb-4 border-b border-[var(--color-border)]">
+        <div>
+          <h1 className="text-[32px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.1]">
+            Use Cases<span className="text-[var(--color-gold-hi)]">.</span>
+          </h1>
+          <p className="text-[12px] text-[var(--color-muted)] mt-1">
+            {list.length} diensten in{' '}
+            {grouped.length + (uncategorized.length > 0 ? 1 : 0)} sectoren
+          </p>
         </div>
+        <button
+          onClick={() => {
+            setShowCreateForm(true);
+            setEditingId(null);
+            setForm({ ...emptyForm, sector: selectedSector ?? '' });
+          }}
+          className="inline-flex items-center gap-2 px-5 py-2 text-[10px] font-medium uppercase tracking-[0.1em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] rounded-full"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Nieuwe Use Case
+        </button>
       </div>
-      {showKlarifaiImportActions && (
-        <div className="space-y-3">
-          <button
-            onClick={() => setShowCodebaseForm((prev) => !prev)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all"
-          >
-            <ChevronDown
-              className={`w-4 h-4 transition-transform ${showCodebaseForm ? 'rotate-180' : ''}`}
-            />
-            Analyze a project codebase...
-          </button>
-
-          {showCodebaseForm && (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <input
-                value={codebasePath}
-                onChange={(e) => setCodebasePath(e.target.value)}
-                placeholder="/home/klarifai/Documents/klarifai/projects/copifai"
-                className={codebaseInputClass}
-              />
-              <button
-                onClick={() =>
-                  codebaseImportMutation.mutate({ projectPath: codebasePath })
-                }
-                disabled={
-                  codebaseImportMutation.isPending ||
-                  codebasePath.trim().length === 0
-                }
-                className="admin-btn-secondary sm:shrink-0"
-              >
-                {codebaseImportMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <CodeXml className="w-4 h-4" />
-                    Analyze Codebase
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Create form */}
       {showCreateForm && (
-        <div className="glass-card p-6 space-y-4">
-          <h2 className="text-sm font-black text-[#040026] uppercase tracking-wider">
-            New {catalogItemLabel}
-          </h2>
+        <div className="glass-card p-5 space-y-4">
+          <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)]">
+            Nieuwe Use Case
+          </span>
           <UseCaseForm
             form={form}
             setForm={setForm}
-            itemLabel={catalogItemLabel}
             onSave={handleSave}
             onCancel={cancelForm}
             isSaving={isSaving}
@@ -321,7 +178,7 @@ export default function UseCasesPage() {
         </div>
       )}
 
-      {/* Loading state */}
+      {/* Loading */}
       {useCases.isLoading && (
         <PageLoader
           label="Loading use cases"
@@ -329,183 +186,274 @@ export default function UseCasesPage() {
         />
       )}
 
-      {/* Empty state */}
-      {!useCases.isLoading && list.length === 0 && (
-        <div className="py-20 text-center">
-          <BookOpen className="w-12 h-12 text-[var(--color-border-strong)] mx-auto mb-4" />
-          <p className="text-[13px] font-light text-[var(--color-muted)]">
-            {isAtlantisProject
-              ? 'No Atlantis RAG documents yet. Sync from Atlantis volumes.'
-              : 'No use cases yet. Create one, import from Obsidian, or scan vault.'}
-          </p>
-        </div>
-      )}
-
-      {/* Use case list */}
-      {list.length > 0 && (
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
-              {list.length}{' '}
-              {list.length === 1
-                ? catalogItemLabel.toLowerCase()
-                : `${catalogLabel.toLowerCase()}`}
-            </span>
-            <span className="flex-1 h-px bg-[var(--color-border)]" />
-          </div>
-          {list.map((uc) => (
-            <div
-              key={uc.id}
-              className="py-5 border-b border-[var(--color-surface-2)]"
+      {/* Main layout: sidebar + content */}
+      {!useCases.isLoading && (
+        <div className="flex gap-6">
+          {/* Sector sidebar */}
+          <nav className="w-[220px] shrink-0 space-y-0.5">
+            <button
+              onClick={() => setSelectedSector(null)}
+              className={`w-full text-left px-3 py-2 rounded-md text-[11px] font-medium transition-colors ${
+                selectedSector === null
+                  ? 'bg-[var(--color-ink)] text-white'
+                  : 'text-[var(--color-muted)] hover:bg-[var(--color-surface-hover)]'
+              }`}
             >
-              {editingId === uc.id ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)]">
-                      Edit {catalogItemLabel}
-                    </span>
-                    <span className="flex-1 h-px bg-[var(--color-border)]" />
-                  </div>
-                  <UseCaseForm
+              Alle <span className="opacity-60 ml-1">{list.length}</span>
+            </button>
+            {SECTORS.map(([key, label]) => {
+              const count = sectorCounts.find((s) => s.key === key)?.count ?? 0;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setSelectedSector(key)}
+                  className={`w-full text-left px-3 py-2 rounded-md text-[11px] font-medium transition-colors ${
+                    selectedSector === key
+                      ? 'bg-[var(--color-ink)] text-white'
+                      : 'text-[var(--color-muted)] hover:bg-[var(--color-surface-hover)]'
+                  }`}
+                >
+                  {label} <span className="opacity-60 ml-1">{count}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            {list.length === 0 && (
+              <p className="text-[13px] text-[var(--color-muted)] py-12 text-center">
+                Geen use cases gevonden.
+              </p>
+            )}
+
+            {/* Grouped view (Alle) */}
+            {selectedSector === null && list.length > 0 && (
+              <div className="space-y-6">
+                {grouped.map(({ key, label, items }) => (
+                  <SectorGroup
+                    key={key}
+                    label={label}
+                    items={items}
+                    editingId={editingId}
                     form={form}
                     setForm={setForm}
-                    itemLabel={catalogItemLabel}
+                    onEdit={startEdit}
+                    onDelete={(id) => deleteMutation.mutate({ id })}
                     onSave={handleSave}
                     onCancel={cancelForm}
                     isSaving={isSaving}
                   />
-                </div>
-              ) : (
-                <div>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[17px] font-medium text-[var(--color-ink)] tracking-[-0.01em]">
-                          {uc.title}
-                        </span>
-                        <span className="text-[9px] font-medium uppercase tracking-[0.08em] px-2 py-0.5 rounded border border-[var(--color-border)] text-[var(--color-muted)]">
-                          {uc.category}
-                        </span>
-                        {uc.isShipped && (
-                          <span className="text-[9px] font-medium uppercase tracking-[0.06em] text-[var(--color-brand-success)]">
-                            Shipped
-                          </span>
-                        )}
-                        {!uc.isActive && (
-                          <span className="text-[9px] font-medium uppercase tracking-[0.06em] text-[var(--color-brand-danger)]">
-                            Inactive
-                          </span>
-                        )}
-                        {uc._count.proofMatches > 0 && (
-                          <span className="text-[10px] font-light text-[var(--color-muted)]">
-                            {uc._count.proofMatches} matches
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {!isCatalogReadOnly && (
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => startEdit(uc)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all"
-                        >
-                          <Pencil className="w-3 h-3" />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (window.confirm(`Deactivate "${uc.title}"?`)) {
-                              deleteMutation.mutate({ id: uc.id });
-                            }
-                          }}
-                          disabled={deleteMutation.isPending}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[#b45a3b] hover:text-[#b45a3b] transition-all disabled:opacity-50"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                ))}
+                {uncategorized.length > 0 && (
+                  <SectorGroup
+                    label="Overig"
+                    items={uncategorized}
+                    editingId={editingId}
+                    form={form}
+                    setForm={setForm}
+                    onEdit={startEdit}
+                    onDelete={(id) => deleteMutation.mutate({ id })}
+                    onSave={handleSave}
+                    onCancel={cancelForm}
+                    isSaving={isSaving}
+                  />
+                )}
+              </div>
+            )}
 
-                  <p className="text-[13px] font-light text-[var(--color-muted)] mt-2 leading-[1.55] max-w-[700px]">
-                    {uc.summary}
-                  </p>
-
-                  {uc.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {uc.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-[10px] font-light text-[var(--color-muted)] px-2 py-0.5 rounded bg-[var(--color-surface-2)]"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {uc.outcomes.length > 0 && (
-                    <ul className="list-disc list-inside mt-2 pl-1">
-                      {uc.outcomes.map((outcome) => (
-                        <li
-                          key={outcome}
-                          className="text-[12px] font-light text-[var(--color-muted)]"
-                        >
-                          {outcome}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  {uc.caseStudyRefs.length > 0 && (
-                    <div className="flex flex-wrap gap-3 mt-2">
-                      {uc.caseStudyRefs.map((ref) => (
-                        <a
-                          key={ref}
-                          href={ref.startsWith('http') ? ref : undefined}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[11px] font-medium text-[var(--color-ink)] border-b border-[var(--color-border-strong)] hover:border-[var(--color-ink)] transition-colors inline-flex items-center gap-1"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          {ref}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+            {/* Filtered view */}
+            {selectedSector !== null && list.length > 0 && (
+              <div className="space-y-1">
+                {list.map((uc) => (
+                  <UseCaseRow
+                    key={uc.id}
+                    uc={uc}
+                    isEditing={editingId === uc.id}
+                    form={form}
+                    setForm={setForm}
+                    onEdit={() => startEdit(uc)}
+                    onDelete={() => deleteMutation.mutate({ id: uc.id })}
+                    onSave={handleSave}
+                    onCancel={cancelForm}
+                    isSaving={isSaving}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
   );
 }
 
+/* ─── Sector Group ─── */
+function SectorGroup({
+  label,
+  items,
+  editingId,
+  form,
+  setForm,
+  onEdit,
+  onDelete,
+  onSave,
+  onCancel,
+  isSaving,
+}: {
+  label: string;
+  items: UseCase[];
+  editingId: string | null;
+  form: FormState;
+  setForm: React.Dispatch<React.SetStateAction<FormState>>;
+  onEdit: (uc: UseCase) => void;
+  onDelete: (id: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  isSaving: boolean;
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-2">
+        <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+          {label} ({items.length})
+        </span>
+        <span className="flex-1 h-px bg-[var(--color-border)]" />
+      </div>
+      <div className="space-y-1">
+        {items.map((uc) => (
+          <UseCaseRow
+            key={uc.id}
+            uc={uc}
+            isEditing={editingId === uc.id}
+            form={form}
+            setForm={setForm}
+            onEdit={() => onEdit(uc)}
+            onDelete={() => onDelete(uc.id)}
+            onSave={onSave}
+            onCancel={onCancel}
+            isSaving={isSaving}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Use Case Row ─── */
+function UseCaseRow({
+  uc,
+  isEditing,
+  form,
+  setForm,
+  onEdit,
+  onDelete,
+  onSave,
+  onCancel,
+  isSaving,
+}: {
+  uc: UseCase;
+  isEditing: boolean;
+  form: FormState;
+  setForm: React.Dispatch<React.SetStateAction<FormState>>;
+  onEdit: () => void;
+  onDelete: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+  isSaving: boolean;
+}) {
+  if (isEditing) {
+    return (
+      <div className="py-3 px-4 rounded-md bg-[var(--color-surface)] space-y-3">
+        <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)]">
+          Bewerken
+        </span>
+        <UseCaseForm
+          form={form}
+          setForm={setForm}
+          onSave={onSave}
+          onCancel={onCancel}
+          isSaving={isSaving}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="group flex items-start justify-between gap-4 py-3 px-4 rounded-md hover:bg-[var(--color-surface-hover)] transition-colors">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-[14px] font-medium text-[var(--color-ink)] truncate">
+            {uc.title}
+          </span>
+          {uc._count.proofMatches > 0 && (
+            <span className="text-[10px] text-[var(--color-muted)]">
+              {uc._count.proofMatches} matches
+            </span>
+          )}
+          {uc.outcomes.length > 0 && (
+            <span className="text-[10px] text-[var(--color-muted)]">
+              {uc.outcomes.length} outcomes
+            </span>
+          )}
+        </div>
+        <p className="text-[12px] text-[var(--color-muted)] line-clamp-2 mt-0.5 max-w-[600px]">
+          {uc.summary}
+        </p>
+        {uc.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {uc.tags.map((tag) => (
+              <span
+                key={tag}
+                className="text-[10px] text-[var(--color-muted)] px-2 py-0.5 rounded bg-[var(--color-surface)]"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <button
+          onClick={onEdit}
+          className="p-1.5 rounded text-[var(--color-muted)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface)] transition-colors"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => {
+            if (window.confirm(`Deactivate "${uc.title}"?`)) onDelete();
+          }}
+          className="p-1.5 rounded text-[var(--color-muted)] hover:text-[#b45a3b] hover:bg-[var(--color-surface)] transition-colors"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Form ─── */
 type FormState = typeof emptyForm;
 
 function UseCaseForm({
   form,
   setForm,
-  itemLabel,
   onSave,
   onCancel,
   isSaving,
 }: {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
-  itemLabel: string;
   onSave: () => void;
   onCancel: () => void;
   isSaving: boolean;
 }) {
-  const inputClass = 'input-minimal w-full px-3 py-2.5 rounded-md text-[13px]';
+  const inputClass = 'input-minimal w-full px-3 py-2 rounded-md text-[13px]';
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="space-y-1">
           <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
             Title
@@ -526,110 +474,77 @@ function UseCaseForm({
             onChange={(e) =>
               setForm((f) => ({ ...f, category: e.target.value }))
             }
-            placeholder="e.g. design, workflow, content"
+            placeholder="e.g. design, workflow"
             className={inputClass}
           />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
+            Sector
+          </label>
+          <select
+            value={form.sector}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                sector: e.target.value as UseCaseSector | '',
+              }))
+            }
+            className={inputClass}
+          >
+            <option value="">— Geen sector —</option>
+            {SECTORS.map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+        <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
           Summary
         </label>
         <textarea
           value={form.summary}
           onChange={(e) => setForm((f) => ({ ...f, summary: e.target.value }))}
-          placeholder="Brief description of this use case and what problem it solves"
-          rows={3}
+          placeholder="Brief description of this use case"
+          rows={2}
           className={inputClass}
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
-            Tags{' '}
-            <span className="font-normal text-slate-400">
-              (comma-separated)
-            </span>
-          </label>
-          <input
-            value={form.tags}
-            onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
-            placeholder="e.g. branding, logo, visual identity"
-            className={inputClass}
-          />
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
           <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
             Outcomes{' '}
-            <span className="font-normal text-slate-400">
-              (comma-separated)
-            </span>
+            <span className="font-normal opacity-60">(comma-separated)</span>
           </label>
           <input
             value={form.outcomes}
             onChange={(e) =>
               setForm((f) => ({ ...f, outcomes: e.target.value }))
             }
-            placeholder="e.g. Consistent brand, 30% recognition lift"
-            className={inputClass}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
-            Case Study Refs{' '}
-            <span className="font-normal text-slate-400">
-              (comma-separated)
-            </span>
-          </label>
-          <input
-            value={form.caseStudyRefs}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, caseStudyRefs: e.target.value }))
-            }
-            placeholder="e.g. https://... , internal-ref-id"
+            placeholder="e.g. 30% cost reduction, faster delivery"
             className={inputClass}
           />
         </div>
         <div className="space-y-1">
           <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)]">
-            External URL
+            Tags{' '}
+            <span className="font-normal opacity-60">(comma-separated)</span>
           </label>
           <input
-            value={form.externalUrl}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, externalUrl: e.target.value }))
-            }
-            placeholder="https://..."
-            type="url"
+            value={form.tags}
+            onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
+            placeholder="e.g. automation, reporting"
             className={inputClass}
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <input
-          id="isShipped"
-          type="checkbox"
-          checked={form.isShipped}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, isShipped: e.target.checked }))
-          }
-          className="rounded border-slate-200"
-        />
-        <label
-          htmlFor="isShipped"
-          className="text-sm font-medium text-slate-600"
-        >
-          Shipped (service is live and available)
-        </label>
-      </div>
-
-      <div className="flex items-center gap-3 pt-2">
+      <div className="flex items-center gap-3 pt-1">
         <button
           onClick={onSave}
           disabled={
@@ -638,22 +553,21 @@ function UseCaseForm({
             form.summary.trim().length < 10 ||
             form.category.trim().length < 2
           }
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] disabled:opacity-50"
         >
           {isSaving ? (
-            <span className="inline-flex items-center gap-2">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Saving...
-            </span>
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...
+            </>
           ) : (
-            `Save ${itemLabel}`
+            'Opslaan'
           )}
         </button>
         <button
           onClick={onCancel}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all"
+          className="px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] text-[var(--color-muted)] border border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-all"
         >
-          Cancel
+          Annuleren
         </button>
       </div>
     </div>
