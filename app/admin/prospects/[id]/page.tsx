@@ -2,7 +2,7 @@
 
 import type { Prisma } from '@prisma/client';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import {
   ArrowLeft,
@@ -446,9 +446,25 @@ const FEED_TABS: { id: 'ALL' | EventType; label: string }[] = [
 export default function ProspectDetail() {
   const params = useParams();
   const id = params.id as string;
+  const router = useRouter();
 
   const prospectQuery = api.admin.getProspect.useQuery({ id });
   const runsQuery = api.research.listRuns.useQuery({ prospectId: id });
+  const enrichMut = api.admin.enrichProspect.useMutation({
+    onSuccess: () => {
+      void prospectQuery.refetch();
+    },
+  });
+  const runResearchMut = api.admin.runResearchRun.useMutation({
+    onSuccess: () => {
+      void runsQuery.refetch();
+    },
+  });
+  const runAnalysisMut = api.admin.runMasterAnalysis.useMutation({
+    onSuccess: () => {
+      void prospectQuery.refetch();
+    },
+  });
   const [copied, setCopied] = useState(false);
   const [feedFilter, setFeedFilter] = useState<'ALL' | EventType>('ALL');
 
@@ -598,7 +614,10 @@ export default function ProspectDetail() {
               </>
             )}
           </HeroBtn>
-          <HeroBtn variant="gold">
+          <HeroBtn
+            variant="gold"
+            onClick={() => router.push(`/admin/prospects/${id}/quotes/new`)}
+          >
             Start voorstel
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.75} />
           </HeroBtn>
@@ -719,10 +738,23 @@ export default function ProspectDetail() {
           <div className="pt-8">
             <Eyebrow>Dossier</Eyebrow>
             <div className="grid grid-cols-2 gap-2 pt-2">
-              <DossierLink href={`#`} label="Evidence" count={evidenceCount} />
-              <DossierLink href={`#`} label="Analyse" />
-              <DossierLink href={`#`} label="Outreach" />
-              <DossierLink href={`#`} label="Resultaten" />
+              <DossierLink
+                href={`/admin/prospects/${id}/evidence`}
+                label="Evidence"
+                count={evidenceCount}
+              />
+              <DossierLink
+                href={`/admin/prospects/${id}/analyse`}
+                label="Analyse"
+              />
+              <DossierLink
+                href={`/admin/prospects/${id}/outreach`}
+                label="Outreach"
+              />
+              <DossierLink
+                href={`/admin/prospects/${id}/resultaten`}
+                label="Resultaten"
+              />
             </div>
           </div>
         </aside>
@@ -766,14 +798,28 @@ export default function ProspectDetail() {
           <div className="space-y-2.5">
             <Eyebrow>Acties</Eyebrow>
             <div className="space-y-1.5 pt-1">
-              <ActionRow icon={RefreshCw} label="Re-enrich" />
-              <ActionRow icon={Play} label="Nieuwe run" kbd="⌘R" />
-              <ActionRow icon={PenLine} label="Genereer analyse" />
+              <ActionRow
+                icon={RefreshCw}
+                label="Re-enrich"
+                onClick={() => enrichMut.mutate({ id })}
+              />
+              <ActionRow
+                icon={Play}
+                label="Nieuwe run"
+                kbd="⌘R"
+                onClick={() => runResearchMut.mutate({ id })}
+              />
+              <ActionRow
+                icon={PenLine}
+                label="Genereer analyse"
+                onClick={() => runAnalysisMut.mutate({ id })}
+              />
               <ActionRow
                 icon={Send}
                 label="Start outreach"
                 kbd="⌘↵"
                 variant="gold"
+                onClick={() => router.push(`/admin/prospects/${id}/outreach`)}
               />
             </div>
           </div>
