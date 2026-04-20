@@ -1,0 +1,92 @@
+{
+  "capturedAt": "2026-04-20T22:27:47.584Z",
+  "prospect": {
+    "slug": "BCDmoNqH",
+    "readableSlug": "heijmans",
+    "companyName": "Heijmans",
+    "domain": "heijmans.nl"
+  },
+  "analysis": {
+    "id": "cmmp43ylz01cpbiijifiv3ymf",
+    "version": "analysis-v2",
+    "createdAt": "2026-03-13T16:29:39.191Z",
+    "modelUsed": "gemini-2.5-pro",
+    "content": {
+      "version": "analysis-v2",
+      "sections": [
+        {
+          "id": "strategische-alliantie-infrastructuur",
+          "body": "Heijmans bezit de kerndisciplines die fundamenteel zijn voor de realisatie van Europe's Gate. Uw bewezen ervaring in complexe civieltechnische projecten, zoals de versterking van 20 kilometer dijk langs de Vecht, vormt de basis voor de constructie van onze 360 kilometer lange hoofdcorridor en de landaanwinning van meer dan 400 km² nieuw land. Deze schaal, die alle eerdere kunstmatige eilandprojecten overstijgt, vereist de efficiëntie die uw eigen digitale ontwerptoepassingen bieden, gericht op het bouwen met \"minder materiaal, veiliger, goedkoper\". De integrale aanpak die u hanteert, waarbij energie, infrastructuur en ruimtelijke kwaliteit vanaf de start samenkomen, is een directe afspiegeling van de systeemfilosofie van Europe's Gate. Dit project is niet louter een verzameling van bouwopgaven, maar een geïntegreerd systeem dat een partner met uw visionaire en integrale blik vereist.",
+          "title": "Strategische Alliantie voor de Volgende Generatie Infrastructuur",
+          "citations": [
+            "Bron: WEBSITE | Ontwerpkennis in één applicatie | digitaal bouwen",
+            "Bron: WEBSITE | Heijmans versterkt 20 kilometer dijk",
+            "Bron: WEBSITE | Innovatieve energievoorziening maakt nieuwbouw mogelijk",
+            "Bron: II — Landaanwinning & Waterbouw (SPV: InfraCo)",
+            "Bron: Volume I - Technische Specificaties & Locatie — Locatie & Gebiedsdefinitie"
+          ]
+        },
+        {
+          "id": "schaalvergroting-duurzame-gebiedsontwikkeling",
+          "body": "De ontwikkeling van de 43 circulaire wooneilanden van Europe's Gate, elk ontworpen voor 398.000 inwoners, biedt een uniek platform voor uw expertise in gebiedsontwikkeling en woningbouw. Uw focus op het creëren van gezonde leefomgevingen, zoals gedemonstreerd in projecten als Maanwijk Leusden met zijn 'GezondWonen-concept', sluit naadloos aan bij onze ambitie. De principes van natuurinclusief bouwen, die u reeds succesvol toepast in Culemborg en onderzoekt met partners als Naturalis, kunnen binnen Europe's Gate de standaard worden voor miljoenen inwoners. Bovendien kan uw proactieve benadering van procesversnelling, zoals het 'vergunningsvrij bouwen' in Vught, cruciaal zijn voor het behalen van de tijdlijnen van dit megaproject. Dit is de kans om uw concepten voor duurzaam wonen niet per project, maar op systeemniveau te implementeren.",
+          "title": "Schaalvergroting van Duurzame Gebiedsontwikkeling",
+          "citations": [
+            "Bron: WEBSITE | Maanwijk Leusden: toekomstbestendige wijk",
+            "Bron: WEBSITE | Vergunningsvrij bouwen versnelt woningbouw in Vught",
+            "Bron: WEBSITE | Resultaat met natuurinclusief bouwen in Culemborg",
+            "Bron: Volume I - Technische Specificaties & Locatie — Locatie & Gebiedsdefinitie"
+          ]
+        },
+        {
+          "id": "leiderschap-in-de-circulaire-bouwketen",
+          "body": "Duurzaamheid en circulariteit zijn voor Heijmans strategische pijlers, zichtbaar in uw partnerschappen met Staatsbosbeheer en WUR en uw focus op duurzaamheidseisen in aanbestedingen. Europe's Gate biedt de mogelijkheid om deze ambities te vertalen naar een industrie-definiërende realiteit. Een centraal element is de circulaire landwinning, waarbij jaarlijks 30 miljoen ton staalslakken wordt getransformeerd van afvalstof naar een strategische bouwgrondstof. Dit is een ongekende toepassing van circulariteit die uw bedrijf kan positioneren als wereldleider in duurzame waterbouw. Hoewel uw publieke waardering op platforms als Trustpilot (2.2 score) een aandachtspunt is, biedt een zichtbare, leidende rol in een project met deze positieve maatschappelijke en ecologische impact een unieke kans om de perceptie van uw merk te versterken en uw nalatenschap als maatschappelijk bouwer te verankeren.",
+          "title": "Leiderschap in de Circulaire Bouwketen",
+          "citations": [
+            "Bron: REVIEWS | Review signal 1 (trustpilot)",
+            "Bron: WEBSITE | Heijmans investeert in biodiversiteit met Staatsbosbeheer",
+            "Bron: WEBSITE | Principes voor gezonde bodem",
+            "Bron: WEBSITE | Heijmans bouwt honderden appartementen in Limburg",
+            "Bron: III — Groenstaal Productie (SPV: SteelCo)"
+          ]
+        }
+      ],
+      "modelUsed": "gemini-2.5-pro",
+      "generatedAt": "2026-03-13T16:29:39.189Z",
+      "openingHook": "Al een eeuw lang vormt Heijmans het Nederlandse landschap. Europe's Gate biedt u de mogelijkheid om deze vormgevende kracht toe te passen op een pan-Europese schaal, en de volgende honderd jaar van infrastructuur en leefomgevingen te definiëren.",
+      "executiveSummary": "Onze analyse toont een diepgaande strategische congruentie tussen de integrale bouwfilosofie van Heijmans en de systeembehoefte van Europe's Gate. Uw expertise in grootschalige infrastructuur, digitale bouwmethoden en duurzame gebiedsontwikkeling positioneert Heijmans als een sleutelpartner voor de realisatie van onze landaanwinning en wooneilanden. Een partnerschap biedt Heijmans de kans om uw innovaties, zoals vergunningsvrij bouwen en natuurinclusieve ontwerpen, op ongekende schaal toe te passen en uw rol als pionier in de Europese bouwsector te bestendigen.",
+      "spvRecommendations": [
+        {
+          "spvCode": "INFRA",
+          "spvName": "InfraCo",
+          "strategicTags": [
+            "landaanwinning",
+            "civiele-techniek",
+            "digitale-bouw"
+          ],
+          "relevanceNarrative": "Uw kerncompetenties in civiele techniek, waterbouw en grootschalige infrastructuurprojecten sluiten direct aan op de mandaat van InfraCo. Deze SPV overziet de landaanwinning, de bouw van de 360km lange hoofdstructuur en de integratie van alle fysieke netwerken. Uw participatie is hier fundamenteel."
+        },
+        {
+          "spvCode": "REALESTATE",
+          "spvName": "RealEstateCo",
+          "strategicTags": [
+            "gebiedsontwikkeling",
+            "woningbouw",
+            "duurzaamheid"
+          ],
+          "relevanceNarrative": "Uw divisies 'Wonen' en 'Werken' zijn perfect gepositioneerd om een leidende rol te spelen binnen RealEstateCo. Deze SPV is verantwoordelijk voor de ontwikkeling van 43 complete stedelijke ecosystemen. Uw ervaring met gebiedsontwikkeling, duurzame woningbouw en het creëren van gezonde leefomgevingen is hier van onschatbare waarde."
+        }
+      ]
+    },
+    "inputSnapshot": {
+      "spvCount": 8,
+      "passageCount": 12,
+      "evidenceCount": 46,
+      "crossConnectionCount": 0
+    }
+  },
+  "researchRun": {
+    "id": "cmmp3yqjz0000biij92at022g",
+    "createdAt": "2026-03-13T16:25:35.471Z",
+    "status": "COMPLETED"
+  }
+}

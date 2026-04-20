@@ -1,0 +1,95 @@
+{
+  "capturedAt": "2026-04-20T22:27:47.584Z",
+  "prospect": {
+    "slug": "t63pSR0K",
+    "readableSlug": null,
+    "companyName": "DuckDB",
+    "domain": "duckdb.org"
+  },
+  "analysis": {
+    "id": "cmnzjjtop0k3n7pw2tsngtyyj",
+    "version": "analysis-v2",
+    "createdAt": "2026-04-15T04:19:17.641Z",
+    "modelUsed": "gemini-2.5-pro",
+    "content": {
+      "version": "analysis-v2",
+      "sections": [
+        {
+          "id": "scaling-expert-knowledge",
+          "body": "Met een gebruikersbasis die maandelijks met miljoenen groeit, is het traditionele model van expert-support onhoudbaar voor een team van uw omvang. Elke vraag die via Discord, GitHub of direct contact binnenkomt en beantwoord wordt door een kernontwikkelaar, is tijd die niet besteed wordt aan de roadmap of aan betaalde opdrachten. Uw documentatie is uitgebreid, maar fungeert als een statische bibliotheek. Gebruikers moeten zelf actief zoeken naar antwoorden, wat leidt tot frictie en herhaaldelijke vragen over reeds gedocumenteerde features. Dit leidt tot een operationele 'support-schuld', waarbij de groei van de community de capaciteit van uw team overstijgt en de perceptie van responsiviteit onder druk zet.",
+          "title": "De Kennis-Bottleneck: Schaalbaarheid van Expert-Support",
+          "citations": [
+            "Bron: Prospect Profiel — Groei naar twee miljoen downloads per maand.",
+            "Bron: Prospect Profiel — Lean team (11-50 medewerkers) ondersteunt een wereldwijd project.",
+            "Bron: Prospect Profiel — DuckDB Labs biedt commerciële support en consulting."
+          ]
+        },
+        {
+          "id": "monetization-friction",
+          "body": "De open-source community is de belangrijkste bron voor commerciële leads voor DuckDB Labs. Het identificeren en kwalificeren van deze kansen is echter een grotendeels handmatig en ongestructureerd proces. Potentiële klanten met complexe, waardevolle problemen uiten hun behoeften vaak impliciet in technische discussies. Het filteren van dit signaal uit de ruis van de dagelijkse community-interacties is niet efficiënt. Wanneer een lead zich meldt, begint een intensief traject om de precieze technische en zakelijke context te doorgronden alvorens een consulting-voorstel kan worden gedaan. Dit vertraagt de salescyclus en legt een aanzienlijke presales-last op uw meest technische medewerkers, wat de schaalbaarheid van uw commerciële tak beperkt.",
+          "title": "Frictie in Commerciële Conversie: Van Community naar Klant",
+          "citations": [
+            "Bron: Prospect Profiel — Bedrijfsmodel is gebaseerd op diensten, niet op durfkapitaal.",
+            "Bron: Prospect Profiel — Diensten omvatten SQL-assistentie en deployment-advies."
+          ]
+        },
+        {
+          "id": "knowledge-management",
+          "body": "De snelheid waarmee DuckDB zich ontwikkelt, is een kracht, maar vormt intern een uitdaging. Essentiële kennis over architecturale beslissingen, implementatie-details en de product-roadmap is vaak geconcentreerd bij de oprichters en senior ontwikkelaars. Voor nieuwe medewerkers of teamleden die aan een nieuw onderdeel van de codebase werken, is het een tijdrovend proces om deze informatie te vinden en te assimileren. Dit vertraagt de onboarding en verhoogt het risico op inconsistente beslissingen. Een gedecentraliseerd, moeilijk doorzoekbaar intern kennislandschap remt de effectiviteit van het team en daarmee het vermogen van de organisatie om op te schalen.",
+          "title": "Interne Kennisoverdracht als Groeibelemmering",
+          "citations": [
+            "Bron: WEBSITE — Frequente releases en een publieke roadmap duiden op snelle productontwikkeling.",
+            "Bron: Prospect Profiel — Oorspronkelijk ontwikkeld als onderzoeksprototype, wat duidt op diepe, gespecialiseerde kennis."
+          ]
+        }
+      ],
+      "modelUsed": "gemini-2.5-pro",
+      "generatedAt": "2026-04-15T04:19:17.639Z",
+      "openingHook": "DuckDB bevindt zich op een uniek kantelpunt: de explosieve groei van uw open-source community, met twee miljoen downloads per maand, creëert een significante druk op de schaalbaarheid van de commerciële diensten van DuckDB Labs. Uw lean, expert-gedreven team is uw grootste troef, maar ook uw meest kritieke bottleneck.",
+      "fallbackUsed": false,
+      "executiveSummary": "De kernuitdaging voor DuckDB is niet technologisch, maar operationeel: hoe kunt u de diepgaande expertise van uw kernteam vertalen naar een schaalbaar model dat de exponentiële groei van uw gebruikersbasis ondersteunt en monetiseert? Momenteel bestaat het risico dat waardevolle engineering-tijd wordt opgeslokt door repetitieve supportvragen, wat ten koste gaat van productinnovatie en hoogwaardige consulting. Door de ontsluiting van uw kennis te automatiseren en commerciële processen te stroomlijnen, kan DuckDB Labs de groei van de community omzetten in duurzame omzet, zonder de focus van uw experts te verliezen.",
+      "useCaseRecommendations": [
+        {
+          "category": "content",
+          "useCaseTitle": "Intelligent Documentatie Portaal",
+          "applicableOutcomes": [
+            "Drastische reductie van de tijd besteed aan eerstelijns support",
+            "Verbeterde gebruikerservaring en snellere adoptie van DuckDB",
+            "Directe beschikbaarheid van kennis, 24/7"
+          ],
+          "relevanceNarrative": "Transformeer uw statische documentatie naar een interactief dialoogsysteem. Hierdoor kunnen gebruikers in natuurlijke taal vragen stellen en direct antwoorden krijgen op basis van uw bestaande documenten, tutorials en FAQ's. Dit reduceert het aantal repetitieve vragen significant en stelt uw team in staat zich te focussen op complexe uitdagingen."
+        },
+        {
+          "category": "content",
+          "useCaseTitle": "Geautomatiseerde Intake van Consulting-Aanvragen",
+          "applicableOutcomes": [
+            "Verkorting van de salescyclus voor consulting-diensten",
+            "Verbeterde kwaliteit en consistentie van projectvoorstellen",
+            "Efficiënter gebruik van de tijd van uw senior consultants"
+          ],
+          "relevanceNarrative": "Structureer de intake van commerciële projecten door inkomende e-mails en contactformulieren automatisch te analyseren. Het systeem extraheert de belangrijkste informatie — zoals probleemstelling, doelen en technische context — en genereert een gestructureerd project-dossier. Dit versnelt het scoping-proces en stelt uw consultants in staat direct met een gekwalificeerd voorstel te starten."
+        },
+        {
+          "category": "content",
+          "useCaseTitle": "Gecentraliseerde, Doorzoekbare Kennisbank voor Enterprise Klanten",
+          "applicableOutcomes": [
+            "Verhoogde waarde van commerciële support-contracten",
+            "Verbeterde databeveiliging en -privacy voor klanten",
+            "Efficiëntere self-service voor uw meest waardevolle klanten"
+          ],
+          "relevanceNarrative": "Creëer een premium service voor uw enterprise klanten door hen toegang te geven tot een beveiligde, private kennisomgeving. Deze omgeving bevat niet alleen de algemene documentatie, maar ook klantspecifieke notities, support-historie en best practices. Klanten kunnen deze informatie direct bevragen, wat de waarde van uw support-contracten verhoogt en een schaalbaar, additioneel verdienmodel creëert."
+        }
+      ]
+    },
+    "inputSnapshot": {
+      "useCaseCount": 20,
+      "evidenceCount": 46,
+      "crossConnectionCount": 0
+    }
+  },
+  "researchRun": {
+    "id": "cmnzjics10hql7pw20vtj6rne",
+    "createdAt": "2026-04-15T04:18:09.073Z",
+    "status": "COMPLETED"
+  }
+}
