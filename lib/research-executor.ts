@@ -70,6 +70,7 @@ import type {
   KlarifaiNarrativeInput,
 } from '@/lib/analysis/types';
 import type { Prisma, PrismaClient } from '@prisma/client';
+import { industryToSector } from '@/lib/constants/sectors';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -1746,23 +1747,54 @@ export async function executeResearchRun(
     // (This else-branch is already non-ATLANTIS; condition kept for clarity)
     {
       try {
-        // Fetch active Use Cases for this project
-        const useCases = await db.useCase.findMany({
+        // Fetch active Use Cases for this project, sector-aware
+        // Determine prospect's sector from industry
+        const prospectSector = industryToSector(prospect.industry);
+
+        // Fetch sector-matched use cases first, then fill with others
+        const sectorUseCases = prospectSector
+          ? await db.useCase.findMany({
+              where: {
+                projectId: prospect.project.id,
+                isActive: true,
+                isShipped: true,
+                sector: prospectSector,
+              },
+              select: {
+                id: true,
+                title: true,
+                summary: true,
+                category: true,
+                sector: true,
+                outcomes: true,
+              },
+              orderBy: { updatedAt: 'desc' },
+              take: 15,
+            })
+          : [];
+
+        // Fill remaining slots with other sectors (cross-pollination)
+        const sectorIds = new Set(sectorUseCases.map((u) => u.id));
+        const otherUseCases = await db.useCase.findMany({
           where: {
             projectId: prospect.project.id,
             isActive: true,
             isShipped: true,
+            ...(sectorIds.size > 0 ? { id: { notIn: [...sectorIds] } } : {}),
           },
           select: {
             id: true,
             title: true,
             summary: true,
             category: true,
+            sector: true,
             outcomes: true,
           },
           orderBy: { updatedAt: 'desc' },
-          take: 20, // Cap at 20 use cases to control prompt size
+          take: prospectSector ? 5 : 20,
         });
+
+        const useCases = [...sectorUseCases, ...otherUseCases];
 
         if (useCases.length === 0) {
           diagnostics.push({
@@ -1825,6 +1857,7 @@ export async function executeResearchRun(
               title: uc.title,
               summary: uc.summary,
               category: uc.category,
+              sector: uc.sector ?? null,
               outcomes: uc.outcomes as string[],
             })),
             prospect: {

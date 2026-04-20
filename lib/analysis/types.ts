@@ -112,6 +112,7 @@ export type UseCaseInput = {
   title: string;
   summary: string;
   category: string;
+  sector?: string | null; // ADD THIS
   outcomes: string[];
 };
 

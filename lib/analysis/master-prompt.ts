@@ -327,8 +327,13 @@ function buildKlarifaiNarrativePrompt(input: KlarifaiNarrativeInput): string {
   // --- Use Cases (replaces RAG passages) ---
   parts.push('');
   parts.push('=== BEWEZEN DIENSTEN (Klarifai) ===');
+  if (prospect.industry) {
+    parts.push(
+      `Dit bedrijf zit in de sector "${prospect.industry}". Prioriteer diensten die passen bij deze sector.`,
+    );
+  }
   parts.push(
-    'Gebruik deze diensten als basis voor aanbevelingen. Match diensten aan pijnpunten uit het bewijs.',
+    'Match diensten aan pijnpunten uit het bewijs. Kies de 3-6 meest relevante.',
   );
 
   if (useCases.length === 0) {
