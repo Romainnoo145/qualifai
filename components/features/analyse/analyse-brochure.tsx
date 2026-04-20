@@ -159,7 +159,7 @@ export function AnalyseBrochure({
       return () => clearTimeout(t);
     }
 
-    const timer = setTimeout(() => setOverlayVisible(true), 4000);
+    const timer = setTimeout(() => setOverlayVisible(true), 2000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -235,13 +235,13 @@ export function AnalyseBrochure({
         <div
           style={{
             position: 'absolute',
-            right: '10%',
+            right: '20%',
             bottom: '30%',
             fontFamily: 'var(--font-sora), sans-serif',
             zIndex: 10,
             opacity: overlayVisible ? 1 : 0,
             transform: overlayVisible ? 'translateY(0)' : 'translateY(8px)',
-            transition: 'opacity 800ms ease-out, transform 800ms ease-out',
+            transition: 'opacity 400ms ease-out, transform 400ms ease-out',
             pointerEvents: overlayVisible ? 'auto' : 'none',
             display: 'flex',
             flexDirection: 'column',

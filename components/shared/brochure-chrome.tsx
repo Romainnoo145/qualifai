@@ -48,13 +48,12 @@ export function BrandChrome({ companyName }: { companyName?: string } = {}) {
             fontWeight: 500,
             color: TEXT_ON_NAVY,
             letterSpacing: '0.04em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
           }}
         >
-          <span
-            style={{ color: GOLD_LIGHT, margin: '0 6px', fontSize: '11px' }}
-          >
-            ✕
-          </span>
+          <span style={{ color: GOLD_LIGHT, fontSize: '10px' }}>✕</span>
           {companyName}
         </span>
       )}
