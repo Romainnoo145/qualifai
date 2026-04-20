@@ -5,7 +5,7 @@ milestone_name: Klant Lifecycle Convergence
 status: '60 / 61 / 61.1 / 61.2 / 61.3 all shipped. resolveLogoUrl pipeline unified three scattered call sites, ProspectLogo component simplified to 2-stage trust-the-DB, backfill script ran and populated 2 empty rows (marcore + stb-kozijnen) + re-validated 8 existing. Romano flagged meta-concern about lack of design spec / component system / uniform backend endpoints — Phase 62 is being restructured to start with /design-consultation skill before any implementation. Next action: run /design-consultation for admin prospect detail + client /voorstel pages as anchor surfaces.'
 stopped_at: Completed 61.4-01-PLAN.md
 last_updated: '2026-04-20T12:07:19.061Z'
-last_activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
+last_activity: 2026-04-20 - Completed quick task 260420-uoo: commit seed-use-cases.ts to git
 progress:
   total_phases: 8
   completed_phases: 4
@@ -121,6 +121,12 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 ### Pending Todos
 
 None.
+
+### Quick Tasks Completed
+
+| #          | Description                     | Date       | Commit  | Directory                                                                                         |
+| ---------- | ------------------------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------- |
+| 260420-uoo | commit seed-use-cases.ts to git | 2026-04-20 | e1bffe2 | [260420-uoo-commit-seed-use-cases-ts-to-git](./quick/260420-uoo-commit-seed-use-cases-ts-to-git/) |
 
 ### Blockers/Concerns
 
