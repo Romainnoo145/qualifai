@@ -400,7 +400,7 @@ export default async function DiscoverPage({ params }: Props) {
   // Compute research stats for cover overlay
   const researchStats = {
     bronnen: evidenceItemsForDiscover.length,
-    signalen: evidenceItemsForDiscover.length,
+    brontypen: sourceTypeCount,
     inzichten: (
       narrativeAnalysis?.sections ??
       klarifaiNarrativeAnalysis?.sections ??

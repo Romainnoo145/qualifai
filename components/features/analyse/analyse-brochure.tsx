@@ -39,7 +39,7 @@ interface AnalyseBrochureProps {
   sections: NarrativeSection[];
   recommendations: SPVRecommendation[] | UseCaseRecommendation[];
   recommendationType: 'spv' | 'usecase';
-  researchStats: { bronnen: number; signalen: number; inzichten: number };
+  researchStats: { bronnen: number; brontypen: number; inzichten: number };
   bookingUrl: string | null;
   contactEmail: string | null;
   phoneNumber: string | null;
@@ -142,7 +142,7 @@ export function AnalyseBrochure({
       return () => clearTimeout(t);
     }
 
-    const timer = setTimeout(() => setOverlayVisible(true), 12000);
+    const timer = setTimeout(() => setOverlayVisible(true), 4000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -232,38 +232,22 @@ export function AnalyseBrochure({
         >
           {/* Research stats */}
           <div
-            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
           >
-            <StatRow
-              value={researchStats.bronnen}
-              label="bronnen geanalyseerd"
-            />
-            <StatRow
-              value={researchStats.signalen}
-              label="signalen gedetecteerd"
-            />
-            <StatRow
-              value={researchStats.inzichten}
-              label="inzichten gegenereerd"
-            />
+            <StatRow value={researchStats.bronnen} label="BRONNEN" />
+            <StatRow value={researchStats.brontypen} label="BRONTYPEN" />
+            <StatRow value={researchStats.inzichten} label="INZICHTEN" />
           </div>
-
-          {/* Separator */}
-          <div
-            style={{
-              width: '100%',
-              height: '1px',
-              background: `linear-gradient(90deg, ${GOLD_MID}, transparent)`,
-            }}
-          />
 
           {/* Company name */}
           <div
             style={{
-              fontSize: '16px',
+              fontSize: '14px',
               fontWeight: 500,
               color: TEXT_ON_NAVY,
-              letterSpacing: '-0.01em',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase' as const,
+              marginTop: '4px',
             }}
           >
             {prospect.companyName}
@@ -715,28 +699,38 @@ function CitationsBar({ citations }: { citations: string[] }) {
 }
 
 function StatRow({ value, label }: { value: number; label: string }) {
+  const spaced = label.split('').join('\u2009');
   return (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'flex-end',
+        gap: '16px',
+      }}
+    >
       <span
         style={{
-          fontSize: '22px',
+          fontSize: '28px',
           fontWeight: 700,
           ...goldGradientText,
-          letterSpacing: '-0.01em',
+          letterSpacing: '-0.02em',
+          fontVariantNumeric: 'tabular-nums',
+          minWidth: '48px',
+          textAlign: 'right',
         }}
       >
         {value}
       </span>
       <span
         style={{
-          fontSize: '12px',
+          fontSize: '11px',
           fontWeight: 500,
           color: TEXT_ON_NAVY,
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase' as const,
+          letterSpacing: '0.12em',
         }}
       >
-        {label}
+        {spaced}
       </span>
     </div>
   );
