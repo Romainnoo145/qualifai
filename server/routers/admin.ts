@@ -69,7 +69,9 @@ function buildEnrichmentData(
     confidence?: unknown;
   },
 ) {
-  return {
+  // Strip null values — never overwrite existing DB data with null from
+  // a partial enrichment (e.g. Apollo no-coverage fallback).
+  const raw: Record<string, unknown> = {
     companyName: enriched.companyName,
     industry: enriched.industry,
     subIndustry: enriched.subIndustry,
@@ -89,6 +91,13 @@ function buildEnrichmentData(
     naicsCode: enriched.naicsCode,
     sicCode: enriched.sicCode,
     lushaCompanyId: enriched.lushaCompanyId,
+  };
+  // Only include fields that have actual values — don't null-out existing data
+  const cleaned = Object.fromEntries(
+    Object.entries(raw).filter(([, v]) => v != null),
+  );
+  return {
+    ...cleaned,
     lushaRawData: toJson({
       provider: 'apollo',
       apollo: enriched.rawData,

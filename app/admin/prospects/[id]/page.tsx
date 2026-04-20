@@ -261,11 +261,13 @@ function HeroBtn({
   variant = 'paper',
   onClick,
   title,
+  disabled,
 }: {
   children: React.ReactNode;
   variant?: 'paper' | 'ink' | 'gold';
   onClick?: () => void;
   title?: string;
+  disabled?: boolean;
 }) {
   const base =
     'inline-flex items-center gap-2 rounded-[6px] border px-4 py-2.5 text-[13px] font-medium leading-none transition-colors cursor-pointer';
@@ -278,9 +280,14 @@ function HeroBtn({
   return (
     <button
       type="button"
-      className={cn(base, variants[variant])}
+      className={cn(
+        base,
+        variants[variant],
+        disabled && 'opacity-50 cursor-not-allowed',
+      )}
       onClick={onClick}
       title={title}
+      disabled={disabled}
     >
       {children}
     </button>
@@ -465,6 +472,17 @@ export default function ProspectDetail() {
       void prospectQuery.refetch();
     },
   });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const suggestNumQuery = (api.quotes.suggestNextQuoteNumber as any).useQuery(
+    undefined,
+  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const createQuoteMut = (api.quotes.create as any).useMutation({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onSuccess: (data: any) => {
+      router.push(`/admin/quotes/${data.id}`);
+    },
+  });
   const [copied, setCopied] = useState(false);
   const [feedFilter, setFeedFilter] = useState<'ALL' | EventType>('ALL');
 
@@ -616,9 +634,26 @@ export default function ProspectDetail() {
           </HeroBtn>
           <HeroBtn
             variant="gold"
-            onClick={() => router.push(`/admin/prospects/${id}/quotes/new`)}
+            onClick={() => {
+              const today = new Date();
+              const plus30 = new Date(
+                today.getTime() + 30 * 24 * 60 * 60 * 1000,
+              );
+              createQuoteMut.mutate({
+                prospectId: id,
+                nummer:
+                  suggestNumQuery.data?.nummer ??
+                  `${today.getFullYear()}-OFF???`,
+                datum: today.toISOString().slice(0, 10),
+                geldigTot: plus30.toISOString().slice(0, 10),
+                onderwerp: `Klarifai x ${displayName}`,
+                btwPercentage: 21,
+                lines: [],
+              });
+            }}
+            disabled={createQuoteMut.isPending}
           >
-            Start voorstel
+            {createQuoteMut.isPending ? 'Aanmaken...' : 'Start voorstel'}
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.75} />
           </HeroBtn>
         </div>
