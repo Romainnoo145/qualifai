@@ -26,7 +26,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Validation
 
-- [ ] **VALID-01**: Baseline analysis JSON captured for all existing prospects before pipeline changes
+- [x] **VALID-01**: Baseline analysis JSON captured for all existing prospects before pipeline changes
 - [ ] **VALID-02**: Full pipeline re-run for 3-5 prospects with before/after comparison on evidence count, narrative quality, and discover page rendering
 
 ## Future Requirements
@@ -60,18 +60,18 @@ Explicitly excluded. Documented to prevent scope creep.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase                                        | Status  |
-| ----------- | -------------------------------------------- | ------- |
-| VALID-01    | Phase 64 — Baseline Capture                  | Pending |
-| FUNNEL-01   | Phase 65 — Surgical Funnel Fixes             | Pending |
-| FUNNEL-02   | Phase 65 — Surgical Funnel Fixes             | Pending |
-| PROMPT-01   | Phase 65 — Surgical Funnel Fixes             | Pending |
-| FUNNEL-03   | Phase 66 — Content Deduplication             | Pending |
-| FUNNEL-04   | Phase 67 — Relevance Gate at Ingestion       | Pending |
-| SELECT-01   | Phase 68 — Evidence Selection + Masterprompt | Pending |
-| PROMPT-02   | Phase 68 — Evidence Selection + Masterprompt | Pending |
-| PROMPT-03   | Phase 68 — Evidence Selection + Masterprompt | Pending |
-| VALID-02    | Phase 69 — E2E Validation                    | Pending |
+| Requirement | Phase                                        | Status   |
+| ----------- | -------------------------------------------- | -------- |
+| VALID-01    | Phase 64 — Baseline Capture                  | Complete |
+| FUNNEL-01   | Phase 65 — Surgical Funnel Fixes             | Pending  |
+| FUNNEL-02   | Phase 65 — Surgical Funnel Fixes             | Pending  |
+| PROMPT-01   | Phase 65 — Surgical Funnel Fixes             | Pending  |
+| FUNNEL-03   | Phase 66 — Content Deduplication             | Pending  |
+| FUNNEL-04   | Phase 67 — Relevance Gate at Ingestion       | Pending  |
+| SELECT-01   | Phase 68 — Evidence Selection + Masterprompt | Pending  |
+| PROMPT-02   | Phase 68 — Evidence Selection + Masterprompt | Pending  |
+| PROMPT-03   | Phase 68 — Evidence Selection + Masterprompt | Pending  |
+| VALID-02    | Phase 69 — E2E Validation                    | Pending  |
 
 **Coverage:**
 

@@ -161,7 +161,7 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 **Milestone Goal:** Fix de lekkende evidence trechter en vereenvoudig de masterprompt zodat elke prospect een clean, deduplicated, relevance-scored evidence set krijgt die consistent hoge kwaliteit narratieven oplevert.
 
-- [ ] **Phase 64: Baseline Capture** — Snapshot current analysis JSON for all prospects before pipeline changes
+- [x] **Phase 64: Baseline Capture** — Snapshot current analysis JSON for all prospects before pipeline changes (completed 2026-04-20)
 - [ ] **Phase 65: Surgical Funnel Fixes + Dead Code** — HTTP gate, fallback suppression, legacy v1 prompt deletion
 - [ ] **Phase 66: Content Deduplication** — SHA-256 content hash dedup scoped per sourceType per prospect
 - [ ] **Phase 67: Relevance Gate at Ingestion** — Gemini Flash scoring with source-type-specific thresholds drops irrelevant items before DB storage
@@ -506,7 +506,7 @@ Plans:
 | 61.5. Prospect Dossier Pages            | 0/TBD          | Not started | -          |
 | 62. Client-Facing Voorstel + PDF Worker | 0/TBD          | Not started | -          |
 | 63. Contract Workflow                   | 0/TBD          | Not started | -          |
-| 64. Baseline Capture                    | 0/TBD          | Not started | -          |
+| 64. Baseline Capture                    | 1/1            | Complete    | 2026-04-20 |
 | 65. Surgical Funnel Fixes + Dead Code   | 0/TBD          | Not started | -          |
 | 66. Content Deduplication               | 0/TBD          | Not started | -          |
 | 67. Relevance Gate at Ingestion         | 0/TBD          | Not started | -          |
