@@ -213,33 +213,43 @@ export function AnalyseBrochure({
         <BrandChrome />
         <ProgressIndicator label={progressLabel} />
 
-        {/* Dynamic overlay — fades in after 12s or video end */}
+        {/* Dynamic overlay — right of header, above the video's gold line */}
         <div
           style={{
             position: 'absolute',
             right: '72px',
-            bottom: '160px',
+            top: '50%',
+            transform: overlayVisible
+              ? 'translateY(-70%)'
+              : 'translateY(-70%) translateX(12px)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '24px',
+            gap: '16px',
             fontFamily: 'var(--font-sora), sans-serif',
             zIndex: 10,
             opacity: overlayVisible ? 1 : 0,
-            transform: overlayVisible ? 'translateY(0)' : 'translateY(12px)',
             transition: 'opacity 800ms ease-out, transform 800ms ease-out',
             pointerEvents: overlayVisible ? 'auto' : 'none',
+            textAlign: 'right',
           }}
         >
-          {/* Research stats */}
-          <div
-            style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
-          >
-            <StatRow value={researchStats.bronnen} label="BRONNEN" />
-            <StatRow value={researchStats.brontypen} label="BRONTYPEN" />
-            <StatRow value={researchStats.inzichten} label="INZICHTEN" />
-          </div>
+          {/* Research stats — above the divider line */}
+          <StatRow value={researchStats.bronnen} label="BRONNEN" />
+          <StatRow value={researchStats.brontypen} label="BRONTYPEN" />
+          <StatRow value={researchStats.inzichten} label="INZICHTEN" />
 
-          {/* Company name */}
+          {/* Divider — aligns with the video's gold line */}
+          <div
+            style={{
+              width: '100%',
+              height: '1px',
+              background: `linear-gradient(90deg, transparent, ${GOLD_MID})`,
+              marginTop: '4px',
+              marginBottom: '4px',
+            }}
+          />
+
+          {/* Company name — only thing below the line */}
           <div
             style={{
               fontSize: '14px',
@@ -247,7 +257,6 @@ export function AnalyseBrochure({
               color: TEXT_ON_NAVY,
               letterSpacing: '0.15em',
               textTransform: 'uppercase' as const,
-              marginTop: '4px',
             }}
           >
             {prospect.companyName}
