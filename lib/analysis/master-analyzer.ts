@@ -245,12 +245,34 @@ function validateNarrativeSection(raw: unknown): NarrativeSection | null {
     return null;
   }
   if (!isStringArray(obj.citations)) return null;
-  return {
+
+  const section: NarrativeSection = {
     id: obj.id,
     title: obj.title,
     body: obj.body,
     citations: obj.citations,
   };
+
+  // Preserve optional visual fields when AI provides them
+  if (isNonEmptyString(obj.punchline)) {
+    section.punchline = obj.punchline;
+  }
+  const validVisualTypes = ['quote', 'comparison', 'signals', 'stats'];
+  if (
+    isNonEmptyString(obj.visualType) &&
+    validVisualTypes.includes(obj.visualType)
+  ) {
+    section.visualType = obj.visualType as NarrativeSection['visualType'];
+  }
+  if (obj.visualData && typeof obj.visualData === 'object') {
+    // Pass through visualData if it has a valid type field matching visualType
+    const vd = obj.visualData as Record<string, unknown>;
+    if (isNonEmptyString(vd.type) && vd.type === obj.visualType) {
+      section.visualData = obj.visualData as NarrativeSection['visualData'];
+    }
+  }
+
+  return section;
 }
 
 function validateSPVRecommendation(raw: unknown): SPVRecommendation | null {

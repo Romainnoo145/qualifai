@@ -186,6 +186,49 @@ function buildNarrativePrompt(input: NarrativeAnalysisInput): string {
     'Liever 3 sterke secties dan 5 dunne. Niet elk sjabloon hoeft gevuld.',
   );
   sections.push('');
+  sections.push('Elke sectie moet bevatten:');
+  sections.push('- "id": slug identifier');
+  sections.push('- "title": korte titel in het Nederlands');
+  sections.push('- "body": narratief (2-3 alinea\'s boardroom Dutch)');
+  sections.push('- "citations": bronverwijzingen');
+  sections.push(
+    '- "punchline": één pakkende zin die de kernboodschap samenvat (max 15 woorden)',
+  );
+  sections.push(
+    '- "visualType": kies het meest passende type op basis van de gevonden data:',
+  );
+  sections.push(
+    '  * "quote" — wanneer er een krachtig citaat of review-fragment is gevonden',
+  );
+  sections.push(
+    '  * "comparison" — wanneer er een voor/na of A-vs-B vergelijking mogelijk is',
+  );
+  sections.push(
+    '  * "signals" — wanneer er meetbare signalen of trends zijn (bijv. groei, marktpositie)',
+  );
+  sections.push(
+    '  * "stats" — wanneer er concrete cijfers of percentages beschikbaar zijn',
+  );
+  sections.push(
+    '- "visualData": gestructureerde data die past bij het gekozen visualType:',
+  );
+  sections.push(
+    '  * Voor "quote": { "type": "quote", "quote": "het citaat", "attribution": "bron" }',
+  );
+  sections.push(
+    '  * Voor "comparison": { "type": "comparison", "items": [{ "label": "aspect", "before": "huidig", "after": "mogelijk" }] } (2-4 items)',
+  );
+  sections.push(
+    '  * Voor "signals": { "type": "signals", "items": [{ "label": "signaal", "value": "waarde", "trend": "up"|"down"|"neutral" }] } (2-4 items)',
+  );
+  sections.push(
+    '  * Voor "stats": { "type": "stats", "items": [{ "label": "metric", "value": "getal", "context": "toelichting" }] } (2-4 items)',
+  );
+  sections.push('');
+  sections.push(
+    'BELANGRIJK: visualData moet ALTIJD afgeleid zijn van echte brondata — NOOIT verzonnen. Als er geen geschikte data is voor een visualType, laat visualType en visualData weg en gebruik alleen body tekst.',
+  );
+  sections.push('');
   sections.push('Retourneer UITSLUITEND valide JSON in dit formaat:');
   sections.push('```json');
   sections.push('{');
@@ -200,7 +243,12 @@ function buildNarrativePrompt(input: NarrativeAnalysisInput): string {
     '      "body": "Vloeiend narratief dat bewijsmateriaal citeert...",',
   );
   sections.push(
-    '      "citations": ["Bron: Volume X — Document Y", "Bron: REVIEWS — ..."]',
+    '      "citations": ["Bron: Volume X — Document Y", "Bron: REVIEWS — ..."],',
+  );
+  sections.push('      "punchline": "Eén pakkende zin als headline",');
+  sections.push('      "visualType": "stats",');
+  sections.push(
+    '      "visualData": { "type": "stats", "items": [{ "label": "metric", "value": "42%", "context": "toelichting" }] }',
   );
   sections.push('    }');
   sections.push('  ],');
@@ -349,6 +397,49 @@ function buildKlarifaiNarrativePrompt(input: KlarifaiNarrativeInput): string {
     'Liever 3 sterke secties dan 5 dunne. Niet elk sjabloon hoeft gevuld.',
   );
   parts.push('');
+  parts.push('Elke sectie moet bevatten:');
+  parts.push('- "id": slug identifier');
+  parts.push('- "title": korte titel in het Nederlands');
+  parts.push('- "body": narratief (2-3 alinea\'s boardroom Dutch)');
+  parts.push('- "citations": bronverwijzingen');
+  parts.push(
+    '- "punchline": één pakkende zin die de kernboodschap samenvat (max 15 woorden)',
+  );
+  parts.push(
+    '- "visualType": kies het meest passende type op basis van de gevonden data:',
+  );
+  parts.push(
+    '  * "quote" — wanneer er een krachtig citaat of review-fragment is gevonden',
+  );
+  parts.push(
+    '  * "comparison" — wanneer er een voor/na of A-vs-B vergelijking mogelijk is',
+  );
+  parts.push(
+    '  * "signals" — wanneer er meetbare signalen of trends zijn (bijv. groei, marktpositie)',
+  );
+  parts.push(
+    '  * "stats" — wanneer er concrete cijfers of percentages beschikbaar zijn',
+  );
+  parts.push(
+    '- "visualData": gestructureerde data die past bij het gekozen visualType:',
+  );
+  parts.push(
+    '  * Voor "quote": { "type": "quote", "quote": "het citaat", "attribution": "bron" }',
+  );
+  parts.push(
+    '  * Voor "comparison": { "type": "comparison", "items": [{ "label": "aspect", "before": "huidig", "after": "mogelijk" }] } (2-4 items)',
+  );
+  parts.push(
+    '  * Voor "signals": { "type": "signals", "items": [{ "label": "signaal", "value": "waarde", "trend": "up"|"down"|"neutral" }] } (2-4 items)',
+  );
+  parts.push(
+    '  * Voor "stats": { "type": "stats", "items": [{ "label": "metric", "value": "getal", "context": "toelichting" }] } (2-4 items)',
+  );
+  parts.push('');
+  parts.push(
+    'BELANGRIJK: visualData moet ALTIJD afgeleid zijn van echte brondata — NOOIT verzonnen. Als er geen geschikte data is voor een visualType, laat visualType en visualData weg en gebruik alleen body tekst.',
+  );
+  parts.push('');
   parts.push('Retourneer UITSLUITEND valide JSON in dit formaat:');
   parts.push('```json');
   parts.push('{');
@@ -363,7 +454,12 @@ function buildKlarifaiNarrativePrompt(input: KlarifaiNarrativeInput): string {
     '      "body": "Vloeiend narratief dat bewijsmateriaal citeert...",',
   );
   parts.push(
-    '      "citations": ["Bron: REVIEWS — ...", "Bron: WEBSITE — ..."]',
+    '      "citations": ["Bron: REVIEWS — ...", "Bron: WEBSITE — ..."],',
+  );
+  parts.push('      "punchline": "Eén pakkende zin als headline",');
+  parts.push('      "visualType": "quote",');
+  parts.push(
+    '      "visualData": { "type": "quote", "quote": "het citaat uit een review", "attribution": "Trustpilot review" }',
   );
   parts.push('    }');
   parts.push('  ],');

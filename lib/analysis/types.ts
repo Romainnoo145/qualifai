@@ -11,12 +11,38 @@ import type { RagRetrievedPassage } from '@/lib/rag/retriever';
 // analysis-v2 Output types (new)
 // ---------------------------------------------------------------------------
 
+/** Visual element types the AI can choose per section */
+export type VisualType = 'quote' | 'comparison' | 'signals' | 'stats';
+
+/** Structured visual data matching the chosen visualType */
+export type VisualData =
+  | { type: 'quote'; quote: string; attribution: string }
+  | {
+      type: 'comparison';
+      items: Array<{ label: string; before: string; after: string }>;
+    }
+  | {
+      type: 'signals';
+      items: Array<{
+        label: string;
+        value: string;
+        trend: 'up' | 'down' | 'neutral';
+      }>;
+    }
+  | {
+      type: 'stats';
+      items: Array<{ label: string; value: string; context?: string }>;
+    };
+
 /** A narrative section with title, body, and optional evidence citations */
 export type NarrativeSection = {
   id: string; // slug identifier (e.g., "opening-hook", "market-position")
   title: string; // section heading in Dutch
   body: string; // flowing narrative paragraph(s) in boardroom Dutch
   citations: string[]; // source references woven into the narrative
+  punchline?: string; // one-sentence headline for the brochure page (max 15 words)
+  visualType?: VisualType; // AI chooses based on evidence found
+  visualData?: VisualData; // structured data matching the visualType
 };
 
 /** The complete narrative analysis output — version analysis-v2 */
