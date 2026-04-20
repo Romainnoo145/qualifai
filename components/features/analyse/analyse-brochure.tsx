@@ -57,6 +57,7 @@ const statNumberStyle: React.CSSProperties = {
   letterSpacing: '-0.02em',
   fontVariantNumeric: 'tabular-nums',
   lineHeight: 1,
+  textAlign: 'right',
 };
 
 const statLabelStyle: React.CSSProperties = {
