@@ -129,7 +129,7 @@ export function BrochureCover({
         >
           <source src="/video/klarifai-intro.mp4" type="video/mp4" />
         </video>
-        <BrandChrome />
+        <BrandChrome companyName={prospect.companyName} />
         <ProgressIndicator label={progressLabel} />
         <NextArrow onClick={handleNext} />
       </main>
@@ -282,7 +282,7 @@ function Uitdaging({
   onNext,
   onBack,
   progressLabel,
-  prospect: _prospect,
+  prospect,
   quote,
 }: {
   onNext: () => void;
@@ -312,7 +312,7 @@ function Uitdaging({
   return (
     <main style={{ ...pageBase, backgroundColor: NAVY }}>
       <GeometricBackdrop />
-      <BrandChrome />
+      <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       {/* Viewport-fit content — hero statement top, 3 cards below */}
@@ -364,17 +364,17 @@ function Uitdaging({
         >
           <h1
             style={{
-              fontSize: 'clamp(56px, 6.5vw, 96px)',
+              fontSize: 'clamp(36px, 5vw, 80px)',
               fontWeight: 700,
-              lineHeight: 1.02,
+              lineHeight: 1.08,
               letterSpacing: '-0.03em',
               margin: 0,
               maxWidth: '1100px',
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
             }}
           >
-            Plancraft loopt vast
-            <br />
-            op zijn eigen succes
+            {quote?.onderwerp || `${prospect.companyName} — De Uitdaging`}
             <span
               style={{
                 background: GOLD_GRADIENT,
@@ -484,7 +484,7 @@ function Aanpak({
   onNext,
   onBack,
   progressLabel,
-  prospect: _prospect,
+  prospect,
   quote,
 }: {
   onNext: () => void;
@@ -523,7 +523,7 @@ function Aanpak({
   return (
     <main style={{ ...pageBase, backgroundColor: NAVY }}>
       <GeometricBackdrop />
-      <BrandChrome />
+      <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       <div
@@ -719,7 +719,7 @@ function Investering({
   onNext,
   onBack,
   progressLabel,
-  prospect: _prospect,
+  prospect,
   quote,
 }: {
   onNext: () => void;
@@ -766,7 +766,7 @@ function Investering({
   return (
     <main style={{ ...pageBase, backgroundColor: NAVY }}>
       <GeometricBackdrop />
-      <BrandChrome />
+      <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       <div
@@ -1117,7 +1117,7 @@ function Scope({
   onNext,
   onBack,
   progressLabel,
-  prospect: _prospect,
+  prospect,
 }: {
   onNext: () => void;
   onBack: () => void;
@@ -1145,7 +1145,7 @@ function Scope({
   return (
     <main style={{ ...pageBase, backgroundColor: NAVY }}>
       <GeometricBackdrop />
-      <BrandChrome />
+      <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       <div
@@ -1566,7 +1566,7 @@ function Signing({
   return (
     <main style={{ ...pageBase, backgroundColor: NAVY }}>
       <GeometricBackdrop />
-      <BrandChrome />
+      <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       <div
@@ -2053,7 +2053,7 @@ function Bevestigd({
   return (
     <main style={{ ...pageBase, backgroundColor: NAVY }}>
       <GeometricBackdrop />
-      <BrandChrome />
+      <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       <div
