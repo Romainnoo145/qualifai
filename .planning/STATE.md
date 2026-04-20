@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: '60 / 61 / 61.1 / 61.2 / 61.3 all shipped. resolveLogoUrl pipeline unified three scattered call sites, ProspectLogo component simplified to 2-stage trust-the-DB, backfill script ran and populated 2 empty rows (marcore + stb-kozijnen) + re-validated 8 existing. Romano flagged meta-concern about lack of design spec / component system / uniform backend endpoints — Phase 62 is being restructured to start with /design-consultation skill before any implementation. Next action: run /design-consultation for admin prospect detail + client /voorstel pages as anchor surfaces.'
-stopped_at: Phase 61.4 context gathered
-last_updated: '2026-04-18T14:51:59.922Z'
+stopped_at: Completed 61.4-01-PLAN.md
+last_updated: '2026-04-20T12:07:19.061Z'
 last_activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
 progress:
   total_phases: 8
   completed_phases: 4
-  total_plans: 17
-  completed_plans: 18
+  total_plans: 20
+  completed_plans: 19
 ---
 
 # Project State
@@ -24,12 +24,12 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 
 ## Current Position
 
-Phase: 61.3 — Logo Pipeline Unification (COMPLETE, lean exec) — next Phase 62 design consultation
-Plan: Single session, 4 atomic commits, no GSD plan-checker ceremony per Romano's request
-Status: 60 / 61 / 61.1 / 61.2 / 61.3 all shipped. resolveLogoUrl pipeline unified three scattered call sites, ProspectLogo component simplified to 2-stage trust-the-DB, backfill script ran and populated 2 empty rows (marcore + stb-kozijnen) + re-validated 8 existing. Romano flagged meta-concern about lack of design spec / component system / uniform backend endpoints — Phase 62 is being restructured to start with /design-consultation skill before any implementation. Next action: run /design-consultation for admin prospect detail + client /voorstel pages as anchor surfaces.
-Last activity: 2026-04-14 — Plan 61.1-03 shipped (retrigger mutations, ProspectLogo, error-mapping, recordAnalysis\* wiring)
+Phase: 61.4 — Admin Design System Sweep (Plan 01 complete)
+Plan: 01 of 61.4 complete — Wire dead buttons and broken links
+Status: 61.4-01 shipped. All 6 dead navigation targets wired (Start voorstel, 4 dossier links, Start Outreach dashboard button). Action bar buttons wired to tRPC mutations.
+Last activity: 2026-04-20 — Plan 61.4-01 shipped (prospect detail + dashboard navigation fixes)
 
-**Progress bar:** [██████████] 100% (9/9 plans, 1/4 phases)
+**Progress bar:** [██████████] 95% (19/20 plans)
 
 ## Milestones Shipped
 
@@ -116,6 +116,7 @@ Out of Phase 60 scope (deferred to tech-debt backlog):
 - [Phase 61.2]: og-logo IIFE in createAndProcess is a net-new addition (the mutation had no favicon IIFE before Plan 03) — createProspect still has its own favicon-only IIFE unchanged
 - [Phase 61.2]: ProspectEnrichmentBadge: amber pill uses title= attribute for tooltip, returns null when all fields populated
 - [Phase 61.2]: Detail page null guard audit confirmed existing guards sufficient — no fixes needed
+- [Phase 61.4]: Action bar buttons wired directly to tRPC mutations with refetch on success
 
 ### Pending Todos
 
@@ -136,8 +137,8 @@ Pre-Phase 63 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-18T14:51:59.919Z
-Stopped at: Phase 61.4 context gathered
+Last session: 2026-04-20T12:07:10.104Z
+Stopped at: Completed 61.4-01-PLAN.md
 Resume command: `/gsd:execute-plan 62 01`
 
 ## Accumulated Context
