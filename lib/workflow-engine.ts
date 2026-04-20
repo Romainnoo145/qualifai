@@ -1514,22 +1514,58 @@ export async function matchProofs(
   limit = 4,
   options?: {
     projectId?: string;
+    sector?: string | null;
   },
 ): Promise<ProofMatchResult[]> {
-  const useCases = await db.useCase.findMany({
-    where: {
-      isActive: true,
-      ...(options?.projectId ? { projectId: options.projectId } : {}),
-    },
-    select: {
-      id: true,
-      title: true,
-      summary: true,
-      tags: true,
-      isShipped: true,
-      externalUrl: true,
-    },
-  });
+  const baseWhere: Record<string, unknown> = {
+    isActive: true,
+    ...(options?.projectId ? { projectId: options.projectId } : {}),
+  };
+
+  let useCases;
+  if (options?.sector) {
+    const sectorCases = await db.useCase.findMany({
+      where: { ...baseWhere, sector: options.sector as any },
+      select: {
+        id: true,
+        title: true,
+        summary: true,
+        tags: true,
+        isShipped: true,
+        externalUrl: true,
+      },
+    });
+    const otherCases = await db.useCase.findMany({
+      where: {
+        ...baseWhere,
+        ...(sectorCases.length > 0
+          ? { id: { notIn: sectorCases.map((u) => u.id) } }
+          : {}),
+      },
+      select: {
+        id: true,
+        title: true,
+        summary: true,
+        tags: true,
+        isShipped: true,
+        externalUrl: true,
+      },
+      take: 10,
+    });
+    useCases = [...sectorCases, ...otherCases];
+  } else {
+    useCases = await db.useCase.findMany({
+      where: baseWhere,
+      select: {
+        id: true,
+        title: true,
+        summary: true,
+        tags: true,
+        isShipped: true,
+        externalUrl: true,
+      },
+    });
+  }
 
   if (useCases.length === 0) {
     return [

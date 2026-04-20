@@ -14,6 +14,7 @@ import {
 } from '@/lib/readable-slug';
 import { executeResearchRun } from '@/lib/research-executor';
 import { matchProofs } from '@/lib/workflow-engine';
+import { industryToSector } from '@/lib/constants/sectors';
 import { TRPCError } from '@trpc/server';
 import { resolveLogoUrl } from '@/lib/enrichment/logo-pipeline';
 import { prettifyDomainToName } from '@/lib/enrichment/company-name';
@@ -656,6 +657,7 @@ export const adminRouter = router({
             const query = `${h.title} ${h.problemStatement}`;
             const matches = await matchProofs(ctx.db, query, 4, {
               projectId: prospect.projectId,
+              sector: industryToSector(prospect.industry),
             });
             for (const match of matches) {
               await ctx.db.proofMatch.create({

@@ -4,6 +4,7 @@ import { projectAdminProcedure, router } from '../trpc';
 import { executeResearchRun } from '@/lib/research-executor';
 import { buildDefaultReviewSeedUrls } from '@/lib/research-refresh';
 import { matchProofs } from '@/lib/workflow-engine';
+import { industryToSector } from '@/lib/constants/sectors';
 import { scoreContactForOutreach } from '@/lib/outreach/quality';
 import { TRPCError } from '@trpc/server';
 import { generateIntroDraft } from '@/lib/outreach/generate-intro';
@@ -488,6 +489,7 @@ export const campaignsRouter = router({
                   domain: true,
                   companyName: true,
                   projectId: true,
+                  industry: true,
                 },
               },
             },
@@ -598,7 +600,10 @@ export const campaignsRouter = router({
               ctx.db,
               `${hypothesis.title} ${hypothesis.problemStatement}`,
               4,
-              { projectId: prospect.projectId },
+              {
+                projectId: prospect.projectId,
+                sector: industryToSector(prospect.industry),
+              },
             );
             for (const match of matches) {
               await ctx.db.proofMatch.create({
@@ -627,7 +632,10 @@ export const campaignsRouter = router({
               ctx.db,
               `${opportunity.title} ${opportunity.description}`,
               4,
-              { projectId: prospect.projectId },
+              {
+                projectId: prospect.projectId,
+                sector: industryToSector(prospect.industry),
+              },
             );
             for (const match of matches) {
               await ctx.db.proofMatch.create({

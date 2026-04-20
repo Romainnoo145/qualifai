@@ -6,6 +6,7 @@ import {
   generateOpportunityDrafts,
   matchProofs,
 } from '@/lib/workflow-engine';
+import { industryToSector } from '@/lib/constants/sectors';
 import { generateDualEvidenceOpportunityDrafts } from '@/lib/rag/opportunity-generator';
 import type { Prisma } from '@prisma/client';
 
@@ -273,6 +274,7 @@ export const hypothesesRouter = router({
         where: { id: run.prospectId },
         select: {
           projectId: true,
+          industry: true,
           project: {
             select: {
               projectType: true,
@@ -351,7 +353,10 @@ export const hypothesesRouter = router({
           ctx.db,
           `${hypothesis.title} ${hypothesis.problemStatement}`,
           4,
-          { projectId: prospectScope.projectId },
+          {
+            projectId: prospectScope.projectId,
+            sector: industryToSector(prospectScope.industry),
+          },
         );
         for (const match of hypothesisMatches) {
           await ctx.db.proofMatch.create({
@@ -402,7 +407,10 @@ export const hypothesesRouter = router({
           ctx.db,
           `${opportunity.title} ${opportunity.description}`,
           4,
-          { projectId: prospectScope.projectId },
+          {
+            projectId: prospectScope.projectId,
+            sector: industryToSector(prospectScope.industry),
+          },
         );
         for (const match of opportunityMatches) {
           await ctx.db.proofMatch.create({
