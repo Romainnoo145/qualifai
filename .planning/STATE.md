@@ -1,33 +1,33 @@
 ---
 gsd_state_version: 1.0
-milestone: v9.0
-milestone_name: Klant Lifecycle Convergence
-status: '60 / 61 / 61.1 / 61.2 / 61.3 all shipped. resolveLogoUrl pipeline unified three scattered call sites, ProspectLogo component simplified to 2-stage trust-the-DB, backfill script ran and populated 2 empty rows (marcore + stb-kozijnen) + re-validated 8 existing. Romano flagged meta-concern about lack of design spec / component system / uniform backend endpoints — Phase 62 is being restructured to start with /design-consultation skill before any implementation. Next action: run /design-consultation for admin prospect detail + client /voorstel pages as anchor surfaces.'
-stopped_at: Completed 61.4-01-PLAN.md
-last_updated: '2026-04-20T12:07:19.061Z'
-last_activity: 2026-04-20 - Completed quick task 260420-uoo: commit seed-use-cases.ts to git
+milestone: v10.0
+milestone_name: Evidence Pipeline Overhaul
+status: Defining requirements
+stopped_at: Milestone started
+last_updated: '2026-04-20T22:49:00.000Z'
+last_activity: 2026-04-20 - Milestone v10.0 started
 progress:
-  total_phases: 8
-  completed_phases: 4
-  total_plans: 20
-  completed_plans: 19
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-13)
+See: .planning/PROJECT.md (updated 2026-04-20)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service Klarifai actually delivers. No spray-and-pray.
-**Current focus:** v9.0 Klant Lifecycle Convergence — Phase 60 (Quote Schema Foundation, ready to plan)
+**Current focus:** v10.0 Evidence Pipeline Overhaul — Defining requirements
 
 ## Current Position
 
-Phase: 61.4 — Admin Design System Sweep (COMPLETE)
-Plan: 02 of 02 complete
-Status: 61.4-01 and 61.4-02 shipped. All dead buttons wired. NarrativeSection extended with visual data types, master prompt updated, brochure renders visual elements as primary content, evidence count fixed, citations collapsible.
-Last activity: 2026-04-20 — Plan 61.4-02 shipped (visual data types, brochure visual rendering, evidence count fix)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-20 — Milestone v10.0 started
 
 **Progress bar:** [██████████] 100% (20/20 plans)
 

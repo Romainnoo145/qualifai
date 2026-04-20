@@ -69,32 +69,22 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ### Active
 
-## Current Milestone: v9.0 — Klant Lifecycle Convergence
+## Current Milestone: v10.0 — Evidence Pipeline Overhaul
 
-**Goal:** Converge klarifai-core's quote/contract pipeline into Qualifai zodat de volledige klant-lifecycle (prospect → quote → contract → start project) in één systeem leeft, met een gepersonaliseerde URL als primair output-formaat in plaats van losse PDFs.
+**Goal:** Fix de lekkende evidence trechter en vereenvoudig de masterprompt zodat elke prospect een clean, deduplicated, relevance-scored evidence set krijgt die consistent hoge kwaliteit narratieven oplevert.
 
-**Strategie-context:** Zie `klarifai-core/docs/strategy/qualifai-convergence.md` (strategy), `klarifai-core/docs/strategy/HANDOFF.md` (multi-session handoff), en `klarifai-core/docs/strategy/decisions.md` (locked decisions Q5/Q8/Q9/Q12/Q13).
+**Target features (3 streams):**
 
-**Target features (4 phases):**
+- **Evidence Quality (de trechter)** — Fix remaining 404 leaks (Crawl4AI path, fallback drafts), content deduplication at ingestion, AI relevance scoring per item at ingestion (Gemini Flash), drop sub-threshold items, pre-compute ranked evidence set for masterprompt
+- **Masterprompt Simplification** — Delete legacy v1 prompt (260 lines dead code), remove visualType/visualData from masterprompt into separate downstream call, pre-filter to top 20 highest-quality items grouped by sourceType, simplify JSON output schema
+- **E2E Validation** — Re-run full pipeline for 3-5 existing prospects with new filtering, compare output quality before/after, verify discover page renders correctly
 
-- **Schema foundation** — `Quote`/`QuoteLine` Prisma models, `QuoteStatus` enum, extended `ProspectStatus` (+`QUOTE_SENT`), tRPC `quotes.*` router with state-machine transitions, foundation fixes (typed status constants, state transition validation on `updateProspect`, Zod-validated snapshots), YAML import script for klarifai-core migration.
-- **Admin UI voor quotes** — `/admin/quotes` list view, `/admin/prospects/[id]/quotes/new` form (narrative fields + line items + scope), live preview iframe, status workflow Draft → Sent.
-- **Client-facing voorstel** — `/discover/[slug]/voorstel` route serving the proposal as HTML (single source: snapshot at sent), accept flow with confirmation modal, separate Railway PDF worker for snapshot generation, Slack/email notification to admin on accept.
-- **Contract workflow** — Contract drafting from accepted quote, click-to-sign with IP logging, contract PDF snapshot, status transition to project-active.
+**Context:**
 
-**Out of scope for v9.0** (deferred to v10.0+):
-
-- Invoice generation pipeline
-- klarifai-core CLI deprecation/sunset
-- Multi-brand support (single Klarifai brand assumed)
-
-**Dependencies:**
-
-- `decisions.md` Q5: PDF rendering = separate Railway worker service (not in-process)
-- `decisions.md` Q8: Existing klarifai-core YAMLs migrated via idempotent import script
-- `decisions.md` Q9: Snapshot at `QUOTE_SENT` (not live render)
-- `decisions.md` Q12: Snapshot versioning = `snapshotAt: DateTime` + `templateVersion: String` (no counter)
-- `decisions.md` Q13: Quote and Prospect have separate status enums with auto-sync via state-machine helper
+- STB-kozijnen: 233 evidence items, ~60% estimated duplicates
+- Mujjo: 427 evidence items at scale
+- Evidence scrapers work well (Scrapling + Crawl4AI) — problem is what happens AFTER scraping
+- Use case matching (matchProofs) already split out of masterprompt — that pattern continues here
 
 ### Out of Scope
 
@@ -175,4 +165,4 @@ Every outreach message is backed by real evidence of a prospect's workflow pain 
 
 ---
 
-_Last updated: 2026-04-13 after v9.0 milestone start (Klant Lifecycle Convergence)_
+_Last updated: 2026-04-20 after v10.0 milestone start (Evidence Pipeline Overhaul)_
