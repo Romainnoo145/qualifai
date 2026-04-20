@@ -415,7 +415,11 @@ Plans:
 3. `buildLegacyPrompt` and all associated v1 types/validators are absent from the codebase — a grep for `buildLegacyPrompt` returns zero results
 4. `npm run check` (or `npx tsc --noEmit`) passes with zero TypeScript errors after the deletion
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+
+- [ ] 65-01-PLAN.md — HTTP status gate, fallback/notFound filter, legacy v1 prompt deletion (FUNNEL-01, FUNNEL-02, PROMPT-01)
 
 ---
 
@@ -507,7 +511,7 @@ Plans:
 | 62. Client-Facing Voorstel + PDF Worker | 0/TBD          | Not started | -          |
 | 63. Contract Workflow                   | 0/TBD          | Not started | -          |
 | 64. Baseline Capture                    | 1/1            | Complete    | 2026-04-20 |
-| 65. Surgical Funnel Fixes + Dead Code   | 0/TBD          | Not started | -          |
+| 65. Surgical Funnel Fixes + Dead Code   | 0/1            | Not started | -          |
 | 66. Content Deduplication               | 0/TBD          | Not started | -          |
 | 67. Relevance Gate at Ingestion         | 0/TBD          | Not started | -          |
 | 68. Evidence Selection + Masterprompt   | 0/TBD          | Not started | -          |
