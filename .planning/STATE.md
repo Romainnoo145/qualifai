@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v10.0
 milestone_name: Evidence Pipeline Overhaul
-status: Defining requirements
-stopped_at: Milestone started
-last_updated: '2026-04-20T22:49:00.000Z'
-last_activity: 2026-04-20 - Milestone v10.0 started
+status: Ready to plan
+stopped_at: Roadmap created — 6 phases defined (64-69)
+last_updated: '2026-04-20T00:00:00.000Z'
+last_activity: 2026-04-20 - v10.0 roadmap created, phases 64-69 defined
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,16 +20,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-20)
 
 **Core value:** Every outreach message is backed by real evidence of a prospect's workflow pain points, matched to a service Klarifai actually delivers. No spray-and-pray.
-**Current focus:** v10.0 Evidence Pipeline Overhaul — Defining requirements
+**Current focus:** v10.0 Evidence Pipeline Overhaul — Phase 64: Baseline Capture
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-20 — Milestone v10.0 started
+Phase: 64 of 69 (Baseline Capture)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-04-20 — Roadmap created, 6 phases defined
 
-**Progress bar:** [██████████] 100% (20/20 plans)
+**Progress bar:** [░░░░░░░░░░] 0% (0/6 phases complete)
 
 ## Milestones Shipped
 
@@ -48,107 +48,31 @@ Last activity: 2026-04-20 — Milestone v10.0 started
 
 ## Accumulated Context
 
-### Roadmap Evolution
-
-- Phase 61.1 inserted after Phase 61: Manual prospect flow polish (URGENT) — Romano discovered during Phase 61 smoke testing that (a) `createProspect` never triggers enrichment so manual prospects have no logo/Apollo data, (b) Marfa is too small for Apollo so even Apollo path wouldn't have given a logo (need favicon fallback), (c) master-analyzer hits Gemini 503 with no retry, (d) no UI to retrigger pipeline.
-- Phase 61.2 inserted after Phase 61.1: Manual Prospect Parity (URGENT) — discovered during 61.1 smoke testing that the favicon fallback chain "works" but renders 16x16 lo-res icons as generic globes when upscaled, Apollo throws 422 on small NL SMBs without graceful fallback, and the manual prospect detail card is hollow (12+ Apollo-only fields blank). Also need an evidence/analysis page render audit. Scope: Apollo error catch + og:image scraping + inline manual enrichment form + render parity audit.
-
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
+From research (2026-04-20):
 
-Strategy decisions for v9.0 live in `klarifai-core/docs/strategy/decisions.md`:
+- Dedup MUST be scoped within sourceType (not across) — cross-source corroboration drives confidence scores
+- Dutch-language thresholds needed: WEBSITE/REGISTRY at 0.25, REVIEWS/CAREERS at 0.45
+- Async scoring or 80-item batch cap required to avoid 30-90s latency spike
+- Visual data Flash call needs cited evidence items per section, not just section body
 
-- **Q5**: PDF rendering via separate Railway worker service, not in-process
-- **Q8**: Existing klarifai-core YAMLs migrated via idempotent import script (`scripts/import-klarifai-yaml.ts`, dry-run default, `--apply` flag)
-- **Q9**: Snapshot at `QUOTE_SENT` (not live render) — what client sees is frozen from the moment of sending
-- **Q12**: Snapshot versioning = `snapshotAt: DateTime` + `templateVersion: String`, no counter. Applied to Quote model; existing models (ResearchRun, WorkflowLossMap, ProspectAnalysis) are separate tech-debt cleanup.
-- **Q13**: Quote and Prospect have separate status enums with auto-sync via state-machine helper. One new ProspectStatus value: `QUOTE_SENT` (between ENGAGED and CONVERTED). Quote.ACCEPTED → Prospect.CONVERTED (transactional). Quote.REJECTED → Prospect remains ENGAGED.
+Design decisions still open (from Phase 63 planning):
 
-Codebase concerns informing Phase 60 scope (see `.planning/codebase/CONCERNS.md` and `.planning/tech-debt.md`):
-
-- ProspectStatus has scattered hardcoded string checks — Phase 60 must extract typed constants into `lib/constants/prospect-statuses.ts`
-- `updateProspect` mutation accepts any state transition without validation — Phase 60 adds state-machine guard with typed error on invalid moves
-- `Quote.snapshotData` must have a Zod schema at `lib/schemas/quote-snapshot.ts`, validated on every write, with type-safe accessor helper
-
-Out of Phase 60 scope (deferred to tech-debt backlog):
-
-- tRPC v11 `as any` inference casts in existing components (Phase 61 touches those files)
-- Cadence engine config hardcoded thresholds (unrelated to Quote)
-- `ResearchRun.inputSnapshot` Zod schema (separate cleanup, not Phase 60 blocker)
-- Inconsistent snapshot versioning on WorkflowLossMap/ProspectAnalysis (separate cleanup)
-- [Phase 60]: Plan 02: Manually-authored migration to bypass pre-existing dev DB drift, verified clean on shadow DB pre-loaded from dev schema dump
-- [Phase 60]: Plan 02: Quote.replacesId self-FK added in Phase 60 (Q9) to avoid second migration in Phase 61
-- [Phase 60]: Pattern: typed as-const arrays in lib/constants/prospect-statuses.ts are the SSOT for ProspectStatus literals; assertValidProspectTransition pure helper reused by every status mutation entrypoint
-- [Phase 60]: Plan 03: QuoteSnapshotSchema is single source of truth feeding both web template and PDF worker (Q14) — schema describes business content only, snapshotHtml/snapshotPdfUrl live on Quote row
-- [Phase 60]: Plan 03: QuoteSnapshotLine.tarief uses z.number().int() with NO .nonnegative() — OFF003 Pakketkorting carries tarief: -800 (Pitfall 5)
-- [Phase 60]: Plan 03: parseSnapshot returns null on failure (defensive read paths use getSnapshotField with fallback); Plan 04 quotes.update will use safeParse + throw TRPCError on the strict write path
-- [Phase 60]: Plan 04: transitionQuote is the ONLY authorised path for mutating Quote.status — router `update` Zod input OMITS status/snapshot\*/replacesId; the runtime invariant is enforced by the state machine helper
-- [Phase 60]: Plan 04: Multi-tenant isolation for Quote uses `prospect: { projectId: ctx.projectId }` relation filter instead of a duplicate projectId column on Quote — Prospect FK IS the tenancy boundary (research decision)
-- [Phase 60]: Plan 04: Snapshot freeze on DRAFT→SENT is transactional — QuoteSnapshotSchema.parse runs BEFORE any Prisma write, inside the same $transaction as the status + Prospect cascade
-- [Phase 60]: Plan 04: Pattern: state-machine + router pair per entity — state machine owns mutation, router is a thin scope-check + delegate (Quote is first entity to follow this pattern)
-- [Phase 61-admin-ui-for-quotes]: Nummer versioning via -v2/-vN suffix (no version counter column; lineage via replacesId FK)
-- [Phase 61-admin-ui-for-quotes]: transitionQuote split into dispatcher + runTransition so nested callers (createVersion) can pass an existing Prisma.TransactionClient (runtime detection of method)
-- [Phase 61-admin-ui-for-quotes]: Plan 02: QuoteForm uses plain useState + props callback (no react-hook-form, no schema) — canonical admin form pattern mirroring app/admin/prospects/new/page.tsx
-- [Phase 61-admin-ui-for-quotes]: Plan 02: Dynamic list form pattern established — pure state helpers (addLine/updateLine/removeLine/moveUp/moveDown) exported alongside the list component and unit-tested directly without React mount
-- [Phase 61-admin-ui-for-quotes]: Plan 02: Read-only form mode is a single isReadOnly prop — disables every input + replaces submit button with Dutch muted message; Q9 immutability mirrored at UI layer
-- [Phase 61-admin-ui-for-quotes]: Plan 02: /admin/quotes list uses stacked sections (Concept/Verstuurd/Gearchiveerd) with native HTML <details> for the archived collapsible — no new disclosure primitive added
-- [Phase 61-admin-ui-for-quotes]: Plan 03: Detail page URL is flat at /admin/quotes/[id] (O4 hybrid — nested under prospect for create, flat for edit) so the reserved actions slot can be mounted without a prospect context
-- [Phase 61-admin-ui-for-quotes]: Plan 03: Tab panels ALWAYS use CSS `hidden` (className={tab===X ? "" : "hidden"}) to keep panels mounted and avoid refetch flash on switch — never conditional unmount, never React.lazy in tabs
-- [Phase 61-admin-ui-for-quotes]: Plan 03: Admin HTML preview route contract: sandboxed iframe + bearer token in querystring → server handler maps scope.allowedProjectSlug → project.id → prospect.projectId filter → renderQuotePreview → text/html with Pitfall 4 headers (no-store + noindex + no-referrer)
-- [Phase 61-admin-ui-for-quotes]: Plan 03: Empty `data-testid="quote-actions-slot"` div on detail page is the 61-04 contract — 61-04 mounts QuoteSendConfirm + QuoteVersionConfirm into the slot without touching the detail page shell
-- [Phase 61-admin-ui-for-quotes]: Plan 03: Next.js 15 route handler params accepted as sync OR Promise via `await Promise.resolve(context.params)` — single-line forward-compat with upcoming Promise<{id}> params shape
-- [Phase 61-admin-ui-for-quotes]: Plan 03: Timeline viewedAt/acceptedAt hardcoded to null in 61-03 (props optional nullables) — Phase 62 adds real columns and swaps the null literals without touching the component API
-- [Phase 61]: Plan 04: Verbatim Dutch copy locked via module-scope string constants so prettier JSX wrapping can't break grep acceptance — pattern for any future O6-style verbatim check
-- [Phase 61]: Plan 04: Action components are self-visibility-gated (each returns null when its status precondition is not met); page shell mounts both unconditionally without branching on quote.status
-- [Phase 61]: Plan 04: Mutation error/success simulation via captured onError/onSuccess callbacks + act() — required when triggering React state updates outside React event handlers for RTL getByText to see flushed DOM
-- [Phase 61.1-manual-prospect-flow-polish]: getFaviconUrl: Google s2/favicons HEAD probe → DuckDuckGo ip3 fallback → null; buildInlineGoogleFaviconUrl exported as pure URL builder for ProspectLogo onError chain
-- [Phase 61.1-manual-prospect-flow-polish]: callGeminiWithRetry returns GeminiCallResult envelope (not raw GenerateContentResult) so Plans 03 and 04 can thread fallbackUsed end-to-end
-- [Phase 61.1-manual-prospect-flow-polish]: recordAnalysisFailure intentionally leaves lastAnalysisModelUsed untouched — previous successful model stays as history breadcrumb
-- [Phase 61.1-manual-prospect-flow-polish]: runMasterAnalysis throws PRECONDITION_FAILED with Dutch copy — ProspectAnalysis.inputSnapshot is counts-only (not reconstructable); runResearchRun is the primary rerun path in Phase 61.1
-- [Phase 61.1-manual-prospect-flow-polish]: ProspectLogo shape prop drives base rounding class (rounded-full vs rounded-2xl) — callers specify shape not Tailwind override
-- [Phase 61.1-manual-prospect-flow-polish]: FRIENDLY_ERROR_GEMINI_FALLBACK exported from error-mapping.ts but NOT returned by mapMutationError — it is a positive success-with-warning signal for Plan 04 ProspectLastRunStatus
-- [Phase 61.1-manual-prospect-flow-polish]: generateNarrativeAnalysis + generateKlarifaiNarrativeAnalysis return type tightened to include modelUsed narrow union (was missing from Plan 01 — Plan 03 Rule 1 fix)
-- [Phase 61.2-manual-prospect-parity]: og-logo.ts uses plain fetch (not scrapling service) for homepage GET — simpler, no port dependency, sufficient for public homepages
-- [Phase 61.2]: EnrichmentNoCoverageError placed in apollo.ts, re-exported from service.ts for single import point
-- [Phase 61.2]: enrichProspect returns { success, fallbackUsed, noCoverage } shape — fires Acties panel amber branch via existing markSuccess(data.fallbackUsed) hook, no component change needed
-- [Phase 61.2]: createAndProcess: sticky guard covers companyName/industry/city/country only — description and employeeRange are NOT sticky (Apollo values preferred for quality)
-- [Phase 61.2]: og-logo IIFE in createAndProcess is a net-new addition (the mutation had no favicon IIFE before Plan 03) — createProspect still has its own favicon-only IIFE unchanged
-- [Phase 61.2]: ProspectEnrichmentBadge: amber pill uses title= attribute for tooltip, returns null when all fields populated
-- [Phase 61.2]: Detail page null guard audit confirmed existing guards sufficient — no fixes needed
-- [Phase 61.4]: Action bar buttons wired directly to tRPC mutations with refetch on success
+- Q6: Design tokens harmoniseren — resolve before Phase 62 (v9.0) start
+- Q7: Auth model voor `/voorstel` pagina — resolve before Phase 62 (v9.0) start
 
 ### Pending Todos
 
 None.
 
-### Quick Tasks Completed
-
-| #          | Description                     | Date       | Commit  | Directory                                                                                         |
-| ---------- | ------------------------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------- |
-| 260420-uoo | commit seed-use-cases.ts to git | 2026-04-20 | e1bffe2 | [260420-uoo-commit-seed-use-cases-ts-to-git](./quick/260420-uoo-commit-seed-use-cases-ts-to-git/) |
-
 ### Blockers/Concerns
 
-None — all Phase 60 blockers (Q5/Q8/Q9/Q12/Q13) resolved in `klarifai-core/docs/strategy/decisions.md`.
-
-Pre-Phase 62 decisions still to make (from decisions.md "Next decisions"):
-
-- **Q6**: Design tokens harmoniseren — resolve before Phase 62 start
-- **Q7**: Auth model voor `/voorstel` pagina — resolve before Phase 62 start
-
-Pre-Phase 63 decisions:
-
-- **Q3**: Contracts zelf bouwen vs SignWell — locked to MVP self-built per REQUIREMENTS.md Out of Scope (SignWell deferred)
+- Phase numbering: v9.0 uses phases 60-63; v10.0 starts at 64 (not 62 as originally planned in handoff). Handoff file `.planning/phases/62-evidence-pipeline-overhaul/.continue-here.md` may reference phase 62 — check before planning Phase 64.
+- Research flags needing design decisions before Phase 67 implementation: sync vs. async scoring architecture; Dutch threshold calibration against real STB-kozijnen items; confirm discover brochure renderer handles optional visual fields.
 
 ## Session Continuity
 
-Last session: 2026-04-20T12:08:31Z
-Stopped at: Completed 61.4-02-PLAN.md (Phase 61.4 complete)
-Resume command: `/gsd:execute-plan 62 01`
-
-## Accumulated Context
-
-### Roadmap Evolution
-
-- Phase 61.4 inserted after Phase 61: Admin Design System Sweep — Apply cool SaaS design tokens across all 15 admin pages (URGENT)
+Last session: 2026-04-20
+Stopped at: Roadmap created for v10.0 (phases 64-69 written to ROADMAP.md)
+Resume command: `/gsd:plan-phase 64`

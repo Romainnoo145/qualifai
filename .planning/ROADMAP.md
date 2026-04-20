@@ -15,6 +15,7 @@
 - ✅ **v7.0 Atlantis Discover Pipeline Rebuild** — Phases 49-54 (shipped 2026-03-15)
 - ✅ **v8.0 Unified Outreach Pipeline** — Phases 55-59 (shipped 2026-03-16)
 - 🔄 **v9.0 Klant Lifecycle Convergence** — Phases 60-63 (in progress)
+- 📋 **v10.0 Evidence Pipeline Overhaul** — Phases 64-69 (planned)
 
 ## Phases
 
@@ -155,6 +156,17 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 - [x] **Phase 61.4: Admin Design System Sweep** — QA fix sweep: backend wiring, prompt engineering, visual polish (completed 2026-04-20)
 - [ ] **Phase 62: Client-Facing Voorstel + PDF Worker** — Prospect proposal page and Railway PDF worker service
 - [ ] **Phase 63: Contract Workflow** — Click-to-sign contract flow following accepted quote
+
+### 📋 v10.0 Evidence Pipeline Overhaul (Phases 64-69) — PLANNED
+
+**Milestone Goal:** Fix de lekkende evidence trechter en vereenvoudig de masterprompt zodat elke prospect een clean, deduplicated, relevance-scored evidence set krijgt die consistent hoge kwaliteit narratieven oplevert.
+
+- [ ] **Phase 64: Baseline Capture** — Snapshot current analysis JSON for all prospects before pipeline changes
+- [ ] **Phase 65: Surgical Funnel Fixes + Dead Code** — HTTP gate, fallback suppression, legacy v1 prompt deletion
+- [ ] **Phase 66: Content Deduplication** — SHA-256 content hash dedup scoped per sourceType per prospect
+- [ ] **Phase 67: Relevance Gate at Ingestion** — Gemini Flash scoring with source-type-specific thresholds drops irrelevant items before DB storage
+- [ ] **Phase 68: Evidence Selection + Masterprompt Simplification** — Pre-ranked top-20 selection replaces arbitrary slice; visual data split into downstream call; simplified JSON output schema
+- [ ] **Phase 69: E2E Validation** — Full pipeline re-run for 3-5 prospects with before/after comparison
 
 ## Phase Details
 
@@ -366,6 +378,119 @@ Plans:
 
 ---
 
+### Phase 64: Baseline Capture
+
+**Goal**: Current analysis output is preserved for all existing prospects before any pipeline changes, enabling before/after comparison once the overhaul lands.
+
+**Depends on**: Nothing (can run immediately, before any v10.0 code changes)
+
+**Requirements**: VALID-01
+
+**Success Criteria** (what must be TRUE):
+
+1. A baseline JSON snapshot of `ProspectAnalysis.outputJson` exists on disk for every prospect that has a completed analysis (minimum: STB-kozijnen, Nedri, Mujjo)
+2. Each snapshot file is named by prospect slug and timestamped so it cannot be overwritten by a future capture run
+3. Romano can diff any two snapshot files with a standard JSON diff tool and see which narrative sections changed between runs
+
+**Plans**: TBD
+
+---
+
+### Phase 65: Surgical Funnel Fixes + Dead Code
+
+**Goal**: Three one-line corrections eliminate 404 evidence pollution and URL-only stubs from the pipeline, and 260 lines of legacy v1 prompt code are deleted from the codebase — all with zero AI cost and zero schema changes.
+
+**Depends on**: Phase 64 (baseline captured before any pipeline changes)
+
+**Requirements**: FUNNEL-01, FUNNEL-02, PROMPT-01
+
+**Success Criteria** (what must be TRUE):
+
+1. A Crawl4AI fetch that returns HTTP 404 or 500 produces zero new EvidenceItem rows — the pipeline logs the skip and moves on without error
+2. The research pipeline no longer stores URL-only EvidenceItems: fallback/notFound drafts are suppressed before the DB insert, and running a pipeline re-run on an existing prospect does not add new stub items
+3. `buildLegacyPrompt` and all associated v1 types/validators are absent from the codebase — a grep for `buildLegacyPrompt` returns zero results
+4. `npm run check` (or `npx tsc --noEmit`) passes with zero TypeScript errors after the deletion
+
+**Plans**: TBD
+
+---
+
+### Phase 66: Content Deduplication
+
+**Goal**: Duplicate evidence snippets scraped from multiple sources are identified by content hash and suppressed before DB storage, so each unique piece of content appears at most once per sourceType per prospect.
+
+**Depends on**: Phase 65
+
+**Requirements**: FUNNEL-03
+
+**Success Criteria** (what must be TRUE):
+
+1. Running the research pipeline on STB-kozijnen (currently ~233 items) produces a meaningfully lower item count — the same snippet appearing in two scraper passes is stored exactly once per sourceType
+2. A `contentHash` column exists on `EvidenceItem` in the Prisma schema, populated for every new item inserted after this phase ships
+3. Cross-sourceType corroboration is preserved: the same snippet found in both a WEBSITE scrape and a REVIEWS scrape creates two EvidenceItems (one per sourceType), not one — because dedup is scoped within sourceType
+4. Re-running the pipeline a second time without new scraping produces zero duplicate inserts — the hash check is idempotent
+
+**Plans**: TBD
+
+---
+
+### Phase 67: Relevance Gate at Ingestion
+
+**Goal**: Every evidence item is scored for relevance by Gemini Flash before DB storage, using source-type-specific thresholds that account for Dutch-language content — items that fail the threshold are dropped at the gate, never reaching the masterprompt.
+
+**Depends on**: Phase 66 (dedup reduces item count before scoring, bounding AI cost)
+
+**Requirements**: FUNNEL-04
+
+**Success Criteria** (what must be TRUE):
+
+1. After a pipeline re-run on STB-kozijnen, each stored EvidenceItem has an `aiRelevance` score between 0 and 1 — no items are stored without a score
+2. Items with `aiRelevance` below the source-type threshold (0.25 for WEBSITE/REGISTRY, 0.45 for REVIEWS/CAREERS) are absent from the DB for that run — they were dropped before insert
+3. Dutch-language evidence items from REGISTRY and WEBSITE sources score comparably to equivalent English items — the Flash prompt includes Dutch examples and the threshold calibration reflects NL SMB content characteristics
+4. Scoring a batch of 80 items adds no more than 90 seconds to the total pipeline run time (sync cap or async batch respected)
+
+**Plans**: TBD
+
+---
+
+### Phase 68: Evidence Selection + Masterprompt Simplification
+
+**Goal**: The masterprompt receives a pre-ranked, source-diverse top-20 evidence set instead of an arbitrary 60-item slice, visual data generation is moved to a separate downstream Gemini Flash call per section, and the masterprompt JSON output schema is simplified to prose-only fields — eliminating the schema violation root cause.
+
+**Depends on**: Phase 67 (relevance-gated items feed the ranked selection)
+
+**Requirements**: SELECT-01, PROMPT-02, PROMPT-03
+
+**Success Criteria** (what must be TRUE):
+
+1. The masterprompt call receives exactly the top-20 highest-scored evidence items, with no single sourceType contributing more than 5 of those 20 slots — Romano can verify this by inspecting the `inputSnapshot` logged on `ResearchRun`
+2. The masterprompt JSON output schema contains only `openingHook`, `executiveSummary`, and `sections` (with `body`, `citations`, `punchline` per section) — `visualType` and `visualData` fields are absent from the prompt spec and from the TypeScript output type
+3. Visual data for each section is generated by a separate Gemini Flash call that receives the section body plus its cited evidence items — the discover page renders visual elements correctly using this downstream output
+4. The discover page renders without errors after receiving the new simplified analysis JSON from a prospect re-run — no broken visual blocks, no missing sections
+
+**Plans**: TBD
+
+---
+
+### Phase 69: E2E Validation
+
+**Goal**: The full pipeline is re-run for 3-5 existing prospects and the output quality is demonstrably better than the pre-overhaul baseline — evidence counts are lower and cleaner, narrative sections are tighter, and the discover page renders correctly end-to-end.
+
+**Depends on**: Phase 68 (all pipeline changes in place)
+
+**Requirements**: VALID-02
+
+**Success Criteria** (what must be TRUE):
+
+1. A pipeline re-run on STB-kozijnen produces fewer than 100 stored EvidenceItems (down from ~233) with no URL-only stubs, no 404-sourced items, and no duplicate content within any sourceType
+2. Side-by-side JSON diff of before/after `ProspectAnalysis.outputJson` for at least 2 prospects shows narrative sections that reference specific company details rather than generic filler — Romano judges the after version to be higher quality
+3. The discover page (`/discover/[slug]`) renders correctly for every re-run prospect — no broken layout, no missing visual sections, no console errors
+4. `npx tsc --noEmit` passes clean after all v10.0 changes — zero new TypeScript errors introduced across the milestone
+
+**Plans**: TBD
+
+---
+
 ## Progress Table
 
 | Phase                                   | Plans Complete | Status      | Completed  |
@@ -377,5 +502,11 @@ Plans:
 | 61.5. Prospect Dossier Pages            | 0/TBD          | Not started | -          |
 | 62. Client-Facing Voorstel + PDF Worker | 0/TBD          | Not started | -          |
 | 63. Contract Workflow                   | 0/TBD          | Not started | -          |
+| 64. Baseline Capture                    | 0/TBD          | Not started | -          |
+| 65. Surgical Funnel Fixes + Dead Code   | 0/TBD          | Not started | -          |
+| 66. Content Deduplication               | 0/TBD          | Not started | -          |
+| 67. Relevance Gate at Ingestion         | 0/TBD          | Not started | -          |
+| 68. Evidence Selection + Masterprompt   | 0/TBD          | Not started | -          |
+| 69. E2E Validation                      | 0/TBD          | Not started | -          |
 
-_Roadmap last updated: 2026-04-20 — Phase 61.5 added (prospect dossier pages)_
+_Roadmap last updated: 2026-04-20 — v10.0 Evidence Pipeline Overhaul phases 64-69 added_

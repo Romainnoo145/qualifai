@@ -60,26 +60,26 @@ Explicitly excluded. Documented to prevent scope creep.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| FUNNEL-01   | —     | Pending |
-| FUNNEL-02   | —     | Pending |
-| FUNNEL-03   | —     | Pending |
-| FUNNEL-04   | —     | Pending |
-| PROMPT-01   | —     | Pending |
-| PROMPT-02   | —     | Pending |
-| PROMPT-03   | —     | Pending |
-| SELECT-01   | —     | Pending |
-| VALID-01    | —     | Pending |
-| VALID-02    | —     | Pending |
+| Requirement | Phase                                        | Status  |
+| ----------- | -------------------------------------------- | ------- |
+| VALID-01    | Phase 64 — Baseline Capture                  | Pending |
+| FUNNEL-01   | Phase 65 — Surgical Funnel Fixes             | Pending |
+| FUNNEL-02   | Phase 65 — Surgical Funnel Fixes             | Pending |
+| PROMPT-01   | Phase 65 — Surgical Funnel Fixes             | Pending |
+| FUNNEL-03   | Phase 66 — Content Deduplication             | Pending |
+| FUNNEL-04   | Phase 67 — Relevance Gate at Ingestion       | Pending |
+| SELECT-01   | Phase 68 — Evidence Selection + Masterprompt | Pending |
+| PROMPT-02   | Phase 68 — Evidence Selection + Masterprompt | Pending |
+| PROMPT-03   | Phase 68 — Evidence Selection + Masterprompt | Pending |
+| VALID-02    | Phase 69 — E2E Validation                    | Pending |
 
 **Coverage:**
 
 - v10.0 requirements: 10 total
-- Mapped to phases: 0
-- Unmapped: 10 ⚠️
+- Mapped to phases: 10
+- Unmapped: 0 ✓
 
 ---
 
 _Requirements defined: 2026-04-21_
-_Last updated: 2026-04-21 after initial definition_
+_Last updated: 2026-04-20 — traceability filled after roadmap creation (phases 64-69)_
