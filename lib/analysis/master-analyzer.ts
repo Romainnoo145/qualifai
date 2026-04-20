@@ -664,19 +664,13 @@ export function validateKlarifaiNarrativeAnalysis(
     sections.push(section);
   }
 
-  // useCaseRecommendations: array of 1-6 items
-  if (!Array.isArray(obj.useCaseRecommendations)) return null;
-  if (
-    obj.useCaseRecommendations.length < 1 ||
-    obj.useCaseRecommendations.length > 6
-  ) {
-    return null;
-  }
+  // useCaseRecommendations: optional — populated separately via matchProofs
   const useCaseRecommendations: UseCaseRecommendation[] = [];
-  for (const recRaw of obj.useCaseRecommendations) {
-    const rec = validateUseCaseRecommendation(recRaw);
-    if (!rec) return null;
-    useCaseRecommendations.push(rec);
+  if (Array.isArray(obj.useCaseRecommendations)) {
+    for (const recRaw of obj.useCaseRecommendations) {
+      const rec = validateUseCaseRecommendation(recRaw);
+      if (rec) useCaseRecommendations.push(rec);
+    }
   }
 
   return {
@@ -745,7 +739,7 @@ export async function generateKlarifaiNarrativeAnalysis(
         ],
       });
       response = await chat.sendMessage(
-        'De JSON was ongeldig of voldeed niet aan het schema. Corrigeer het en retourneer ALLEEN valide JSON in exact het gevraagde analysis-v2 formaat. Zorg voor: version "analysis-v2", niet-lege openingHook en executiveSummary, 2-7 sections met id/title/body/citations, en 1-6 useCaseRecommendations met useCaseTitle/category/relevanceNarrative/applicableOutcomes.',
+        'De JSON was ongeldig of voldeed niet aan het schema. Corrigeer het en retourneer ALLEEN valide JSON in exact het gevraagde analysis-v2 formaat. Zorg voor: version "analysis-v2", niet-lege openingHook en executiveSummary, 2-7 sections met id/title/body/citations.',
       );
     }
 

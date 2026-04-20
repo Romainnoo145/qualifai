@@ -6,6 +6,7 @@ import {
   generateOpportunityDrafts,
   runSummaryPayload,
   reviewSeedUrls,
+  matchProofs,
 } from '@/lib/workflow-engine';
 import {
   retrieveRagPassages,
@@ -1876,17 +1877,63 @@ export async function executeResearchRun(
           const analysisResult =
             await generateKlarifaiNarrativeAnalysis(klarifaiInput);
 
+          // Step 2: Match use cases separately via matchProofs (Gemini Flash)
+          // Uses the narrative output as query context for semantic matching
+          const narrativeQuery = [
+            analysisResult.executiveSummary,
+            ...analysisResult.sections.map((s) => s.title),
+          ].join('. ');
+
+          const proofMatches = await matchProofs(db, narrativeQuery, 6, {
+            projectId: prospect.project.id,
+            sector: industryToSector(prospect.industry),
+          });
+
+          // Convert ProofMatchResults to UseCaseRecommendations
+          const useCaseRecommendations = proofMatches
+            .filter((m) => m.score >= 0.3 && !m.isCustomPlan)
+            .map((m) => ({
+              useCaseTitle: m.proofTitle,
+              category: '', // not available from proofMatch
+              relevanceNarrative: m.proofSummary ?? '',
+              applicableOutcomes: [] as string[],
+            }));
+
+          // Enrich recommendations with full use case data (category + outcomes)
+          for (const rec of useCaseRecommendations) {
+            const fullUc = useCases.find((uc) => uc.title === rec.useCaseTitle);
+            if (fullUc) {
+              rec.category = fullUc.category;
+              rec.applicableOutcomes = fullUc.outcomes as string[];
+            }
+          }
+
+          // Merge: use matchProofs recommendations, fall back to any AI-generated ones
+          const finalRecommendations =
+            useCaseRecommendations.length > 0
+              ? useCaseRecommendations
+              : analysisResult.useCaseRecommendations;
+
+          const finalResult = {
+            ...analysisResult,
+            useCaseRecommendations: finalRecommendations,
+          };
+
           await db.prospectAnalysis.create({
             data: {
               researchRunId: run.id,
               prospectId: input.prospectId,
               version: 'analysis-v2',
-              content: toJson(analysisResult),
+              content: toJson(finalResult),
               modelUsed: analysisResult.modelUsed,
               inputSnapshot: toJson({
                 evidenceCount: evidenceItems.length,
                 useCaseCount: useCases.length,
                 crossConnectionCount: klarifaiCrossConnections.length,
+                recommendationSource:
+                  useCaseRecommendations.length > 0
+                    ? 'matchProofs'
+                    : 'masterprompt-fallback',
               }),
             },
           });
@@ -1903,7 +1950,7 @@ export async function executeResearchRun(
           diagnostics.push({
             source: 'master_analysis',
             status: 'ok',
-            message: `Klarifai narrative analysis generated: ${analysisResult.sections.length} sections, ${analysisResult.useCaseRecommendations.length} use case recommendations${analysisResult.fallbackUsed ? ' (fallback model used)' : ''}`,
+            message: `Klarifai narrative analysis generated: ${analysisResult.sections.length} sections, ${finalRecommendations.length} use case recommendations (via ${useCaseRecommendations.length > 0 ? 'matchProofs' : 'masterprompt'})${analysisResult.fallbackUsed ? ' (fallback model used)' : ''}`,
           });
         }
       } catch (analysisErr) {

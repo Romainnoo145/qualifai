@@ -279,7 +279,7 @@ function buildNarrativePrompt(input: NarrativeAnalysisInput): string {
 const KLARIFAI_SYSTEM_PREAMBLE = `Je bent een senior workflow-consultant die bedrijven adviseert over procesautomatisering en AI-integratie. Toon: helder, direct, data-gedreven Nederlands — concreet over pijnpunten, specifiek over oplossingen. Schrijf alsof het een executive briefing is voor een ondernemer die zijn tijd bewaakt.`;
 
 function buildKlarifaiNarrativePrompt(input: KlarifaiNarrativeInput): string {
-  const { evidence, useCases, prospect, crossConnections } = input;
+  const { evidence, prospect, crossConnections } = input;
 
   const parts: string[] = [];
 
@@ -324,31 +324,6 @@ function buildKlarifaiNarrativePrompt(input: KlarifaiNarrativeInput): string {
     if (item.sourceUrl) parts.push(`    Bron: ${item.sourceUrl}`);
   }
 
-  // --- Use Cases (replaces RAG passages) ---
-  parts.push('');
-  parts.push('=== BEWEZEN DIENSTEN (Klarifai) ===');
-  if (prospect.industry) {
-    parts.push(
-      `Dit bedrijf zit in de sector "${prospect.industry}". Prioriteer diensten die passen bij deze sector.`,
-    );
-  }
-  parts.push(
-    'Match diensten aan pijnpunten uit het bewijs. Kies de 3-6 meest relevante.',
-  );
-
-  if (useCases.length === 0) {
-    parts.push(
-      'Geen diensten beschikbaar — schrijf vanuit algemeen procesautomatisering perspectief.',
-    );
-  } else {
-    for (let i = 0; i < useCases.length; i++) {
-      const uc = useCases[i]!;
-      parts.push(`\n[${i + 1}] ${uc.title} | Categorie: ${uc.category}`);
-      parts.push(`    ${uc.summary}`);
-      parts.push(`    Resultaten: ${uc.outcomes.join(', ')}`);
-    }
-  }
-
   // --- Cross-prospect connections ---
   if (crossConnections.length > 0) {
     parts.push('');
@@ -373,19 +348,7 @@ function buildKlarifaiNarrativePrompt(input: KlarifaiNarrativeInput): string {
     );
   }
 
-  if (useCases.length < 3) {
-    parts.push(
-      'LET OP: Er zijn weinig diensten beschikbaar. Schrijf kwalitatieve narratieven met directioneel bewijs.',
-    );
-  }
-
-  if (useCases.length >= 5) {
-    parts.push(
-      'De dienstencatalogus is rijkelijk gevuld. Selecteer de meest relevante diensten en prioriteer concrete resultaten.',
-    );
-  }
-
-  // --- Output format specification (analysis-v2, useCaseRecommendations) ---
+  // --- Output format specification (analysis-v2, narrative only) ---
   parts.push('');
   parts.push('=== OPDRACHT ===');
   parts.push(
@@ -465,18 +428,6 @@ function buildKlarifaiNarrativePrompt(input: KlarifaiNarrativeInput): string {
   parts.push('      "visualType": "quote",');
   parts.push(
     '      "visualData": { "type": "quote", "quote": "het citaat uit een review", "attribution": "Trustpilot review" }',
-  );
-  parts.push('    }');
-  parts.push('  ],');
-  parts.push('  "useCaseRecommendations": [');
-  parts.push('    {');
-  parts.push('      "useCaseTitle": "...",');
-  parts.push('      "category": "...",');
-  parts.push(
-    '      "relevanceNarrative": "waarom deze dienst past bij dit bedrijf...",',
-  );
-  parts.push(
-    '      "applicableOutcomes": ["specifiek resultaat relevant voor dit bedrijf"]',
   );
   parts.push('    }');
   parts.push('  ]');
