@@ -310,6 +310,9 @@ export function AnalyseBrochure({
             overflow: 'hidden',
           }}
         >
+          {layout === 'visual' && (
+            <SectionVisualLayout section={section} pageNum={pageNum} />
+          )}
           {layout === 'split' && (
             <SectionSplit section={section} pageNum={pageNum} />
           )}
@@ -610,7 +613,9 @@ export function AnalyseBrochure({
 function selectLayout(
   section: NarrativeSection,
   index: number,
-): 'split' | 'pillars' | 'quote' {
+): 'split' | 'pillars' | 'quote' | 'visual' {
+  // Prefer visual layout when AI provides structured visual data
+  if (section.visualData) return 'visual';
   const hasNewsCitation = section.citations.some((c) =>
     c.toUpperCase().includes('NEWS'),
   );
@@ -703,20 +708,51 @@ function Narrative({
 function CitationsBar({ citations }: { citations: string[] }) {
   if (citations.length === 0) return null;
   return (
-    <div
+    <details
       style={{
-        fontSize: '11px',
-        fontWeight: 300,
-        color: 'rgba(137, 137, 153, 0.6)',
-        letterSpacing: '0.02em',
-        lineHeight: 1.5,
-        borderTop: `1px solid ${CONTAINER_BORDER}`,
-        paddingTop: '16px',
         marginTop: 'auto',
+        borderTop: `1px solid ${CONTAINER_BORDER}`,
+        paddingTop: '12px',
       }}
     >
-      {citations.join(' · ')}
-    </div>
+      <summary
+        style={{
+          cursor: 'pointer',
+          fontSize: '10px',
+          fontWeight: 500,
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+          color: TEXT_MUTED_ON_NAVY,
+          listStyle: 'none',
+        }}
+      >
+        {citations.length} bronnen
+      </summary>
+      <div
+        style={{
+          marginTop: '8px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '6px',
+        }}
+      >
+        {citations.map((cite, i) => (
+          <span
+            key={i}
+            style={{
+              fontSize: '9px',
+              color: TEXT_MUTED_ON_NAVY,
+              opacity: 0.6,
+              padding: '2px 8px',
+              borderRadius: '4px',
+              border: `1px solid ${CONTAINER_BORDER}`,
+            }}
+          >
+            {cite}
+          </span>
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -782,6 +818,264 @@ function extractQuote(body: string): { text: string; source: string } {
 function extractNewsSource(citations: string[]): string {
   const news = citations.find((c) => c.toUpperCase().includes('NEWS'));
   return news || '';
+}
+
+// ── SectionVisualLayout — primary layout when AI provides visualData ──
+
+function SectionVisualLayout({
+  section,
+  pageNum,
+}: {
+  section: NarrativeSection;
+  pageNum: string;
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateRows: 'auto auto 1fr auto',
+        height: '100%',
+        gap: '28px',
+      }}
+    >
+      <SectionLabel num={pageNum} title={section.title} />
+
+      {/* Punchline as hero heading */}
+      {section.punchline ? (
+        <h1
+          style={{
+            fontSize: 'clamp(24px, 3vw, 36px)',
+            fontWeight: 700,
+            lineHeight: 1.15,
+            letterSpacing: '-0.02em',
+            color: TEXT_ON_NAVY,
+            margin: 0,
+            maxWidth: '800px',
+          }}
+        >
+          {section.punchline}
+          <GoldDot />
+        </h1>
+      ) : (
+        <HeroHeading title={section.title} />
+      )}
+
+      {/* Visual element as primary content */}
+      <div style={{ overflow: 'hidden' }}>
+        <SectionVisual visualData={section.visualData!} />
+        {/* Body text as secondary */}
+        <div
+          style={{
+            marginTop: '32px',
+            maxWidth: '720px',
+            fontSize: '14px',
+            lineHeight: 1.7,
+            color: TEXT_MUTED_ON_NAVY,
+          }}
+        >
+          {section.body
+            .split('\n\n')
+            .slice(0, 2)
+            .map((p, i) => (
+              <p key={i} style={{ margin: i > 0 ? '12px 0 0' : 0 }}>
+                {truncate(p, 250)}
+              </p>
+            ))}
+        </div>
+      </div>
+
+      <CitationsBar citations={section.citations} />
+    </div>
+  );
+}
+
+// ── SectionVisual — renders structured visual data ──
+
+function SectionVisual({
+  visualData,
+}: {
+  visualData: NonNullable<NarrativeSection['visualData']>;
+}) {
+  if (visualData.type === 'quote') {
+    return (
+      <blockquote
+        style={{
+          borderLeft: `3px solid ${GOLD_MID}`,
+          paddingLeft: '24px',
+          margin: '0 0 0 0',
+          maxWidth: '700px',
+        }}
+      >
+        <p
+          style={{
+            fontSize: 'clamp(20px, 2.5vw, 28px)',
+            fontWeight: 300,
+            lineHeight: 1.5,
+            fontStyle: 'italic',
+            color: TEXT_ON_NAVY,
+            margin: 0,
+          }}
+        >
+          &ldquo;{visualData.quote}&rdquo;
+        </p>
+        <cite
+          style={{
+            display: 'block',
+            marginTop: '12px',
+            fontSize: '12px',
+            fontWeight: 500,
+            color: TEXT_MUTED_ON_NAVY,
+            fontStyle: 'normal',
+          }}
+        >
+          — {visualData.attribution}
+        </cite>
+      </blockquote>
+    );
+  }
+
+  if (visualData.type === 'stats') {
+    return (
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${Math.min(visualData.items.length, 3)}, 1fr)`,
+          gap: '32px',
+          margin: '0',
+        }}
+      >
+        {visualData.items.map((item, i) => (
+          <div key={i} style={{ textAlign: 'left' }}>
+            <div
+              style={{
+                fontSize: 'clamp(32px, 4vw, 48px)',
+                fontWeight: 700,
+                ...goldGradientText,
+                lineHeight: 1,
+                marginBottom: '8px',
+              }}
+            >
+              {item.value}
+            </div>
+            <div
+              style={{
+                fontSize: '13px',
+                fontWeight: 500,
+                color: TEXT_ON_NAVY,
+                marginBottom: '4px',
+              }}
+            >
+              {item.label}
+            </div>
+            {item.context && (
+              <div style={{ fontSize: '11px', color: TEXT_MUTED_ON_NAVY }}>
+                {item.context}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (visualData.type === 'comparison') {
+    return (
+      <div style={{ margin: '0' }}>
+        {visualData.items.map((item, i) => (
+          <div
+            key={i}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto 1fr',
+              gap: '16px',
+              alignItems: 'center',
+              padding: '16px 0',
+              borderBottom:
+                i < visualData.items.length - 1
+                  ? `1px solid ${CONTAINER_BORDER}`
+                  : 'none',
+            }}
+          >
+            <div style={{ fontSize: '14px', color: TEXT_MUTED_ON_NAVY }}>
+              {item.before}
+            </div>
+            <div
+              style={{
+                fontSize: '11px',
+                fontWeight: 500,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: GOLD_MID,
+              }}
+            >
+              {item.label}
+            </div>
+            <div
+              style={{
+                fontSize: '14px',
+                fontWeight: 500,
+                color: TEXT_ON_NAVY,
+                textAlign: 'right',
+              }}
+            >
+              {item.after}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (visualData.type === 'signals') {
+    return (
+      <div
+        style={{
+          margin: '0',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+        }}
+      >
+        {visualData.items.map((item, i) => (
+          <div
+            key={i}
+            style={{ display: 'flex', alignItems: 'center', gap: '16px' }}
+          >
+            <span
+              style={{
+                fontSize: '20px',
+                width: '32px',
+                textAlign: 'center',
+                color: GOLD_MID,
+              }}
+            >
+              {item.trend === 'up'
+                ? '\u2191'
+                : item.trend === 'down'
+                  ? '\u2193'
+                  : '\u2192'}
+            </span>
+            <div>
+              <div
+                style={{
+                  fontSize: 'clamp(18px, 2vw, 24px)',
+                  fontWeight: 700,
+                  color: TEXT_ON_NAVY,
+                }}
+              >
+                {item.value}
+              </div>
+              <div style={{ fontSize: '12px', color: TEXT_MUTED_ON_NAVY }}>
+                {item.label}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return null;
 }
 
 // ── SectionSplit ──
@@ -1428,6 +1722,3 @@ function EvidenceIcon() {
     </svg>
   );
 }
-
-// Prevent unused lint warning
-void GOLD_MID;
