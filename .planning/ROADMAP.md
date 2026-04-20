@@ -152,7 +152,7 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 - [x] **Phase 60: Quote Schema Foundation** — Prisma schema, tRPC router, state machine, YAML import, foundation fixes (completed 2026-04-13)
 - [x] **Phase 61: Admin UI for Quotes** — Full quote management UI inside existing Qualifai admin shell (completed 2026-04-13)
-- [ ] **Phase 61.4: Admin Design System Sweep** — QA fix sweep: backend wiring, prompt engineering, visual polish (in progress)
+- [x] **Phase 61.4: Admin Design System Sweep** — QA fix sweep: backend wiring, prompt engineering, visual polish (completed 2026-04-20)
 - [ ] **Phase 62: Client-Facing Voorstel + PDF Worker** — Prospect proposal page and Railway PDF worker service
 - [ ] **Phase 63: Contract Workflow** — Click-to-sign contract flow following accepted quote
 
@@ -216,8 +216,8 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 
 Plans:
 
-- [ ] 61.4-01-PLAN.md — Backend wiring: Start voorstel button, dossier sidebar links, dashboard Start Outreach (PAGE-SWEEP-A, PAGE-SWEEP-B, SIDEBAR-HOVER, FEATURE-COMPONENT-SWEEP)
-- [ ] 61.4-02-PLAN.md — Prompt engineering: NarrativeSection visual data types, master prompt update, brochure visual rendering, evidence count fix (TOKEN-SYNC, COMPONENT-EXTRACT, STATUS-UNIFY)
+- [x] 61.4-01-PLAN.md — Backend wiring: Start voorstel button, dossier sidebar links, dashboard Start Outreach (PAGE-SWEEP-A, PAGE-SWEEP-B, SIDEBAR-HOVER, FEATURE-COMPONENT-SWEEP)
+- [x] 61.4-02-PLAN.md — Prompt engineering: NarrativeSection visual data types, master prompt update, brochure visual rendering, evidence count fix (TOKEN-SYNC, COMPONENT-EXTRACT, STATUS-UNIFY)
 - [ ] 61.4-03-PLAN.md — Visual polish: offerte BrandChrome companyName, cover text truncation, visual verification checkpoint (CTA-FIX, VISUAL-VERIFY)
 
 ### Phase 61.1: Manual prospect flow polish (INSERTED)
