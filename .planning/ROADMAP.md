@@ -392,7 +392,11 @@ Plans:
 2. Each snapshot file is named by prospect slug and timestamped so it cannot be overwritten by a future capture run
 3. Romano can diff any two snapshot files with a standard JSON diff tool and see which narrative sections changed between runs
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+
+- [ ] 64-01-PLAN.md — Capture baseline analysis JSON for all prospects (VALID-01)
 
 ---
 
