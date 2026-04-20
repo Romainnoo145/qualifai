@@ -11,6 +11,7 @@ import {
   Activity,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { PageLoader } from '@/components/ui/page-loader';
@@ -262,6 +263,7 @@ function ReplyRow({ reply }: { reply: Reply }) {
 // --- Ready prospect row ---
 
 function ReadyProspectRow({ prospect }: { prospect: ReadyProspect }) {
+  const router = useRouter();
   return (
     <Link
       href={`/admin/prospects/${prospect.id}`}
@@ -287,9 +289,17 @@ function ReadyProspectRow({ prospect }: { prospect: ReadyProspect }) {
           </span>
         </div>
       </div>
-      <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] shrink-0">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          router.push(`/admin/prospects/${prospect.id}/outreach`);
+        }}
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] shrink-0 cursor-pointer hover:brightness-105 transition-all"
+      >
         Start Outreach
-      </span>
+      </button>
     </Link>
   );
 }
