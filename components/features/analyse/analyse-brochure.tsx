@@ -1,5 +1,6 @@
 'use client';
 
+import type React from 'react';
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { api } from '@/components/providers';
 
@@ -48,6 +49,22 @@ interface AnalyseBrochureProps {
 // ─────────────────────────────────────────────────────────────────────────────
 // Main export
 // ─────────────────────────────────────────────────────────────────────────────
+
+const statNumberStyle: React.CSSProperties = {
+  fontSize: 'clamp(28px, 3.5vw, 44px)',
+  fontWeight: 700,
+  ...goldGradientText,
+  letterSpacing: '-0.02em',
+  fontVariantNumeric: 'tabular-nums',
+  lineHeight: 1,
+};
+
+const statLabelStyle: React.CSSProperties = {
+  fontSize: 'clamp(11px, 1.2vw, 15px)',
+  fontWeight: 500,
+  color: TEXT_ON_NAVY,
+  letterSpacing: '0.12em',
+};
 
 const RESPONSIVE_STYLES = `
   @media (max-width: 1024px) {
@@ -210,7 +227,7 @@ export function AnalyseBrochure({
           <source src="/video/klarifai-analyse.mp4" type="video/mp4" />
         </video>
 
-        <BrandChrome />
+        <BrandChrome companyName={prospect.companyName} />
         <ProgressIndicator label={progressLabel} />
 
         {/* Dynamic overlay — positioned where video keywords were:
@@ -232,23 +249,35 @@ export function AnalyseBrochure({
             gap: '12px',
           }}
         >
-          {/* Stats — large, right-aligned, above the video's gold line */}
-          <StatRow value={researchStats.bronnen} label="BRONNEN" />
-          <StatRow value={researchStats.brontypen} label="BRONTYPEN" />
-          <StatRow value={researchStats.inzichten} label="INZICHTEN" />
-
-          {/* Company name — below the video's gold line (no own divider) */}
+          {/* Stats — tabular grid, numbers right-aligned, labels left */}
           <div
             style={{
-              fontSize: '13px',
-              fontWeight: 500,
-              color: TEXT_ON_NAVY,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase' as const,
-              marginTop: '28px',
+              display: 'grid',
+              gridTemplateColumns: 'auto auto',
+              gap: '8px 18px',
+              alignItems: 'baseline',
             }}
           >
-            {prospect.companyName}
+            <span style={{ ...statNumberStyle, justifySelf: 'end' }}>
+              {researchStats.bronnen}
+            </span>
+            <span style={statLabelStyle}>
+              {'B\u2009R\u2009O\u2009N\u2009N\u2009E\u2009N'}
+            </span>
+
+            <span style={{ ...statNumberStyle, justifySelf: 'end' }}>
+              {researchStats.brontypen}
+            </span>
+            <span style={statLabelStyle}>
+              {'B\u2009R\u2009O\u2009N\u2009T\u2009Y\u2009P\u2009E\u2009N'}
+            </span>
+
+            <span style={{ ...statNumberStyle, justifySelf: 'end' }}>
+              {researchStats.inzichten}
+            </span>
+            <span style={statLabelStyle}>
+              {'I\u2009N\u2009Z\u2009I\u2009C\u2009H\u2009T\u2009E\u2009N'}
+            </span>
           </div>
         </div>
 
@@ -271,7 +300,7 @@ export function AnalyseBrochure({
       >
         <style dangerouslySetInnerHTML={{ __html: RESPONSIVE_STYLES }} />
         <GeometricBackdrop />
-        <BrandChrome />
+        <BrandChrome companyName={prospect.companyName} />
         <ProgressIndicator label={progressLabel} />
 
         <div
@@ -314,7 +343,7 @@ export function AnalyseBrochure({
       >
         <style dangerouslySetInnerHTML={{ __html: RESPONSIVE_STYLES }} />
         <GeometricBackdrop />
-        <BrandChrome />
+        <BrandChrome companyName={prospect.companyName} />
         <ProgressIndicator label={progressLabel} />
 
         <div
@@ -374,7 +403,7 @@ export function AnalyseBrochure({
     >
       <style dangerouslySetInnerHTML={{ __html: RESPONSIVE_STYLES }} />
       <GeometricBackdrop />
-      <BrandChrome />
+      <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       <div
@@ -692,43 +721,6 @@ function CitationsBar({ citations }: { citations: string[] }) {
       }}
     >
       {citations.join(' · ')}
-    </div>
-  );
-}
-
-function StatRow({ value, label }: { value: number; label: string }) {
-  const spaced = label.split('').join('\u2009');
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'baseline',
-        justifyContent: 'flex-end',
-        gap: '18px',
-      }}
-    >
-      <span
-        style={{
-          fontSize: 'clamp(28px, 3.5vw, 44px)',
-          fontWeight: 700,
-          ...goldGradientText,
-          letterSpacing: '-0.02em',
-          fontVariantNumeric: 'tabular-nums',
-          lineHeight: 1,
-        }}
-      >
-        {value}
-      </span>
-      <span
-        style={{
-          fontSize: 'clamp(11px, 1.2vw, 15px)',
-          fontWeight: 500,
-          color: TEXT_ON_NAVY,
-          letterSpacing: '0.15em',
-        }}
-      >
-        {spaced}
-      </span>
     </div>
   );
 }

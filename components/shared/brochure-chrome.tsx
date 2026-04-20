@@ -17,7 +17,7 @@ import {
  * proper logo sourcing (Brandfetch/Logo.dev/manual upload), the chrome is
  * Klarifai-only. The companyName already appears in the page content.
  */
-export function BrandChrome() {
+export function BrandChrome({ companyName }: { companyName?: string } = {}) {
   return (
     <div
       style={{
@@ -41,6 +41,23 @@ export function BrandChrome() {
         height={36}
         style={{ width: '36px', height: '36px', display: 'block' }}
       />
+      {companyName && (
+        <span
+          style={{
+            fontSize: '13px',
+            fontWeight: 500,
+            color: TEXT_ON_NAVY,
+            letterSpacing: '0.04em',
+          }}
+        >
+          <span
+            style={{ color: GOLD_LIGHT, margin: '0 6px', fontSize: '11px' }}
+          >
+            ✕
+          </span>
+          {companyName}
+        </span>
+      )}
     </div>
   );
 }
