@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
+import { api } from '@/components/providers';
 
 import {
   NAVY,
@@ -72,7 +73,7 @@ const RESPONSIVE_STYLES = `
 `;
 
 export function AnalyseBrochure({
-  slug: _slug,
+  slug,
   prospect,
   sections,
   recommendations,
@@ -85,6 +86,15 @@ export function AnalyseBrochure({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [overlayVisible, setOverlayVisible] = useState(false);
+
+  // Session tracking
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const stepStartRef = useRef<number>(
+    typeof performance !== 'undefined' ? performance.now() : Date.now(),
+  );
+  const stepTimesRef = useRef<Record<string, number>>({});
+  const startSession = api.wizard.startSession.useMutation();
+  const trackProgress = api.wizard.trackProgress.useMutation();
 
   const totalPages = 1 + sections.length + 1 + 1; // cover + sections + kansen + contact
 
@@ -144,6 +154,37 @@ export function AnalyseBrochure({
     video.addEventListener('ended', onEnded);
     return () => video.removeEventListener('ended', onEnded);
   }, []);
+
+  // Start session on mount
+  useEffect(() => {
+    startSession.mutate(
+      { slug, userAgent: navigator.userAgent },
+      {
+        onSuccess: (data) => {
+          if (data) setSessionId(data.sessionId);
+        },
+      },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Track page progress
+  useEffect(() => {
+    const now =
+      typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const elapsedMs = Math.max(0, now - stepStartRef.current);
+    stepTimesRef.current[String(currentPage)] = Math.floor(elapsedMs / 1000);
+    stepStartRef.current = now;
+
+    if (sessionId) {
+      trackProgress.mutate({
+        sessionId,
+        currentStep: currentPage,
+        stepTimes: stepTimesRef.current,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, sessionId]);
 
   const progressLabel = `${String(currentPage + 1).padStart(2, '0')} / ${String(totalPages).padStart(2, '0')}`;
 

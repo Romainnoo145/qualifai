@@ -95,7 +95,7 @@ export const wizardRouter = router({
     .input(
       z.object({
         sessionId: z.string(),
-        currentStep: z.number().min(0).max(5),
+        currentStep: z.number().min(0).max(20),
         stepTimes: z.record(z.string(), z.number()).optional(),
       }),
     )
