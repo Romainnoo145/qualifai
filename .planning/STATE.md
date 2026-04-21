@@ -4,7 +4,7 @@ milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: planning
 stopped_at: Completed 65-01-PLAN.md
-last_updated: '2026-04-21T09:53:56.000Z'
+last_updated: '2026-04-21T09:56:11.486Z'
 last_activity: 2026-04-20 — Roadmap created, 6 phases defined
 progress:
   total_phases: 15
