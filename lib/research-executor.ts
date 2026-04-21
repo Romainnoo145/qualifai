@@ -72,6 +72,7 @@ import type {
 } from '@/lib/analysis/types';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { industryToSector } from '@/lib/constants/sectors';
+import { createHash } from 'node:crypto';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -365,6 +366,17 @@ function dedupeEvidenceDrafts<
     unique.push(draft);
   }
   return unique;
+}
+
+/** Normalize snippet for content hashing: lowercase, collapse whitespace, trim */
+export function normalizeSnippet(snippet: string): string {
+  return snippet.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/** SHA-256 hash of normalized snippet text */
+export function computeContentHash(snippet: string): string {
+  const normalized = normalizeSnippet(snippet);
+  return createHash('sha256').update(normalized, 'utf8').digest('hex');
 }
 
 function isFallbackEvidenceDraft(
@@ -1314,6 +1326,21 @@ export async function executeResearchRun(
         : {}),
     };
 
+    const contentHash = computeContentHash(draft.snippet);
+
+    // Dedup: skip if same content already exists for this prospect + sourceType
+    const existingEvidence = await db.evidenceItem.findFirst({
+      where: {
+        prospectId: input.prospectId,
+        sourceType: draft.sourceType,
+        contentHash,
+      },
+      select: { id: true },
+    });
+    if (existingEvidence) {
+      continue; // Already stored — skip duplicate
+    }
+
     const record = await db.evidenceItem.create({
       data: {
         researchRunId: run.id,
@@ -1324,6 +1351,7 @@ export async function executeResearchRun(
         snippet: draft.snippet,
         workflowTag: draft.workflowTag,
         confidenceScore: finalConfidence,
+        contentHash,
         metadata: toJson(metadata),
       },
       select: {
@@ -1542,6 +1570,22 @@ export async function executeResearchRun(
           inheritedWorkflowTag: passage.workflowTag,
           chunkMetadata: passage.chunkMetadata,
         };
+        const ragSnippet = passage.content.slice(0, 1800);
+        const ragContentHash = computeContentHash(ragSnippet);
+
+        // Dedup: skip if same RAG passage already exists for this prospect
+        const existingRag = await db.evidenceItem.findFirst({
+          where: {
+            prospectId: input.prospectId,
+            sourceType: 'RAG_DOCUMENT',
+            contentHash: ragContentHash,
+          },
+          select: { id: true },
+        });
+        if (existingRag) {
+          continue; // Already stored — skip duplicate
+        }
+
         const record = await db.evidenceItem.create({
           data: {
             researchRunId: run.id,
@@ -1552,9 +1596,10 @@ export async function executeResearchRun(
               passage.sectionHeader != null
                 ? `${passage.documentId} — ${passage.sectionHeader}`
                 : `${passage.documentId} — ${passage.documentTitle}`,
-            snippet: passage.content.slice(0, 1800),
+            snippet: ragSnippet,
             workflowTag: passage.workflowTag,
             confidenceScore,
+            contentHash: ragContentHash,
             metadata: toJson(metadata),
           },
           select: {
