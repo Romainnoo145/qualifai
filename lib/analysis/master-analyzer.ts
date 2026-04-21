@@ -3,9 +3,7 @@
  * structured analysis from evidence items, RAG passages, prospect profile,
  * and SPV data.
  *
- * Supports two output shapes:
- *   - NarrativeAnalysis (analysis-v2): flowing narrative sections (new)
- *   - MasterAnalysis (analysis-v1): rigid trigger/track JSON (legacy)
+ * Supports analysis-v2 output: flowing narrative sections.
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -16,16 +14,10 @@ import type {
 import { GEMINI_MODEL_PRO, GEMINI_MODEL_FLASH } from '@/lib/ai/constants';
 import { buildMasterPrompt } from './master-prompt';
 import type {
-  MasterAnalysis,
   NarrativeAnalysis,
   NarrativeAnalysisInput,
   NarrativeSection,
   SPVRecommendation,
-  AnalysisContext,
-  AnalysisTrigger,
-  AnalysisTrack,
-  AnalysisKPI,
-  TriggerCategory,
   KlarifaiNarrativeInput,
   KlarifaiNarrativeAnalysis,
   UseCaseRecommendation,
@@ -208,14 +200,6 @@ export async function recordAnalysisSuccess(
   });
 }
 
-const VALID_TRIGGER_CATEGORIES: TriggerCategory[] = [
-  'market',
-  'compliance_esg',
-  'capital_derisking',
-];
-
-const VALID_URGENCY = ['high', 'medium', 'low'] as const;
-
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
@@ -336,139 +320,6 @@ export function validateNarrativeAnalysis(
     executiveSummary: obj.executiveSummary,
     sections,
     spvRecommendations,
-    generatedAt: '', // filled by caller
-    modelUsed: '', // filled by caller
-  };
-}
-
-// ---------------------------------------------------------------------------
-// analysis-v1 validation (legacy)
-// ---------------------------------------------------------------------------
-
-function validateKPI(raw: unknown): AnalysisKPI | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const obj = raw as Record<string, unknown>;
-  if (
-    !isNonEmptyString(obj.label) ||
-    !isNonEmptyString(obj.value) ||
-    !isNonEmptyString(obj.context)
-  ) {
-    return null;
-  }
-  return { label: obj.label, value: obj.value, context: obj.context };
-}
-
-function validateContext(raw: unknown): AnalysisContext | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const obj = raw as Record<string, unknown>;
-  if (!isNonEmptyString(obj.hook) || !isNonEmptyString(obj.executiveHook)) {
-    return null;
-  }
-  if (!Array.isArray(obj.kpis) || obj.kpis.length !== 3) return null;
-  const kpis: AnalysisKPI[] = [];
-  for (const kpiRaw of obj.kpis) {
-    const kpi = validateKPI(kpiRaw);
-    if (!kpi) return null;
-    kpis.push(kpi);
-  }
-  return { hook: obj.hook, kpis, executiveHook: obj.executiveHook };
-}
-
-function validateTrigger(raw: unknown): AnalysisTrigger | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const obj = raw as Record<string, unknown>;
-  if (
-    !isNonEmptyString(obj.category) ||
-    !VALID_TRIGGER_CATEGORIES.includes(obj.category as TriggerCategory)
-  ) {
-    return null;
-  }
-  if (!isNonEmptyString(obj.title) || !isNonEmptyString(obj.narrative)) {
-    return null;
-  }
-  if (!isStringArray(obj.numbers)) return null;
-  if (
-    !isNonEmptyString(obj.urgency) ||
-    !VALID_URGENCY.includes(obj.urgency as (typeof VALID_URGENCY)[number])
-  ) {
-    return null;
-  }
-  return {
-    category: obj.category as TriggerCategory,
-    title: obj.title,
-    narrative: obj.narrative,
-    numbers: obj.numbers,
-    urgency: obj.urgency as 'high' | 'medium' | 'low',
-  };
-}
-
-function validateTrack(raw: unknown): AnalysisTrack | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const obj = raw as Record<string, unknown>;
-  if (
-    !isNonEmptyString(obj.spvName) ||
-    !isNonEmptyString(obj.spvCode) ||
-    !isNonEmptyString(obj.scope) ||
-    !isNonEmptyString(obj.relevance)
-  ) {
-    return null;
-  }
-  if (!isStringArray(obj.strategicTags) || obj.strategicTags.length === 0) {
-    return null;
-  }
-  return {
-    spvName: obj.spvName,
-    spvCode: obj.spvCode,
-    scope: obj.scope,
-    relevance: obj.relevance,
-    strategicTags: obj.strategicTags,
-  };
-}
-
-/**
- * Validate a raw parsed object against the MasterAnalysis shape (analysis-v1).
- * Returns null on any structural or content violation.
- */
-export function validateMasterAnalysis(raw: unknown): MasterAnalysis | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const obj = raw as Record<string, unknown>;
-
-  // Context section
-  const context = validateContext(obj.context);
-  if (!context) return null;
-
-  // Triggers section — exactly 3 with correct categories
-  if (!Array.isArray(obj.triggers) || obj.triggers.length !== 3) return null;
-  const triggers: AnalysisTrigger[] = [];
-  const seenCategories = new Set<string>();
-  for (const triggerRaw of obj.triggers) {
-    const trigger = validateTrigger(triggerRaw);
-    if (!trigger) return null;
-    if (seenCategories.has(trigger.category)) return null;
-    seenCategories.add(trigger.category);
-    triggers.push(trigger);
-  }
-
-  // Tracks section — 2-3 items
-  if (
-    !Array.isArray(obj.tracks) ||
-    obj.tracks.length < 2 ||
-    obj.tracks.length > 3
-  ) {
-    return null;
-  }
-  const tracks: AnalysisTrack[] = [];
-  for (const trackRaw of obj.tracks) {
-    const track = validateTrack(trackRaw);
-    if (!track) return null;
-    tracks.push(track);
-  }
-
-  return {
-    version: 'analysis-v1',
-    context,
-    triggers,
-    tracks,
     generatedAt: '', // filled by caller
     modelUsed: '', // filled by caller
   };
