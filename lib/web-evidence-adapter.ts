@@ -538,7 +538,9 @@ function processCrawl4aiResult(
   sourceType: EvidenceSourceType,
   markdown: string,
   title: string,
+  statusCode: number,
 ): EvidenceDraft | 'skip' {
+  if (statusCode >= 400) return 'skip';
   if (!markdown) return fallbackDraft(sourceUrl, sourceType);
   if (looksLikeCrawled404(markdown)) return 'skip';
   if (markdown.length < 80) return fallbackDraft(sourceUrl, sourceType);
@@ -648,12 +650,14 @@ export async function ingestWebsiteEvidenceDrafts(
           continue;
         }
         browserBudget--;
-        const { markdown, title } = await extractMarkdown(sourceUrl);
+        const { markdown, title, statusCode } =
+          await extractMarkdown(sourceUrl);
         const result = processCrawl4aiResult(
           sourceUrl,
           sourceType,
           markdown,
           title,
+          statusCode,
         );
         if (result !== 'skip') pushDraft(result);
         continue;
@@ -681,12 +685,14 @@ export async function ingestWebsiteEvidenceDrafts(
           continue;
         }
         browserBudget--;
-        const { markdown, title } = await extractMarkdown(sourceUrl);
+        const { markdown, title, statusCode } =
+          await extractMarkdown(sourceUrl);
         const result = processCrawl4aiResult(
           sourceUrl,
           sourceType,
           markdown,
           title,
+          statusCode,
         );
         if (result !== 'skip') {
           if (riskySeedGuess && fallbackMetadata(result.metadata)) {

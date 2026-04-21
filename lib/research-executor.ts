@@ -1234,10 +1234,15 @@ export async function executeResearchRun(
   const evidenceDraftCap = input.deepCrawl
     ? DEEP_EVIDENCE_DRAFT_CAP
     : INTERACTIVE_EVIDENCE_DRAFT_CAP;
-  const evidenceDrafts = dedupeEvidenceDrafts(allDrafts).slice(
-    0,
-    evidenceDraftCap,
-  );
+  const rawDrafts = dedupeEvidenceDrafts(allDrafts).slice(0, evidenceDraftCap);
+
+  // Filter out fallback/notFound stubs — these are noise, not evidence
+  const evidenceDrafts = rawDrafts.filter((draft) => {
+    const meta = draft.metadata as Record<string, unknown> | null;
+    if (meta?.fallback === true) return false;
+    if (meta?.notFound === true) return false;
+    return true;
+  });
 
   // AI evidence scoring — score all items for workflow/automation relevance
   const scoredMap = new Map<number, ScoredEvidence>();
