@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: planning
-stopped_at: Completed 66-01-PLAN.md
-last_updated: '2026-04-21T10:25:36.566Z'
+stopped_at: Completed 67-01-PLAN.md
+last_updated: '2026-04-21T12:31:44.442Z'
 last_activity: 2026-04-20 — Roadmap created, 6 phases defined
 progress:
   total_phases: 15
-  completed_phases: 7
-  total_plans: 23
-  completed_plans: 23
+  completed_phases: 8
+  total_plans: 24
+  completed_plans: 24
 ---
 
 # Project State
@@ -66,6 +66,8 @@ Design decisions still open (from Phase 63 planning):
 - [Phase 65]: Filter fallback/notFound before scoring to keep scoredMap indices aligned
 - [Phase 66-content-deduplication]: Dedup scoped within (prospectId, sourceType) — cross-sourceType corroboration preserved for confidence scoring
 - [Phase 66-content-deduplication]: Partial unique index (WHERE content_hash IS NOT NULL) for backcompat with existing EvidenceItem rows
+- [Phase 67-relevance-gate-at-ingestion]: RELEVANCE_THRESHOLDS: WEBSITE/REGISTRY 0.25 (thin Dutch web presence), REVIEWS/CAREERS 0.45 (signal-dense sources), LINKEDIN/NEWS 0.35 (calibrate in Phase 69)
+- [Phase 67-relevance-gate-at-ingestion]: passesRelevanceGate() soft-fail: undefined aiScore always passes (scorer failure never drops evidence)
 
 ### Pending Todos
 
@@ -78,6 +80,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-21T10:23:29.297Z
-Stopped at: Completed 66-01-PLAN.md
+Last session: 2026-04-21T12:31:44.440Z
+Stopped at: Completed 67-01-PLAN.md
 Resume command: `/gsd:plan-phase 64`
