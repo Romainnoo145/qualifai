@@ -32,6 +32,26 @@ function getSourceWeight(sourceType: string): number {
   return SOURCE_WEIGHTS[sourceType] ?? 0.65;
 }
 
+/**
+ * Source-type-specific minimum aiRelevance to pass the ingestion gate.
+ * WEBSITE/REGISTRY are lenient (Dutch thin content); REVIEWS/CAREERS are strict (should be signal-dense).
+ * LINKEDIN/NEWS at intermediate 0.35 — calibration subject to Phase 69 validation.
+ */
+export const RELEVANCE_THRESHOLDS: Partial<Record<string, number>> = {
+  WEBSITE: 0.25,
+  MANUAL_URL: 0.25,
+  DOCS: 0.25,
+  HELP_CENTER: 0.25,
+  REGISTRY: 0.25,
+  LINKEDIN: 0.35,
+  NEWS: 0.35,
+  REVIEWS: 0.45,
+  CAREERS: 0.45,
+  JOB_BOARD: 0.45,
+};
+
+export const DEFAULT_RELEVANCE_THRESHOLD = 0.3;
+
 export interface EvidenceToScore {
   index: number;
   sourceType: EvidenceSourceType;
@@ -129,6 +149,14 @@ Rate each item on two dimensions:
   - 0.3-0.5: Surface-level, generic statements
   - 0.6-0.7: Some specifics (named tools, concrete processes)
   - 0.8-1.0: Rich detail (specific pain points, quantified impacts, named workflows)
+
+NOTE: Evidence may be in Dutch (Nederlands). Dutch-language content is valid and expected for Dutch SMB prospects — do not penalize for language.
+Examples of Dutch evidence that should score HIGH on relevance:
+- "Wij verwerken dagelijks 500 facturen handmatig" (manual invoicing pain → relevance 0.85)
+- "Onze medewerkers besteden veel tijd aan het kopieren van data tussen systemen" (manual data transfer → relevance 0.80)
+Examples of Dutch evidence that should score LOW on relevance:
+- "Welkom bij Bedrijf X. Wij zijn actief in de bouw." (generic about page → relevance 0.15)
+- "KvK nummer: 12345678, gevestigd te Amsterdam" (registry metadata only → relevance 0.20)
 
 Only output JSON. No markdown fences. No explanation.
 
