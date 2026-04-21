@@ -1,0 +1,156 @@
+{
+  "capturedAt": "2026-04-21T17:58:16.817Z",
+  "prospect": {
+    "slug": "MZ5XcUVa",
+    "readableSlug": "stb-kozijnen",
+    "companyName": "STB-kozijnen",
+    "domain": "stb-kozijnen.nl"
+  },
+  "analysis": {
+    "id": "cmo8wt7460001aww2pljaj91n",
+    "version": "analysis-v2",
+    "createdAt": "2026-04-21T17:40:25.542Z",
+    "modelUsed": "gemini-2.5-pro",
+    "content": {
+      "version": "analysis-v2",
+      "sections": [
+        {
+          "id": "offerte-bottleneck",
+          "body": "Het samenstellen van een accurate offerte voor maatwerk kozijnen is een kennisintensief en tijdrovend proces. Elke aanvraag vereist manuele berekeningen, controle van materiaalspecificaties en afstemming over configuraties. Dit vertraagt uw reactiesnelheid, waardoor potentiële klanten kunnen afhaken in een competitieve markt. De tijd die uw meest ervaren medewerkers besteden aan het opstellen van offertes, kan niet worden geïnvesteerd in complexere projecten of klantrelaties.\n\nEen intelligent, geleid configuratiesysteem kan dit proces transformeren. Uw verkoopteam kan, zonder diepgaande technische kennis, binnen enkele minuten een foutloze, professionele offerte genereren die rekening houdt met alle variabelen: van profielkeuze tot glasopties en montagekosten. Dit verhoogt niet alleen de conversie door snelheid, maar waarborgt ook de consistentie en winstgevendheid van elke voorgestelde order.",
+          "title": "Het Offertetraject als Groeiremmer",
+          "citations": [],
+          "punchline": "Verander uw offertes van een kostenpost in een geautomatiseerde verkoopmotor.",
+          "visualData": {
+            "items": [
+              {
+                "after": "Binnen enkele minuten",
+                "label": "Tijd offerte opstellen",
+                "before": "Tijdrovend, manueel"
+              },
+              {
+                "after": "Geen diepgaande kennis",
+                "label": "Kennisbehoefte",
+                "before": "Diepgaand technisch"
+              },
+              {
+                "after": "Foutloos, professioneel",
+                "label": "Nauwkeurigheid",
+                "before": "Risico op fouten"
+              }
+            ]
+          },
+          "visualType": "comparison"
+        },
+        {
+          "id": "operationele-frictie",
+          "body": "De overdracht van een geaccepteerde offerte naar een productieorder is een kritiek moment waar frictie en fouten ontstaan. Het handmatig overzetten van specificaties, maten en materiaallijsten naar productiesystemen is risicovol. Een enkele transcriptiefout kan leiden tot incorrecte zaagafmetingen, verkeerde materiaalbestellingen en kostbaar productieverlies. Deze faalkosten drukken direct op uw marge en kunnen leiden tot vertragingen die de klanttevredenheid schaden.\n\nDoor een naadloze digitale koppeling te creëren, wordt een goedgekeurde offerte automatisch vertaald naar een sluitende werkorder, inclusief stuklijsten en machine-instructies. De kans op menselijke fouten wordt geëlimineerd. Dit leidt tot een voorspelbaarder productieproces, minder afval en een kortere doorlooptijd van order tot levering. Uw productievloer ontvangt perfecte informatie, elke keer opnieuw.",
+          "title": "Van Order tot Productie: De Frictie in Uw Workflow",
+          "citations": [],
+          "punchline": "Een foutloze workflow is geen luxe, maar een directe bijdrage aan uw winstmarge.",
+          "visualData": {
+            "items": [
+              {
+                "after": "Geëlimineerd",
+                "label": "Fouten bij overdracht",
+                "before": "Risico op transcriptiefouten"
+              },
+              {
+                "after": "Minder afval",
+                "label": "Productieverlies/Afval",
+                "before": "Kostbaar productieverlies, afval"
+              },
+              {
+                "after": "Kortere doorlooptijd",
+                "label": "Doorlooptijd",
+                "before": "Vertragingen"
+              }
+            ]
+          },
+          "visualType": "comparison"
+        },
+        {
+          "id": "kennis-en-schaalbaarheid",
+          "body": "De diepgaande expertise van uw senior medewerkers is een van de meest waardevolle, maar ook kwetsbare activa van STB-kozijnen. Deze kennis over productcomplexiteit, prijsstelling en productielimieten bevindt zich vaak in de hoofden van enkele sleutelfiguren. Dit vormt een strategisch risico bij ziekte, verloop of pensionering en maakt het opschalen van uw team een langzaam en kostbaar proces.\n\nEen gecentraliseerd systeem institutionaliseert deze expertise. Door de regels, logica en best practices vast te leggen in een digitaal fundament, maakt u deze kennis toegankelijk en toepasbaar voor de hele organisatie. Nieuwe medewerkers worden sneller productief en de consistentie in kwaliteit en besluitvorming wordt gewaarborgd. U transformeert impliciete, individuele kennis in een expliciet, schaalbaar bedrijfskapitaal.",
+          "title": "Kennisbehoud en Schaalbaarheid: Uw Strategische Activa",
+          "citations": [],
+          "punchline": "Digitaliseer de expertise van uw beste mensen en maak groei voorspelbaar.",
+          "visualData": {
+            "items": [
+              {
+                "after": "Gecentraliseerd en toegankelijk",
+                "label": "Kennislocatie",
+                "before": "In hoofden van sleutelfiguren"
+              },
+              {
+                "after": "Geminimaliseerd",
+                "label": "Risico kennisverlies",
+                "before": "Hoog (ziekte, verloop, pensionering)"
+              },
+              {
+                "after": "Sneller productief",
+                "label": "Nieuwe medewerkers",
+                "before": "Langzaam en kostbaar inwerken"
+              }
+            ]
+          },
+          "visualType": "comparison"
+        }
+      ],
+      "modelUsed": "gemini-2.5-pro",
+      "generatedAt": "2026-04-21T17:38:37.692Z",
+      "openingHook": "STB-kozijnen opereert in een markt waar precisie, snelheid en klantvertrouwen doorslaggevend zijn. De complexiteit van maatwerk en de druk op marges vereisen een operationele ruggengraat die niet alleen efficiënt is, maar ook schaalbaar. Deze briefing identificeert de strategische knelpunten die uw groei kunnen belemmeren en schetst de contouren van een oplossing.",
+      "fallbackUsed": false,
+      "executiveSummary": "Onze analyse wijst op drie kerngebieden waar STB-kozijnen aanzienlijke waarde kan ontsluiten: het offertetraject, de overdracht van order naar productie, en de afhankelijkheid van specialistische kennis. Door deze processen te digitaliseren en centraliseren, kan uw bedrijf sneller reageren op klantvragen, faalkosten drastisch reduceren en een fundament leggen voor duurzame, voorspelbare groei. Het doel is niet incrementele verbetering, maar een strategische transformatie van uw operationele model.",
+      "useCaseRecommendations": [
+        {
+          "category": "",
+          "useCaseTitle": "Unified CRM and proposal management system",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "This system integrates with Offorte API to provide real-time synchronization of customer data, proposals, and installations.  It solves the problem of fragmented data sources and inefficient workflows for window installation companies."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Custom CRM and Proposal Management System",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "A custom CRM and proposal management system replaces disjointed tools like Airtable and Offorte, streamlining customer and proposal management.  It features real-time synchronization, route planning, and automated invoicing, enabling efficient operations and improved customer service."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Full-stack CRM system development",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Development of a custom CRM system, like the STB Kozijnen project, replacing existing solutions with a tailored solution integrating specific proposal software. This addresses the client's need for a CRM that is specifically designed for their business and integrates with their existing tools."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Workflow Audit and Bottleneck Detection",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Analyzes operational workflows and highlights friction points that create delay, rework, or missed revenue."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Proposal Generator with Proof Snippets",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Builds proposal drafts using reusable proof blocks and outcome language tied to specific client goals."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Workflow Bottleneck Identification",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Using collected prospect data and AI-powered analysis, this service identifies key workflow bottlenecks within a prospect's business. This helps users understand potential pain points and areas for improvement where they can offer targeted solutions, leading to more effective sales conversations."
+        }
+      ]
+    },
+    "inputSnapshot": {
+      "useCaseCount": 20,
+      "evidenceCount": 0,
+      "sourceBreakdown": {},
+      "crossConnectionCount": 0,
+      "recommendationSource": "matchProofs"
+    }
+  },
+  "researchRun": {
+    "id": "cmo8wpudf0000aww2br4scvro",
+    "createdAt": "2026-04-21T17:37:49.059Z",
+    "status": "COMPLETED"
+  }
+}

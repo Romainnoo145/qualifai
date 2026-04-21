@@ -1,0 +1,169 @@
+{
+  "capturedAt": "2026-04-21T17:58:16.817Z",
+  "prospect": {
+    "slug": "MZ5XcUVa",
+    "readableSlug": "stb-kozijnen",
+    "companyName": "STB-kozijnen",
+    "domain": "stb-kozijnen.nl"
+  },
+  "analysis": {
+    "id": "cmo8wo5160004czw2s0xyy87m",
+    "version": "analysis-v2",
+    "createdAt": "2026-04-21T17:36:29.562Z",
+    "modelUsed": "gemini-2.5-pro",
+    "content": {
+      "version": "analysis-v2",
+      "sections": [
+        {
+          "id": "de-groeiparadox",
+          "body": "STB-kozijnen wordt door klanten uitzonderlijk hoog gewaardeerd. Een score van 99.65% (zeer) tevreden klanten op basis van 281 beoordelingen, en een 9/10 uit meer dan 740 Google reviews, is een bewijs van operationele excellentie. Dit succes creëert echter zijn eigen uitdaging: de processen die u tot dit punt hebben gebracht, zijn vaak niet schaalbaar.\n\nDe aanwezigheid van openstaande vacatures signaleert een toenemende werklast die niet langer door het huidige team opgevangen kan worden. Deze 'groeipijn' manifesteert zich vaak in administratieve knelpunten, langere doorlooptijden voor offertes en een verhoogde coördinatielast. Zonder interventie kan de operationele druk de klantgerichte focus, uw voornaamste troef, beginnen te eroderen.",
+          "title": "De Groeiparadox: Wanneer Succes een Rem wordt",
+          "citations": [
+            "Bron: 5sterrenspecialist.nl, klantbeoordelingen STB Kozijnen B.V.",
+            "Bron: offerteadviseur.nl, review-aggregatie STB kozijnen b.v.",
+            "Bron: deBanenSite.nl, vacatures STB-Kozijnen"
+          ],
+          "punchline": "Uw succes van vandaag creëert de operationele knelpunten van morgen.",
+          "visualData": {
+            "items": [
+              {
+                "label": "Klanttevredenheid (5sterrenspecialist)",
+                "trend": "neutral",
+                "value": "99.65%"
+              },
+              {
+                "label": "Google Review Score",
+                "trend": "neutral",
+                "value": "9/10"
+              },
+              {
+                "label": "Openstaande vacatures",
+                "trend": "up",
+                "value": "Aanwezig"
+              }
+            ]
+          },
+          "visualType": "signals"
+        },
+        {
+          "id": "klantervaring-als-risico",
+          "body": "De 94% 'supertevreden' klanten is het directe resultaat van persoonlijke aandacht en vlekkeloze uitvoering. Dit niveau van dienstverlening is arbeidsintensief en wordt kwetsbaar naarmate het aantal projecten toeneemt. Elke minuut die uw experts besteden aan planning, materiaalbestelling, facturatie of statusupdates, is een minuut die niet aan de klant wordt besteed.\n\nHet risico is niet een plotselinge daling in kwaliteit, maar een geleidelijke afname van de proactieve communicatie en flexibiliteit die klanten nu zo waarderen. Door repetitieve, administratieve taken te systematiseren en automatiseren, creëert u ademruimte voor uw team. Zo wordt de focus verlegd van interne coördinatie naar externe klantwaarde, en wordt uw 5-sterren reputatie actief beschermd.",
+          "title": "Klantervaring: Van Concurrentievoordeel naar Kwetsbaarheid",
+          "citations": [
+            "Bron: 5sterrenspecialist.nl, klantbeoordelingen STB Kozijnen B.V."
+          ],
+          "punchline": "Bescherm uw 5-sterren reputatie door de back-office te automatiseren.",
+          "visualData": {
+            "items": [
+              {
+                "after": "Externe klantwaarde",
+                "label": "Focus team",
+                "before": "Interne coördinatie"
+              },
+              {
+                "after": "Klantwaarde activiteiten",
+                "label": "Tijdsbesteding experts",
+                "before": "Administratieve taken"
+              },
+              {
+                "after": "Actief beschermd",
+                "label": "Klantreputatie",
+                "before": "Kwetsbaar bij groei"
+              }
+            ]
+          },
+          "visualType": "comparison"
+        },
+        {
+          "id": "strategische-capaciteit",
+          "body": "Uw openstaande vacatures wijzen op een directe behoefte aan meer capaciteit. De traditionele oplossing is werving, maar in de huidige arbeidsmarkt is dat een kostbaar en tijdrovend proces. Een strategisch alternatief is het verhogen van de productiviteit en doorvoercapaciteit van uw bestaande, bewezen team.\n\nDoor de informatiestromen rondom projecten – van aanvraag tot en met oplevering – te stroomlijnen, kan de output per medewerker significant verhoogd worden. Dit transformeert de dynamiek van reactief personeel aannemen naar het proactief creëren van schaalbare capaciteit. Het resultaat is niet alleen een hogere efficiëntie, maar ook een aantrekkelijkere werkomgeving voor uw talent, dat zich kan richten op vakmanschap in plaats van administratie.",
+          "title": "Van Werving naar Waarde: Ontsluit Strategische Capaciteit",
+          "citations": ["Bron: deBanenSite.nl, vacatures STB-Kozijnen"],
+          "punchline": "Verhoog uw capaciteit door uw beste mensen te bevrijden van repetitief werk.",
+          "visualData": {
+            "items": [
+              {
+                "after": "Proactief capaciteit creëren",
+                "label": "Capaciteitsstrategie",
+                "before": "Reactief werven"
+              },
+              {
+                "after": "Vakmanschap",
+                "label": "Focus medewerker",
+                "before": "Administratie"
+              },
+              {
+                "after": "Verhogen productiviteit bestaand team",
+                "label": "Wervingsproces",
+                "before": "Kostbaar en tijdrovend"
+              }
+            ]
+          },
+          "visualType": "comparison"
+        }
+      ],
+      "modelUsed": "gemini-2.5-pro",
+      "generatedAt": "2026-04-21T17:34:30.882Z",
+      "openingHook": "STB-kozijnen heeft een ijzersterke reputatie opgebouwd, met een klanttevredenheid die de 99% overstijgt. De huidige uitdaging is niet het behouden van kwaliteit, maar het beschermen van diezelfde kwaliteit tegen de frictie van uw eigen groei.",
+      "fallbackUsed": false,
+      "executiveSummary": "Uw bedrijf demonstreert een uitzonderlijk niveau van klanttevredenheid, wat de basis is voor duurzaam succes. Echter, de noodzaak voor nieuwe vacatures duidt op toenemende operationele druk die deze servicekwaliteit op termijn kan ondermijnen. Door intelligente automatisering van ondersteunende processen kan STB-kozijnen schalen zonder in te boeten op de persoonlijke aandacht die klanten waarderen. Dit stelt u in staat om de capaciteit te vergroten, de winstgevendheid per project te verhogen en uw marktleiderschap verder te verstevigen.",
+      "useCaseRecommendations": [
+        {
+          "category": "",
+          "useCaseTitle": "Unified CRM and proposal management system",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "This system integrates with Offorte API to provide real-time synchronization of customer data, proposals, and installations.  It solves the problem of fragmented data sources and inefficient workflows for window installation companies."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Custom CRM and Proposal Management System",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "A custom CRM and proposal management system replaces disjointed tools like Airtable and Offorte, streamlining customer and proposal management.  It features real-time synchronization, route planning, and automated invoicing, enabling efficient operations and improved customer service."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Full-stack CRM system development",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Development of a custom CRM system, like the STB Kozijnen project, replacing existing solutions with a tailored solution integrating specific proposal software. This addresses the client's need for a CRM that is specifically designed for their business and integrates with their existing tools."
+        },
+        {
+          "category": "crm",
+          "useCaseTitle": "Proposal Management & Sync",
+          "applicableOutcomes": [
+            "Improved proposal accuracy",
+            "Faster proposal generation",
+            "Better tracking of proposal status",
+            "Reduced manual data entry"
+          ],
+          "relevanceNarrative": "This capability streamlines the creation and management of proposals, including synchronizing them with external systems like Offorte. It enables users to create, track, and sync proposals, ensuring accurate and up-to-date information."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Digitale werkbon app voor bouwteams",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Een eenvoudige mobiele app waarmee uitvoerders en timmermannen uren, materialen en foto's per klus registreren, automatisch gekoppeld aan planning en facturatie."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Slimme planning voor bouwprojecten",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Een planningsbord dat mensen, onderaannemers en leveringen plant via drag-and-drop, met automatische signalen bij overbezetting of overlap."
+        }
+      ]
+    },
+    "inputSnapshot": {
+      "useCaseCount": 20,
+      "evidenceCount": 3,
+      "sourceBreakdown": {
+        "NEWS": 3
+      },
+      "crossConnectionCount": 0,
+      "recommendationSource": "matchProofs"
+    }
+  },
+  "researchRun": {
+    "id": "cmo8wkl1s0000czw2euchdrgz",
+    "createdAt": "2026-04-21T17:33:43.696Z",
+    "status": "COMPLETED"
+  }
+}

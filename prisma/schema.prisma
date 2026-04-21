@@ -478,7 +478,7 @@ model EvidenceItem {
   confidenceScore Float
   isApproved      Boolean            @default(false)
   metadata        Json?
-  contentHash     String?
+  contentHash     String?   @map("content_hash")
 
   researchRunId String
   researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
