@@ -17,12 +17,12 @@ Requirements for this milestone. Each maps to roadmap phases.
 ### Masterprompt
 
 - [x] **PROMPT-01**: Legacy v1 prompt (buildLegacyPrompt, ~260 lines) and associated v1 types/validators deleted
-- [ ] **PROMPT-02**: visualType/visualData specification removed from masterprompt — simplified JSON output schema (openingHook, executiveSummary, sections with body/citations/punchline only)
+- [x] **PROMPT-02**: visualType/visualData specification removed from masterprompt — simplified JSON output schema (openingHook, executiveSummary, sections with body/citations/punchline only)
 - [ ] **PROMPT-03**: Visual data generated via separate downstream Gemini Flash call per section, receiving section body + cited evidence items
 
 ### Evidence Selection
 
-- [ ] **SELECT-01**: Pre-ranked top-20 evidence selection with source-diversity caps replaces arbitrary .slice(0, 60) before masterprompt
+- [x] **SELECT-01**: Pre-ranked top-20 evidence selection with source-diversity caps replaces arbitrary .slice(0, 60) before masterprompt
 
 ### Validation
 
@@ -68,8 +68,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROMPT-01   | Phase 65 — Surgical Funnel Fixes             | Complete |
 | FUNNEL-03   | Phase 66 — Content Deduplication             | Complete |
 | FUNNEL-04   | Phase 67 — Relevance Gate at Ingestion       | Complete |
-| SELECT-01   | Phase 68 — Evidence Selection + Masterprompt | Pending  |
-| PROMPT-02   | Phase 68 — Evidence Selection + Masterprompt | Pending  |
+| SELECT-01   | Phase 68 — Evidence Selection + Masterprompt | Complete |
+| PROMPT-02   | Phase 68 — Evidence Selection + Masterprompt | Complete |
 | PROMPT-03   | Phase 68 — Evidence Selection + Masterprompt | Pending  |
 | VALID-02    | Phase 69 — E2E Validation                    | Pending  |
 

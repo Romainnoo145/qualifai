@@ -527,7 +527,7 @@ Plans:
 | 65. Surgical Funnel Fixes + Dead Code   | 1/1            | Complete    | 2026-04-21 |
 | 66. Content Deduplication               | 1/1            | Complete    | 2026-04-21 |
 | 67. Relevance Gate at Ingestion         | 1/1            | Complete    | 2026-04-21 |
-| 68. Evidence Selection + Masterprompt   | 0/2            | Not started | -          |
+| 68. Evidence Selection + Masterprompt   | 1/2            | In Progress |            |
 | 69. E2E Validation                      | 0/TBD          | Not started | -          |
 
 _Roadmap last updated: 2026-04-21 — Phase 68 plans created_
