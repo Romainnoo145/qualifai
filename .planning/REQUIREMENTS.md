@@ -18,7 +18,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **PROMPT-01**: Legacy v1 prompt (buildLegacyPrompt, ~260 lines) and associated v1 types/validators deleted
 - [x] **PROMPT-02**: visualType/visualData specification removed from masterprompt — simplified JSON output schema (openingHook, executiveSummary, sections with body/citations/punchline only)
-- [ ] **PROMPT-03**: Visual data generated via separate downstream Gemini Flash call per section, receiving section body + cited evidence items
+- [x] **PROMPT-03**: Visual data generated via separate downstream Gemini Flash call per section, receiving section body + cited evidence items
 
 ### Evidence Selection
 
@@ -70,7 +70,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FUNNEL-04   | Phase 67 — Relevance Gate at Ingestion       | Complete |
 | SELECT-01   | Phase 68 — Evidence Selection + Masterprompt | Complete |
 | PROMPT-02   | Phase 68 — Evidence Selection + Masterprompt | Complete |
-| PROMPT-03   | Phase 68 — Evidence Selection + Masterprompt | Pending  |
+| PROMPT-03   | Phase 68 — Evidence Selection + Masterprompt | Complete |
 | VALID-02    | Phase 69 — E2E Validation                    | Pending  |
 
 **Coverage:**

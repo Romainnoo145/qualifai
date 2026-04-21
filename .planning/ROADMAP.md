@@ -165,7 +165,7 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 - [x] **Phase 65: Surgical Funnel Fixes + Dead Code** — HTTP gate, fallback suppression, legacy v1 prompt deletion (completed 2026-04-21)
 - [x] **Phase 66: Content Deduplication** — SHA-256 content hash dedup scoped per sourceType per prospect (completed 2026-04-21)
 - [x] **Phase 67: Relevance Gate at Ingestion** — Gemini Flash scoring with source-type-specific thresholds drops irrelevant items before DB storage (completed 2026-04-21)
-- [ ] **Phase 68: Evidence Selection + Masterprompt Simplification** — Pre-ranked top-20 selection replaces arbitrary slice; visual data split into downstream call; simplified JSON output schema
+- [x] **Phase 68: Evidence Selection + Masterprompt Simplification** — Pre-ranked top-20 selection replaces arbitrary slice; visual data split into downstream call; simplified JSON output schema (completed 2026-04-21)
 - [ ] **Phase 69: E2E Validation** — Full pipeline re-run for 3-5 prospects with before/after comparison
 
 ## Phase Details
@@ -527,7 +527,7 @@ Plans:
 | 65. Surgical Funnel Fixes + Dead Code   | 1/1            | Complete    | 2026-04-21 |
 | 66. Content Deduplication               | 1/1            | Complete    | 2026-04-21 |
 | 67. Relevance Gate at Ingestion         | 1/1            | Complete    | 2026-04-21 |
-| 68. Evidence Selection + Masterprompt   | 1/2            | In Progress |            |
+| 68. Evidence Selection + Masterprompt   | 2/2            | Complete    | 2026-04-21 |
 | 69. E2E Validation                      | 0/TBD          | Not started | -          |
 
 _Roadmap last updated: 2026-04-21 — Phase 68 plans created_

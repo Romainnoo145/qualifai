@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: planning
-stopped_at: Completed 68-01-PLAN.md
-last_updated: '2026-04-21T17:04:49.842Z'
+stopped_at: Completed 68-02-PLAN.md
+last_updated: '2026-04-21T17:09:40.596Z'
 last_activity: 2026-04-20 — Roadmap created, 6 phases defined
 progress:
   total_phases: 15
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 26
-  completed_plans: 25
+  completed_plans: 26
 ---
 
 # Project State
@@ -70,6 +70,8 @@ Design decisions still open (from Phase 63 planning):
 - [Phase 67-relevance-gate-at-ingestion]: passesRelevanceGate() soft-fail: undefined aiScore always passes (scorer failure never drops evidence)
 - [Phase 68]: Internal sort+slice(0,60) removed from both masterprompt builders — callers must pre-select via selectEvidenceForPrompt
 - [Phase 68]: Visual spec (visualType/visualData) stripped from masterprompt — will be generated downstream by separate Flash call (Plan 68-02)
+- [Phase 68]: Visual spec generated downstream by separate Flash call (generateSectionVisuals) — masterprompt stays clean
+- [Phase 68]: Both pipeline paths use selectEvidenceForPrompt top-20 — .slice(0,60) removed from Atlantis and Klarifai evidence selection
 
 ### Pending Todos
 
@@ -82,6 +84,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-21T17:04:44.951Z
-Stopped at: Completed 68-01-PLAN.md
+Last session: 2026-04-21T17:09:40.594Z
+Stopped at: Completed 68-02-PLAN.md
 Resume command: `/gsd:plan-phase 64`
