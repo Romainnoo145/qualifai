@@ -157,7 +157,7 @@ Merged two disconnected email generation systems into one AI-driven pipeline. Al
 - [ ] **Phase 62: Client-Facing Voorstel + PDF Worker** — Prospect proposal page and Railway PDF worker service
 - [ ] **Phase 63: Contract Workflow** — Click-to-sign contract flow following accepted quote
 
-### 📋 v10.0 Evidence Pipeline Overhaul (Phases 64-69) — PLANNED
+### v10.0 Evidence Pipeline Overhaul (Phases 64-69) — PLANNED
 
 **Milestone Goal:** Fix de lekkende evidence trechter en vereenvoudig de masterprompt zodat elke prospect een clean, deduplicated, relevance-scored evidence set krijgt die consistent hoge kwaliteit narratieven oplevert.
 
@@ -438,7 +438,11 @@ Plans:
 3. Cross-sourceType corroboration is preserved: the same snippet found in both a WEBSITE scrape and a REVIEWS scrape creates two EvidenceItems (one per sourceType), not one — because dedup is scoped within sourceType
 4. Re-running the pipeline a second time without new scraping produces zero duplicate inserts — the hash check is idempotent
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+
+- [ ] 66-01-PLAN.md — Schema contentHash column + SHA-256 dedup guard in evidence insert loop (FUNNEL-03)
 
 ---
 
@@ -512,9 +516,9 @@ Plans:
 | 63. Contract Workflow                   | 0/TBD          | Not started | -          |
 | 64. Baseline Capture                    | 1/1            | Complete    | 2026-04-20 |
 | 65. Surgical Funnel Fixes + Dead Code   | 1/1            | Complete    | 2026-04-21 |
-| 66. Content Deduplication               | 0/TBD          | Not started | -          |
+| 66. Content Deduplication               | 0/1            | Not started | -          |
 | 67. Relevance Gate at Ingestion         | 0/TBD          | Not started | -          |
 | 68. Evidence Selection + Masterprompt   | 0/TBD          | Not started | -          |
 | 69. E2E Validation                      | 0/TBD          | Not started | -          |
 
-_Roadmap last updated: 2026-04-20 — v10.0 Evidence Pipeline Overhaul phases 64-69 added_
+_Roadmap last updated: 2026-04-21 — Phase 66 plan created_
