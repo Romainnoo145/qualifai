@@ -508,7 +508,11 @@ Plans:
 3. The discover page (`/discover/[slug]`) renders correctly for every re-run prospect — no broken layout, no missing visual sections, no console errors
 4. `npx tsc --noEmit` passes clean after all v10.0 changes — zero new TypeScript errors introduced across the milestone
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+
+- [ ] 69-01-PLAN.md — Multi-prospect pipeline rerun + before/after quality review (VALID-02)
 
 ---
 
@@ -528,6 +532,6 @@ Plans:
 | 66. Content Deduplication               | 1/1            | Complete    | 2026-04-21 |
 | 67. Relevance Gate at Ingestion         | 1/1            | Complete    | 2026-04-21 |
 | 68. Evidence Selection + Masterprompt   | 2/2            | Complete    | 2026-04-21 |
-| 69. E2E Validation                      | 0/TBD          | Not started | -          |
+| 69. E2E Validation                      | 0/1            | Not started | -          |
 
-_Roadmap last updated: 2026-04-21 — Phase 68 plans created_
+_Roadmap last updated: 2026-04-21 — Phase 69 plan created_
