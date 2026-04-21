@@ -35,7 +35,12 @@ import {
 import { fetchEmployeeReviews } from '@/lib/enrichment/employee-reviews';
 import { fetchLinkedInJobs } from '@/lib/enrichment/linkedin-jobs';
 import { fetchCustomerReviews } from '@/lib/enrichment/google-reviews';
-import { scoreEvidenceBatch, type ScoredEvidence } from '@/lib/evidence-scorer';
+import {
+  scoreEvidenceBatch,
+  type ScoredEvidence,
+  RELEVANCE_THRESHOLDS,
+  DEFAULT_RELEVANCE_THRESHOLD,
+} from '@/lib/evidence-scorer';
 import {
   discoverSitemapUrls,
   type SitemapCandidate,
@@ -377,6 +382,22 @@ export function normalizeSnippet(snippet: string): string {
 export function computeContentHash(snippet: string): string {
   const normalized = normalizeSnippet(snippet);
   return createHash('sha256').update(normalized, 'utf8').digest('hex');
+}
+
+/**
+ * Phase 67: Returns true if the evidence item should be KEPT (passes the relevance gate).
+ * Returns false if the item should be DROPPED.
+ * Items with no aiScore always pass (scorer failure fallback — never penalise unscored items).
+ * Items at exactly the threshold value pass — check is strictly less-than (<).
+ */
+export function passesRelevanceGate(
+  aiScore: { aiRelevance: number } | undefined,
+  sourceType: string,
+): boolean {
+  if (!aiScore) return true; // No score = pass through
+  const threshold =
+    RELEVANCE_THRESHOLDS[sourceType] ?? DEFAULT_RELEVANCE_THRESHOLD;
+  return aiScore.aiRelevance >= threshold;
 }
 
 function isFallbackEvidenceDraft(
@@ -1308,6 +1329,11 @@ export async function executeResearchRun(
   for (let i = 0; i < evidenceDrafts.length; i++) {
     const draft = evidenceDrafts[i]!;
     const aiScore = scoredMap.get(i);
+
+    // Phase 67: Relevance gate — drop below-threshold items before DB insert
+    if (aiScore && !passesRelevanceGate(aiScore, draft.sourceType as string)) {
+      continue; // Below threshold — never reaches DB
+    }
 
     // Use AI-scored confidence if available, otherwise keep original
     const finalConfidence = aiScore
