@@ -71,10 +71,8 @@ function buildNarrativePrompt(input: NarrativeAnalysisInput): string {
     'Dit zijn de ruwe bewijsitems uit extern onderzoek, gesorteerd op betrouwbaarheid. Gebruik ze direct in het narratief — citeer specifieke datapunten, namen en feiten.',
   );
 
-  // Sort by confidence descending, include up to 60 items
-  const sortedEvidence = [...evidence]
-    .sort((a, b) => b.confidenceScore - a.confidenceScore)
-    .slice(0, 60);
+  // Trust pre-selected input (caller uses selectEvidenceForPrompt)
+  const sortedEvidence = evidence;
 
   for (let i = 0; i < sortedEvidence.length; i++) {
     const item = sortedEvidence[i]!;
@@ -182,40 +180,6 @@ function buildNarrativePrompt(input: NarrativeAnalysisInput): string {
   sections.push(
     '- "punchline": één pakkende zin die de kernboodschap samenvat (max 15 woorden)',
   );
-  sections.push(
-    '- "visualType": kies het meest passende type op basis van de gevonden data:',
-  );
-  sections.push(
-    '  * "quote" — wanneer er een krachtig citaat of review-fragment is gevonden',
-  );
-  sections.push(
-    '  * "comparison" — wanneer er een voor/na of A-vs-B vergelijking mogelijk is',
-  );
-  sections.push(
-    '  * "signals" — wanneer er meetbare signalen of trends zijn (bijv. groei, marktpositie)',
-  );
-  sections.push(
-    '  * "stats" — wanneer er concrete cijfers of percentages beschikbaar zijn',
-  );
-  sections.push(
-    '- "visualData": gestructureerde data die past bij het gekozen visualType:',
-  );
-  sections.push(
-    '  * Voor "quote": { "type": "quote", "quote": "het citaat", "attribution": "bron" }',
-  );
-  sections.push(
-    '  * Voor "comparison": { "type": "comparison", "items": [{ "label": "aspect", "before": "huidig", "after": "mogelijk" }] } (2-4 items)',
-  );
-  sections.push(
-    '  * Voor "signals": { "type": "signals", "items": [{ "label": "signaal", "value": "waarde", "trend": "up"|"down"|"neutral" }] } (2-4 items)',
-  );
-  sections.push(
-    '  * Voor "stats": { "type": "stats", "items": [{ "label": "metric", "value": "getal", "context": "toelichting" }] } (2-4 items)',
-  );
-  sections.push('');
-  sections.push(
-    'BELANGRIJK: visualData moet ALTIJD afgeleid zijn van echte brondata — NOOIT verzonnen. Als er geen geschikte data is voor een visualType, laat visualType en visualData weg en gebruik alleen body tekst.',
-  );
   sections.push('');
   sections.push('Retourneer UITSLUITEND valide JSON in dit formaat:');
   sections.push('```json');
@@ -233,11 +197,7 @@ function buildNarrativePrompt(input: NarrativeAnalysisInput): string {
   sections.push(
     '      "citations": ["Bron: Volume X — Document Y", "Bron: REVIEWS — ..."],',
   );
-  sections.push('      "punchline": "Eén pakkende zin als headline",');
-  sections.push('      "visualType": "stats",');
-  sections.push(
-    '      "visualData": { "type": "stats", "items": [{ "label": "metric", "value": "42%", "context": "toelichting" }] }',
-  );
+  sections.push('      "punchline": "Eén pakkende zin als headline"');
   sections.push('    }');
   sections.push('  ],');
   sections.push('  "spvRecommendations": [');
@@ -297,9 +257,8 @@ function buildKlarifaiNarrativePrompt(input: KlarifaiNarrativeInput): string {
     'Dit zijn de ruwe bewijsitems uit extern onderzoek, gesorteerd op betrouwbaarheid. Gebruik ze direct in het narratief — citeer specifieke datapunten, namen en feiten.',
   );
 
-  const sortedEvidence = [...evidence]
-    .sort((a, b) => b.confidenceScore - a.confidenceScore)
-    .slice(0, 60);
+  // Trust pre-selected input (caller uses selectEvidenceForPrompt)
+  const sortedEvidence = evidence;
 
   for (let i = 0; i < sortedEvidence.length; i++) {
     const item = sortedEvidence[i]!;
@@ -361,40 +320,6 @@ function buildKlarifaiNarrativePrompt(input: KlarifaiNarrativeInput): string {
   parts.push(
     '- "punchline": één pakkende zin die de kernboodschap samenvat (max 15 woorden)',
   );
-  parts.push(
-    '- "visualType": kies het meest passende type op basis van de gevonden data:',
-  );
-  parts.push(
-    '  * "quote" — wanneer er een krachtig citaat of review-fragment is gevonden',
-  );
-  parts.push(
-    '  * "comparison" — wanneer er een voor/na of A-vs-B vergelijking mogelijk is',
-  );
-  parts.push(
-    '  * "signals" — wanneer er meetbare signalen of trends zijn (bijv. groei, marktpositie)',
-  );
-  parts.push(
-    '  * "stats" — wanneer er concrete cijfers of percentages beschikbaar zijn',
-  );
-  parts.push(
-    '- "visualData": gestructureerde data die past bij het gekozen visualType:',
-  );
-  parts.push(
-    '  * Voor "quote": { "type": "quote", "quote": "het citaat", "attribution": "bron" }',
-  );
-  parts.push(
-    '  * Voor "comparison": { "type": "comparison", "items": [{ "label": "aspect", "before": "huidig", "after": "mogelijk" }] } (2-4 items)',
-  );
-  parts.push(
-    '  * Voor "signals": { "type": "signals", "items": [{ "label": "signaal", "value": "waarde", "trend": "up"|"down"|"neutral" }] } (2-4 items)',
-  );
-  parts.push(
-    '  * Voor "stats": { "type": "stats", "items": [{ "label": "metric", "value": "getal", "context": "toelichting" }] } (2-4 items)',
-  );
-  parts.push('');
-  parts.push(
-    'BELANGRIJK: visualData moet ALTIJD afgeleid zijn van echte brondata — NOOIT verzonnen. Als er geen geschikte data is voor een visualType, laat visualType en visualData weg en gebruik alleen body tekst.',
-  );
   parts.push('');
   parts.push('Retourneer UITSLUITEND valide JSON in dit formaat:');
   parts.push('```json');
@@ -412,11 +337,7 @@ function buildKlarifaiNarrativePrompt(input: KlarifaiNarrativeInput): string {
   parts.push(
     '      "citations": ["Bron: REVIEWS — ...", "Bron: WEBSITE — ..."],',
   );
-  parts.push('      "punchline": "Eén pakkende zin als headline",');
-  parts.push('      "visualType": "quote",');
-  parts.push(
-    '      "visualData": { "type": "quote", "quote": "het citaat uit een review", "attribution": "Trustpilot review" }',
-  );
+  parts.push('      "punchline": "Eén pakkende zin als headline"');
   parts.push('    }');
   parts.push('  ]');
   parts.push('}');
