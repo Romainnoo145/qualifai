@@ -11,7 +11,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **FUNNEL-01**: Crawl4AI path checks HTTP status and skips 4xx/5xx pages before storing evidence
 - [x] **FUNNEL-02**: Fallback/notFound drafts are suppressed — no URL-only EvidenceItems stored
-- [ ] **FUNNEL-03**: Content deduplication via SHA-256 hash on normalized snippet, scoped per sourceType per prospect
+- [x] **FUNNEL-03**: Content deduplication via SHA-256 hash on normalized snippet, scoped per sourceType per prospect
 - [ ] **FUNNEL-04**: AI relevance scoring at ingestion via Gemini Flash with source-type-specific thresholds drops irrelevant items before DB storage
 
 ### Masterprompt
@@ -66,7 +66,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FUNNEL-01   | Phase 65 — Surgical Funnel Fixes             | Complete |
 | FUNNEL-02   | Phase 65 — Surgical Funnel Fixes             | Complete |
 | PROMPT-01   | Phase 65 — Surgical Funnel Fixes             | Complete |
-| FUNNEL-03   | Phase 66 — Content Deduplication             | Pending  |
+| FUNNEL-03   | Phase 66 — Content Deduplication             | Complete |
 | FUNNEL-04   | Phase 67 — Relevance Gate at Ingestion       | Pending  |
 | SELECT-01   | Phase 68 — Evidence Selection + Masterprompt | Pending  |
 | PROMPT-02   | Phase 68 — Evidence Selection + Masterprompt | Pending  |
