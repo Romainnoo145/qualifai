@@ -9,14 +9,14 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Evidence Funnel
 
-- [ ] **FUNNEL-01**: Crawl4AI path checks HTTP status and skips 4xx/5xx pages before storing evidence
-- [ ] **FUNNEL-02**: Fallback/notFound drafts are suppressed — no URL-only EvidenceItems stored
+- [x] **FUNNEL-01**: Crawl4AI path checks HTTP status and skips 4xx/5xx pages before storing evidence
+- [x] **FUNNEL-02**: Fallback/notFound drafts are suppressed — no URL-only EvidenceItems stored
 - [ ] **FUNNEL-03**: Content deduplication via SHA-256 hash on normalized snippet, scoped per sourceType per prospect
 - [ ] **FUNNEL-04**: AI relevance scoring at ingestion via Gemini Flash with source-type-specific thresholds drops irrelevant items before DB storage
 
 ### Masterprompt
 
-- [ ] **PROMPT-01**: Legacy v1 prompt (buildLegacyPrompt, ~260 lines) and associated v1 types/validators deleted
+- [x] **PROMPT-01**: Legacy v1 prompt (buildLegacyPrompt, ~260 lines) and associated v1 types/validators deleted
 - [ ] **PROMPT-02**: visualType/visualData specification removed from masterprompt — simplified JSON output schema (openingHook, executiveSummary, sections with body/citations/punchline only)
 - [ ] **PROMPT-03**: Visual data generated via separate downstream Gemini Flash call per section, receiving section body + cited evidence items
 
@@ -63,9 +63,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase                                        | Status   |
 | ----------- | -------------------------------------------- | -------- |
 | VALID-01    | Phase 64 — Baseline Capture                  | Complete |
-| FUNNEL-01   | Phase 65 — Surgical Funnel Fixes             | Pending  |
-| FUNNEL-02   | Phase 65 — Surgical Funnel Fixes             | Pending  |
-| PROMPT-01   | Phase 65 — Surgical Funnel Fixes             | Pending  |
+| FUNNEL-01   | Phase 65 — Surgical Funnel Fixes             | Complete |
+| FUNNEL-02   | Phase 65 — Surgical Funnel Fixes             | Complete |
+| PROMPT-01   | Phase 65 — Surgical Funnel Fixes             | Complete |
 | FUNNEL-03   | Phase 66 — Content Deduplication             | Pending  |
 | FUNNEL-04   | Phase 67 — Relevance Gate at Ingestion       | Pending  |
 | SELECT-01   | Phase 68 — Evidence Selection + Masterprompt | Pending  |

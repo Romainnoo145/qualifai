@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Klant Lifecycle Convergence
 status: planning
-stopped_at: Completed 64-01-PLAN.md
-last_updated: '2026-04-20T22:31:25.694Z'
+stopped_at: Completed 65-01-PLAN.md
+last_updated: '2026-04-21T09:53:56.000Z'
 last_activity: 2026-04-20 — Roadmap created, 6 phases defined
 progress:
   total_phases: 15
-  completed_phases: 5
-  total_plans: 21
-  completed_plans: 21
+  completed_phases: 6
+  total_plans: 22
+  completed_plans: 22
 ---
 
 # Project State
@@ -63,6 +63,7 @@ Design decisions still open (from Phase 63 planning):
 - Q7: Auth model voor `/voorstel` pagina — resolve before Phase 62 (v9.0) start
 - [Phase 64-baseline-capture]: Include analysisId suffix in filename to prevent collision when a prospect has multiple ProspectAnalysis records
 - [Phase 64-baseline-capture]: Commit baseline JSON files to git (not gitignored) for Phase 69 cross-machine comparison
+- [Phase 65]: Filter fallback/notFound before scoring to keep scoredMap indices aligned
 
 ### Pending Todos
 
@@ -75,6 +76,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-20T22:29:15.846Z
-Stopped at: Completed 64-01-PLAN.md
+Last session: 2026-04-21T09:53:55.998Z
+Stopped at: Completed 65-01-PLAN.md
 Resume command: `/gsd:plan-phase 64`
