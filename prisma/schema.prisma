@@ -478,6 +478,7 @@ model EvidenceItem {
   confidenceScore Float
   isApproved      Boolean            @default(false)
   metadata        Json?
+  contentHash     String?
 
   researchRunId String
   researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
@@ -489,6 +490,7 @@ model EvidenceItem {
   @@index([researchRunId])
   @@index([prospectId, createdAt])
   @@index([workflowTag])
+  @@unique([prospectId, sourceType, contentHash])
 }
 
 model WorkflowHypothesis {
