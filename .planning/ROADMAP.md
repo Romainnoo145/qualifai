@@ -461,7 +461,11 @@ Plans:
 3. Dutch-language evidence items from REGISTRY and WEBSITE sources score comparably to equivalent English items — the Flash prompt includes Dutch examples and the threshold calibration reflects NL SMB content characteristics
 4. Scoring a batch of 80 items adds no more than 90 seconds to the total pipeline run time (sync cap or async batch respected)
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+
+- [ ] 67-01-PLAN.md — Threshold constants, Dutch prompt calibration, relevance gate in insert loop (FUNNEL-04)
 
 ---
 
@@ -517,8 +521,8 @@ Plans:
 | 64. Baseline Capture                    | 1/1            | Complete    | 2026-04-20 |
 | 65. Surgical Funnel Fixes + Dead Code   | 1/1            | Complete    | 2026-04-21 |
 | 66. Content Deduplication               | 1/1            | Complete    | 2026-04-21 |
-| 67. Relevance Gate at Ingestion         | 0/TBD          | Not started | -          |
+| 67. Relevance Gate at Ingestion         | 0/1            | Not started | -          |
 | 68. Evidence Selection + Masterprompt   | 0/TBD          | Not started | -          |
 | 69. E2E Validation                      | 0/TBD          | Not started | -          |
 
-_Roadmap last updated: 2026-04-21 — Phase 66 plan created_
+_Roadmap last updated: 2026-04-21 — Phase 67 plan created_
