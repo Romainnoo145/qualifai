@@ -77,6 +77,11 @@ import type {
 } from '@/lib/analysis/types';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { industryToSector } from '@/lib/constants/sectors';
+import {
+  selectEvidenceForPrompt,
+  buildSourceBreakdown,
+} from '@/lib/analysis/evidence-selector';
+import { generateSectionVisuals } from '@/lib/analysis/visual-generator';
 import { createHash } from 'node:crypto';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
@@ -1706,10 +1711,9 @@ export async function executeResearchRun(
         });
 
         // Map evidence records to EvidenceItem (PIPE-01: raw evidence, no intent compression)
-        const evidenceItems: EvidenceItem[] = evidenceRecords
+        // SELECT-01: Use selectEvidenceForPrompt for top-20 with max-5-per-source diversity cap
+        const allEvidence: EvidenceItem[] = evidenceRecords
           .filter((item) => item.sourceType !== 'RAG_DOCUMENT')
-          .sort((a, b) => b.confidenceScore - a.confidenceScore)
-          .slice(0, 60)
           .map((item) => ({
             sourceType: item.sourceType,
             sourceUrl: item.sourceUrl,
@@ -1718,6 +1722,7 @@ export async function executeResearchRun(
             confidenceScore: item.confidenceScore,
             workflowTag: item.workflowTag,
           }));
+        const evidenceItems = selectEvidenceForPrompt(allEvidence);
 
         // Map RAG passages to RagPassageInput (PIPE-02: with sourceLabel from Phase 49)
         const passageInputs: RagPassageInput[] = ragPassages.map((p) => ({
@@ -1751,15 +1756,42 @@ export async function executeResearchRun(
 
         const analysisResult = await generateNarrativeAnalysis(narrativeInput);
 
+        // PROMPT-03: Enrich sections with visual data via Gemini Flash
+        let finalAnalysis = analysisResult;
+        try {
+          const visualResults = await generateSectionVisuals(
+            analysisResult.sections,
+            evidenceItems,
+          );
+          finalAnalysis = {
+            ...analysisResult,
+            sections: analysisResult.sections.map((s, i) => ({
+              ...s,
+              ...(visualResults[i]?.visualType
+                ? {
+                    visualType: visualResults[i].visualType,
+                    visualData: visualResults[i].visualData,
+                  }
+                : {}),
+            })),
+          };
+        } catch (visualErr) {
+          console.warn(
+            '[research-executor] Visual enrichment failed, proceeding without:',
+            visualErr instanceof Error ? visualErr.message : visualErr,
+          );
+        }
+
         await db.prospectAnalysis.create({
           data: {
             researchRunId: run.id,
             prospectId: input.prospectId,
             version: 'analysis-v2',
-            content: toJson(analysisResult),
+            content: toJson(finalAnalysis),
             modelUsed: analysisResult.modelUsed,
             inputSnapshot: toJson({
               evidenceCount: evidenceItems.length,
+              sourceBreakdown: buildSourceBreakdown(evidenceItems),
               passageCount: passageInputs.length,
               crossConnectionCount: crossConnections.length,
               spvCount: spvs.length,
@@ -1882,10 +1914,9 @@ export async function executeResearchRun(
           });
         } else {
           // Map evidence records to EvidenceItem (same as Atlantis)
-          const evidenceItems: EvidenceItem[] = evidenceRecords
+          // SELECT-01: Use selectEvidenceForPrompt for top-20 with max-5-per-source diversity cap
+          const allEvidence: EvidenceItem[] = evidenceRecords
             .filter((item) => item.sourceType !== 'RAG_DOCUMENT')
-            .sort((a, b) => b.confidenceScore - a.confidenceScore)
-            .slice(0, 60)
             .map((item) => ({
               sourceType: item.sourceType,
               sourceUrl: item.sourceUrl,
@@ -1894,6 +1925,7 @@ export async function executeResearchRun(
               confidenceScore: item.confidenceScore,
               workflowTag: item.workflowTag,
             }));
+          const evidenceItems = selectEvidenceForPrompt(allEvidence);
 
           // Cross-prospect connection detection (same logic as Atlantis)
           const klarifaiCrossConnections: CrossProspectConnection[] = [];
@@ -1995,15 +2027,42 @@ export async function executeResearchRun(
             useCaseRecommendations: finalRecommendations,
           };
 
+          // PROMPT-03: Enrich sections with visual data via Gemini Flash
+          let enrichedResult = finalResult;
+          try {
+            const visualResults = await generateSectionVisuals(
+              finalResult.sections,
+              evidenceItems,
+            );
+            enrichedResult = {
+              ...finalResult,
+              sections: finalResult.sections.map((s, i) => ({
+                ...s,
+                ...(visualResults[i]?.visualType
+                  ? {
+                      visualType: visualResults[i].visualType,
+                      visualData: visualResults[i].visualData,
+                    }
+                  : {}),
+              })),
+            };
+          } catch (visualErr) {
+            console.warn(
+              '[research-executor] Visual enrichment failed, proceeding without:',
+              visualErr instanceof Error ? visualErr.message : visualErr,
+            );
+          }
+
           await db.prospectAnalysis.create({
             data: {
               researchRunId: run.id,
               prospectId: input.prospectId,
               version: 'analysis-v2',
-              content: toJson(finalResult),
+              content: toJson(enrichedResult),
               modelUsed: analysisResult.modelUsed,
               inputSnapshot: toJson({
                 evidenceCount: evidenceItems.length,
+                sourceBreakdown: buildSourceBreakdown(evidenceItems),
                 useCaseCount: useCases.length,
                 crossConnectionCount: klarifaiCrossConnections.length,
                 recommendationSource:
