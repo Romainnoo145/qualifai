@@ -136,4 +136,20 @@ describe('research.getActiveStatusBySlug', () => {
       startedAt: null,
     });
   });
+
+  it('returns nulls when prospect is not in PUBLIC_VISIBLE_STATUSES', async () => {
+    const db = makeMockDb();
+    // prospect.findFirst returns null because the visibility filter (status: { in: PUBLIC_VISIBLE_STATUSES })
+    // excluded the ARCHIVED prospect — the mock faithfully represents the DB behaviour.
+    db.prospect.findFirst.mockResolvedValueOnce(null);
+
+    const result = await callerForPublic(db).getActiveStatusBySlug({
+      slug: 'archived-prospect',
+    });
+
+    expect(result.isActive).toBe(false);
+    expect(result.status).toBeNull();
+    expect(result.currentStep).toBeNull();
+    expect(result.startedAt).toBeNull();
+  });
 });

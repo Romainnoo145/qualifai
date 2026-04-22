@@ -21,6 +21,14 @@ import {
 import type { Prisma } from '@prisma/client';
 import { currentStepLabel, isActiveStatus } from '@/lib/research/status-labels';
 import { discoverLookupCandidates } from '@/lib/prospect-url';
+import { PUBLIC_VISIBLE_STATUSES } from '@/lib/constants/prospect-statuses';
+
+const INACTIVE_STATUS = {
+  isActive: false,
+  status: null,
+  currentStep: null,
+  startedAt: null,
+} as const;
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -124,12 +132,7 @@ export const researchRouter = router({
         select: { status: true, startedAt: true },
       });
       if (!run) {
-        return {
-          isActive: false,
-          status: null,
-          currentStep: null,
-          startedAt: null,
-        };
+        return INACTIVE_STATUS;
       }
       return {
         isActive: isActiveStatus(run.status),
@@ -144,26 +147,17 @@ export const researchRouter = router({
     .query(async ({ ctx, input }) => {
       const candidates = discoverLookupCandidates(input.slug);
       if (candidates.length === 0) {
-        return {
-          isActive: false,
-          status: null,
-          currentStep: null,
-          startedAt: null,
-        };
+        return INACTIVE_STATUS;
       }
       const prospect = await ctx.db.prospect.findFirst({
         where: {
           OR: candidates.flatMap((c) => [{ slug: c }, { readableSlug: c }]),
+          status: { in: [...PUBLIC_VISIBLE_STATUSES] },
         },
         select: { id: true },
       });
       if (!prospect) {
-        return {
-          isActive: false,
-          status: null,
-          currentStep: null,
-          startedAt: null,
-        };
+        return INACTIVE_STATUS;
       }
       const run = await ctx.db.researchRun.findFirst({
         where: { prospectId: prospect.id },
@@ -171,12 +165,7 @@ export const researchRouter = router({
         select: { status: true, startedAt: true },
       });
       if (!run) {
-        return {
-          isActive: false,
-          status: null,
-          currentStep: null,
-          startedAt: null,
-        };
+        return INACTIVE_STATUS;
       }
       return {
         isActive: isActiveStatus(run.status),
