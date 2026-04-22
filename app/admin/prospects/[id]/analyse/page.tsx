@@ -149,18 +149,23 @@ export default function AnalysePage() {
     },
   );
 
+  const refetchAnalysis = analysisQuery.refetch;
+
   const wasActiveRef = useRef(false);
+  // React Query returns a fresh data object on each poll, so this effect runs
+  // every 5s while active. The wasActiveRef ensures refetch fires exactly once
+  // on the active→inactive transition and not on subsequent inactive observations.
   useEffect(() => {
     const isActive = activeRun.data?.isActive ?? false;
     if (isActive) {
       wasActiveRef.current = true;
       return;
     }
-    if (wasActiveRef.current && !isActive) {
+    if (wasActiveRef.current) {
       wasActiveRef.current = false;
-      void analysisQuery.refetch?.();
+      void refetchAnalysis?.();
     }
-  }, [activeRun.data?.isActive, analysisQuery]);
+  }, [activeRun.data?.isActive, refetchAnalysis]);
 
   return (
     <SubRouteShell active="analyse">
