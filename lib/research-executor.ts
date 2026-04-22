@@ -684,6 +684,13 @@ export async function executeResearchRun(
     sourceSet: initialSourceSet,
   });
 
+  // Fresh runs replace all prior evidence — delete old ResearchRuns (cascades to EvidenceItem).
+  if (!input.existingRunId) {
+    await db.researchRun.deleteMany({
+      where: { prospectId: input.prospectId },
+    });
+  }
+
   const run = input.existingRunId
     ? await db.researchRun.update({
         where: { id: input.existingRunId },
@@ -705,9 +712,7 @@ export async function executeResearchRun(
         },
       });
 
-  // Re-runs update the same ResearchRun row.
-  // Clear prior generated rows first so stale evidence URLs from older logic
-  // do not persist (for example historical guessed /contact|/services pages).
+  // Re-runs (existingRunId path) clear the same run's rows before re-populating.
   if (input.existingRunId) {
     await db.$transaction([
       db.evidenceItem.deleteMany({ where: { researchRunId: run.id } }),

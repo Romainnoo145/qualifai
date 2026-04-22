@@ -643,19 +643,20 @@ function SectionLabel({ num, title }: { num: string; title: string }) {
 }
 
 function HeroHeading({ title }: { title: string }) {
+  const text = title.replace(/\.+$/, '');
   return (
     <h1
       style={{
-        fontSize: 'clamp(36px, 4.5vw, 60px)',
+        fontSize: 'clamp(28px, 3.8vw, 56px)',
         fontWeight: 700,
-        lineHeight: 1.05,
+        lineHeight: 1.08,
         letterSpacing: '-0.025em',
         margin: 0,
         maxWidth: '1000px',
         color: TEXT_ON_NAVY,
       }}
     >
-      {title}
+      {text}
       <GoldDot />
     </h1>
   );
@@ -781,23 +782,18 @@ function deriveInsights(body: string): { title: string; desc: string }[] {
   });
 }
 
-/** Derive pillars from body paragraphs — short title + max 2 lines desc */
+/** Derive pillars from body paragraphs — only use sentence as title if it fits cleanly */
 function derivePillars(body: string): { title: string; desc: string }[] {
   const paragraphs = body.split('\n\n').filter(Boolean);
   return paragraphs.slice(0, 3).map((p) => {
-    // Title: first sentence or first ~6 words
     const firstDot = p.indexOf('. ');
-    let title: string;
-    let rest: string;
-    if (firstDot > 0 && firstDot < 60) {
-      title = p.slice(0, firstDot + 1);
-      rest = p.slice(firstDot + 2);
-    } else {
-      const words = p.split(' ');
-      title = words.slice(0, 6).join(' ');
-      rest = words.slice(6).join(' ');
+    if (firstDot > 0 && firstDot < 72) {
+      return {
+        title: p.slice(0, firstDot + 1),
+        desc: truncate(p.slice(firstDot + 2), 160),
+      };
     }
-    return { title: truncate(title, 50), desc: truncate(rest || p, 120) };
+    return { title: '', desc: truncate(p, 180) };
   });
 }
 
@@ -853,7 +849,7 @@ function SectionVisualLayout({
             maxWidth: '800px',
           }}
         >
-          {section.punchline}
+          {section.punchline.replace(/\.+$/, '')}
           <GoldDot />
         </h1>
       ) : (
@@ -1100,7 +1096,7 @@ function SectionSplit({
       }}
     >
       <SectionLabel num={pageNum} title={section.title} />
-      <HeroHeading title={section.title} />
+      <HeroHeading title={section.punchline ?? section.title} />
 
       <div
         className="analyse-split"
@@ -1204,16 +1200,16 @@ function SectionPillars({
       >
         <h1
           style={{
-            fontSize: 'clamp(48px, 6vw, 88px)',
+            fontSize: 'clamp(28px, 3.8vw, 60px)',
             fontWeight: 700,
-            lineHeight: 1.02,
+            lineHeight: 1.08,
             letterSpacing: '-0.03em',
             margin: 0,
             maxWidth: '1100px',
             color: TEXT_ON_NAVY,
           }}
         >
-          {section.title}
+          {(section.punchline ?? section.title).replace(/\.+$/, '')}
           <GoldDot />
         </h1>
       </div>
@@ -1282,22 +1278,24 @@ function PillarCard({
       >
         {num}
       </div>
-      <div
-        style={{
-          fontSize: '18px',
-          fontWeight: 500,
-          color: TEXT_ON_NAVY,
-          letterSpacing: '-0.01em',
-          lineHeight: 1.25,
-        }}
-      >
-        {title}
-      </div>
+      {title && (
+        <div
+          style={{
+            fontSize: '18px',
+            fontWeight: 500,
+            color: TEXT_ON_NAVY,
+            letterSpacing: '-0.01em',
+            lineHeight: 1.25,
+          }}
+        >
+          {title}
+        </div>
+      )}
       <div
         style={{
           fontSize: '14px',
           fontWeight: 300,
-          lineHeight: 1.55,
+          lineHeight: 1.6,
           color: TEXT_MUTED_ON_NAVY,
         }}
       >
@@ -1336,7 +1334,7 @@ function SectionQuote({
       }}
     >
       <SectionLabel num={pageNum} title={section.title} />
-      <HeroHeading title={section.title} />
+      <HeroHeading title={section.punchline ?? section.title} />
 
       <div
         className="analyse-split"
