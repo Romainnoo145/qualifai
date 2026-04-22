@@ -51,6 +51,7 @@ export function ActiveRunPoller({ slug }: Props) {
     <RerunLoadingScreen
       variant="full"
       currentStep={data?.currentStep ?? null}
+      currentStatus={data?.status ?? null}
     />
   );
 }

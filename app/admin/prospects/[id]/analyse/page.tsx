@@ -175,6 +175,7 @@ export default function AnalysePage() {
         <RerunLoadingScreen
           variant="inline"
           currentStep={activeRun.data.currentStep}
+          currentStatus={activeRun.data.status}
         />
       ) : !analysis ? (
         <div className="py-16 text-center">

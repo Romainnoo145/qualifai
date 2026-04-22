@@ -3,7 +3,7 @@
 import type { Prisma } from '@prisma/client';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Copy,
@@ -19,6 +19,7 @@ import { api } from '@/components/providers';
 import { PageLoader } from '@/components/ui/page-loader';
 import { cn } from '@/lib/utils';
 import { buildDiscoverPath } from '@/lib/prospect-url';
+import { RerunLoadingScreen } from '@/components/features/research/rerun-loading-screen';
 
 // ─────────────────────────────────────────────────────────────────────
 // Prospect Detail — Editorial layout (Fase A Step 3)
@@ -451,6 +452,32 @@ export default function ProspectDetail() {
 
   const prospectQuery = api.admin.getProspect.useQuery({ id });
   const runsQuery = api.research.listRuns.useQuery({ prospectId: id });
+
+  const activeRun = api.research.getActiveStatusByProspectId.useQuery(
+    { prospectId: id },
+    {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      refetchInterval: (q: any) => (q.state.data?.isActive ? 5000 : false),
+      refetchOnWindowFocus: true,
+    },
+  );
+
+  const refetchProspect = prospectQuery.refetch;
+  const refetchRuns = runsQuery.refetch;
+  const wasActiveRef = useRef(false);
+  useEffect(() => {
+    const isActive = activeRun.data?.isActive ?? false;
+    if (isActive) {
+      wasActiveRef.current = true;
+      return;
+    }
+    if (wasActiveRef.current) {
+      wasActiveRef.current = false;
+      void refetchProspect();
+      void refetchRuns();
+    }
+  }, [activeRun.data?.isActive, refetchProspect, refetchRuns]);
+
   const enrichMut = api.admin.enrichProspect.useMutation({
     onSuccess: () => {
       void prospectQuery.refetch();
@@ -727,189 +754,199 @@ export default function ProspectDetail() {
         />
       </section>
 
-      {/* Main grid: facts · activity · actions */}
-      <div className="grid grid-cols-[260px_minmax(0,1fr)_240px] gap-10">
-        {/* Left: facts */}
-        <aside className="space-y-2">
-          <Eyebrow>Feiten</Eyebrow>
-          <dl className="space-y-2 pt-1">
-            {p.domain ? (
-              <FactsRow k="Domein">
-                <a
-                  href={`https://${p.domain}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 border-b border-[var(--color-border-strong)] hover:border-[var(--color-ink)]"
-                >
-                  {p.domain}
-                  <ExternalLink className="h-2.5 w-2.5" strokeWidth={2} />
-                </a>
-              </FactsRow>
-            ) : null}
-            {p.industry ? (
-              <FactsRow k="Industrie">
-                {p.industry}
-                {p.subIndustry ? ` / ${p.subIndustry}` : ''}
-              </FactsRow>
-            ) : null}
-            {location ? <FactsRow k="Locatie">{location}</FactsRow> : null}
-            {employees ? <FactsRow k="Team">{employees}</FactsRow> : null}
-            {p.foundedYear ? (
-              <FactsRow k="Opgericht">{p.foundedYear}</FactsRow>
-            ) : null}
-            {p.linkedinUrl ? (
-              <FactsRow k="LinkedIn">
-                <a
-                  href={p.linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 border-b border-[var(--color-border-strong)] hover:border-[var(--color-ink)]"
-                >
-                  Bekijk
-                  <ExternalLink className="h-2.5 w-2.5" strokeWidth={2} />
-                </a>
-              </FactsRow>
-            ) : null}
-            {p.lastEnrichedAt ? (
-              <FactsRow k="Verrijkt">
-                {new Date(p.lastEnrichedAt).toLocaleDateString('nl-NL')}
-              </FactsRow>
-            ) : null}
-          </dl>
+      {/* Main grid: facts · activity · actions — replaced by loading state during active run */}
+      {activeRun.data?.isActive ? (
+        <div className="py-12">
+          <RerunLoadingScreen
+            variant="inline"
+            currentStep={activeRun.data.currentStep}
+            currentStatus={activeRun.data.status}
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-[260px_minmax(0,1fr)_240px] gap-10">
+          {/* Left: facts */}
+          <aside className="space-y-2">
+            <Eyebrow>Feiten</Eyebrow>
+            <dl className="space-y-2 pt-1">
+              {p.domain ? (
+                <FactsRow k="Domein">
+                  <a
+                    href={`https://${p.domain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 border-b border-[var(--color-border-strong)] hover:border-[var(--color-ink)]"
+                  >
+                    {p.domain}
+                    <ExternalLink className="h-2.5 w-2.5" strokeWidth={2} />
+                  </a>
+                </FactsRow>
+              ) : null}
+              {p.industry ? (
+                <FactsRow k="Industrie">
+                  {p.industry}
+                  {p.subIndustry ? ` / ${p.subIndustry}` : ''}
+                </FactsRow>
+              ) : null}
+              {location ? <FactsRow k="Locatie">{location}</FactsRow> : null}
+              {employees ? <FactsRow k="Team">{employees}</FactsRow> : null}
+              {p.foundedYear ? (
+                <FactsRow k="Opgericht">{p.foundedYear}</FactsRow>
+              ) : null}
+              {p.linkedinUrl ? (
+                <FactsRow k="LinkedIn">
+                  <a
+                    href={p.linkedinUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 border-b border-[var(--color-border-strong)] hover:border-[var(--color-ink)]"
+                  >
+                    Bekijk
+                    <ExternalLink className="h-2.5 w-2.5" strokeWidth={2} />
+                  </a>
+                </FactsRow>
+              ) : null}
+              {p.lastEnrichedAt ? (
+                <FactsRow k="Verrijkt">
+                  {new Date(p.lastEnrichedAt).toLocaleDateString('nl-NL')}
+                </FactsRow>
+              ) : null}
+            </dl>
 
-          {/* Dossier quick links — stand-in for sub-routes */}
-          <div className="pt-8">
-            <Eyebrow>Dossier</Eyebrow>
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <DossierLink
-                href={`/admin/prospects/${id}/evidence`}
-                label="Evidence"
-                count={evidenceCount}
-              />
-              <DossierLink
-                href={`/admin/prospects/${id}/analyse`}
-                label="Analyse"
-              />
-              <DossierLink
-                href={`/admin/prospects/${id}/outreach`}
-                label="Outreach"
-                disabled
-              />
-              <DossierLink
-                href={`/admin/prospects/${id}/resultaten`}
-                label="Resultaten"
-                disabled
-              />
+            {/* Dossier quick links — stand-in for sub-routes */}
+            <div className="pt-8">
+              <Eyebrow>Dossier</Eyebrow>
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <DossierLink
+                  href={`/admin/prospects/${id}/evidence`}
+                  label="Evidence"
+                  count={evidenceCount}
+                />
+                <DossierLink
+                  href={`/admin/prospects/${id}/analyse`}
+                  label="Analyse"
+                />
+                <DossierLink
+                  href={`/admin/prospects/${id}/outreach`}
+                  label="Outreach"
+                  disabled
+                />
+                <DossierLink
+                  href={`/admin/prospects/${id}/resultaten`}
+                  label="Resultaten"
+                  disabled
+                />
+              </div>
             </div>
-          </div>
-        </aside>
+          </aside>
 
-        {/* Center: activity */}
-        <main>
-          <Eyebrow className="mb-4">Activiteit</Eyebrow>
-          <div className="flex gap-1.5 mb-5">
-            {feedTabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setFeedFilter(tab.id)}
-                className={cn(
-                  'px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded border transition-all',
-                  feedFilter === tab.id
-                    ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
-                    : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          {visibleEvents.length === 0 ? (
-            <p className="py-12 text-center text-[13px] text-[var(--color-muted)]">
-              Geen events{' '}
-              {feedFilter !== 'ALL' ? `in filter "${feedFilter}"` : 'nog'}.
-            </p>
-          ) : (
-            <div>
-              {visibleEvents.map((event) => (
-                <ActivityRow key={event.id} event={event} />
+          {/* Center: activity */}
+          <main>
+            <Eyebrow className="mb-4">Activiteit</Eyebrow>
+            <div className="flex gap-1.5 mb-5">
+              {feedTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setFeedFilter(tab.id)}
+                  className={cn(
+                    'px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded border transition-all',
+                    feedFilter === tab.id
+                      ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                      : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
+                  )}
+                >
+                  {tab.label}
+                </button>
               ))}
             </div>
-          )}
-        </main>
+            {visibleEvents.length === 0 ? (
+              <p className="py-12 text-center text-[13px] text-[var(--color-muted)]">
+                Geen events{' '}
+                {feedFilter !== 'ALL' ? `in filter "${feedFilter}"` : 'nog'}.
+              </p>
+            ) : (
+              <div>
+                {visibleEvents.map((event) => (
+                  <ActivityRow key={event.id} event={event} />
+                ))}
+              </div>
+            )}
+          </main>
 
-        {/* Right: actions + contacts */}
-        <aside className="space-y-8">
-          <div className="space-y-2.5">
-            <Eyebrow>Acties</Eyebrow>
-            <div className="space-y-1.5 pt-1">
-              <ActionRow
-                icon={RefreshCw}
-                label="Re-enrich"
-                onClick={() => enrichMut.mutate({ id })}
-              />
-              <ActionRow
-                icon={Play}
-                label="Nieuwe run"
-                kbd="⌘R"
-                onClick={() => runResearchMut.mutate({ id })}
-              />
-              <ActionRow
-                icon={PenLine}
-                label="Genereer analyse"
-                onClick={() => runAnalysisMut.mutate({ id })}
-              />
-              <ActionRow
-                icon={Send}
-                label="Start outreach"
-                kbd="⌘↵"
-                variant="gold"
-                onClick={() => router.push(`/admin/prospects/${id}/outreach`)}
-              />
+          {/* Right: actions + contacts */}
+          <aside className="space-y-8">
+            <div className="space-y-2.5">
+              <Eyebrow>Acties</Eyebrow>
+              <div className="space-y-1.5 pt-1">
+                <ActionRow
+                  icon={RefreshCw}
+                  label="Re-enrich"
+                  onClick={() => enrichMut.mutate({ id })}
+                />
+                <ActionRow
+                  icon={Play}
+                  label="Nieuwe run"
+                  kbd="⌘R"
+                  onClick={() => runResearchMut.mutate({ id })}
+                />
+                <ActionRow
+                  icon={PenLine}
+                  label="Genereer analyse"
+                  onClick={() => runAnalysisMut.mutate({ id })}
+                />
+                <ActionRow
+                  icon={Send}
+                  label="Start outreach"
+                  kbd="⌘↵"
+                  variant="gold"
+                  onClick={() => router.push(`/admin/prospects/${id}/outreach`)}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-2.5">
-            <Eyebrow>Contacts · {p.contacts?.length ?? 0}</Eyebrow>
-            <div className="space-y-0.5 pt-1">
-              {(p.contacts ?? []).slice(0, 5).map((c, i) => {
-                const name = [c.firstName, c.lastName]
-                  .filter(Boolean)
-                  .join(' ');
-                const initials = name
-                  .split(/\s+/)
-                  .map((s) => s[0])
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .join('')
-                  .toUpperCase();
-                const accents = [
-                  undefined,
-                  '#3d5f82',
-                  '#4a7a52',
-                  '#6e4780',
-                  '#b45a3b',
-                ];
-                return (
-                  <ContactRow
-                    key={c.id}
-                    initials={initials || '??'}
-                    name={name || c.primaryEmail || 'Onbekend'}
-                    role={c.jobTitle ?? '—'}
-                    isPrimary={i === 0}
-                    accent={accents[i % accents.length]}
-                  />
-                );
-              })}
-              {(p.contacts?.length ?? 0) === 0 ? (
-                <p className="text-[12px] text-[var(--color-muted)] px-2.5 py-2">
-                  Nog geen contacts.
-                </p>
-              ) : null}
+            <div className="space-y-2.5">
+              <Eyebrow>Contacts · {p.contacts?.length ?? 0}</Eyebrow>
+              <div className="space-y-0.5 pt-1">
+                {(p.contacts ?? []).slice(0, 5).map((c, i) => {
+                  const name = [c.firstName, c.lastName]
+                    .filter(Boolean)
+                    .join(' ');
+                  const initials = name
+                    .split(/\s+/)
+                    .map((s) => s[0])
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .join('')
+                    .toUpperCase();
+                  const accents = [
+                    undefined,
+                    '#3d5f82',
+                    '#4a7a52',
+                    '#6e4780',
+                    '#b45a3b',
+                  ];
+                  return (
+                    <ContactRow
+                      key={c.id}
+                      initials={initials || '??'}
+                      name={name || c.primaryEmail || 'Onbekend'}
+                      role={c.jobTitle ?? '—'}
+                      isPrimary={i === 0}
+                      accent={accents[i % accents.length]}
+                    />
+                  );
+                })}
+                {(p.contacts?.length ?? 0) === 0 ? (
+                  <p className="text-[12px] text-[var(--color-muted)] px-2.5 py-2">
+                    Nog geen contacts.
+                  </p>
+                ) : null}
+              </div>
             </div>
-          </div>
-        </aside>
-      </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
