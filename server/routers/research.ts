@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { adminProcedure, router } from '../trpc';
+import { adminProcedure, publicProcedure, router } from '../trpc';
 import {
   executeResearchRun,
   manualUrlsFromSnapshot,
@@ -19,6 +19,8 @@ import {
   type ResearchUrlCandidate,
 } from '@/lib/enrichment/url-selection';
 import type { Prisma } from '@prisma/client';
+import { currentStepLabel, isActiveStatus } from '@/lib/research/status-labels';
+import { discoverLookupCandidates } from '@/lib/prospect-url';
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -111,6 +113,77 @@ export const researchRouter = router({
         deepCrawl: input.deepCrawl,
         hypothesisModel: input.hypothesisModel,
       });
+    }),
+
+  getActiveStatusByProspectId: adminProcedure
+    .input(z.object({ prospectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const run = await ctx.db.researchRun.findFirst({
+        where: { prospectId: input.prospectId },
+        orderBy: { createdAt: 'desc' },
+        select: { status: true, startedAt: true },
+      });
+      if (!run) {
+        return {
+          isActive: false,
+          status: null,
+          currentStep: null,
+          startedAt: null,
+        };
+      }
+      return {
+        isActive: isActiveStatus(run.status),
+        status: run.status,
+        currentStep: currentStepLabel(run.status),
+        startedAt: run.startedAt,
+      };
+    }),
+
+  getActiveStatusBySlug: publicProcedure
+    .input(z.object({ slug: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const candidates = discoverLookupCandidates(input.slug);
+      if (candidates.length === 0) {
+        return {
+          isActive: false,
+          status: null,
+          currentStep: null,
+          startedAt: null,
+        };
+      }
+      const prospect = await ctx.db.prospect.findFirst({
+        where: {
+          OR: candidates.flatMap((c) => [{ slug: c }, { readableSlug: c }]),
+        },
+        select: { id: true },
+      });
+      if (!prospect) {
+        return {
+          isActive: false,
+          status: null,
+          currentStep: null,
+          startedAt: null,
+        };
+      }
+      const run = await ctx.db.researchRun.findFirst({
+        where: { prospectId: prospect.id },
+        orderBy: { createdAt: 'desc' },
+        select: { status: true, startedAt: true },
+      });
+      if (!run) {
+        return {
+          isActive: false,
+          status: null,
+          currentStep: null,
+          startedAt: null,
+        };
+      }
+      return {
+        isActive: isActiveStatus(run.status),
+        status: run.status,
+        currentStep: currentStepLabel(run.status),
+        startedAt: run.startedAt,
+      };
     }),
 
   retryRun: adminProcedure
