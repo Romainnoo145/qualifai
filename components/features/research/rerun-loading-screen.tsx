@@ -1,5 +1,7 @@
 'use client';
 
+import { cn } from '@/lib/utils';
+
 interface Props {
   variant?: 'full' | 'inline';
   currentStep?: string | null;
@@ -10,11 +12,10 @@ export function RerunLoadingScreen({ variant = 'inline', currentStep }: Props) {
 
   return (
     <div
-      className={
-        isFull
-          ? 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-ink)]'
-          : 'flex items-center justify-center py-24'
-      }
+      className={cn(
+        'flex items-center justify-center',
+        isFull ? 'fixed inset-0 z-50 bg-[var(--color-ink)]' : 'py-24',
+      )}
       role="status"
       aria-live="polite"
     >
@@ -22,23 +23,23 @@ export function RerunLoadingScreen({ variant = 'inline', currentStep }: Props) {
         <Spinner inverted={isFull} />
         <div className="flex flex-col gap-2">
           <h2
-            className={
-              'font-["Sora"] text-2xl font-medium ' +
-              (isFull ? 'text-white' : 'text-[var(--color-ink)]')
-            }
+            className={cn(
+              'text-2xl font-medium',
+              isFull ? 'text-white' : 'text-[var(--color-ink)]',
+            )}
           >
             Analyse wordt bijgewerkt
           </h2>
           <p
-            className={
-              'font-["Sora"] text-sm font-light ' +
-              (isFull ? 'text-white/70' : 'text-[var(--color-muted)]')
-            }
+            className={cn(
+              'text-sm font-light',
+              isFull ? 'text-white/70' : 'text-[var(--color-muted)]',
+            )}
           >
             Dit duurt een paar minuten.
           </p>
           {currentStep ? (
-            <p className="mt-3 font-['Sora'] text-xs font-medium uppercase tracking-[0.14em] text-[var(--color-gold)]">
+            <p className="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-[var(--color-gold)]">
               {currentStep}
             </p>
           ) : null}
