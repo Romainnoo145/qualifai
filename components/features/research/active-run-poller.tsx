@@ -28,6 +28,9 @@ export function ActiveRunPoller({ slug }: Props) {
 
   const data = query.data;
 
+  // React Query returns a fresh data object on each poll, so this effect runs every
+  // 5s while active. The wasActiveRef ensures router.refresh() fires exactly once on
+  // the active→inactive transition and not on subsequent inactive observations.
   useEffect(() => {
     if (!data) return;
     if (data.isActive) {
@@ -40,7 +43,14 @@ export function ActiveRunPoller({ slug }: Props) {
     }
   }, [data, router]);
 
-  if (!data?.isActive) return null;
+  // Optimistic render: parent only mounts us when SSR says active.
+  // Show loading until poll confirms otherwise — avoids a blank flash on first paint.
+  if (data && !data.isActive) return null;
 
-  return <RerunLoadingScreen variant="full" currentStep={data.currentStep} />;
+  return (
+    <RerunLoadingScreen
+      variant="full"
+      currentStep={data?.currentStep ?? null}
+    />
+  );
 }
