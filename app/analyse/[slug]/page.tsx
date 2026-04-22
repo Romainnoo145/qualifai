@@ -9,7 +9,8 @@ import {
   buildDiscoverSlug,
   discoverLookupCandidates,
 } from '@/lib/prospect-url';
-import { statusLabel } from '@/lib/research/status-labels';
+import { statusLabel, isActiveStatus } from '@/lib/research/status-labels';
+import { ActiveRunPoller } from '@/components/features/research/active-run-poller';
 import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
@@ -260,6 +261,12 @@ export default async function DiscoverPage({ params }: Props) {
 
   if (!prospect || prospect.status === 'ARCHIVED') {
     notFound();
+  }
+
+  const latestRunStatus = prospect.researchRuns?.[0]?.status ?? null;
+
+  if (isActiveStatus(latestRunStatus)) {
+    return <ActiveRunPoller slug={discoverParam} />;
   }
 
   // Fetch latest AI master analysis for all project types
