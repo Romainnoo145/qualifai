@@ -134,11 +134,21 @@ export default function ProspectList() {
 
 function AllCompanies() {
   const prospects = api.admin.listProspects.useQuery(undefined, {
+    // Poll every 10s while at least one row has an active research run.
+    // Note: once this returns `false`, the interval only re-engages when the query
+    // settles again (e.g., focus-refetch). Reruns started in another tab without
+    // refocus will only show up on the next settle event.
+    // TODO: tRPC v11 inference — q must be `any` to avoid TS2589 deep instantiation
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     refetchInterval: (q: any) => {
-      const rows = (q.state.data ?? []) as Array<{
-        researchRuns?: Array<{ status?: string | null }>;
-      }>;
+      const data = q.state.data as
+        | {
+            prospects?: Array<{
+              researchRuns?: Array<{ status?: string | null }>;
+            }>;
+          }
+        | undefined;
+      const rows = data?.prospects ?? [];
       const anyActive = rows.some((r) =>
         isActiveStatus(r.researchRuns?.[0]?.status),
       );
