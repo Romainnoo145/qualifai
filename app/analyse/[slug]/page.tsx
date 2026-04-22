@@ -9,6 +9,7 @@ import {
   buildDiscoverSlug,
   discoverLookupCandidates,
 } from '@/lib/prospect-url';
+import { statusLabel } from '@/lib/research/status-labels';
 import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
@@ -59,28 +60,6 @@ function formatDateLabel(date: Date | null | undefined): string | null {
     year: 'numeric',
     timeZone: 'Europe/Amsterdam',
   }).format(date);
-}
-
-function statusLabel(status: string | null | undefined): string | null {
-  if (!status) return null;
-  switch (status) {
-    case 'PENDING':
-      return 'Onderzoek gestart';
-    case 'CRAWLING':
-      return 'Bronnen verzamelen';
-    case 'EXTRACTING':
-      return 'Data-extractie';
-    case 'HYPOTHESIS':
-      return 'Hypotheses opstellen';
-    case 'BRIEFING':
-      return 'Briefing opstellen';
-    case 'COMPLETED':
-      return 'Onderzoek afgerond';
-    case 'FAILED':
-      return 'Onderzoek update nodig';
-    default:
-      return status;
-  }
 }
 
 function enrichmentLabel(strategy: unknown): string | null {
