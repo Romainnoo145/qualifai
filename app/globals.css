@@ -523,6 +523,26 @@
   }
 }
 
+@keyframes klarifai-pulse {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-klarifai-pulse {
+  animation: klarifai-pulse 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-klarifai-pulse {
+    animation: none;
+  }
+}
+
 /* Tabular numbers for data alignment — no mono font, just the OpenType feature */
 .text-data {
   font-variant-numeric: tabular-nums;
