@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/components/providers';
 import { PageLoader } from '@/components/ui/page-loader';
+import { RerunLoadingScreen } from '@/components/features/research/rerun-loading-screen';
 import { SubRouteShell } from '../_shared/sub-route-shell';
 import type { NarrativeAnalysis, NarrativeSection } from '@/lib/analysis/types';
 
@@ -129,16 +131,46 @@ export default function AnalysePage() {
 
   // TODO: tRPC v11 inference — getAnalysis return type too deep for TS
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: analysis, isLoading } = (api.admin.getAnalysis as any).useQuery(
+  const analysisQuery = (api.admin.getAnalysis as any).useQuery({
+    prospectId: id,
+  }) as {
+    data: AnalysisRow | null | undefined;
+    isLoading: boolean;
+    refetch?: () => Promise<unknown>;
+  };
+  const { data: analysis, isLoading } = analysisQuery;
+
+  const activeRun = api.research.getActiveStatusByProspectId.useQuery(
+    { prospectId: id },
     {
-      prospectId: id,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      refetchInterval: (q: any) => (q.state.data?.isActive ? 5000 : false),
+      refetchOnWindowFocus: true,
     },
-  ) as { data: AnalysisRow | null | undefined; isLoading: boolean };
+  );
+
+  const wasActiveRef = useRef(false);
+  useEffect(() => {
+    const isActive = activeRun.data?.isActive ?? false;
+    if (isActive) {
+      wasActiveRef.current = true;
+      return;
+    }
+    if (wasActiveRef.current && !isActive) {
+      wasActiveRef.current = false;
+      void analysisQuery.refetch?.();
+    }
+  }, [activeRun.data?.isActive, analysisQuery]);
 
   return (
     <SubRouteShell active="analyse">
       {isLoading ? (
         <PageLoader label="Analyse laden" description="Narrative ophalen." />
+      ) : activeRun.data?.isActive ? (
+        <RerunLoadingScreen
+          variant="inline"
+          currentStep={activeRun.data.currentStep}
+        />
       ) : !analysis ? (
         <div className="py-16 text-center">
           <p className="text-[15px] text-[var(--color-muted-dark)]">
