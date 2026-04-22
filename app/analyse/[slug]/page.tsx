@@ -13,6 +13,7 @@ import { statusLabel, isActiveStatus } from '@/lib/research/status-labels';
 import { ActiveRunPoller } from '@/components/features/research/active-run-poller';
 import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
+import { PUBLIC_VISIBLE_STATUSES } from '@/lib/constants/prospect-statuses';
 
 export const dynamic = 'force-dynamic';
 
@@ -259,13 +260,16 @@ export default async function DiscoverPage({ params }: Props) {
     },
   });
 
-  if (!prospect || prospect.status === 'ARCHIVED') {
+  if (
+    !prospect ||
+    !(PUBLIC_VISIBLE_STATUSES as readonly string[]).includes(prospect.status)
+  ) {
     notFound();
   }
 
-  const latestRunStatus = prospect.researchRuns?.[0]?.status ?? null;
+  const latestRun = prospect.researchRuns[0] ?? null;
 
-  if (isActiveStatus(latestRunStatus)) {
+  if (isActiveStatus(latestRun?.status ?? null)) {
     return <ActiveRunPoller slug={discoverParam} />;
   }
 
@@ -299,13 +303,12 @@ export default async function DiscoverPage({ params }: Props) {
   const confidence = asRecord(enrichment?.confidence);
   const kvk = asRecord(enrichment?.kvk);
 
-  const latestAnyRun = prospect.researchRuns[0] ?? null;
   const latestCompletedRun =
     prospect.researchRuns.find((run) => run.status === 'COMPLETED') ?? null;
-  const latestRun = latestCompletedRun ?? latestAnyRun;
-  const latestRunSummary = asRecord(latestRun?.summary);
+  const latestRunWithData = latestCompletedRun ?? latestRun;
+  const latestRunSummary = asRecord(latestRunWithData?.summary);
   const rawEvidenceItems: DiscoverEvidenceItem[] =
-    latestRun?.evidenceItems.map((item) => ({
+    latestRunWithData?.evidenceItems.map((item) => ({
       id: item.id,
       sourceType: item.sourceType,
       sourceUrl: item.sourceUrl,
@@ -338,13 +341,15 @@ export default async function DiscoverPage({ params }: Props) {
     kvkLegalForm:
       typeof kvk?.rechtsvorm === 'string' ? (kvk.rechtsvorm as string) : null,
     lastUpdateLabel:
-      formatDateLabel(latestRun?.completedAt) ??
+      formatDateLabel(latestRunWithData?.completedAt) ??
       formatDateLabel(prospect.lastEnrichedAt),
-    researchStatusLabel: statusLabel(latestAnyRun?.status ?? latestRun?.status),
+    researchStatusLabel: statusLabel(
+      latestRun?.status ?? latestRunWithData?.status,
+    ),
     qualityLabel:
-      latestRun?.qualityApproved === true
+      latestRunWithData?.qualityApproved === true
         ? 'Kwaliteitscheck akkoord'
-        : latestRun?.qualityApproved === false
+        : latestRunWithData?.qualityApproved === false
           ? 'Kwaliteitscheck in review'
           : null,
     evidenceCount: prospect._count.evidenceItems,
