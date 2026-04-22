@@ -12,7 +12,7 @@ export function RerunLoadingScreen({ variant = 'inline', currentStep }: Props) {
     <div
       className={
         isFull
-          ? 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-navy)]'
+          ? 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-ink)]'
           : 'flex items-center justify-center py-24'
       }
       role="status"
