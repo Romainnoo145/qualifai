@@ -2,7 +2,7 @@
 
 import type { Prisma } from '@prisma/client';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
@@ -20,6 +20,10 @@ import { PageLoader } from '@/components/ui/page-loader';
 import { cn } from '@/lib/utils';
 import { buildDiscoverPath } from '@/lib/prospect-url';
 import { RerunLoadingScreen } from '@/components/features/research/rerun-loading-screen';
+import {
+  ProspectDetailLoadingB,
+  ProspectDetailLoadingC,
+} from '@/components/features/research/prospect-detail-loading';
 
 // ─────────────────────────────────────────────────────────────────────
 // Prospect Detail — Editorial layout (Fase A Step 3)
@@ -449,6 +453,9 @@ export default function ProspectDetail() {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const previewVariant = searchParams.get('preview');
+  const isPreviewMode = previewVariant === 'B' || previewVariant === 'C';
 
   const utils = api.useUtils();
 
@@ -763,7 +770,15 @@ export default function ProspectDetail() {
       </section>
 
       {/* Main grid: facts · activity · actions — replaced by loading state during active run */}
-      {activeRun.data?.isActive ? (
+      {isPreviewMode ? (
+        <div className="py-12">
+          {previewVariant === 'B' ? (
+            <ProspectDetailLoadingB currentStatus="CRAWLING" />
+          ) : (
+            <ProspectDetailLoadingC currentStatus="CRAWLING" />
+          )}
+        </div>
+      ) : activeRun.data?.isActive ? (
         <div className="py-12">
           <RerunLoadingScreen
             variant="inline"
