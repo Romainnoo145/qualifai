@@ -6,18 +6,8 @@ import { cn } from '@/lib/utils';
 import {
   ACTIVE_RESEARCH_STATUSES,
   statusLabel,
+  type ActiveResearchStatus,
 } from '@/lib/research/status-labels';
-
-// Ordered list of phases used by PhaseProgress
-const PHASES = ACTIVE_RESEARCH_STATUSES;
-
-const PHASE_MARKER_LABELS: Record<(typeof PHASES)[number], string> = {
-  PENDING: 'Start',
-  CRAWLING: 'Bronnen',
-  EXTRACTING: 'Extract',
-  HYPOTHESIS: 'Hypothese',
-  BRIEFING: 'Briefing',
-};
 
 interface Props {
   variant?: 'full' | 'inline';
@@ -57,18 +47,20 @@ export function RerunLoadingScreen({
           >
             Analyse wordt bijgewerkt
           </h2>
-          <p
-            className={cn(
-              'text-sm font-light',
-              isFull ? 'text-white/70' : 'text-[var(--color-muted)]',
-            )}
-          >
-            Dit duurt een paar minuten.
-          </p>
         </div>
 
-        {/* Phase progress visual */}
-        <PhaseProgress status={currentStatus ?? null} inverted={isFull} />
+        {/* Progress ring visual */}
+        <ProgressRing variant={variant} currentStatus={currentStatus ?? null} />
+
+        {/* Subtext below ring */}
+        <p
+          className={cn(
+            'text-sm font-light',
+            isFull ? 'text-white/70' : 'text-[var(--color-muted)]',
+          )}
+        >
+          Dit duurt een paar minuten.
+        </p>
 
         {/* Dynamic step label — crossfades on change */}
         <AnimatePresence mode="wait">
@@ -84,7 +76,7 @@ export function RerunLoadingScreen({
               currentStep ? 'text-[var(--color-gold)]' : 'opacity-0',
             )}
           >
-            {currentStep ?? ' '}
+            {currentStep ?? ' '}
           </motion.p>
         </AnimatePresence>
       </div>
@@ -93,166 +85,164 @@ export function RerunLoadingScreen({
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// PhaseProgress — horizontal 5-phase indicator
+// ProgressRing — circular SVG progress meter
 // ─────────────────────────────────────────────────────────────────────
 
-function PhaseProgress({
-  status,
-  inverted,
+const RADIUS = 44;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+function ProgressRing({
+  variant,
+  currentStatus,
 }: {
-  status: ResearchStatus | null;
-  inverted: boolean;
+  variant: 'full' | 'inline';
+  currentStatus: ResearchStatus | null;
 }) {
   const shouldReduceMotion = useReducedMotion();
+  const isFull = variant === 'full';
 
-  // Resolve current phase index (null = unknown / not active)
-  const currentIdx = status ? PHASES.findIndex((p) => p === status) : -1;
+  // Resolve phase index; -1 means unknown / not active
+  const phaseIndex = currentStatus
+    ? ACTIVE_RESEARCH_STATUSES.indexOf(currentStatus as ActiveResearchStatus)
+    : -1;
 
-  // Fall back: status is null or not in active list — show simple pulse
-  if (currentIdx === -1) {
+  const size = isFull ? 220 : 160;
+
+  // Fallback: no valid phase — pulsing dot
+  if (phaseIndex === -1) {
     return (
-      <div className="flex items-center justify-center h-10">
+      <div
+        className="flex items-center justify-center"
+        style={{ width: size, height: size }}
+        aria-hidden="true"
+      >
         <motion.div
-          className="h-2 w-2 rounded-full bg-[var(--color-gold)]"
-          animate={shouldReduceMotion ? {} : { opacity: [0.4, 1, 0.4] }}
+          className="h-3 w-3 rounded-full bg-[var(--color-gold)]"
+          animate={
+            shouldReduceMotion
+              ? {}
+              : { scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6] }
+          }
           transition={
             shouldReduceMotion
               ? {}
-              : { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }
+              : { duration: 1.4, repeat: Infinity, ease: 'easeInOut' }
           }
         />
       </div>
     );
   }
 
+  const progress = (phaseIndex + 1) / ACTIVE_RESEARCH_STATUSES.length;
+  const dashOffset = CIRCUMFERENCE * (1 - progress);
+  const stepNumber = phaseIndex + 1;
+  const totalSteps = ACTIVE_RESEARCH_STATUSES.length;
+  const label = statusLabel(currentStatus);
+
   return (
-    <div className="w-full" aria-hidden="true">
-      {/* Dot row with connecting lines */}
-      <div className="relative flex items-center justify-between">
-        {/* Background connecting track */}
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-[var(--color-gold)]/15" />
+    <div
+      className="relative"
+      style={{ width: size, height: size }}
+      aria-hidden="true"
+    >
+      {/* SVG ring layers */}
+      <svg
+        viewBox="0 0 100 100"
+        width={size}
+        height={size}
+        style={{ display: 'block' }}
+      >
+        {/* 1. Background ring */}
+        <circle
+          cx="50"
+          cy="50"
+          r={RADIUS}
+          fill="none"
+          stroke="var(--color-gold)"
+          strokeOpacity={0.15}
+          strokeWidth={4}
+        />
 
-        {/* Per-segment fills between dots */}
-        {PHASES.slice(0, -1).map((_, segIdx) => {
-          const isPastSegment = segIdx < currentIdx;
-          const isCurrentSegment = segIdx === currentIdx - 1;
-          const segWidth = 100 / (PHASES.length - 1);
-          const leftPct = segIdx * segWidth;
+        {/* 2. Progress arc */}
+        {shouldReduceMotion ? (
+          <circle
+            cx="50"
+            cy="50"
+            r={RADIUS}
+            fill="none"
+            stroke="var(--color-gold)"
+            strokeWidth={4}
+            strokeLinecap="round"
+            transform="rotate(-90 50 50)"
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={dashOffset}
+          />
+        ) : (
+          <motion.circle
+            cx="50"
+            cy="50"
+            r={RADIUS}
+            fill="none"
+            stroke="var(--color-gold)"
+            strokeWidth={4}
+            strokeLinecap="round"
+            transform="rotate(-90 50 50)"
+            strokeDasharray={CIRCUMFERENCE}
+            animate={{ strokeDashoffset: dashOffset }}
+            initial={{ strokeDashoffset: CIRCUMFERENCE }}
+            transition={{ duration: 1.2, ease: 'easeInOut' }}
+          />
+        )}
 
-          return (
-            <div
-              key={segIdx}
-              className="absolute top-1/2 -translate-y-1/2 h-px overflow-hidden"
-              style={{
-                left: `${leftPct}%`,
-                width: `${segWidth}%`,
-              }}
+        {/* 3. Continuous rotating accent (skip when reduced motion) */}
+        {!shouldReduceMotion && (
+          <motion.circle
+            cx="50"
+            cy="50"
+            r={RADIUS}
+            fill="none"
+            stroke="var(--color-gold)"
+            strokeOpacity={0.4}
+            strokeWidth={2}
+            strokeDasharray={`${CIRCUMFERENCE * 0.12} ${CIRCUMFERENCE * 0.88}`}
+            style={{ transformOrigin: '50px 50px' }}
+            animate={{ rotate: [0, 360] }}
+            transition={{ duration: 2.4, ease: 'linear', repeat: Infinity }}
+          />
+        )}
+      </svg>
+
+      {/* Center text overlay */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+        {/* "X / 5" */}
+        <span
+          className={cn(
+            'font-medium leading-none',
+            isFull ? 'text-3xl text-white' : 'text-2xl text-[var(--color-ink)]',
+          )}
+        >
+          {stepNumber} / {totalSteps}
+        </span>
+
+        {/* Dutch phase label — crossfades on transition */}
+        {shouldReduceMotion ? (
+          <span className="text-xs font-normal uppercase tracking-[0.14em] text-[var(--color-gold)]">
+            {label}
+          </span>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={label}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.3 }}
+              className="text-xs font-normal uppercase tracking-[0.14em] text-[var(--color-gold)]"
             >
-              {isPastSegment ? (
-                <div className="h-full w-full bg-[var(--color-gold)]" />
-              ) : isCurrentSegment ? (
-                <motion.div
-                  className="h-full bg-[var(--color-gold)] origin-left"
-                  initial={shouldReduceMotion ? { scaleX: 1 } : { scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={
-                    shouldReduceMotion ? {} : { duration: 8, ease: 'linear' }
-                  }
-                />
-              ) : (
-                <div className="h-full w-full bg-[var(--color-gold)]/15" />
-              )}
-            </div>
-          );
-        })}
-
-        {/* Phase dots */}
-        {PHASES.map((phase, idx) => {
-          const isPast = idx < currentIdx;
-          const isCurrent = idx === currentIdx;
-
-          return (
-            <div
-              key={phase}
-              className="relative z-10 flex flex-col items-center"
-            >
-              {isCurrent ? (
-                <motion.div
-                  className="h-2 w-2 rounded-full bg-[var(--color-gold)]"
-                  animate={
-                    shouldReduceMotion
-                      ? {}
-                      : {
-                          scale: [1, 1.4, 1],
-                          opacity: [0.7, 1, 0.7],
-                        }
-                  }
-                  transition={
-                    shouldReduceMotion
-                      ? {}
-                      : {
-                          duration: 1.6,
-                          repeat: Infinity,
-                          ease: 'easeInOut',
-                        }
-                  }
-                />
-              ) : isPast ? (
-                <div className="h-2 w-2 rounded-full bg-[var(--color-gold)]" />
-              ) : (
-                <div className="h-2 w-2 rounded-full bg-[var(--color-gold)]/15 border border-[var(--color-gold)]/30" />
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Label row — gap-3 below dot row */}
-      <div className="mt-3 flex items-start justify-between">
-        {PHASES.map((phase, idx) => {
-          const isPast = idx < currentIdx;
-          const isCurrent = idx === currentIdx;
-
-          return (
-            <span
-              key={phase}
-              className={cn(
-                'text-[10px] font-medium uppercase tracking-[0.14em] text-center',
-                isCurrent
-                  ? 'text-[var(--color-gold)]'
-                  : isPast
-                    ? inverted
-                      ? 'text-white/40'
-                      : 'text-[var(--color-muted)]'
-                    : inverted
-                      ? 'text-white/25'
-                      : 'text-[var(--color-muted)]/50',
-              )}
-              style={{ width: `${100 / PHASES.length}%` }}
-            >
-              {PHASE_MARKER_LABELS[phase]}
-            </span>
-          );
-        })}
-      </div>
-
-      {/* Dynamic phase description label — crossfades on status change */}
-      <div className="mt-2">
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={status ?? 'idle'}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className={cn(
-              'text-[11px] font-light',
-              inverted ? 'text-white/50' : 'text-[var(--color-muted)]',
-            )}
-          >
-            {statusLabel(status) ?? ' '}
-          </motion.p>
-        </AnimatePresence>
+              {label}
+            </motion.span>
+          </AnimatePresence>
+        )}
       </div>
     </div>
   );

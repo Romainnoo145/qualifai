@@ -450,6 +450,8 @@ export default function ProspectDetail() {
   const id = params.id as string;
   const router = useRouter();
 
+  const utils = api.useUtils();
+
   const prospectQuery = api.admin.getProspect.useQuery({ id });
   const runsQuery = api.research.listRuns.useQuery({ prospectId: id });
 
@@ -486,11 +488,17 @@ export default function ProspectDetail() {
   const runResearchMut = api.admin.runResearchRun.useMutation({
     onSuccess: () => {
       void runsQuery.refetch();
+      void utils.research.getActiveStatusByProspectId.invalidate({
+        prospectId: id,
+      });
     },
   });
   const runAnalysisMut = api.admin.runMasterAnalysis.useMutation({
     onSuccess: () => {
       void prospectQuery.refetch();
+      void utils.research.getActiveStatusByProspectId.invalidate({
+        prospectId: id,
+      });
     },
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
