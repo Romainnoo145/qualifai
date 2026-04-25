@@ -540,7 +540,7 @@ export default async function PrintPage({
                   letterSpacing: '-0.02em',
                 }}
               >
-                <span style={{ color: GOLD }}>€</span> {formatEuroNL(total)}
+                <span style={{ color: NAVY }}>€</span> {formatEuroNL(total)}
               </span>
             </div>
           </div>
