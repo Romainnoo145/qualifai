@@ -277,6 +277,7 @@ function Uitdaging({
 
       {/* Viewport-fit content — hero statement top, 3 cards below */}
       <div
+        className="offerte-page-content"
         style={{
           position: 'absolute',
           inset: 0,
@@ -492,6 +493,7 @@ function Aanpak({
       <ProgressIndicator label={progressLabel} />
 
       <div
+        className="offerte-page-content"
         style={{
           position: 'absolute',
           inset: 0,
@@ -693,6 +695,20 @@ const OFFERTE_RESPONSIVE_STYLES = `
     }
     .offerte-main::-webkit-scrollbar {
       display: none; /* WebKit / Chromium */
+    }
+  }
+
+  /* Page content wrappers — release absolute positioning on mobile for natural flow */
+  .offerte-page-content {
+    position: absolute;
+    inset: 0;
+  }
+  @media (max-width: 768px) {
+    .offerte-page-content {
+      position: relative !important;
+      inset: auto !important;
+      width: 100% !important;
+      height: auto !important;
     }
   }
 
@@ -1247,6 +1263,7 @@ function Scope({
       <ProgressIndicator label={progressLabel} />
 
       <div
+        className="offerte-page-content"
         style={{
           position: 'absolute',
           inset: 0,
