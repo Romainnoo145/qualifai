@@ -182,7 +182,7 @@ export function BrochureCover({
     return (
       <Investering
         onNext={handleNext}
-        onBack={handleBack}
+        onBack={currentPage === 0 ? undefined : handleBack}
         progressLabel={progressLabel}
         prospect={prospect}
         quote={quote ?? null}
@@ -223,7 +223,7 @@ export function BrochureCover({
     );
   }
 
-  // Unreachable — all PageId values are handled above
+  // Defensive fallback — navigation bounds prevent this at runtime but pageId can be undefined under noUncheckedIndexedAccess
   return null;
 }
 
@@ -676,7 +676,7 @@ function Investering({
   quote,
 }: {
   onNext: () => void;
-  onBack: () => void;
+  onBack?: () => void;
   progressLabel: string;
   prospect: BrochureProspect;
   quote: BrochureQuote;
@@ -1014,7 +1014,7 @@ function Investering({
         </div>
       </div>
 
-      <BackArrow onClick={onBack} />
+      {onBack && <BackArrow onClick={onBack} />}
       <NextArrow onClick={onNext} />
     </main>
   );
