@@ -676,6 +676,36 @@ const INVESTERING_RESPONSIVE_STYLES = `
   @media (max-width: 768px) {
     .offerte-page-4 { padding: 90px 24px 180px !important; }
   }
+
+  .offerte-line-header {
+    display: grid;
+    grid-template-columns: 32px 1fr 64px 120px;
+    gap: 16px;
+  }
+  .offerte-line-row {
+    display: grid;
+    grid-template-columns: 32px 1fr 64px 120px;
+    gap: 16px;
+    align-items: baseline;
+  }
+  .col-uren-bedrag { display: contents; }
+
+  @media (max-width: 768px) {
+    .offerte-line-header { display: none !important; }
+    .offerte-line-row {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(53, 59, 102, 0.55);
+    }
+    .offerte-line-row .col-omschrijving { font-weight: 600; }
+    .col-uren-bedrag {
+      display: flex !important;
+      justify-content: space-between;
+      color: #898999;
+      font-size: 13px;
+    }
+  }
 `;
 
 function Investering({
@@ -815,10 +845,8 @@ function Investering({
             }}
           >
             <div
+              className="offerte-line-header"
               style={{
-                display: 'grid',
-                gridTemplateColumns: '32px 1fr 64px 120px',
-                gap: '16px',
                 padding: '0 0 12px',
                 fontSize: '10px',
                 fontWeight: 500,
@@ -837,13 +865,10 @@ function Investering({
             {lines.map((l) => (
               <div
                 key={l.num}
+                className="offerte-line-row"
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '32px 1fr 64px 120px',
-                  gap: '16px',
                   padding: '20px 0',
                   borderBottom: `1px solid ${CONTAINER_BORDER}`,
-                  alignItems: 'baseline',
                 }}
               >
                 <span
@@ -858,7 +883,7 @@ function Investering({
                 >
                   {l.num}
                 </span>
-                <div>
+                <div className="col-omschrijving">
                   <div
                     style={{
                       fontSize: '17px',
@@ -880,28 +905,28 @@ function Investering({
                     {l.desc}
                   </div>
                 </div>
-                <div
-                  style={{
-                    fontSize: '15px',
-                    fontWeight: 500,
-                    color: TEXT_ON_NAVY,
-                    textAlign: 'right',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                >
-                  {l.uren > 0 ? `${l.uren}u × €${l.rate}` : '—'}
-                </div>
-                <div
-                  style={{
-                    fontSize: '17px',
-                    fontWeight: 500,
-                    color: TEXT_ON_NAVY,
-                    textAlign: 'right',
-                    fontVariantNumeric: 'tabular-nums',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  {l.uren > 0 ? `€\u00a0${fmt(l.uren * l.rate)}` : '—'}
+                <div className="col-uren-bedrag">
+                  <div
+                    style={{
+                      fontSize: '15px',
+                      fontWeight: 500,
+                      color: TEXT_ON_NAVY,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {l.uren > 0 ? `${l.uren}u × €${l.rate}` : '—'}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '17px',
+                      fontWeight: 500,
+                      color: TEXT_ON_NAVY,
+                      fontVariantNumeric: 'tabular-nums',
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {l.uren > 0 ? `€\u00a0${fmt(l.uren * l.rate)}` : '—'}
+                  </div>
                 </div>
               </div>
             ))}
