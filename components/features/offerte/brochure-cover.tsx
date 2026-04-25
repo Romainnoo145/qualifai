@@ -125,7 +125,13 @@ export function BrochureCover({
 
   const progressLabel = `${String(currentPage + 1).padStart(2, '0')} / ${String(totalPages).padStart(2, '0')}`;
 
-  const pageId = visiblePages[currentPage];
+  // visiblePages is always non-empty (VOORSTEL_PAGES / OFFERTE_PAGES both have ≥1 item)
+  const pageId = (visiblePages[currentPage] ?? visiblePages[0]) as PageId;
+
+  // Section numbering: computed from position within visiblePages (cover has no label).
+  const visibleIndex = visiblePages.indexOf(pageId);
+  const sectionLabel =
+    visibleIndex >= 0 && pageId !== 'cover' ? `[ 0${visibleIndex + 1} ]` : '';
 
   if (pageId === 'cover') {
     return (
@@ -162,6 +168,7 @@ export function BrochureCover({
           onNext={handleNext}
           onBack={handleBack}
           progressLabel={progressLabel}
+          sectionLabel={sectionLabel}
           prospect={prospect}
           quote={quote ?? null}
         />
@@ -172,6 +179,7 @@ export function BrochureCover({
           onNext={handleNext}
           onBack={handleBack}
           progressLabel={progressLabel}
+          sectionLabel={sectionLabel}
           prospect={prospect}
           quote={quote ?? null}
         />
@@ -182,6 +190,7 @@ export function BrochureCover({
           onNext={handleNext}
           onBack={currentPage === 0 ? undefined : handleBack}
           progressLabel={progressLabel}
+          sectionLabel={sectionLabel}
           prospect={prospect}
           quote={quote ?? null}
         />
@@ -192,6 +201,7 @@ export function BrochureCover({
           onNext={handleNext}
           onBack={handleBack}
           progressLabel={progressLabel}
+          sectionLabel={sectionLabel}
           prospect={prospect}
         />
       )}
@@ -201,6 +211,7 @@ export function BrochureCover({
           onBack={handleBack}
           onNext={handleNext}
           progressLabel={progressLabel}
+          sectionLabel={sectionLabel}
           prospect={prospect}
           quote={quote ?? null}
         />
@@ -210,6 +221,7 @@ export function BrochureCover({
         <Bevestigd
           onBack={handleBack}
           progressLabel={progressLabel}
+          sectionLabel={sectionLabel}
           prospect={prospect}
         />
       )}
@@ -225,12 +237,14 @@ function Uitdaging({
   onNext,
   onBack,
   progressLabel,
+  sectionLabel,
   prospect,
   quote,
 }: {
   onNext: () => void;
   onBack: () => void;
   progressLabel: string;
+  sectionLabel: string;
   prospect: BrochureProspect;
   quote: BrochureQuote;
 }) {
@@ -253,7 +267,10 @@ function Uitdaging({
   ];
 
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
+    <main
+      className="offerte-main"
+      style={{ ...pageBase, backgroundColor: NAVY }}
+    >
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
@@ -291,7 +308,7 @@ function Uitdaging({
               fontWeight: 500,
             }}
           >
-            [ 02 ]
+            {sectionLabel}
           </span>
           <span style={{ color: TEXT_ON_NAVY }}>De uitdaging</span>
         </div>
@@ -427,12 +444,14 @@ function Aanpak({
   onNext,
   onBack,
   progressLabel,
+  sectionLabel,
   prospect,
   quote,
 }: {
   onNext: () => void;
   onBack: () => void;
   progressLabel: string;
+  sectionLabel: string;
   prospect: BrochureProspect;
   quote: BrochureQuote;
 }) {
@@ -464,7 +483,10 @@ function Aanpak({
   ];
 
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
+    <main
+      className="offerte-main"
+      style={{ ...pageBase, backgroundColor: NAVY }}
+    >
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
@@ -502,7 +524,7 @@ function Aanpak({
               fontWeight: 500,
             }}
           >
-            [ 03 ]
+            {sectionLabel}
           </span>
           <span style={{ color: TEXT_ON_NAVY }}>Onze aanpak</span>
         </div>
@@ -659,6 +681,21 @@ function Aanpak({
 // ─────────────────────────────────────────────────────────────────────────────
 
 const OFFERTE_RESPONSIVE_STYLES = `
+  /* Mobile scroll — overrides pageBase position:fixed on small viewports */
+  @media (max-width: 768px) {
+    .offerte-main {
+      position: relative !important;
+      overflow-y: auto !important;
+      height: auto !important;
+      min-height: 100vh !important;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; /* Firefox */
+    }
+    .offerte-main::-webkit-scrollbar {
+      display: none; /* WebKit / Chromium */
+    }
+  }
+
   .offerte-page-4 { padding: 120px 72px 160px; }
   @media (max-width: 1024px) {
     .offerte-page-4 { padding: 28px 40px !important; }
@@ -695,7 +732,18 @@ const OFFERTE_RESPONSIVE_STYLES = `
     gap: 48px;
   }
 
+  .offerte-signing-split {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 48px;
+    align-items: start;
+  }
+
   @media (max-width: 768px) {
+    .offerte-signing-split {
+      grid-template-columns: 1fr !important;
+      gap: 24px !important;
+    }
     .offerte-page-4 { padding: 90px 24px 180px !important; }
     .offerte-line-header { display: none !important; }
     .offerte-line-row {
@@ -722,12 +770,14 @@ function Investering({
   onNext,
   onBack,
   progressLabel,
+  sectionLabel,
   prospect,
   quote,
 }: {
   onNext: () => void;
   onBack?: () => void;
   progressLabel: string;
+  sectionLabel: string;
   prospect: BrochureProspect;
   quote: BrochureQuote;
 }) {
@@ -767,7 +817,10 @@ function Investering({
   const phase3 = total * 0.25;
 
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
+    <main
+      className="offerte-main"
+      style={{ ...pageBase, backgroundColor: NAVY }}
+    >
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
@@ -805,7 +858,7 @@ function Investering({
               fontWeight: 500,
             }}
           >
-            [ 04 ]
+            {sectionLabel}
           </span>
           <span style={{ color: TEXT_ON_NAVY }}>Investering</span>
         </div>
@@ -1113,11 +1166,13 @@ function Scope({
   onNext,
   onBack,
   progressLabel,
+  sectionLabel,
   prospect,
 }: {
   onNext: () => void;
   onBack: () => void;
   progressLabel: string;
+  sectionLabel: string;
   prospect: BrochureProspect;
 }) {
   const inScope = [
@@ -1139,7 +1194,10 @@ function Scope({
   ];
 
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
+    <main
+      className="offerte-main"
+      style={{ ...pageBase, backgroundColor: NAVY }}
+    >
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
@@ -1177,7 +1235,7 @@ function Scope({
               fontWeight: 500,
             }}
           >
-            [ 05 ]
+            {sectionLabel}
           </span>
           <span style={{ color: TEXT_ON_NAVY }}>Scope & afsluiting</span>
         </div>
@@ -1408,12 +1466,14 @@ function Signing({
   onBack,
   onNext,
   progressLabel,
+  sectionLabel,
   prospect,
   quote,
 }: {
   onBack: () => void;
   onNext: () => void;
   progressLabel: string;
+  sectionLabel: string;
   prospect: BrochureProspect;
   quote: BrochureQuote;
 }) {
@@ -1560,7 +1620,10 @@ function Signing({
     }).format(n);
 
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
+    <main
+      className="offerte-main"
+      style={{ ...pageBase, backgroundColor: NAVY }}
+    >
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
@@ -1598,7 +1661,7 @@ function Signing({
               fontWeight: 500,
             }}
           >
-            [ 06 ]
+            {sectionLabel}
           </span>
           <span style={{ color: TEXT_ON_NAVY }}>Akkoord</span>
         </div>
@@ -1627,14 +1690,7 @@ function Signing({
         </h1>
 
         {/* Split: summary (left) + signing form (right) */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 0.8fr) minmax(0, 1.2fr)',
-            gap: '48px',
-            alignItems: 'start',
-          }}
-        >
+        <div className="offerte-signing-split">
           {/* LEFT — Summary card */}
           <div
             style={{
@@ -2008,10 +2064,12 @@ function CheckIconSolid() {
 function Bevestigd({
   onBack,
   progressLabel,
+  sectionLabel: _sectionLabel,
   prospect,
 }: {
   onBack: () => void;
   progressLabel: string;
+  sectionLabel: string;
   prospect: BrochureProspect;
 }) {
   // Client-side computed — rendered inside a suppressHydrationWarning span
@@ -2047,7 +2105,10 @@ function Bevestigd({
   ];
 
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
+    <main
+      className="offerte-main"
+      style={{ ...pageBase, backgroundColor: NAVY }}
+    >
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
