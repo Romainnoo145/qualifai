@@ -591,16 +591,31 @@ export default function ProspectDetail() {
 
   const onCopyLink = () => {
     if (!p) return;
-    const url = `${window.location.origin}${buildDiscoverPath({
-      slug: p.slug,
-      readableSlug: p.readableSlug ?? null,
-      companyName: p.companyName ?? null,
-      domain: p.domain ?? null,
-    })}`;
+    const url =
+      voorstelMode === 'BESPOKE' && p.readableSlug
+        ? `${window.location.origin}/voorstel/${p.readableSlug}`
+        : `${window.location.origin}${buildDiscoverPath({
+            slug: p.slug,
+            readableSlug: p.readableSlug ?? null,
+            companyName: p.companyName ?? null,
+            domain: p.domain ?? null,
+          })}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const pitchHref =
+    voorstelMode === 'BESPOKE' && p
+      ? `/voorstel/${p.readableSlug ?? p.slug}`
+      : p
+        ? buildDiscoverPath({
+            slug: p.slug,
+            readableSlug: p.readableSlug ?? null,
+            companyName: p.companyName ?? null,
+            domain: p.domain ?? null,
+          })
+        : '#';
 
   if (prospectQuery.isLoading) {
     return (
@@ -667,6 +682,19 @@ export default function ProspectDetail() {
       <header className="grid grid-cols-[1fr_auto] gap-10 items-end pb-5 mb-5">
         <div>
           <HeroName name={displayName} />
+          <div className="mt-3">
+            <span
+              className={
+                voorstelMode === 'BESPOKE'
+                  ? 'inline-flex items-center gap-1 rounded-full border border-[var(--color-gold-hi)] px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-gold-hi)]'
+                  : 'inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-muted)]'
+              }
+            >
+              {voorstelMode === 'BESPOKE'
+                ? 'Warm · Bespoke'
+                : 'Koud · Standaard'}
+            </span>
+          </div>
           {p.description ? (
             <p className="mt-5 text-[15px] font-light leading-[1.55] text-[var(--color-muted-dark)]">
               {p.description}
@@ -685,23 +713,34 @@ export default function ProspectDetail() {
           )}
         </div>
         <div className="flex flex-col gap-2">
-          <HeroBtn
-            variant="paper"
-            onClick={onCopyLink}
-            title="Kopieer link naar /discover"
-          >
-            {copied ? (
-              <>
-                <Check className="h-3.5 w-3.5" strokeWidth={1.75} />
-                Gekopieerd
-              </>
-            ) : (
-              <>
-                <Copy className="h-3.5 w-3.5" strokeWidth={1.75} />
-                Kopieer voorstel-link
-              </>
-            )}
-          </HeroBtn>
+          <div className="flex gap-2">
+            <HeroBtn
+              variant="paper"
+              onClick={onCopyLink}
+              title="Kopieer pitch-link"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  Gekopieerd
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  Kopieer pitch-link
+                </>
+              )}
+            </HeroBtn>
+            <a
+              href={pitchHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-[6px] border px-4 py-2.5 text-[13px] font-medium leading-none transition-colors cursor-pointer bg-[var(--color-surface)] border-[var(--color-border-strong)] text-[var(--color-ink)] hover:border-[var(--color-ink)]"
+            >
+              <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.75} />
+              Bekijk pitch
+            </a>
+          </div>
           <HeroBtn
             variant="gold"
             onClick={() => {
@@ -723,7 +762,7 @@ export default function ProspectDetail() {
             }}
             disabled={createQuoteMut.isPending}
           >
-            {createQuoteMut.isPending ? 'Aanmaken...' : 'Start voorstel'}
+            {createQuoteMut.isPending ? 'Aanmaken...' : 'Nieuwe offerte'}
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.75} />
           </HeroBtn>
         </div>
@@ -810,7 +849,7 @@ export default function ProspectDetail() {
         <div className="grid grid-cols-[260px_minmax(0,1fr)_240px] gap-10">
           {/* Left: facts */}
           <aside className="space-y-2">
-            <Eyebrow>Feiten</Eyebrow>
+            <Eyebrow>Bedrijf</Eyebrow>
             <dl className="space-y-2 pt-1">
               {p.domain ? (
                 <FactsRow k="Domein">
@@ -855,6 +894,90 @@ export default function ProspectDetail() {
                 </FactsRow>
               ) : null}
             </dl>
+
+            {/* Voorstel routing */}
+            <div className="pt-6 space-y-2.5">
+              <Eyebrow>Voorstel routing</Eyebrow>
+              <div className="space-y-3 pt-1">
+                {/* Mode pill toggle */}
+                <div>
+                  <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)] block mb-1.5">
+                    Modus
+                  </label>
+                  <div className="inline-flex rounded-full border border-[var(--color-border)] p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (voorstelMode !== 'STANDARD') {
+                          setVoorstelMode('STANDARD');
+                          updateProspectMut.mutate({
+                            id,
+                            voorstelMode: 'STANDARD',
+                          });
+                        }
+                      }}
+                      disabled={updateProspectMut.isPending}
+                      className={
+                        voorstelMode === 'STANDARD'
+                          ? 'rounded-full bg-[var(--color-ink)] text-white px-3 py-1 text-[12px] font-medium transition-colors'
+                          : 'rounded-full px-3 py-1 text-[12px] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors'
+                      }
+                    >
+                      Standaard
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (voorstelMode !== 'BESPOKE') {
+                          setVoorstelMode('BESPOKE');
+                          updateProspectMut.mutate({
+                            id,
+                            voorstelMode: 'BESPOKE',
+                          });
+                        }
+                      }}
+                      disabled={updateProspectMut.isPending}
+                      className={
+                        voorstelMode === 'BESPOKE'
+                          ? 'rounded-full bg-[var(--color-ink)] text-white px-3 py-1 text-[12px] font-medium transition-colors'
+                          : 'rounded-full px-3 py-1 text-[12px] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors'
+                      }
+                    >
+                      Bespoke
+                    </button>
+                  </div>
+                </div>
+
+                {/* bespokeUrl — only when BESPOKE */}
+                {voorstelMode === 'BESPOKE' && (
+                  <div>
+                    <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)] block mb-1">
+                      Bespoke URL
+                    </label>
+                    <input
+                      type="url"
+                      value={bespokeUrl ?? ''}
+                      onChange={(e) => setBespokeUrl(e.target.value || null)}
+                      onBlur={() => {
+                        if (bespokeUrl !== p.bespokeUrl) {
+                          updateProspectMut.mutate({
+                            id,
+                            bespokeUrl: bespokeUrl || null,
+                          });
+                        }
+                      }}
+                      placeholder="https://maintix-design.vercel.app"
+                      className="input-minimal w-full text-[13px]"
+                      disabled={updateProspectMut.isPending}
+                    />
+                    <p className="text-[11px] text-[var(--color-muted)] mt-1">
+                      De Vercel-URL waar de bespoke voorstel-HTML staat.
+                      Qualifai proxiet deze op /voorstel/[slug].
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Dossier quick links — stand-in for sub-routes */}
             <div className="pt-8">
@@ -985,68 +1108,6 @@ export default function ProspectDetail() {
                     Nog geen contacts.
                   </p>
                 ) : null}
-              </div>
-            </div>
-
-            {/* Voorstel routing */}
-            <div className="space-y-2.5">
-              <Eyebrow>Voorstel routing</Eyebrow>
-              <div className="space-y-3 pt-1">
-                {/* Mode select */}
-                <div>
-                  <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)] block mb-1">
-                    Modus
-                  </label>
-                  <select
-                    value={voorstelMode}
-                    onChange={(e) => {
-                      const next = e.target.value as 'STANDARD' | 'BESPOKE';
-                      setVoorstelMode(next);
-                      updateProspectMut.mutate({
-                        id,
-                        voorstelMode: next,
-                      });
-                    }}
-                    className="input-minimal w-full text-[13px]"
-                    disabled={updateProspectMut.isPending}
-                  >
-                    <option value="STANDARD">
-                      Standaard (cold-track auto-brochure)
-                    </option>
-                    <option value="BESPOKE">
-                      Bespoke (warm-track, showcase URL)
-                    </option>
-                  </select>
-                </div>
-
-                {/* bespokeUrl — only when BESPOKE */}
-                {voorstelMode === 'BESPOKE' && (
-                  <div>
-                    <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)] block mb-1">
-                      Bespoke URL
-                    </label>
-                    <input
-                      type="url"
-                      value={bespokeUrl ?? ''}
-                      onChange={(e) => setBespokeUrl(e.target.value || null)}
-                      onBlur={() => {
-                        if (bespokeUrl !== p.bespokeUrl) {
-                          updateProspectMut.mutate({
-                            id,
-                            bespokeUrl: bespokeUrl || null,
-                          });
-                        }
-                      }}
-                      placeholder="https://maintix-design.vercel.app"
-                      className="input-minimal w-full text-[13px]"
-                      disabled={updateProspectMut.isPending}
-                    />
-                    <p className="text-[11px] text-[var(--color-muted)] mt-1">
-                      De Vercel-URL waar de bespoke voorstel-HTML staat.
-                      Qualifai proxiet deze op /voorstel/[slug].
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           </aside>
