@@ -47,6 +47,14 @@ type QuoteDetailRow = Prisma.QuoteGetPayload<{
         slug: true;
         readableSlug: true;
         companyName: true;
+        contacts: {
+          select: {
+            id: true;
+            firstName: true;
+            lastName: true;
+            primaryEmail: true;
+          };
+        };
       };
     };
   };
@@ -639,9 +647,9 @@ export default function QuoteDetailPage() {
             <Block>
               <SectionLabel>Email opstellen</SectionLabel>
               <EmailCompose
-                defaultTo={''}
                 defaultSubject={`Voorstel ${quote.nummer} — ${quote.onderwerp}`}
                 brochureUrl={brochureUrl}
+                contacts={quote.prospect.contacts ?? []}
                 isSubmitting={sendEmailMutation.isPending}
                 onSend={(data) =>
                   sendEmailMutation.mutate({ id: quote.id, ...data })

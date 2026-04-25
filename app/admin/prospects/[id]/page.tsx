@@ -885,7 +885,7 @@ export default function ProspectDetail() {
         </div>
       ) : (
         <div className="grid grid-cols-[260px_minmax(0,1fr)_240px] gap-10">
-          {/* Left: facts */}
+          {/* Left: facts + contacts + dossier */}
           <aside className="space-y-2">
             <Eyebrow>Bedrijf</Eyebrow>
             <dl className="space-y-2 pt-1">
@@ -933,174 +933,8 @@ export default function ProspectDetail() {
               ) : null}
             </dl>
 
-            {/* Dossier quick links — stand-in for sub-routes */}
-            <div className="pt-8">
-              <Eyebrow>Dossier</Eyebrow>
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                <DossierLink
-                  href={`/admin/prospects/${id}/evidence`}
-                  label="Evidence"
-                  count={evidenceCount}
-                />
-                <DossierLink
-                  href={`/admin/prospects/${id}/analyse`}
-                  label="Analyse"
-                />
-                <DossierLink
-                  href={`/admin/prospects/${id}/outreach`}
-                  label="Outreach"
-                  disabled
-                />
-                <DossierLink
-                  href={`/admin/prospects/${id}/resultaten`}
-                  label="Resultaten"
-                  disabled
-                />
-              </div>
-            </div>
-          </aside>
-
-          {/* Center: activity */}
-          <main>
-            <Eyebrow className="mb-4">Activiteit</Eyebrow>
-            <div className="flex gap-1.5 mb-5">
-              {feedTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setFeedFilter(tab.id)}
-                  className={cn(
-                    'px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded border transition-all',
-                    feedFilter === tab.id
-                      ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
-                      : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-            {visibleEvents.length === 0 ? (
-              <p className="py-12 text-center text-[13px] text-[var(--color-muted)]">
-                Geen events{' '}
-                {feedFilter !== 'ALL' ? `in filter "${feedFilter}"` : 'nog'}.
-              </p>
-            ) : (
-              <div>
-                {visibleEvents.map((event) => (
-                  <ActivityRow key={event.id} event={event} />
-                ))}
-              </div>
-            )}
-          </main>
-
-          {/* Right: actions + contacts */}
-          <aside className="space-y-8">
-            {/* Voorstel routing */}
-            <div className="space-y-2.5">
-              <Eyebrow>Voorstel routing</Eyebrow>
-              <div className="space-y-3 pt-1">
-                {/* Mode rectangle toggle — full width */}
-                <div>
-                  <div className="grid grid-cols-2 border border-[var(--color-border)] rounded-md overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (voorstelMode !== 'STANDARD') {
-                          setVoorstelMode('STANDARD');
-                          updateProspectMut.mutate({
-                            id,
-                            voorstelMode: 'STANDARD',
-                          });
-                        }
-                      }}
-                      disabled={updateProspectMut.isPending}
-                      className={
-                        voorstelMode === 'STANDARD'
-                          ? 'bg-[var(--color-ink)] text-white py-2.5 px-3 text-[13px] font-medium transition-colors'
-                          : 'bg-transparent text-[var(--color-muted)] py-2.5 px-3 text-[13px] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors'
-                      }
-                    >
-                      Standaard
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (voorstelMode !== 'BESPOKE') {
-                          setVoorstelMode('BESPOKE');
-                          updateProspectMut.mutate({
-                            id,
-                            voorstelMode: 'BESPOKE',
-                          });
-                        }
-                      }}
-                      disabled={updateProspectMut.isPending}
-                      className={
-                        voorstelMode === 'BESPOKE'
-                          ? 'bg-[var(--color-ink)] text-white py-2.5 px-3 text-[13px] font-medium transition-colors'
-                          : 'bg-transparent text-[var(--color-muted)] py-2.5 px-3 text-[13px] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors'
-                      }
-                    >
-                      Bespoke
-                    </button>
-                  </div>
-                </div>
-
-                {/* bespokeUrl — only when BESPOKE */}
-                {voorstelMode === 'BESPOKE' && (
-                  <div>
-                    <input
-                      type="url"
-                      value={bespokeUrl ?? ''}
-                      onChange={(e) => setBespokeUrl(e.target.value || null)}
-                      onBlur={() => {
-                        if (bespokeUrl !== p.bespokeUrl) {
-                          updateProspectMut.mutate({
-                            id,
-                            bespokeUrl: bespokeUrl || null,
-                          });
-                        }
-                      }}
-                      placeholder="https://maintix-design.vercel.app"
-                      className="input-minimal w-full text-[13px]"
-                      disabled={updateProspectMut.isPending}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              <Eyebrow>Acties</Eyebrow>
-              <div className="space-y-1.5 pt-1">
-                <ActionRow
-                  icon={RefreshCw}
-                  label="Re-enrich"
-                  onClick={() => enrichMut.mutate({ id })}
-                />
-                <ActionRow
-                  icon={Play}
-                  label="Nieuwe run"
-                  kbd="⌘R"
-                  onClick={() => runResearchMut.mutate({ id })}
-                />
-                <ActionRow
-                  icon={PenLine}
-                  label="Genereer analyse"
-                  onClick={() => runAnalysisMut.mutate({ id })}
-                />
-                <ActionRow
-                  icon={Send}
-                  label="Start outreach"
-                  kbd="⌘↵"
-                  variant="gold"
-                  onClick={() => router.push(`/admin/prospects/${id}/outreach`)}
-                />
-              </div>
-            </div>
-
             {/* Contacts */}
-            <div className="space-y-2.5">
+            <div className="pt-8 space-y-2.5">
               <div className="flex items-baseline justify-between">
                 <Eyebrow className="flex-1">
                   Contacts · {p.contacts?.length ?? 0}
@@ -1227,6 +1061,98 @@ export default function ProspectDetail() {
               )}
             </div>
 
+            {/* Dossier quick links — stand-in for sub-routes */}
+            <div className="pt-8">
+              <Eyebrow>Dossier</Eyebrow>
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <DossierLink
+                  href={`/admin/prospects/${id}/evidence`}
+                  label="Evidence"
+                  count={evidenceCount}
+                />
+                <DossierLink
+                  href={`/admin/prospects/${id}/analyse`}
+                  label="Analyse"
+                />
+                <DossierLink
+                  href={`/admin/prospects/${id}/outreach`}
+                  label="Outreach"
+                  disabled
+                />
+                <DossierLink
+                  href={`/admin/prospects/${id}/resultaten`}
+                  label="Resultaten"
+                  disabled
+                />
+              </div>
+            </div>
+          </aside>
+
+          {/* Center: activity */}
+          <main>
+            <Eyebrow className="mb-4">Activiteit</Eyebrow>
+            <div className="flex gap-1.5 mb-5">
+              {feedTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setFeedFilter(tab.id)}
+                  className={cn(
+                    'px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded border transition-all',
+                    feedFilter === tab.id
+                      ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                      : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {visibleEvents.length === 0 ? (
+              <p className="py-12 text-center text-[13px] text-[var(--color-muted)]">
+                Geen events{' '}
+                {feedFilter !== 'ALL' ? `in filter "${feedFilter}"` : 'nog'}.
+              </p>
+            ) : (
+              <div>
+                {visibleEvents.map((event) => (
+                  <ActivityRow key={event.id} event={event} />
+                ))}
+              </div>
+            )}
+          </main>
+
+          {/* Right: actions + offertes + voorstel routing */}
+          <aside className="space-y-8">
+            <div className="space-y-2.5">
+              <Eyebrow>Acties</Eyebrow>
+              <div className="space-y-1.5 pt-1">
+                <ActionRow
+                  icon={RefreshCw}
+                  label="Re-enrich"
+                  onClick={() => enrichMut.mutate({ id })}
+                />
+                <ActionRow
+                  icon={Play}
+                  label="Nieuwe run"
+                  kbd="⌘R"
+                  onClick={() => runResearchMut.mutate({ id })}
+                />
+                <ActionRow
+                  icon={PenLine}
+                  label="Genereer analyse"
+                  onClick={() => runAnalysisMut.mutate({ id })}
+                />
+                <ActionRow
+                  icon={Send}
+                  label="Start outreach"
+                  kbd="⌘↵"
+                  variant="gold"
+                  onClick={() => router.push(`/admin/prospects/${id}/outreach`)}
+                />
+              </div>
+            </div>
+
             {/* Offertes */}
             <div className="space-y-2.5">
               <Eyebrow>Offertes · {quotes.length}</Eyebrow>
@@ -1258,6 +1184,80 @@ export default function ProspectDetail() {
                   er een aan te maken.
                 </p>
               )}
+            </div>
+
+            {/* Voorstel routing */}
+            <div className="space-y-2.5">
+              <Eyebrow>Voorstel routing</Eyebrow>
+              <div className="space-y-3 pt-1">
+                {/* Mode rectangle toggle — full width */}
+                <div>
+                  <div className="grid grid-cols-2 border border-[var(--color-border)] rounded-md overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (voorstelMode !== 'STANDARD') {
+                          setVoorstelMode('STANDARD');
+                          updateProspectMut.mutate({
+                            id,
+                            voorstelMode: 'STANDARD',
+                          });
+                        }
+                      }}
+                      disabled={updateProspectMut.isPending}
+                      className={
+                        voorstelMode === 'STANDARD'
+                          ? 'bg-[var(--color-ink)] text-white py-2.5 px-3 text-[13px] font-medium transition-colors'
+                          : 'bg-transparent text-[var(--color-muted)] py-2.5 px-3 text-[13px] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors'
+                      }
+                    >
+                      Standaard
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (voorstelMode !== 'BESPOKE') {
+                          setVoorstelMode('BESPOKE');
+                          updateProspectMut.mutate({
+                            id,
+                            voorstelMode: 'BESPOKE',
+                          });
+                        }
+                      }}
+                      disabled={updateProspectMut.isPending}
+                      className={
+                        voorstelMode === 'BESPOKE'
+                          ? 'bg-[var(--color-ink)] text-white py-2.5 px-3 text-[13px] font-medium transition-colors'
+                          : 'bg-transparent text-[var(--color-muted)] py-2.5 px-3 text-[13px] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors'
+                      }
+                    >
+                      Bespoke
+                    </button>
+                  </div>
+                </div>
+
+                {/* bespokeUrl — only when BESPOKE */}
+                {voorstelMode === 'BESPOKE' && (
+                  <div>
+                    <input
+                      type="url"
+                      value={bespokeUrl ?? ''}
+                      onChange={(e) => setBespokeUrl(e.target.value || null)}
+                      onBlur={() => {
+                        if (bespokeUrl !== p.bespokeUrl) {
+                          updateProspectMut.mutate({
+                            id,
+                            bespokeUrl: bespokeUrl || null,
+                          });
+                        }
+                      }}
+                      placeholder="https://maintix-design.vercel.app"
+                      className="input-minimal w-full text-[13px]"
+                      disabled={updateProspectMut.isPending}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </aside>
         </div>

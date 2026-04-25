@@ -126,6 +126,15 @@ export const quotesRouter = router({
               readableSlug: true,
               companyName: true,
               status: true,
+              contacts: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  primaryEmail: true,
+                },
+                orderBy: { createdAt: 'asc' },
+              },
             },
           },
         },

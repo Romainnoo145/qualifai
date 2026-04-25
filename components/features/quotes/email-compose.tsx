@@ -3,28 +3,44 @@
 import { useState } from 'react';
 import { Send, X } from 'lucide-react';
 
+interface Contact {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  primaryEmail: string | null;
+}
+
 interface EmailComposeProps {
-  defaultTo: string;
   defaultSubject: string;
   brochureUrl: string;
+  contacts: Contact[];
   isSubmitting: boolean;
   onSend: (data: { to: string; subject: string; body: string }) => void;
   onCancel: () => void;
 }
 
 export function EmailCompose({
-  defaultTo,
   defaultSubject,
   brochureUrl,
+  contacts,
   isSubmitting,
   onSend,
   onCancel,
 }: EmailComposeProps) {
-  const [to, setTo] = useState(defaultTo);
+  const validContacts = contacts.filter(
+    (c) => c.primaryEmail && c.primaryEmail.trim(),
+  );
+
+  const [selectedContactId, setSelectedContactId] = useState(
+    validContacts[0]?.id ?? '',
+  );
   const [subject, setSubject] = useState(defaultSubject);
   const [body, setBody] = useState(
     `Beste,\n\nHierbij ons voorstel voor de besproken werkzaamheden.\n\nBekijk het volledige voorstel via onderstaande link:\n${brochureUrl}\n\nMocht je vragen hebben, dan hoor ik het graag.\n\nMet vriendelijke groet,\nRomano Kanters\nKlarifai`,
   );
+
+  const selectedContact = validContacts.find((c) => c.id === selectedContactId);
+  const to = selectedContact?.primaryEmail ?? '';
 
   return (
     <div className="rounded-xl bg-[var(--color-surface-2)] p-6 space-y-4">
@@ -41,13 +57,26 @@ export function EmailCompose({
         </button>
       </div>
       <div className="space-y-3">
-        <input
-          type="email"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-          placeholder="email@bedrijf.nl"
-          className="input-minimal w-full text-[13px]"
-        />
+        {validContacts.length > 0 ? (
+          <select
+            value={selectedContactId}
+            onChange={(e) => setSelectedContactId(e.target.value)}
+            className="input-minimal w-full text-[13px]"
+          >
+            {validContacts.map((c) => (
+              <option key={c.id} value={c.id}>
+                {[c.firstName, c.lastName].filter(Boolean).join(' ') ||
+                  'Contact'}{' '}
+                — {c.primaryEmail}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div className="text-[12px] text-[var(--color-muted)] p-3 border border-[var(--color-border)] rounded">
+            Geen contacts met email. Voeg eerst een contact toe op de prospect
+            pagina.
+          </div>
+        )}
         <input
           type="text"
           value={subject}
@@ -65,7 +94,7 @@ export function EmailCompose({
         <button
           type="button"
           onClick={() => onSend({ to, subject, body })}
-          disabled={isSubmitting || !to.trim()}
+          disabled={isSubmitting || !to}
           className="admin-btn-primary inline-flex items-center gap-2"
         >
           <Send className="h-3.5 w-3.5" />
