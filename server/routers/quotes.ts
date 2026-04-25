@@ -14,6 +14,7 @@ import { Prisma } from '@prisma/client';
 import { projectAdminProcedure, router } from '../trpc';
 import { transitionQuote } from '@/lib/state-machines/quote';
 import { generateQuoteNarrative } from '@/lib/analysis/quote-narrative-generator';
+import { sendOutreachEmail } from '@/lib/outreach/send-email';
 
 const QUOTE_STATUS_VALUES = [
   'DRAFT',
@@ -559,6 +560,62 @@ export const quotesRouter = router({
           },
         });
       });
+    }),
+
+  sendEmail: projectAdminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        to: z.string().email(),
+        subject: z.string().min(1),
+        body: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const quote = await ctx.db.quote.findFirst({
+        where: { id: input.id, prospect: { projectId: ctx.projectId } },
+        include: {
+          prospect: {
+            include: { contacts: { take: 1, orderBy: { createdAt: 'asc' } } },
+          },
+        },
+      });
+      if (!quote) throw new TRPCError({ code: 'NOT_FOUND' });
+      if (quote.status !== 'DRAFT') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Quote is niet meer in concept',
+        });
+      }
+
+      const contact = quote.prospect.contacts[0];
+      if (!contact) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Prospect heeft geen contact',
+        });
+      }
+
+      const sendResult = await sendOutreachEmail({
+        contactId: contact.id,
+        to: input.to,
+        subject: input.subject,
+        bodyText: input.body,
+        bodyHtml: input.body.replace(/\n/g, '<br>'),
+        type: 'QUOTE_DELIVERY',
+        quoteId: quote.id,
+      });
+
+      if (!sendResult.success) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Email kon niet verzonden worden',
+        });
+      }
+
+      await transitionQuote(ctx.db, quote.id, 'SENT');
+
+      return { ok: true };
     }),
 
   delete: projectAdminProcedure
