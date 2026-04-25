@@ -815,6 +815,9 @@ model Quote {
   snapshotPdfUrl  String?
   snapshotStatus  SnapshotStatus?
 
+  // Bespoke voorstel HTML — frozen at SENT for BESPOKE prospects (immune to bespokeUrl drift post-akkoord)
+  bespokeHtmlSnapshot String? @db.Text
+
   // Versioning (Q9 — research recommendation #5: add now to avoid second migration in Phase 61)
   replacesId String?
   replaces   Quote?  @relation("QuoteVersion", fields: [replacesId], references: [id], onDelete: SetNull)
