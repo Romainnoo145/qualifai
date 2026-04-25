@@ -63,11 +63,15 @@ export function BrochureCover({
   slug: _slug,
   prospect,
   quote,
+  mode,
 }: {
   slug: string;
   prospect: BrochureProspect;
   quote?: BrochureQuote;
+  mode: 'voorstel' | 'offerte';
 }) {
+  // Defensive fallback for renderMode — will be consumed in Task 9+ once behavior differs by mode
+  const _renderMode: 'voorstel' | 'offerte' = mode ?? 'voorstel';
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentPage, setCurrentPage] = useState(0);
 
