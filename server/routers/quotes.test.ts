@@ -569,4 +569,101 @@ describe('quotes router — sendEmail', () => {
     );
     expect(transitionQuote).toHaveBeenCalledWith(db, 'q1', 'SENT');
   });
+
+  it('does NOT transition status when sendOutreachEmail throws', async () => {
+    vi.mocked(sendOutreachEmail).mockRejectedValueOnce(
+      new Error('resend network error'),
+    );
+
+    const db = makeMockDb();
+    db.quote.findFirst.mockResolvedValueOnce({
+      id: 'q1',
+      status: 'DRAFT',
+      prospect: {
+        id: 'p1',
+        projectId: 'proj-a',
+        contacts: [{ id: 'c1', primaryEmail: 'klant@maintix.io' }],
+      },
+    });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+
+    await expect(
+      caller.quotes.sendEmail({
+        id: 'q1',
+        to: 'klant@maintix.io',
+        subject: 'X',
+        body: 'Y',
+      }),
+    ).rejects.toThrow(/resend network error/);
+
+    expect(transitionQuote).not.toHaveBeenCalled();
+  });
+
+  it('does NOT transition status when sendOutreachEmail returns success=false', async () => {
+    vi.mocked(sendOutreachEmail).mockResolvedValueOnce({
+      success: false,
+      logId: 'log_failed',
+    });
+
+    const db = makeMockDb();
+    db.quote.findFirst.mockResolvedValueOnce({
+      id: 'q1',
+      status: 'DRAFT',
+      prospect: {
+        id: 'p1',
+        projectId: 'proj-a',
+        contacts: [{ id: 'c1', primaryEmail: 'klant@maintix.io' }],
+      },
+    });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+
+    await expect(
+      caller.quotes.sendEmail({
+        id: 'q1',
+        to: 'klant@maintix.io',
+        subject: 'X',
+        body: 'Y',
+      }),
+    ).rejects.toThrow(/Email kon niet verzonden/);
+
+    expect(transitionQuote).not.toHaveBeenCalled();
+  });
+
+  it('rejects sendEmail when quote is not DRAFT', async () => {
+    const db = makeMockDb();
+    db.quote.findFirst.mockResolvedValueOnce({
+      id: 'q1',
+      status: 'SENT',
+      prospect: {
+        id: 'p1',
+        projectId: 'proj-a',
+        contacts: [{ id: 'c1', primaryEmail: 'klant@maintix.io' }],
+      },
+    });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+
+    await expect(
+      caller.quotes.sendEmail({
+        id: 'q1',
+        to: 'klant@maintix.io',
+        subject: 'X',
+        body: 'Y',
+      }),
+    ).rejects.toThrow(/niet meer in concept/);
+
+    expect(sendOutreachEmail).not.toHaveBeenCalled();
+    expect(transitionQuote).not.toHaveBeenCalled();
+  });
 });
