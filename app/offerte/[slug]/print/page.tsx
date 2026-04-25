@@ -809,6 +809,7 @@ export default async function PrintPage({
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
               gap: '40px',
+              alignItems: 'start',
             }}
           >
             {/* Left: client */}
@@ -892,7 +893,7 @@ export default async function PrintPage({
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
                     color: MUTED,
-                    marginBottom: '8px',
+                    marginBottom: '32px',
                   }}
                 >
                   Naam
@@ -959,59 +960,100 @@ export default async function PrintPage({
             gap: '20px',
           }}
         >
-          {/* Column 1 — Address */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <span
+          {/* Column 1 — Klarifai (Address + Contact) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
               style={{
-                fontSize: '10px',
-                fontWeight: 700,
-                color: NAVY,
-                letterSpacing: '0.05em',
-                marginBottom: '2px',
+                fontSize: '9px',
+                fontWeight: 500,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: GOLD,
+                marginBottom: '4px',
               }}
             >
               Klarifai
-            </span>
-            <span style={{ fontSize: '10px', color: MUTED }}>
-              Le Mairekade 77
-            </span>
-            <span style={{ fontSize: '10px', color: MUTED }}>
-              1013 CB Amsterdam
-            </span>
-          </div>
-
-          {/* Column 2 — Fiscal + contact */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <span style={{ fontSize: '10px', color: MUTED }}>KvK 95189335</span>
-            <span style={{ fontSize: '10px', color: MUTED }}>
-              BTW NL005136262B35
-            </span>
-            <span style={{ fontSize: '10px', color: MUTED, marginTop: '4px' }}>
-              +31 (0)6 823 26128
-            </span>
-            <span style={{ fontSize: '10px', color: MUTED }}>
-              info@klarifai.nl
-            </span>
-            <span style={{ fontSize: '10px', color: MUTED }}>klarifai.nl</span>
-          </div>
-
-          {/* Column 3 — Banking */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <span
+            </div>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}
+            >
+              <span style={{ fontSize: '10px', color: MUTED }}>
+                Le Mairekade 77
+              </span>
+              <span style={{ fontSize: '10px', color: MUTED }}>
+                1013 CB Amsterdam
+              </span>
+            </div>
+            <div
               style={{
-                fontSize: '10px',
-                fontWeight: 700,
-                color: NAVY,
-                letterSpacing: '0.05em',
-                marginBottom: '2px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '3px',
+                marginTop: '8px',
               }}
             >
-              Bankgegevens
-            </span>
-            <span style={{ fontSize: '10px', color: MUTED }}>
-              IBAN NL54 FNOM 0541 6127 33
-            </span>
-            <span style={{ fontSize: '10px', color: MUTED }}>BIC FNOMNL22</span>
+              <span style={{ fontSize: '10px', color: MUTED }}>
+                +31 (0)6 823 26128
+              </span>
+              <span style={{ fontSize: '10px', color: MUTED }}>
+                info@klarifai.nl
+              </span>
+              <span style={{ fontSize: '10px', color: MUTED }}>
+                klarifai.nl
+              </span>
+            </div>
+          </div>
+
+          {/* Column 2 — Fiscaal (KvK + BTW) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+              style={{
+                fontSize: '9px',
+                fontWeight: 500,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: GOLD,
+                marginBottom: '4px',
+              }}
+            >
+              Fiscaal
+            </div>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}
+            >
+              <span style={{ fontSize: '10px', color: MUTED }}>
+                KvK 95189335
+              </span>
+              <span style={{ fontSize: '10px', color: MUTED }}>
+                BTW NL005136262B35
+              </span>
+            </div>
+          </div>
+
+          {/* Column 3 — Bank (IBAN + BIC) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+              style={{
+                fontSize: '9px',
+                fontWeight: 500,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: GOLD,
+                marginBottom: '4px',
+              }}
+            >
+              Bank
+            </div>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}
+            >
+              <span style={{ fontSize: '10px', color: MUTED }}>
+                IBAN NL54 FNOM 0541 6127 33
+              </span>
+              <span style={{ fontSize: '10px', color: MUTED }}>
+                BIC FNOMNL22
+              </span>
+            </div>
           </div>
         </div>
       </div>
