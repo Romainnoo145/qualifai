@@ -677,6 +677,14 @@ const INVESTERING_RESPONSIVE_STYLES = `
     .offerte-page-4 { padding: 90px 24px 180px !important; }
   }
 
+  .offerte-page-6 { padding: 120px 72px 160px; }
+  @media (max-width: 1024px) {
+    .offerte-page-6 { padding: 28px 40px !important; }
+  }
+  @media (max-width: 768px) {
+    .offerte-page-6 { padding: 90px 24px 180px !important; }
+  }
+
   .offerte-line-header {
     display: grid;
     grid-template-columns: 32px 1fr 64px 120px;
@@ -1566,17 +1574,20 @@ function Signing({
 
   return (
     <main style={{ ...pageBase, backgroundColor: NAVY }}>
+      <style
+        dangerouslySetInnerHTML={{ __html: INVESTERING_RESPONSIVE_STYLES }}
+      />
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       <div
+        className="offerte-page-6"
         style={{
           position: 'absolute',
           inset: 0,
           display: 'grid',
           gridTemplateRows: 'auto auto 1fr',
-          padding: '120px 72px 160px',
           fontFamily: 'var(--font-sora), sans-serif',
           color: TEXT_ON_NAVY,
           zIndex: 1,
