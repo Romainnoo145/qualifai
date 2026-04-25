@@ -1,8 +1,36 @@
+// NOTE: For fully clean PDF export (no browser header/footer showing date + URL),
+// instruct the user to uncheck "Headers and footers" in the Chrome print dialog
+// (More settings → uncheck "Headers and footers"). The title override below
+// ensures that when headers ARE shown they display a clean document name like
+// "Offerte 2026-OFF002" instead of the layout's generic "Klarifai — Voorstel".
+
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import prisma from '@/lib/prisma';
 import { prettifyDomainToName } from '@/lib/enrichment/company-name';
 import { PrintTrigger } from './print-trigger';
 import type { PaymentInstallment } from '@/lib/quote-defaults';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const prospect = await prisma.prospect.findFirst({
+    where: { readableSlug: slug },
+    select: {
+      id: true,
+      quotes: {
+        where: { isActiveProposal: true },
+        select: { nummer: true },
+        take: 1,
+      },
+    },
+  });
+  const nummer = prospect?.quotes[0]?.nummer ?? slug;
+  return { title: `Offerte ${nummer}` };
+}
 
 // ─── brand tokens (hardcoded — CSS vars don't survive print stylesheets reliably)
 const NAVY = '#0a0a2e';
@@ -69,6 +97,50 @@ function GoldPeriodHeading({
       {children}
       <span style={{ color: GOLD }}>.</span>
     </h2>
+  );
+}
+
+// ─── signature field — used in the grid-aligned signature block
+// Each field has a fixed-height pre-filled slot so empty and filled cells
+// take identical vertical space, keeping rows aligned across columns.
+
+function SignatureField({
+  label,
+  prefilled,
+}: {
+  label: string;
+  prefilled?: string;
+}) {
+  return (
+    <div style={{ paddingBottom: '24px' }}>
+      {/* Eyebrow label */}
+      <div
+        style={{
+          fontSize: '9px',
+          fontWeight: 500,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          color: MUTED,
+          marginBottom: '8px',
+        }}
+      >
+        {label}
+      </div>
+      {/* Pre-filled text slot — minHeight reserves space even when empty */}
+      <div
+        style={{
+          minHeight: '24px',
+          fontSize: '15px',
+          fontWeight: 500,
+          color: NAVY,
+          marginBottom: '8px',
+        }}
+      >
+        {prefilled ?? ''}
+      </div>
+      {/* Underline */}
+      <div style={{ borderBottom: `1px solid ${NAVY}`, width: '100%' }} />
+    </div>
   );
 }
 
@@ -804,149 +876,51 @@ export default async function PrintPage({
           <SectionLabel num="03" label="Handtekening" />
           <GoldPeriodHeading size={22}>Voor akkoord</GoldPeriodHeading>
 
+          {/* Sub-labels: one per column, side by side */}
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              gap: '40px',
-              alignItems: 'start',
+              columnGap: '48px',
+              marginBottom: '20px',
             }}
           >
-            {/* Left: client */}
-            <div
-              style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
-            >
-              <div style={{ fontSize: '12px', fontWeight: 300, color: MUTED }}>
-                Voor akkoord namens{' '}
-                <strong style={{ color: NAVY }}>{displayName}</strong>
-              </div>
-
-              <div>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 500,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: MUTED,
-                    marginBottom: '32px',
-                  }}
-                >
-                  Naam
-                </div>
-                <div
-                  style={{ borderBottom: `1px solid ${NAVY}`, width: '100%' }}
-                />
-              </div>
-
-              <div>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 500,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: MUTED,
-                    marginBottom: '32px',
-                  }}
-                >
-                  Handtekening
-                </div>
-                <div
-                  style={{ borderBottom: `1px solid ${NAVY}`, width: '100%' }}
-                />
-              </div>
-
-              <div>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 500,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: MUTED,
-                    marginBottom: '32px',
-                  }}
-                >
-                  Datum
-                </div>
-                <div
-                  style={{ borderBottom: `1px solid ${NAVY}`, width: '100%' }}
-                />
-              </div>
+            <div style={{ fontSize: '12px', fontWeight: 300, color: MUTED }}>
+              Voor akkoord namens{' '}
+              <strong style={{ color: NAVY }}>{displayName}</strong>
             </div>
-
-            {/* Right: Klarifai */}
-            <div
-              style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
-            >
-              <div style={{ fontSize: '12px', fontWeight: 300, color: MUTED }}>
-                Voor akkoord namens{' '}
-                <strong style={{ color: NAVY }}>Klarifai</strong>
-              </div>
-
-              <div>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 500,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: MUTED,
-                    marginBottom: '32px',
-                  }}
-                >
-                  Naam
-                </div>
-                <div
-                  style={{
-                    fontSize: '15px',
-                    fontWeight: 500,
-                    color: NAVY,
-                    paddingBottom: '8px',
-                    borderBottom: `1px solid ${NAVY}`,
-                  }}
-                >
-                  Romano Kanters
-                </div>
-              </div>
-
-              <div>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 500,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: MUTED,
-                    marginBottom: '32px',
-                  }}
-                >
-                  Handtekening
-                </div>
-                <div
-                  style={{ borderBottom: `1px solid ${NAVY}`, width: '100%' }}
-                />
-              </div>
-
-              <div>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 500,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: MUTED,
-                    marginBottom: '32px',
-                  }}
-                >
-                  Datum
-                </div>
-                <div
-                  style={{ borderBottom: `1px solid ${NAVY}`, width: '100%' }}
-                />
-              </div>
+            <div style={{ fontSize: '12px', fontWeight: 300, color: MUTED }}>
+              Voor akkoord namens{' '}
+              <strong style={{ color: NAVY }}>Klarifai</strong>
             </div>
+          </div>
+
+          {/*
+           * Signature grid: 2 columns × 3 rows.
+           * Items flow left-to-right: [NAAM left] [NAAM right] [HANDTEKENING left] …
+           * Every row is sized to its tallest cell — the minHeight on the pre-filled
+           * slot in SignatureField ensures the empty left cell matches the filled
+           * right cell (Romano Kanters), keeping underlines perfectly aligned.
+           */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              columnGap: '48px',
+              rowGap: '0',
+            }}
+          >
+            {/* Row 1: NAAM */}
+            <SignatureField label="Naam" />
+            <SignatureField label="Naam" prefilled="Romano Kanters" />
+
+            {/* Row 2: HANDTEKENING */}
+            <SignatureField label="Handtekening" />
+            <SignatureField label="Handtekening" />
+
+            {/* Row 3: DATUM */}
+            <SignatureField label="Datum" />
+            <SignatureField label="Datum" />
           </div>
         </div>
 
