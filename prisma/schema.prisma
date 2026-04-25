@@ -66,6 +66,7 @@ enum OutreachType {
   PDF_REPORT
   FOLLOW_UP
   SIGNAL_TRIGGERED
+  QUOTE_DELIVERY
 }
 
 enum VoorstelMode {
@@ -306,6 +307,9 @@ model OutreachLog {
   prospectId String?
   prospect   Prospect? @relation(fields: [prospectId], references: [id], onDelete: SetNull)
 
+  quoteId String?
+  quote   Quote?  @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+
   type    OutreachType
   channel String       @default("email")
   status  String       @default("draft")
@@ -323,6 +327,7 @@ model OutreachLog {
   @@index([type])
   @@index([status])
   @@index([prospectId])
+  @@index([quoteId])
 }
 
 model CreditUsage {
@@ -839,7 +844,8 @@ model Quote {
   // TypeScript shape: { label: string; percentage: number; dueOn: string }[]
   paymentSchedule Json?
 
-  lines QuoteLine[]
+  lines          QuoteLine[]
+  outreachLogs   OutreachLog[]
 
   @@index([prospectId])
   @@index([prospectId, isActiveProposal])
