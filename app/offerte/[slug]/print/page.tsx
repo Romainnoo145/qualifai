@@ -196,10 +196,10 @@ export default async function PrintPage({
           {/* Left: logo */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/brand/klarifai-icon.svg"
+            src="/brand/klarifai-logo-full.png"
             alt="Klarifai"
-            width={36}
-            height={36}
+            width={150}
+            height="auto"
             style={{ marginTop: '4px' }}
           />
 
@@ -238,18 +238,8 @@ export default async function PrintPage({
               lineHeight: 1.05,
             }}
           >
-            Voorstel<span style={{ color: GOLD }}>.</span>
+            Offerte<span style={{ color: GOLD }}>.</span>
           </h1>
-          <div
-            style={{
-              fontSize: '22px',
-              fontWeight: 400,
-              color: NAVY,
-              marginBottom: '16px',
-            }}
-          >
-            voor {displayName}
-          </div>
           <div
             style={{
               width: '80px',
