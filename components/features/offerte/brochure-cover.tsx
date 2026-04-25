@@ -712,6 +712,14 @@ const OFFERTE_RESPONSIVE_STYLES = `
     .offerte-page-6 { padding: 90px 24px 180px !important; }
   }
 
+  .offerte-page-7 { padding: 120px 72px 160px; }
+  @media (max-width: 1024px) {
+    .offerte-page-7 { padding: 28px 40px !important; }
+  }
+  @media (max-width: 768px) {
+    .offerte-page-7 { padding: 90px 24px 180px !important; }
+  }
+
   .offerte-line-header {
     display: grid;
     grid-template-columns: 32px 1fr 64px 120px;
@@ -739,6 +747,23 @@ const OFFERTE_RESPONSIVE_STYLES = `
     align-items: start;
   }
 
+  /* Bevestigd — 3-card grid */
+  .offerte-bevestigd-steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    max-width: 1000px;
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  /* Bevestigd — action buttons */
+  .offerte-bevestigd-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+  }
+
   @media (max-width: 768px) {
     .offerte-signing-split {
       grid-template-columns: 1fr !important;
@@ -753,6 +778,10 @@ const OFFERTE_RESPONSIVE_STYLES = `
       border-bottom: 1px solid rgba(53, 59, 102, 0.55);
     }
     .offerte-line-row .col-omschrijving { font-weight: 600; }
+    /* Issue 1: prevent description text from touching the right edge on mobile */
+    .offerte-line-row .col-omschrijving .description-text {
+      max-width: 85%;
+    }
     .col-uren-bedrag {
       display: flex !important;
       justify-content: space-between;
@@ -762,6 +791,20 @@ const OFFERTE_RESPONSIVE_STYLES = `
     .offerte-investering-split {
       grid-template-columns: 1fr !important;
       gap: 24px !important;
+    }
+    /* Issue 3: 3-card grid collapses to 1 column on mobile */
+    .offerte-bevestigd-steps {
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+    }
+    /* Issue 3: action buttons stack on mobile */
+    .offerte-bevestigd-actions {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 12px !important;
+    }
+    .offerte-bevestigd-actions a {
+      justify-content: center;
     }
   }
 `;
@@ -953,6 +996,7 @@ function Investering({
                     {l.fase}
                   </div>
                   <div
+                    className="description-text"
                     style={{
                       fontSize: '13px',
                       fontWeight: 300,
@@ -1511,12 +1555,24 @@ function Signing({
       ctx.lineJoin = 'round';
     };
 
+    // Track the last measured size so we only reset the canvas when the
+    // CSS box actually changes (not on every ResizeObserver tick).
+    let lastW = 0;
+    let lastH = 0;
+
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
+      // Only re-initialise when the visible size has actually changed.
+      if (Math.round(rect.width) === lastW && Math.round(rect.height) === lastH)
+        return;
+      lastW = Math.round(rect.width);
+      lastH = Math.round(rect.height);
       const dpr = window.devicePixelRatio || 1;
+      // Resizing the canvas attribute clears its content — reset signature state.
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
+      setHasSignature(false);
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       ctx.scale(dpr, dpr);
@@ -1524,6 +1580,12 @@ function Signing({
     };
 
     resize();
+
+    // ResizeObserver catches devtools panel open/close and orientation changes
+    // that don't fire a window resize event.
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+    // Keep window resize as a fallback for browsers without ResizeObserver.
     window.addEventListener('resize', resize);
 
     let drawing = false;
@@ -1586,6 +1648,7 @@ function Signing({
     canvas.addEventListener('touchcancel', end);
 
     return () => {
+      ro.disconnect();
       window.removeEventListener('resize', resize);
       canvas.removeEventListener('mousedown', start);
       window.removeEventListener('mousemove', move);
@@ -2114,6 +2177,7 @@ function Bevestigd({
       <ProgressIndicator label={progressLabel} />
 
       <div
+        className="offerte-page-7"
         style={{
           position: 'absolute',
           inset: 0,
@@ -2121,7 +2185,6 @@ function Bevestigd({
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '120px 72px 160px',
           fontFamily: 'var(--font-sora), sans-serif',
           color: TEXT_ON_NAVY,
           zIndex: 1,
@@ -2187,7 +2250,7 @@ function Bevestigd({
         {/* Lead */}
         <p
           style={{
-            fontSize: '20px',
+            fontSize: 'clamp(15px, 2.2vw, 20px)',
             fontWeight: 500,
             lineHeight: 1.45,
             letterSpacing: '-0.005em',
@@ -2201,17 +2264,8 @@ function Bevestigd({
           voorstel en het contract. Daarna plannen we de kick-off.
         </p>
 
-        {/* Next steps — 3 columns */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: '20px',
-            maxWidth: '1000px',
-            width: '100%',
-            marginTop: '16px',
-          }}
-        >
+        {/* Next steps — 3 columns (collapses to 1 on mobile via .offerte-bevestigd-steps) */}
+        <div className="offerte-bevestigd-steps">
           {steps.map((s) => (
             <div
               key={s.num}
@@ -2263,14 +2317,8 @@ function Bevestigd({
           ))}
         </div>
 
-        {/* Action buttons */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '16px',
-            marginTop: '8px',
-          }}
-        >
+        {/* Action buttons (stacks on mobile via .offerte-bevestigd-actions) */}
+        <div className="offerte-bevestigd-actions">
           <a
             href="/voorstel.pdf"
             download
