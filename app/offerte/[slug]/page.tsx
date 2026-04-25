@@ -49,6 +49,7 @@ export default async function OffertePage({
 
   return (
     <BrochureCover
+      mode="offerte"
       slug={slug}
       prospect={{
         id: prospect.id,
