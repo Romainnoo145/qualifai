@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Play,
   PenLine,
+  Pencil,
   Send,
   ExternalLink,
   Check,
@@ -372,17 +373,19 @@ function ContactRow({
   role,
   isPrimary,
   accent,
+  onEdit,
 }: {
   initials: string;
   name: string;
   role: string;
   isPrimary?: boolean;
   accent?: string;
+  onEdit?: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 px-2.5 py-2 rounded-[6px] hover:bg-[var(--color-surface-hover)] transition-colors">
+    <div className="group relative flex items-center gap-3 px-2.5 py-2 rounded-[6px] hover:bg-[var(--color-surface-hover)] transition-colors">
       <div
-        className="flex h-7 w-7 items-center justify-center rounded-full"
+        className="flex h-7 w-7 items-center justify-center rounded-full flex-shrink-0"
         style={{
           background: accent ?? 'var(--color-ink)',
           color: accent ? '#ffffff' : 'var(--color-gold-hi)',
@@ -402,6 +405,16 @@ function ContactRow({
         <span className="text-[9px] text-[var(--color-tag-quality-text)] tracking-wider">
           primair
         </span>
+      ) : null}
+      {onEdit ? (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--color-muted)] hover:text-[var(--color-ink)] ml-1 flex-shrink-0"
+          aria-label="Bewerk contact"
+        >
+          <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
+        </button>
       ) : null}
     </div>
   );
@@ -559,6 +572,46 @@ export default function ProspectDetail() {
       lastName: newContact.lastName,
       primaryEmail: newContact.primaryEmail || undefined,
       jobTitle: newContact.jobTitle || undefined,
+    });
+  };
+
+  // Inline edit state for existing contacts
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    primaryEmail: '',
+    jobTitle: '',
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateContactMut = (api.contacts.update as any).useMutation({
+    onSuccess: () => {
+      void prospectQuery.refetch();
+      setEditingContactId(null);
+    },
+  });
+  const startEdit = (c: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    primaryEmail: string | null;
+    jobTitle: string | null;
+  }) => {
+    setEditingContactId(c.id);
+    setEditForm({
+      firstName: c.firstName ?? '',
+      lastName: c.lastName ?? '',
+      primaryEmail: c.primaryEmail ?? '',
+      jobTitle: c.jobTitle ?? '',
+    });
+  };
+  const saveEdit = (contactId: string) => {
+    updateContactMut.mutate({
+      id: contactId,
+      firstName: editForm.firstName || undefined,
+      lastName: editForm.lastName || undefined,
+      primaryEmail: editForm.primaryEmail || null,
+      jobTitle: editForm.jobTitle || null,
     });
   };
 
@@ -971,6 +1024,88 @@ export default function ProspectDetail() {
                       '#6e4780',
                       '#b45a3b',
                     ];
+
+                    if (editingContactId === c.id) {
+                      return (
+                        <div
+                          key={c.id}
+                          className="space-y-2 px-2.5 py-2 rounded-[6px] border border-[var(--color-border-strong)] bg-[var(--color-surface)]"
+                        >
+                          <input
+                            type="text"
+                            placeholder="Voornaam"
+                            value={editForm.firstName}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                firstName: e.target.value,
+                              })
+                            }
+                            className="input-minimal w-full text-[13px]"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Achternaam"
+                            value={editForm.lastName}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                lastName: e.target.value,
+                              })
+                            }
+                            className="input-minimal w-full text-[13px]"
+                          />
+                          <input
+                            type="email"
+                            placeholder="email@bedrijf.nl"
+                            value={editForm.primaryEmail}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                primaryEmail: e.target.value,
+                              })
+                            }
+                            className="input-minimal w-full text-[13px]"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Functie (optioneel)"
+                            value={editForm.jobTitle}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                jobTitle: e.target.value,
+                              })
+                            }
+                            className="input-minimal w-full text-[13px]"
+                          />
+                          <div className="flex gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => saveEdit(c.id)}
+                              disabled={
+                                !editForm.firstName ||
+                                !editForm.lastName ||
+                                updateContactMut.isPending
+                              }
+                              className="inline-flex items-center gap-1.5 rounded-[6px] border px-3 py-2 text-[12px] font-medium leading-none transition-colors bg-[var(--color-ink)] border-[var(--color-ink)] text-[var(--color-background)] hover:bg-[#1c1c44] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {updateContactMut.isPending
+                                ? 'Opslaan...'
+                                : 'Opslaan'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingContactId(null)}
+                              className="text-[12px] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors px-1"
+                            >
+                              Annuleer
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     return (
                       <ContactRow
                         key={c.id}
@@ -979,6 +1114,7 @@ export default function ProspectDetail() {
                         role={c.jobTitle ?? '—'}
                         isPrimary={i === 0}
                         accent={accents[i % accents.length]}
+                        onEdit={() => startEdit(c)}
                       />
                     );
                   })}
