@@ -901,9 +901,6 @@ export default function ProspectDetail() {
               <div className="space-y-3 pt-1">
                 {/* Mode pill toggle */}
                 <div>
-                  <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)] block mb-1.5">
-                    Modus
-                  </label>
                   <div className="inline-flex rounded-full border border-[var(--color-border)] p-0.5">
                     <button
                       type="button"
@@ -951,9 +948,6 @@ export default function ProspectDetail() {
                 {/* bespokeUrl — only when BESPOKE */}
                 {voorstelMode === 'BESPOKE' && (
                   <div>
-                    <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)] block mb-1">
-                      Bespoke URL
-                    </label>
                     <input
                       type="url"
                       value={bespokeUrl ?? ''}
