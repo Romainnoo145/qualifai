@@ -689,6 +689,7 @@ const INVESTERING_RESPONSIVE_STYLES = `
     align-items: baseline;
   }
   .col-uren-bedrag { display: contents; }
+  .col-uren-bedrag > div { text-align: right; }
 
   @media (max-width: 768px) {
     .offerte-line-header { display: none !important; }
