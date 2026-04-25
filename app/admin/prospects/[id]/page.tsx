@@ -899,9 +899,9 @@ export default function ProspectDetail() {
             <div className="pt-6 space-y-2.5">
               <Eyebrow>Voorstel routing</Eyebrow>
               <div className="space-y-3 pt-1">
-                {/* Mode pill toggle */}
+                {/* Mode rectangle toggle — full width */}
                 <div>
-                  <div className="inline-flex rounded-full border border-[var(--color-border)] p-0.5">
+                  <div className="grid grid-cols-2 border border-[var(--color-border)] rounded-md overflow-hidden">
                     <button
                       type="button"
                       onClick={() => {
@@ -916,8 +916,8 @@ export default function ProspectDetail() {
                       disabled={updateProspectMut.isPending}
                       className={
                         voorstelMode === 'STANDARD'
-                          ? 'rounded-full bg-[var(--color-ink)] text-white px-3 py-1 text-[12px] font-medium transition-colors'
-                          : 'rounded-full px-3 py-1 text-[12px] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors'
+                          ? 'bg-[var(--color-ink)] text-white py-2.5 px-3 text-[13px] font-medium transition-colors'
+                          : 'bg-transparent text-[var(--color-muted)] py-2.5 px-3 text-[13px] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors'
                       }
                     >
                       Standaard
@@ -936,8 +936,8 @@ export default function ProspectDetail() {
                       disabled={updateProspectMut.isPending}
                       className={
                         voorstelMode === 'BESPOKE'
-                          ? 'rounded-full bg-[var(--color-ink)] text-white px-3 py-1 text-[12px] font-medium transition-colors'
-                          : 'rounded-full px-3 py-1 text-[12px] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors'
+                          ? 'bg-[var(--color-ink)] text-white py-2.5 px-3 text-[13px] font-medium transition-colors'
+                          : 'bg-transparent text-[var(--color-muted)] py-2.5 px-3 text-[13px] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors'
                       }
                     >
                       Bespoke

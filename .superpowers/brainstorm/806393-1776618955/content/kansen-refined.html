@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kansen-pagina</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Sora', sans-serif;
+    color: #fefefe;
+    background: #040026;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  .geo { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+
+  .chrome-logo {
+    position: fixed; top: 32px; left: 48px; z-index: 20;
+    pointer-events: none; user-select: none;
+  }
+  .chrome-logo img { width: 36px; height: 36px; display: block; }
+  .progress-label {
+    position: fixed; top: 36px; right: 36px; z-index: 20;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.15em; color: #fdf97b;
+  }
+  .arrow-back {
+    position: fixed; left: 48px; bottom: 48px; z-index: 20;
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.04);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 150ms;
+  }
+  .arrow-back:hover { background: rgba(255,255,255,0.08); }
+  .arrow-next {
+    position: fixed; right: 48px; bottom: 48px; z-index: 20;
+    width: 56px; height: 56px; border-radius: 50%; border: none;
+    background: linear-gradient(180deg, #e1c33c, #fdf97b);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 8px 24px rgba(225,195,60,0.35);
+    transition: transform 150ms, box-shadow 150ms;
+  }
+  .arrow-next:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(225,195,60,0.5); }
+
+  .num { background: linear-gradient(180deg, #e1c33c, #fdf97b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .dot { background: linear-gradient(180deg, #e1c33c, #fdf97b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .gold-gradient { background: linear-gradient(180deg, #e1c33c, #fdf97b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .container-card {
+    background: linear-gradient(180deg, #040026 0%, #080054 100%);
+    border: 1px solid rgba(53, 59, 102, 0.55);
+    border-radius: 16px;
+  }
+  .section-label {
+    font-size: 12px; font-weight: 500; letter-spacing: 0.18em;
+    text-transform: uppercase; display: flex; align-items: center; gap: 14px;
+  }
+  .tag {
+    font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 999px;
+    border: 1px solid rgba(53,59,102,0.55); color: #898999;
+  }
+  .arrow-svg { width: 22px; height: 22px; }
+</style>
+</head>
+<body>
+
+<svg class="geo" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+  <defs><linearGradient id="sf" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#000319" stop-opacity="0.7"/><stop offset="100%" stop-color="#000319" stop-opacity="0.15"/></linearGradient></defs>
+  <g fill="url(#sf)">
+    <rect x="-120" y="-40" width="320" height="320" rx="40" transform="rotate(18 40 120)"/>
+    <rect x="60" y="420" width="260" height="260" rx="32" transform="rotate(18 190 550)"/>
+    <rect x="1180" y="-80" width="360" height="360" rx="44" transform="rotate(18 1360 100)"/>
+    <rect x="1080" y="520" width="280" height="280" rx="36" transform="rotate(18 1220 660)"/>
+  </g>
+</svg>
+
+<div class="chrome-logo"><img src="http://localhost:9200/brand/klarifai-icon.svg" alt="Klarifai" onerror="this.outerHTML='<div style=\'width:36px;height:36px;background:#e1c33c;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#040026;\'>K</div>'" /></div>
+<div class="progress-label">06 / 07</div>
+<div class="arrow-back"><svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="#fefefe" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></div>
+<div class="arrow-next"><svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="#040026" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+
+<div style="position:relative; z-index:1; padding: 120px 72px 140px; display:grid; grid-template-rows: auto auto 1fr; gap:28px; min-height:100vh; max-width:1400px; margin:0 auto;">
+  <div class="section-label">
+    <span class="num">[ 06 ]</span>
+    <span>Kansen</span>
+  </div>
+
+  <h1 style="font-size: clamp(36px, 4.5vw, 60px); font-weight:700; line-height:1.06; letter-spacing:-0.025em; max-width:800px;">
+    Concrete mogelijkheden<br>voor Nedri Spanstaal<span class="dot">.</span>
+  </h1>
+
+  <!-- Two recommendation cards side by side -->
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; align-content:start; padding-top:8px;">
+
+    <!-- Card 1: SteelCo -->
+    <div class="container-card" style="padding:36px 32px; display:flex; flex-direction:column; gap:20px;">
+      <!-- Header: number + partner label -->
+      <div style="display:flex; align-items:flex-start; gap:20px;">
+        <div class="gold-gradient" style="font-size:44px; font-weight:700; line-height:1; letter-spacing:-0.02em; flex-shrink:0;">01</div>
+        <div style="padding-top:4px;">
+          <div style="font-size:10px; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; color:#898999; margin-bottom:6px;">SteelCo Partnership</div>
+          <div style="font-size:20px; font-weight:500; color:#fefefe; letter-spacing:-0.01em; line-height:1.25;">Groenstaal Toeleveringsketen</div>
+        </div>
+      </div>
+
+      <!-- Narrative -->
+      <p style="font-size:15px; font-weight:300; line-height:1.65; color:#898999;">
+        Verwerk het op ons Staaleiland geproduceerde groene staal tot hoogwaardige spanstaalproducten. Dit lost uw voornaamste strategische uitdaging op: ongekende leveringszekerheid en stabiele prijzen voor uw belangrijkste grondstof.
+      </p>
+
+      <!-- Tags -->
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:auto;">
+        <span class="tag">Supply Chain</span>
+        <span class="tag">Strategic Sourcing</span>
+        <span class="tag">Manufacturing</span>
+      </div>
+    </div>
+
+    <!-- Card 2: InfraCo -->
+    <div class="container-card" style="padding:36px 32px; display:flex; flex-direction:column; gap:20px;">
+      <div style="display:flex; align-items:flex-start; gap:20px;">
+        <div class="gold-gradient" style="font-size:44px; font-weight:700; line-height:1; letter-spacing:-0.02em; flex-shrink:0;">02</div>
+        <div style="padding-top:4px;">
+          <div style="font-size:10px; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; color:#898999; margin-bottom:6px;">InfraCo Partnership</div>
+          <div style="font-size:20px; font-weight:500; color:#fefefe; letter-spacing:-0.01em; line-height:1.25;">Infrastructuur Leverancier</div>
+        </div>
+      </div>
+
+      <p style="font-size:15px; font-weight:300; line-height:1.65; color:#898999;">
+        Uw producten vormen letterlijk de versterking van de infrastructuur die InfraCo zal bouwen — van de 360 km hoofdstructuur tot de 43 circulaire wooneilanden. Een afzetmarkt voor decennia op ongekende schaal.
+      </p>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:auto;">
+        <span class="tag">Critical Supply</span>
+        <span class="tag">Infrastructure</span>
+        <span class="tag">Long-term</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

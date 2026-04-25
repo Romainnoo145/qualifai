@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact-pagina (Terminal)</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Sora', sans-serif;
+    color: #fefefe;
+    background: #040026;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  .geo { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+
+  .chrome-logo {
+    position: fixed; top: 32px; left: 48px; z-index: 20;
+    pointer-events: none; user-select: none;
+  }
+  .chrome-logo img { width: 36px; height: 36px; display: block; }
+  .progress-label {
+    position: fixed; top: 36px; right: 36px; z-index: 20;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.15em; color: #fdf97b;
+  }
+  .arrow-back {
+    position: fixed; left: 48px; bottom: 48px; z-index: 20;
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.04);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 150ms;
+  }
+  .arrow-back:hover { background: rgba(255,255,255,0.08); }
+
+  .num { background: linear-gradient(180deg, #e1c33c, #fdf97b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .dot { background: linear-gradient(180deg, #e1c33c, #fdf97b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .gold-gradient { background: linear-gradient(180deg, #e1c33c, #fdf97b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .gold-pill {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 20px 40px; border-radius: 9999px; border: none;
+    background: linear-gradient(180deg, #e1c33c, #fdf97b);
+    color: #040026; font-family: 'Sora', sans-serif;
+    font-size: 16px; font-weight: 700; letter-spacing: -0.01em;
+    cursor: pointer; text-decoration: none;
+    box-shadow: 0 8px 24px rgba(225,195,60,0.35);
+    transition: transform 150ms, box-shadow 150ms;
+  }
+  .gold-pill:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(225,195,60,0.5); }
+
+  .ghost-pill {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 16px 28px; border-radius: 9999px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: transparent; color: #fefefe;
+    font-family: 'Sora', sans-serif;
+    font-size: 14px; font-weight: 500; letter-spacing: -0.005em;
+    cursor: pointer; text-decoration: none;
+    transition: background 150ms;
+  }
+  .ghost-pill:hover { background: rgba(255,255,255,0.06); }
+
+  .arrow-svg { width: 22px; height: 22px; }
+
+  @media (max-width: 768px) {
+    .cta-row { flex-direction: column !important; }
+    .contact-details { flex-direction: column !important; gap: 8px !important; }
+    .contact-details .sep { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="geo" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+  <defs><linearGradient id="sf" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#000319" stop-opacity="0.7"/><stop offset="100%" stop-color="#000319" stop-opacity="0.15"/></linearGradient></defs>
+  <g fill="url(#sf)">
+    <rect x="-120" y="-40" width="320" height="320" rx="40" transform="rotate(18 40 120)"/>
+    <rect x="60" y="420" width="260" height="260" rx="32" transform="rotate(18 190 550)"/>
+    <rect x="1180" y="-80" width="360" height="360" rx="44" transform="rotate(18 1360 100)"/>
+    <rect x="1080" y="520" width="280" height="280" rx="36" transform="rotate(18 1220 660)"/>
+  </g>
+</svg>
+
+<div class="chrome-logo"><img src="http://localhost:9200/brand/klarifai-icon.svg" alt="Klarifai" onerror="this.outerHTML='<div style=\'width:36px;height:36px;background:#e1c33c;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#040026;\'>K</div>'" /></div>
+<div class="progress-label">07 / 07</div>
+<div class="arrow-back"><svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="#fefefe" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></div>
+<!-- No next arrow — terminal page -->
+
+<div style="position:relative; z-index:1; padding: 120px 72px 140px; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; gap:32px;">
+
+  <!-- Eyebrow -->
+  <div style="font-size:11px; font-weight:500; letter-spacing:0.22em; text-transform:uppercase;" class="gold-gradient">
+    Analyse compleet · Nedri Spanstaal BV
+  </div>
+
+  <!-- Hero -->
+  <h1 style="font-size: clamp(44px, 5.5vw, 76px); font-weight:700; line-height:1.06; letter-spacing:-0.028em; max-width:900px;">
+    Laten we<br>in gesprek gaan<span class="dot">.</span>
+  </h1>
+
+  <!-- Lead -->
+  <p style="font-size:18px; font-weight:300; line-height:1.55; color:#898999; max-width:560px;">
+    Wij hebben de analyse gedaan. Nu is het aan u om te beslissen of deze kansen het waard zijn om te verkennen. Geen verplichtingen, geen druk.
+  </p>
+
+  <!-- CTA buttons -->
+  <div class="cta-row" style="display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:12px;">
+    <a href="#" class="gold-pill">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Plan een gesprek
+    </a>
+    <a href="#" class="ghost-pill">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Stuur een mail
+    </a>
+    <a href="#" class="ghost-pill">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      Bel direct
+    </a>
+  </div>
+
+  <!-- Contact details -->
+  <div class="contact-details" style="display:flex; gap:24px; margin-top:12px; font-size:13px; font-weight:300; color:rgba(137,137,153,0.6); align-items:center;">
+    <span>info@klarifai.nl</span>
+    <span class="sep" style="color:rgba(137,137,153,0.3);">·</span>
+    <span>+31 6 12 34 56 78</span>
+    <span class="sep" style="color:rgba(137,137,153,0.3);">·</span>
+    <span>klarifai.nl</span>
+  </div>
+
+  <!-- Footer -->
+  <div style="position:fixed; bottom:48px; left:0; right:0; text-align:center;">
+    <span style="font-size:10px; font-weight:500; letter-spacing:0.18em; text-transform:uppercase; color:rgba(137,137,153,0.25);">
+      Klarifai · Workflow Analyse
+    </span>
+  </div>
+</div>
+
+</body>
+</html>
