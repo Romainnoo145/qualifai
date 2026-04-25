@@ -23,6 +23,7 @@ interface SendOutreachOptions {
   bodyText: string;
   type: OutreachType;
   metadata?: Record<string, unknown>;
+  quoteId?: string | null;
 }
 
 function buildUnsubscribeUrl(contactId: string, email: string): string {
@@ -49,8 +50,16 @@ function withComplianceFooter(
 export async function sendOutreachEmail(
   options: SendOutreachOptions,
 ): Promise<{ success: boolean; logId: string }> {
-  const { contactId, to, subject, bodyHtml, bodyText, type, metadata } =
-    options;
+  const {
+    contactId,
+    to,
+    subject,
+    bodyHtml,
+    bodyText,
+    type,
+    metadata,
+    quoteId,
+  } = options;
   const emailAssessment = assessEmailForOutreach(to);
   if (emailAssessment.status === 'blocked') {
     throw new Error(
@@ -134,6 +143,7 @@ export async function sendOutreachEmail(
       bodyText: compliantContent.bodyText,
       metadata: messageMetadata as never,
       sentAt,
+      quoteId: quoteId ?? null,
     },
   });
 
