@@ -885,7 +885,7 @@ function Investering({
       <ProgressIndicator label={progressLabel} />
 
       <div
-        className="offerte-page-4"
+        className="offerte-page-4 offerte-page-content"
         style={{
           position: 'absolute',
           inset: 0,
@@ -1709,7 +1709,7 @@ function Signing({
       <ProgressIndicator label={progressLabel} />
 
       <div
-        className="offerte-page-6"
+        className="offerte-page-6 offerte-page-content"
         style={{
           position: 'absolute',
           inset: 0,
@@ -2194,7 +2194,7 @@ function Bevestigd({
       <ProgressIndicator label={progressLabel} />
 
       <div
-        className="offerte-page-7"
+        className="offerte-page-7 offerte-page-content"
         style={{
           position: 'absolute',
           inset: 0,
