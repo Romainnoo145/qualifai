@@ -218,6 +218,8 @@ type ProspectShape = Record<string, unknown> & {
   slug: string;
   readableSlug: string | null;
   lastEnrichedAt: Date | null;
+  voorstelMode: 'STANDARD' | 'BESPOKE';
+  bespokeUrl: string | null;
   _count?: { evidenceItems: number };
   contacts?: Array<{
     id: string;
@@ -509,6 +511,12 @@ export default function ProspectDetail() {
     },
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateProspectMut = (api.admin.updateProspect as any).useMutation({
+    onSuccess: () => {
+      void prospectQuery.refetch();
+    },
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const suggestNumQuery = (api.quotes.suggestNextQuoteNumber as any).useQuery(
     undefined,
   );
@@ -526,6 +534,18 @@ export default function ProspectDetail() {
   // Cast through unknown to avoid TS2589 excessively deep instantiation.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const p = prospectQuery.data as any as ProspectShape | null;
+
+  // Local state for voorstel routing — initialised from prospect data once loaded
+  const [voorstelMode, setVoorstelMode] = useState<'STANDARD' | 'BESPOKE'>(
+    'STANDARD',
+  );
+  const [bespokeUrl, setBespokeUrl] = useState<string | null>(null);
+  // Sync local state when prospect data arrives (handles initial load + refetch)
+  useEffect(() => {
+    if (!p) return;
+    setVoorstelMode(p.voorstelMode ?? 'STANDARD');
+    setBespokeUrl(p.bespokeUrl ?? null);
+  }, [p?.voorstelMode, p?.bespokeUrl]); // eslint-disable-line react-hooks/exhaustive-deps
   const runs = runsQuery.data as ResearchRunRow[] | undefined;
   const latestRun = runs?.[0] ?? null;
 
@@ -965,6 +985,68 @@ export default function ProspectDetail() {
                     Nog geen contacts.
                   </p>
                 ) : null}
+              </div>
+            </div>
+
+            {/* Voorstel routing */}
+            <div className="space-y-2.5">
+              <Eyebrow>Voorstel routing</Eyebrow>
+              <div className="space-y-3 pt-1">
+                {/* Mode select */}
+                <div>
+                  <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)] block mb-1">
+                    Modus
+                  </label>
+                  <select
+                    value={voorstelMode}
+                    onChange={(e) => {
+                      const next = e.target.value as 'STANDARD' | 'BESPOKE';
+                      setVoorstelMode(next);
+                      updateProspectMut.mutate({
+                        id,
+                        voorstelMode: next,
+                      });
+                    }}
+                    className="input-minimal w-full text-[13px]"
+                    disabled={updateProspectMut.isPending}
+                  >
+                    <option value="STANDARD">
+                      Standaard (cold-track auto-brochure)
+                    </option>
+                    <option value="BESPOKE">
+                      Bespoke (warm-track, showcase URL)
+                    </option>
+                  </select>
+                </div>
+
+                {/* bespokeUrl — only when BESPOKE */}
+                {voorstelMode === 'BESPOKE' && (
+                  <div>
+                    <label className="text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-muted)] block mb-1">
+                      Bespoke URL
+                    </label>
+                    <input
+                      type="url"
+                      value={bespokeUrl ?? ''}
+                      onChange={(e) => setBespokeUrl(e.target.value || null)}
+                      onBlur={() => {
+                        if (bespokeUrl !== p.bespokeUrl) {
+                          updateProspectMut.mutate({
+                            id,
+                            bespokeUrl: bespokeUrl || null,
+                          });
+                        }
+                      }}
+                      placeholder="https://maintix-design.vercel.app"
+                      className="input-minimal w-full text-[13px]"
+                      disabled={updateProspectMut.isPending}
+                    />
+                    <p className="text-[11px] text-[var(--color-muted)] mt-1">
+                      De Vercel-URL waar de bespoke voorstel-HTML staat.
+                      Qualifai proxiet deze op /voorstel/[slug].
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </aside>

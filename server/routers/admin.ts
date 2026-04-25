@@ -905,6 +905,8 @@ export const adminRouter = router({
           ])
           .optional(),
         internalNotes: z.string().optional(),
+        voorstelMode: z.enum(['STANDARD', 'BESPOKE']).optional(),
+        bespokeUrl: z.string().url().max(500).nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -923,6 +925,12 @@ export const adminRouter = router({
           ...(input.status !== undefined && { status: input.status }),
           ...(input.internalNotes !== undefined && {
             internalNotes: input.internalNotes,
+          }),
+          ...(input.voorstelMode !== undefined && {
+            voorstelMode: input.voorstelMode,
+          }),
+          ...(input.bespokeUrl !== undefined && {
+            bespokeUrl: input.bespokeUrl,
           }),
         },
       });
