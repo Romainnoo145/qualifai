@@ -668,6 +668,16 @@ function Aanpak({
 // Page 4 — Investering (split: phase breakdown + summary card)
 // ─────────────────────────────────────────────────────────────────────────────
 
+const INVESTERING_RESPONSIVE_STYLES = `
+  .offerte-page-4 { padding: 120px 72px 160px; }
+  @media (max-width: 1024px) {
+    .offerte-page-4 { padding: 28px 40px !important; }
+  }
+  @media (max-width: 768px) {
+    .offerte-page-4 { padding: 90px 24px 180px !important; }
+  }
+`;
+
 function Investering({
   onNext,
   onBack,
@@ -718,17 +728,20 @@ function Investering({
 
   return (
     <main style={{ ...pageBase, backgroundColor: NAVY }}>
+      <style
+        dangerouslySetInnerHTML={{ __html: INVESTERING_RESPONSIVE_STYLES }}
+      />
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       <div
+        className="offerte-page-4"
         style={{
           position: 'absolute',
           inset: 0,
           display: 'grid',
           gridTemplateRows: 'auto auto 1fr',
-          padding: '120px 72px 160px',
           fontFamily: 'var(--font-sora), sans-serif',
           color: TEXT_ON_NAVY,
           zIndex: 1,
@@ -763,7 +776,7 @@ function Investering({
         {/* Hero statement */}
         <h1
           style={{
-            fontSize: 'clamp(40px, 4.5vw, 68px)',
+            fontSize: 'clamp(36px, 5vw, 64px)',
             fontWeight: 700,
             lineHeight: 1.05,
             letterSpacing: '-0.025em',
