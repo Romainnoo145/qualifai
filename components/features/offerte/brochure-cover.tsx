@@ -691,7 +691,14 @@ const INVESTERING_RESPONSIVE_STYLES = `
   .col-uren-bedrag { display: contents; }
   .col-uren-bedrag > div { text-align: right; }
 
+  .offerte-investering-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 48px;
+  }
+
   @media (max-width: 768px) {
+    .offerte-page-4 { padding: 90px 24px 180px !important; }
     .offerte-line-header { display: none !important; }
     .offerte-line-row {
       grid-template-columns: 1fr !important;
@@ -705,6 +712,10 @@ const INVESTERING_RESPONSIVE_STYLES = `
       justify-content: space-between;
       color: #898999;
       font-size: 13px;
+    }
+    .offerte-investering-split {
+      grid-template-columns: 1fr !important;
+      gap: 24px !important;
     }
   }
 `;
@@ -829,10 +840,8 @@ function Investering({
 
         {/* Split: phase breakdown (left) + summary card (right) */}
         <div
+          className="offerte-investering-split"
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)',
-            gap: '48px',
             alignItems: 'start',
             paddingTop: '16px',
           }}
