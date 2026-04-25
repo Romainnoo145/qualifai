@@ -13,7 +13,6 @@ import {
   TEXT_ON_NAVY,
   TEXT_MUTED_ON_NAVY,
   pageBase,
-  sectionLabelStyle,
 } from '@/lib/brochure-tokens';
 import {
   BrandChrome,
@@ -35,7 +34,18 @@ import {
  *   subtle geometric backdrop echoing the video's motion graphics
  */
 
-const TOTAL_PAGES = 7;
+// Page identifiers — order within each mode array determines navigation order
+type PageId =
+  | 'cover'
+  | 'uitdaging'
+  | 'aanpak'
+  | 'investering'
+  | 'scope'
+  | 'signing'
+  | 'bevestigd';
+
+const VOORSTEL_PAGES: PageId[] = ['cover', 'uitdaging', 'aanpak', 'scope'];
+const OFFERTE_PAGES: PageId[] = ['investering', 'signing', 'bevestigd'];
 
 interface BrochureProspect {
   id: string;
@@ -70,14 +80,16 @@ export function BrochureCover({
   quote?: BrochureQuote;
   mode: 'voorstel' | 'offerte';
 }) {
-  // Defensive fallback for renderMode — will be consumed in Task 9+ once behavior differs by mode
-  const _renderMode: 'voorstel' | 'offerte' = mode ?? 'voorstel';
+  const visiblePages: PageId[] =
+    mode === 'offerte' ? OFFERTE_PAGES : VOORSTEL_PAGES;
+  const totalPages = visiblePages.length;
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentPage, setCurrentPage] = useState(0);
 
   const handleNext = useCallback(() => {
-    setCurrentPage((p) => Math.min(p + 1, TOTAL_PAGES - 1));
-  }, []);
+    setCurrentPage((p) => Math.min(p + 1, totalPages - 1));
+  }, [totalPages]);
 
   const handleBack = useCallback(() => {
     setCurrentPage((p) => Math.max(p - 1, 0));
@@ -111,9 +123,11 @@ export function BrochureCover({
     }).catch(() => {});
   }, [prospect?.id]);
 
-  const progressLabel = `${String(currentPage + 1).padStart(2, '0')} / ${String(TOTAL_PAGES).padStart(2, '0')}`;
+  const progressLabel = `${String(currentPage + 1).padStart(2, '0')} / ${String(totalPages).padStart(2, '0')}`;
 
-  if (currentPage === 0) {
+  const pageId = visiblePages[currentPage];
+
+  if (pageId === 'cover') {
     return (
       <main style={pageBase}>
         <video
@@ -140,7 +154,7 @@ export function BrochureCover({
     );
   }
 
-  if (currentPage === 1) {
+  if (pageId === 'uitdaging') {
     return (
       <Uitdaging
         onNext={handleNext}
@@ -152,7 +166,7 @@ export function BrochureCover({
     );
   }
 
-  if (currentPage === 2) {
+  if (pageId === 'aanpak') {
     return (
       <Aanpak
         onNext={handleNext}
@@ -164,7 +178,7 @@ export function BrochureCover({
     );
   }
 
-  if (currentPage === 3) {
+  if (pageId === 'investering') {
     return (
       <Investering
         onNext={handleNext}
@@ -176,7 +190,7 @@ export function BrochureCover({
     );
   }
 
-  if (currentPage === 4) {
+  if (pageId === 'scope') {
     return (
       <Scope
         onNext={handleNext}
@@ -187,7 +201,7 @@ export function BrochureCover({
     );
   }
 
-  if (currentPage === 5) {
+  if (pageId === 'signing') {
     return (
       <Signing
         onBack={handleBack}
@@ -199,7 +213,7 @@ export function BrochureCover({
     );
   }
 
-  if (currentPage === 6) {
+  if (pageId === 'bevestigd') {
     return (
       <Bevestigd
         onBack={handleBack}
@@ -209,73 +223,8 @@ export function BrochureCover({
     );
   }
 
-  return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
-      <GeometricBackdrop />
-      <ProgressIndicator label={progressLabel} />
-      <div
-        style={{
-          position: 'relative',
-          zIndex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          gap: '24px',
-          color: TEXT_ON_NAVY,
-          fontFamily: 'var(--font-sora), sans-serif',
-        }}
-      >
-        <div style={sectionLabelStyle}>
-          <span
-            style={{
-              background: GOLD_GRADIENT,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            [ 0{currentPage} ]
-          </span>
-          <span style={{ marginLeft: '12px' }}>PAGINA {currentPage + 1}</span>
-        </div>
-        <h1
-          style={{
-            fontSize: '64px',
-            fontWeight: 700,
-            margin: 0,
-            letterSpacing: '-0.02em',
-          }}
-        >
-          Placeholder
-          <span
-            style={{
-              background: GOLD_GRADIENT,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            .
-          </span>
-        </h1>
-        <p
-          style={{
-            fontSize: '18px',
-            fontWeight: 300,
-            color: TEXT_MUTED_ON_NAVY,
-            maxWidth: '560px',
-            textAlign: 'center',
-            margin: 0,
-            lineHeight: 1.6,
-          }}
-        >
-          Deze pagina wordt gebouwd in de volgende iteratie tegen DESIGN.md §4.
-        </p>
-      </div>
-      <BackArrow onClick={handleBack} />
-      {currentPage < TOTAL_PAGES - 1 && <NextArrow onClick={handleNext} />}
-    </main>
-  );
+  // Unreachable — all PageId values are handled above
+  return null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
