@@ -895,8 +895,71 @@ export default function ProspectDetail() {
               ) : null}
             </dl>
 
+            {/* Dossier quick links — stand-in for sub-routes */}
+            <div className="pt-8">
+              <Eyebrow>Dossier</Eyebrow>
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <DossierLink
+                  href={`/admin/prospects/${id}/evidence`}
+                  label="Evidence"
+                  count={evidenceCount}
+                />
+                <DossierLink
+                  href={`/admin/prospects/${id}/analyse`}
+                  label="Analyse"
+                />
+                <DossierLink
+                  href={`/admin/prospects/${id}/outreach`}
+                  label="Outreach"
+                  disabled
+                />
+                <DossierLink
+                  href={`/admin/prospects/${id}/resultaten`}
+                  label="Resultaten"
+                  disabled
+                />
+              </div>
+            </div>
+          </aside>
+
+          {/* Center: activity */}
+          <main>
+            <Eyebrow className="mb-4">Activiteit</Eyebrow>
+            <div className="flex gap-1.5 mb-5">
+              {feedTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setFeedFilter(tab.id)}
+                  className={cn(
+                    'px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded border transition-all',
+                    feedFilter === tab.id
+                      ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                      : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {visibleEvents.length === 0 ? (
+              <p className="py-12 text-center text-[13px] text-[var(--color-muted)]">
+                Geen events{' '}
+                {feedFilter !== 'ALL' ? `in filter "${feedFilter}"` : 'nog'}.
+              </p>
+            ) : (
+              <div>
+                {visibleEvents.map((event) => (
+                  <ActivityRow key={event.id} event={event} />
+                ))}
+              </div>
+            )}
+          </main>
+
+          {/* Right: actions + contacts */}
+          <aside className="space-y-8">
             {/* Voorstel routing */}
-            <div className="pt-6 space-y-2.5">
+            <div className="space-y-2.5">
               <Eyebrow>Voorstel routing</Eyebrow>
               <div className="space-y-3 pt-1">
                 {/* Mode rectangle toggle — full width */}
@@ -964,78 +1027,11 @@ export default function ProspectDetail() {
                       className="input-minimal w-full text-[13px]"
                       disabled={updateProspectMut.isPending}
                     />
-                    <p className="text-[11px] text-[var(--color-muted)] mt-1">
-                      De Vercel-URL waar de bespoke voorstel-HTML staat.
-                      Qualifai proxiet deze op /voorstel/[slug].
-                    </p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Dossier quick links — stand-in for sub-routes */}
-            <div className="pt-8">
-              <Eyebrow>Dossier</Eyebrow>
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                <DossierLink
-                  href={`/admin/prospects/${id}/evidence`}
-                  label="Evidence"
-                  count={evidenceCount}
-                />
-                <DossierLink
-                  href={`/admin/prospects/${id}/analyse`}
-                  label="Analyse"
-                />
-                <DossierLink
-                  href={`/admin/prospects/${id}/outreach`}
-                  label="Outreach"
-                  disabled
-                />
-                <DossierLink
-                  href={`/admin/prospects/${id}/resultaten`}
-                  label="Resultaten"
-                  disabled
-                />
-              </div>
-            </div>
-          </aside>
-
-          {/* Center: activity */}
-          <main>
-            <Eyebrow className="mb-4">Activiteit</Eyebrow>
-            <div className="flex gap-1.5 mb-5">
-              {feedTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setFeedFilter(tab.id)}
-                  className={cn(
-                    'px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded border transition-all',
-                    feedFilter === tab.id
-                      ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
-                      : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-            {visibleEvents.length === 0 ? (
-              <p className="py-12 text-center text-[13px] text-[var(--color-muted)]">
-                Geen events{' '}
-                {feedFilter !== 'ALL' ? `in filter "${feedFilter}"` : 'nog'}.
-              </p>
-            ) : (
-              <div>
-                {visibleEvents.map((event) => (
-                  <ActivityRow key={event.id} event={event} />
-                ))}
-              </div>
-            )}
-          </main>
-
-          {/* Right: actions + contacts */}
-          <aside className="space-y-8">
             <div className="space-y-2.5">
               <Eyebrow>Acties</Eyebrow>
               <div className="space-y-1.5 pt-1">
