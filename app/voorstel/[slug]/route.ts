@@ -82,7 +82,7 @@ export async function GET(
   // 4. Inject <base> + tracking pixel
   const baseTag = `<base href="${prospect.bespokeUrl}/">`;
   const trackingScript = `<script>
-fetch('/api/offerte/viewed', {
+fetch(window.location.origin + '/api/offerte/viewed', {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ prospectId: ${JSON.stringify(prospect.id)} }),

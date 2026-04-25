@@ -63,6 +63,7 @@ describe('GET /voorstel/[slug]', () => {
     expect(body).toContain('Frozen');
     expect(body).toContain('<base href="https://example.com/">');
     expect(body).toContain('/api/offerte/viewed');
+    expect(body).toContain("window.location.origin + '/api/offerte/viewed'");
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });
