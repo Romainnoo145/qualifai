@@ -70,7 +70,7 @@ export type BrochureQuote = {
 } | null;
 
 export function BrochureCover({
-  slug: _slug,
+  slug,
   prospect,
   quote,
   mode,
@@ -223,6 +223,7 @@ export function BrochureCover({
           progressLabel={progressLabel}
           sectionLabel={sectionLabel}
           prospect={prospect}
+          slug={slug}
         />
       )}
     </>
@@ -2146,11 +2147,13 @@ function Bevestigd({
   progressLabel,
   sectionLabel: _sectionLabel,
   prospect,
+  slug,
 }: {
   onBack: () => void;
   progressLabel: string;
   sectionLabel: string;
   prospect: BrochureProspect;
+  slug: string;
 }) {
   // Client-side computed — rendered inside a suppressHydrationWarning span
   // below. Safe because the date is a display-only label, never part of
@@ -2337,8 +2340,9 @@ function Bevestigd({
         {/* Action buttons (stacks on mobile via .offerte-bevestigd-actions) */}
         <div className="offerte-bevestigd-actions">
           <a
-            href="/voorstel.pdf"
-            download
+            href={`/offerte/${slug}/print`}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -2366,8 +2370,9 @@ function Bevestigd({
             Download voorstel (PDF)
           </a>
           <a
-            href="/calendar.ics"
-            download
+            href="https://cal.com/romano-kanters-klarifai/kick-off"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -2398,7 +2403,7 @@ function Bevestigd({
             }}
           >
             <CalendarIcon />
-            Agenda uitnodiging
+            Plan kick-off in
           </a>
         </div>
       </div>

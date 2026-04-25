@@ -1,0 +1,811 @@
+import { notFound } from 'next/navigation';
+import prisma from '@/lib/prisma';
+import { prettifyDomainToName } from '@/lib/enrichment/company-name';
+import { PrintTrigger } from './print-trigger';
+
+// ─── brand tokens (hardcoded — CSS vars don't survive print stylesheets reliably)
+const NAVY = '#0a0a2e';
+const GOLD = '#E4C33C';
+const GREY = '#E5E5EA';
+const MUTED = '#5A6878';
+
+// ─── formatting helpers
+function formatEuroNL(amount: number): string {
+  return new Intl.NumberFormat('nl-NL', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+function formatDateNL(date: Date): string {
+  return date.toLocaleDateString('nl-NL', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+// ─── sub-components
+
+function SectionLabel({ num, label }: { num: string; label: string }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        fontSize: '10px',
+        fontWeight: 500,
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase',
+        marginBottom: '18px',
+      }}
+    >
+      <span style={{ color: GOLD }}>[{num}]</span>
+      <span style={{ color: NAVY }}>{label}</span>
+    </div>
+  );
+}
+
+function GoldPeriodHeading({
+  children,
+  size = 28,
+}: {
+  children: React.ReactNode;
+  size?: number;
+}) {
+  return (
+    <h2
+      style={{
+        fontSize: `${size}px`,
+        fontWeight: 700,
+        letterSpacing: '-0.02em',
+        color: NAVY,
+        margin: '0 0 20px',
+        lineHeight: 1.1,
+      }}
+    >
+      {children}
+      <span style={{ color: GOLD }}>.</span>
+    </h2>
+  );
+}
+
+// ─── main page
+
+export default async function PrintPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
+  const prospect = await prisma.prospect.findFirst({
+    where: { readableSlug: slug },
+    select: {
+      id: true,
+      companyName: true,
+      domain: true,
+    },
+  });
+
+  if (!prospect) {
+    notFound();
+  }
+
+  const activeQuote = await prisma.quote.findFirst({
+    where: {
+      prospectId: prospect.id,
+      isActiveProposal: true,
+    },
+    include: {
+      lines: { orderBy: { position: 'asc' } },
+    },
+  });
+
+  if (!activeQuote) {
+    notFound();
+  }
+
+  const displayName =
+    (prospect.companyName && prospect.companyName.trim()) ||
+    prettifyDomainToName(prospect.domain) ||
+    slug;
+
+  const subtotal = activeQuote.lines.reduce(
+    (acc, l) => acc + l.uren * l.tarief,
+    0,
+  );
+  const btwAmount = subtotal * (activeQuote.btwPercentage / 100);
+  const total = subtotal + btwAmount;
+
+  return (
+    <>
+      <PrintTrigger />
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap');
+
+            @page {
+              size: A4;
+              margin: 18mm;
+            }
+
+            * {
+              box-sizing: border-box;
+            }
+
+            html, body {
+              margin: 0;
+              padding: 0;
+              background: #ffffff;
+              color: ${NAVY};
+              font-family: 'Sora', 'Helvetica Neue', Arial, sans-serif;
+              font-size: 14px;
+              line-height: 1.5;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+
+            .print-page {
+              max-width: 720px;
+              margin: 0 auto;
+              padding: 0;
+            }
+
+            @media screen {
+              .print-page {
+                padding: 40px 24px 80px;
+              }
+            }
+
+            @media print {
+              body { background: white; }
+            }
+
+            /* typography */
+            h1, h2, h3 { font-family: 'Sora', sans-serif; color: ${NAVY}; }
+
+            /* table */
+            table { width: 100%; border-collapse: collapse; }
+            td, th { padding: 0; }
+
+            /* utilities */
+            .text-muted { color: ${MUTED}; }
+            .text-gold  { color: ${GOLD}; }
+            .font-mono  { font-family: 'Courier New', Courier, monospace; }
+          `,
+        }}
+      />
+
+      <div className="print-page">
+        {/* ── HEADER ───────────────────────────────────────────────────── */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: '40px',
+            paddingBottom: '24px',
+            borderBottom: `1px solid ${GREY}`,
+          }}
+        >
+          {/* Left: logo */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/klarifai-icon.svg"
+            alt="Klarifai"
+            width={36}
+            height={36}
+            style={{ marginTop: '4px' }}
+          />
+
+          {/* Right: quote nummer */}
+          <div style={{ textAlign: 'right' }}>
+            <div
+              style={{
+                fontSize: '9px',
+                fontWeight: 500,
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color: GOLD,
+                marginBottom: '4px',
+              }}
+            >
+              Offertenummer
+            </div>
+            <div
+              className="font-mono"
+              style={{ fontSize: '15px', fontWeight: 600, color: NAVY }}
+            >
+              #{activeQuote.nummer}
+            </div>
+          </div>
+        </div>
+
+        {/* ── TITLE BLOCK ──────────────────────────────────────────────── */}
+        <div style={{ marginBottom: '36px' }}>
+          <h1
+            style={{
+              fontSize: '48px',
+              fontWeight: 700,
+              letterSpacing: '-0.028em',
+              color: NAVY,
+              margin: '0 0 10px',
+              lineHeight: 1.05,
+            }}
+          >
+            Voorstel<span style={{ color: GOLD }}>.</span>
+          </h1>
+          <div
+            style={{
+              fontSize: '22px',
+              fontWeight: 400,
+              color: NAVY,
+              marginBottom: '16px',
+            }}
+          >
+            voor {displayName}
+          </div>
+          <div
+            style={{
+              width: '80px',
+              height: '1px',
+              background: GOLD,
+            }}
+          />
+        </div>
+
+        {/* ── META ROW ─────────────────────────────────────────────────── */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: '24px',
+            marginBottom: '44px',
+            paddingBottom: '28px',
+            borderBottom: `1px solid ${GREY}`,
+          }}
+        >
+          {[
+            { label: 'Datum', value: formatDateNL(activeQuote.datum) },
+            { label: 'Geldig tot', value: formatDateNL(activeQuote.geldigTot) },
+            { label: 'Status', value: activeQuote.status },
+          ].map(({ label, value }) => (
+            <div key={label}>
+              <div
+                style={{
+                  fontSize: '9px',
+                  fontWeight: 500,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color: GOLD,
+                  marginBottom: '6px',
+                }}
+              >
+                {label}
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: 500, color: NAVY }}>
+                {value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── INTRODUCTIE ──────────────────────────────────────────────── */}
+        {activeQuote.introductie && activeQuote.introductie.trim() && (
+          <div style={{ marginBottom: '44px' }}>
+            <p
+              style={{
+                fontSize: '16px',
+                fontWeight: 300,
+                lineHeight: 1.6,
+                color: NAVY,
+                margin: 0,
+              }}
+            >
+              {activeQuote.introductie}
+            </p>
+          </div>
+        )}
+
+        {/* ── INVESTERING ──────────────────────────────────────────────── */}
+        <div style={{ marginBottom: '48px' }}>
+          <SectionLabel num="01" label="Investering" />
+          <GoldPeriodHeading size={28}>Het prijsvoorstel</GoldPeriodHeading>
+
+          {/* Line items */}
+          <table style={{ marginBottom: '24px' }}>
+            <thead>
+              <tr
+                style={{
+                  borderBottom: `1px solid ${GREY}`,
+                  paddingBottom: '10px',
+                }}
+              >
+                <th
+                  style={{
+                    width: '32px',
+                    textAlign: 'left',
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: MUTED,
+                    paddingBottom: '10px',
+                  }}
+                >
+                  #
+                </th>
+                <th
+                  style={{
+                    textAlign: 'left',
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: MUTED,
+                    paddingBottom: '10px',
+                  }}
+                >
+                  Fase
+                </th>
+                <th
+                  style={{
+                    width: '60px',
+                    textAlign: 'right',
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: MUTED,
+                    paddingBottom: '10px',
+                  }}
+                >
+                  Uren
+                </th>
+                <th
+                  style={{
+                    width: '100px',
+                    textAlign: 'right',
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: MUTED,
+                    paddingBottom: '10px',
+                  }}
+                >
+                  Bedrag
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {activeQuote.lines.map((line, i) => {
+                const lineTotal = line.uren * line.tarief;
+                return (
+                  <tr
+                    key={line.id}
+                    style={{ borderBottom: `1px solid ${GREY}` }}
+                  >
+                    <td
+                      style={{
+                        paddingTop: '14px',
+                        paddingBottom: '14px',
+                        verticalAlign: 'top',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: '13px',
+                          fontWeight: 700,
+                          color: GOLD,
+                        }}
+                      >
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                    </td>
+                    <td
+                      style={{
+                        paddingTop: '14px',
+                        paddingBottom: '14px',
+                        paddingRight: '16px',
+                        verticalAlign: 'top',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          color: NAVY,
+                          marginBottom: '4px',
+                        }}
+                      >
+                        {line.fase}
+                      </div>
+                      {line.omschrijving && (
+                        <div
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: 300,
+                            color: MUTED,
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          {line.omschrijving}
+                        </div>
+                      )}
+                    </td>
+                    <td
+                      style={{
+                        paddingTop: '14px',
+                        paddingBottom: '14px',
+                        textAlign: 'right',
+                        verticalAlign: 'top',
+                        fontSize: '14px',
+                        color: NAVY,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {line.uren}
+                    </td>
+                    <td
+                      style={{
+                        paddingTop: '14px',
+                        paddingBottom: '14px',
+                        textAlign: 'right',
+                        verticalAlign: 'top',
+                        fontSize: '14px',
+                        color: NAVY,
+                        fontVariantNumeric: 'tabular-nums',
+                        fontWeight: 500,
+                      }}
+                    >
+                      € {formatEuroNL(lineTotal)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {/* Totals block */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              gap: '8px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                width: '280px',
+              }}
+            >
+              <span style={{ fontSize: '13px', color: MUTED }}>
+                Subtotaal excl. BTW
+              </span>
+              <span
+                style={{
+                  fontSize: '13px',
+                  color: NAVY,
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                € {formatEuroNL(subtotal)}
+              </span>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                width: '280px',
+              }}
+            >
+              <span style={{ fontSize: '13px', color: MUTED }}>
+                BTW ({activeQuote.btwPercentage}%)
+              </span>
+              <span
+                style={{
+                  fontSize: '13px',
+                  color: NAVY,
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                € {formatEuroNL(btwAmount)}
+              </span>
+            </div>
+            {/* Separator */}
+            <div style={{ width: '280px', height: '2px', background: NAVY }} />
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                width: '280px',
+                alignItems: 'baseline',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  color: NAVY,
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                Totaal incl. BTW
+              </span>
+              <span
+                style={{
+                  fontSize: '22px',
+                  fontWeight: 700,
+                  color: NAVY,
+                  fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                <span style={{ color: GOLD }}>€</span> {formatEuroNL(total)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── AKKOORD / VOORWAARDEN ─────────────────────────────────────── */}
+        <div
+          style={{
+            marginBottom: '48px',
+            paddingTop: '32px',
+            borderTop: `1px solid ${GREY}`,
+          }}
+        >
+          <SectionLabel num="02" label="Akkoord" />
+          <GoldPeriodHeading size={22}>Voorwaarden</GoldPeriodHeading>
+
+          <ul
+            style={{
+              margin: 0,
+              padding: 0,
+              listStyle: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+            }}
+          >
+            {[
+              'Betaaltermijn 14 dagen na factuurdatum.',
+              `Intellectueel eigendom gaat over naar ${displayName} na volledige betaling.`,
+              '30 dagen garantie op opgeleverd werk.',
+              'Een op maat gemaakte verwerkersovereenkomst volgt samen met het contract, binnen 5 werkdagen na akkoord.',
+              'Algemene voorwaarden zijn van toepassing. Zie klarifai.nl/legal/terms-and-conditions.',
+            ].map((term) => (
+              <li
+                key={term}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px',
+                  fontSize: '13px',
+                  fontWeight: 300,
+                  color: NAVY,
+                  lineHeight: 1.55,
+                }}
+              >
+                <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0 }}>
+                  —
+                </span>
+                <span>{term}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* ── HANDTEKENING ─────────────────────────────────────────────── */}
+        <div
+          style={{
+            marginBottom: '56px',
+            paddingTop: '32px',
+            borderTop: `1px solid ${GREY}`,
+          }}
+        >
+          <SectionLabel num="03" label="Handtekening" />
+          <GoldPeriodHeading size={22}>Voor akkoord</GoldPeriodHeading>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '40px',
+            }}
+          >
+            {/* Left: client */}
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
+            >
+              <div style={{ fontSize: '12px', fontWeight: 300, color: MUTED }}>
+                Voor akkoord namens{' '}
+                <strong style={{ color: NAVY }}>{displayName}</strong>
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: MUTED,
+                    marginBottom: '32px',
+                  }}
+                >
+                  Naam
+                </div>
+                <div
+                  style={{ borderBottom: `1px solid ${NAVY}`, width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: MUTED,
+                    marginBottom: '32px',
+                  }}
+                >
+                  Handtekening
+                </div>
+                <div
+                  style={{ borderBottom: `1px solid ${NAVY}`, width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: MUTED,
+                    marginBottom: '32px',
+                  }}
+                >
+                  Datum
+                </div>
+                <div
+                  style={{ borderBottom: `1px solid ${NAVY}`, width: '100%' }}
+                />
+              </div>
+            </div>
+
+            {/* Right: Klarifai */}
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
+            >
+              <div style={{ fontSize: '12px', fontWeight: 300, color: MUTED }}>
+                Voor akkoord namens{' '}
+                <strong style={{ color: NAVY }}>Klarifai</strong>
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: MUTED,
+                    marginBottom: '8px',
+                  }}
+                >
+                  Naam
+                </div>
+                <div
+                  style={{
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    color: NAVY,
+                    paddingBottom: '8px',
+                    borderBottom: `1px solid ${NAVY}`,
+                  }}
+                >
+                  Romano Kanters
+                </div>
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: MUTED,
+                    marginBottom: '32px',
+                  }}
+                >
+                  Handtekening
+                </div>
+                <div
+                  style={{ borderBottom: `1px solid ${NAVY}`, width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: MUTED,
+                    marginBottom: '32px',
+                  }}
+                >
+                  Datum
+                </div>
+                <div
+                  style={{ borderBottom: `1px solid ${NAVY}`, width: '100%' }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── FOOTER ───────────────────────────────────────────────────── */}
+        <div
+          style={{
+            paddingTop: '20px',
+            borderTop: `1px solid ${GREY}`,
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: '20px',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                color: NAVY,
+                letterSpacing: '0.05em',
+              }}
+            >
+              KLARIFAI B.V.
+            </span>
+            {/* TODO: real address */}
+            <span style={{ fontSize: '10px', color: MUTED }}>
+              (TODO: straat + huisnummer)
+            </span>
+            <span style={{ fontSize: '10px', color: MUTED }}>
+              (TODO: postcode + plaatsnaam)
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {/* TODO: real KvK + BTW numbers */}
+            <span style={{ fontSize: '10px', color: MUTED }}>
+              KvK (TODO: XX.XXX.XXX)
+            </span>
+            <span style={{ fontSize: '10px', color: MUTED }}>
+              BTW (TODO: NL...B01)
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={{ fontSize: '10px', color: MUTED }}>
+              info@klarifai.nl
+            </span>
+            <span style={{ fontSize: '10px', color: MUTED }}>klarifai.nl</span>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
