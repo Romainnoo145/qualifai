@@ -68,6 +68,11 @@ enum OutreachType {
   SIGNAL_TRIGGERED
 }
 
+enum VoorstelMode {
+  STANDARD
+  BESPOKE
+}
+
 enum ResearchStatus {
   PENDING
   CRAWLING
@@ -177,6 +182,10 @@ model Prospect {
   // Status tracking
   status        ProspectStatus @default(DRAFT)
   internalNotes String?
+
+  // Voorstel routing — STANDARD = render via standard 7-page brochure, BESPOKE = proxy from bespokeUrl
+  voorstelMode VoorstelMode @default(STANDARD)
+  bespokeUrl   String?      @db.VarChar(500)
 
   // Project scoping
   projectId String  @default("project_klarifai")
