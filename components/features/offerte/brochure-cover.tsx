@@ -154,77 +154,67 @@ export function BrochureCover({
     );
   }
 
-  if (pageId === 'uitdaging') {
-    return (
-      <Uitdaging
-        onNext={handleNext}
-        onBack={handleBack}
-        progressLabel={progressLabel}
-        prospect={prospect}
-        quote={quote ?? null}
-      />
-    );
-  }
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: OFFERTE_RESPONSIVE_STYLES }} />
+      {pageId === 'uitdaging' && (
+        <Uitdaging
+          onNext={handleNext}
+          onBack={handleBack}
+          progressLabel={progressLabel}
+          prospect={prospect}
+          quote={quote ?? null}
+        />
+      )}
 
-  if (pageId === 'aanpak') {
-    return (
-      <Aanpak
-        onNext={handleNext}
-        onBack={handleBack}
-        progressLabel={progressLabel}
-        prospect={prospect}
-        quote={quote ?? null}
-      />
-    );
-  }
+      {pageId === 'aanpak' && (
+        <Aanpak
+          onNext={handleNext}
+          onBack={handleBack}
+          progressLabel={progressLabel}
+          prospect={prospect}
+          quote={quote ?? null}
+        />
+      )}
 
-  if (pageId === 'investering') {
-    return (
-      <Investering
-        onNext={handleNext}
-        onBack={currentPage === 0 ? undefined : handleBack}
-        progressLabel={progressLabel}
-        prospect={prospect}
-        quote={quote ?? null}
-      />
-    );
-  }
+      {pageId === 'investering' && (
+        <Investering
+          onNext={handleNext}
+          onBack={currentPage === 0 ? undefined : handleBack}
+          progressLabel={progressLabel}
+          prospect={prospect}
+          quote={quote ?? null}
+        />
+      )}
 
-  if (pageId === 'scope') {
-    return (
-      <Scope
-        onNext={handleNext}
-        onBack={handleBack}
-        progressLabel={progressLabel}
-        prospect={prospect}
-      />
-    );
-  }
+      {pageId === 'scope' && (
+        <Scope
+          onNext={handleNext}
+          onBack={handleBack}
+          progressLabel={progressLabel}
+          prospect={prospect}
+        />
+      )}
 
-  if (pageId === 'signing') {
-    return (
-      <Signing
-        onBack={handleBack}
-        onNext={handleNext}
-        progressLabel={progressLabel}
-        prospect={prospect}
-        quote={quote ?? null}
-      />
-    );
-  }
+      {pageId === 'signing' && (
+        <Signing
+          onBack={handleBack}
+          onNext={handleNext}
+          progressLabel={progressLabel}
+          prospect={prospect}
+          quote={quote ?? null}
+        />
+      )}
 
-  if (pageId === 'bevestigd') {
-    return (
-      <Bevestigd
-        onBack={handleBack}
-        progressLabel={progressLabel}
-        prospect={prospect}
-      />
-    );
-  }
-
-  // Defensive fallback — navigation bounds prevent this at runtime but pageId can be undefined under noUncheckedIndexedAccess
-  return null;
+      {pageId === 'bevestigd' && (
+        <Bevestigd
+          onBack={handleBack}
+          progressLabel={progressLabel}
+          prospect={prospect}
+        />
+      )}
+    </>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -668,7 +658,7 @@ function Aanpak({
 // Page 4 — Investering (split: phase breakdown + summary card)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const INVESTERING_RESPONSIVE_STYLES = `
+const OFFERTE_RESPONSIVE_STYLES = `
   .offerte-page-4 { padding: 120px 72px 160px; }
   @media (max-width: 1024px) {
     .offerte-page-4 { padding: 28px 40px !important; }
@@ -778,9 +768,6 @@ function Investering({
 
   return (
     <main style={{ ...pageBase, backgroundColor: NAVY }}>
-      <style
-        dangerouslySetInnerHTML={{ __html: INVESTERING_RESPONSIVE_STYLES }}
-      />
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
@@ -1574,9 +1561,6 @@ function Signing({
 
   return (
     <main style={{ ...pageBase, backgroundColor: NAVY }}>
-      <style
-        dangerouslySetInnerHTML={{ __html: INVESTERING_RESPONSIVE_STYLES }}
-      />
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
