@@ -141,13 +141,9 @@ export default function UseCasesPage() {
       {/* Header */}
       <div className="flex items-baseline justify-between pb-4 border-b border-[var(--color-border)]">
         <div>
-          <h1 className="text-[32px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.1]">
+          <h1 className="text-[48px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
             Use Cases<span className="text-[var(--color-gold-hi)]">.</span>
           </h1>
-          <p className="text-[12px] text-[var(--color-muted)] mt-1">
-            {list.length} diensten in{' '}
-            {grouped.length + (uncategorized.length > 0 ? 1 : 0)} sectoren
-          </p>
         </div>
         <button
           onClick={() => {

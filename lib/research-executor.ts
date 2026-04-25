@@ -83,6 +83,18 @@ import {
 } from '@/lib/analysis/evidence-selector';
 import { generateSectionVisuals } from '@/lib/analysis/visual-generator';
 import { createHash } from 'node:crypto';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GEMINI_MODEL_FLASH } from '@/lib/ai/constants';
+
+let _descGenAI: GoogleGenerativeAI | null = null;
+function getDescGenAI(): GoogleGenerativeAI {
+  if (!_descGenAI) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) throw new Error('GEMINI_API_KEY not set');
+    _descGenAI = new GoogleGenerativeAI(key);
+  }
+  return _descGenAI;
+}
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -1300,6 +1312,11 @@ export async function executeResearchRun(
       metadata: draft.metadata,
     }));
 
+    await db.researchRun.update({
+      where: { id: run.id },
+      data: { status: 'EXTRACTING' },
+    });
+
     const scored = await scoreEvidenceBatch(toScore, {
       companyName: prospect.companyName,
       industry: prospect.industry,
@@ -1404,6 +1421,45 @@ export async function executeResearchRun(
     evidenceRecords.push(record);
   }
 
+  // Generate prospect description if missing (uses website evidence snippets + Gemini Flash)
+  let prospectDescription = prospect.description ?? null;
+  if (!prospectDescription) {
+    try {
+      const websiteSnippets = evidenceRecords
+        .filter(
+          (r) =>
+            r.sourceType === 'WEBSITE' && r.snippet && r.snippet.length > 40,
+        )
+        .slice(0, 4)
+        .map((r) => r.snippet)
+        .join('\n\n');
+
+      if (websiteSnippets.length > 60) {
+        const descModel = getDescGenAI().getGenerativeModel({
+          model: GEMINI_MODEL_FLASH,
+        });
+        const descPrompt = `Je bent een B2B-analist. Schrijf één zin in het Nederlands die beschrijft wat ${prospect.companyName ?? prospect.domain} doet, gebaseerd op onderstaande websitecontent. Maximaal 20 woorden. Geen aanhalingstekens, geen punt aan het einde.\n\n${websiteSnippets}`;
+        const descResult = await descModel.generateContent(descPrompt);
+        const generated = descResult.response
+          .text()
+          .trim()
+          .replace(/^["']|["']$/g, '');
+        if (generated) {
+          await db.prospect.update({
+            where: { id: prospect.id },
+            data: { description: generated },
+          });
+          prospectDescription = generated;
+        }
+      }
+    } catch (err) {
+      console.error(
+        '[Description Gen] Failed to generate prospect description:',
+        err,
+      );
+    }
+  }
+
   // Phase 42: Intent extraction for Atlantis prospects (before RAG retrieval)
   let intentVars: IntentVariables | null = null;
   if (prospect.project.projectType === 'ATLANTIS') {
@@ -1427,7 +1483,7 @@ export async function executeResearchRun(
         {
           companyName: prospect.companyName ?? prospect.domain,
           industry: prospect.industry ?? null,
-          description: prospect.description ?? null,
+          description: prospectDescription,
           specialties: prospect.specialties,
         },
       );
@@ -1482,7 +1538,7 @@ export async function executeResearchRun(
       const aiQueryInputs = await buildEvidenceAwareQueries({
         companyName: prospect.companyName ?? prospect.domain,
         industry: prospect.industry,
-        description: prospect.description,
+        description: prospectDescription,
         spvName: prospect.spv?.name ?? null,
         evidence: nonRagEvidence,
       });
@@ -1507,7 +1563,7 @@ export async function executeResearchRun(
           {
             companyName: prospect.companyName ?? prospect.domain,
             industry: prospect.industry,
-            description: prospect.description,
+            description: prospectDescription,
             specialties: prospect.specialties,
             technologies: prospect.technologies,
             country: prospect.country ?? null,
@@ -1559,7 +1615,7 @@ export async function executeResearchRun(
         {
           companyName: prospect.companyName ?? prospect.domain,
           industry: prospect.industry,
-          description: prospect.description,
+          description: prospectDescription,
           specialties: prospect.specialties,
           technologies: prospect.technologies,
           country: prospect.country ?? null,
@@ -1708,6 +1764,11 @@ export async function executeResearchRun(
         // Non-critical — proceed without cross-connections
       }
 
+      await db.researchRun.update({
+        where: { id: run.id },
+        data: { status: 'BRIEFING' },
+      });
+
       // Phase 50: Narrative analysis generation — produces flowing boardroom content
       try {
         const spvs = await db.sPV.findMany({
@@ -1743,7 +1804,7 @@ export async function executeResearchRun(
           prospect: {
             companyName: prospect.companyName ?? prospect.domain,
             industry: prospect.industry ?? null,
-            description: prospect.description ?? null,
+            description: prospectDescription,
             specialties: prospect.specialties ?? [],
             country: prospect.country ?? null,
             city: prospect.city ?? null,
@@ -1977,7 +2038,7 @@ export async function executeResearchRun(
             prospect: {
               companyName: prospect.companyName ?? prospect.domain,
               industry: prospect.industry ?? null,
-              description: prospect.description ?? null,
+              description: prospectDescription,
               specialties: prospect.specialties ?? [],
               country: prospect.country ?? null,
               city: prospect.city ?? null,
@@ -2136,6 +2197,11 @@ export async function executeResearchRun(
     where: { researchRunId: run.id },
   });
 
+  await db.researchRun.update({
+    where: { id: run.id },
+    data: { status: 'HYPOTHESIS' },
+  });
+
   const hypotheses = await generateHypothesisDraftsAI(
     evidenceRecords.map((item) => ({
       id: item.id,
@@ -2151,7 +2217,7 @@ export async function executeResearchRun(
       companyName: prospect.companyName,
       industry: prospect.industry,
       specialties: prospect.specialties,
-      description: prospect.description,
+      description: prospectDescription,
     },
     gate.confirmedPainTags,
     input.hypothesisModel,

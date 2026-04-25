@@ -373,11 +373,10 @@ function AllCompanies() {
                   className="border border-[var(--color-border)] bg-[var(--color-surface-2)]"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div>
                     <span className="text-[17px] font-medium text-[var(--color-ink)] tracking-[-0.01em]">
                       {prospect.companyName ?? prospect.domain}
                     </span>
-                    <ResearchRunBadge status={run?.status} />
                   </div>
                   <div className="flex items-center gap-2 mt-1 text-[12px] font-light text-[var(--color-muted)]">
                     <span>{prospect.domain}</span>
@@ -387,6 +386,7 @@ function AllCompanies() {
                         <span>{prospect.industry}</span>
                       </>
                     )}
+                    <ResearchRunBadge status={run?.status} />
                   </div>
                 </div>
 

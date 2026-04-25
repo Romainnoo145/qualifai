@@ -129,10 +129,12 @@ export default function QuoteDetailPage() {
       },
     });
 
-  // TODO: tRPC v11 inference gap — quotes.sendEmail (if available)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sendEmailMutation = (api.quotes as any).sendEmail?.useMutation?.({
-    onSuccess: () => setShowEmailCompose(false),
+  const sendEmailMutation = api.quotes.sendEmail.useMutation({
+    onSuccess: () => {
+      setShowEmailCompose(false);
+      utils.quotes?.get?.invalidate?.({ slug });
+      utils.quotes?.list?.invalidate?.();
+    },
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -640,9 +642,9 @@ export default function QuoteDetailPage() {
                 defaultTo={''}
                 defaultSubject={`Voorstel ${quote.nummer} — ${quote.onderwerp}`}
                 brochureUrl={brochureUrl}
-                isSubmitting={sendEmailMutation?.isPending ?? false}
+                isSubmitting={sendEmailMutation.isPending}
                 onSend={(data) =>
-                  sendEmailMutation?.mutate?.({ id: quote.id, ...data })
+                  sendEmailMutation.mutate({ id: quote.id, ...data })
                 }
                 onCancel={() => setShowEmailCompose(false)}
               />

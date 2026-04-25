@@ -20,6 +20,7 @@ import {
 export function BrandChrome({ companyName }: { companyName?: string } = {}) {
   return (
     <div
+      className="analyse-chrome-brand"
       style={{
         position: 'fixed',
         top: '32px',
@@ -64,6 +65,7 @@ export function BrandChrome({ companyName }: { companyName?: string } = {}) {
 export function ProgressIndicator({ label }: { label: string }) {
   return (
     <div
+      className="analyse-chrome-progress"
       aria-label={`Pagina ${label}`}
       style={{
         position: 'fixed',
@@ -157,6 +159,7 @@ export function NextArrow({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
+      className="analyse-chrome-next"
       aria-label="Volgende pagina"
       style={{
         position: 'fixed',
@@ -198,6 +201,7 @@ export function BackArrow({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
+      className="analyse-chrome-back"
       aria-label="Vorige pagina"
       style={{
         position: 'fixed',

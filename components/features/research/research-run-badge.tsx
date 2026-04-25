@@ -2,7 +2,7 @@
 
 import type { ResearchStatus } from '@prisma/client';
 import { motion, useReducedMotion } from 'framer-motion';
-import { isActiveStatus, statusLabel } from '@/lib/research/status-labels';
+import { isActiveStatus } from '@/lib/research/status-labels';
 
 interface Props {
   status: ResearchStatus | string | null | undefined;
@@ -13,37 +13,21 @@ export function ResearchRunBadge({ status }: Props) {
 
   if (!isActiveStatus(status)) return null;
 
-  const label = statusLabel(status) ?? 'bezig';
-
   return (
-    <span
+    <motion.span
       role="status"
       aria-live="polite"
-      aria-label={`Onderzoek loopt: ${label}`}
-      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-ink)] bg-[var(--color-gold)]/15 border border-[var(--color-gold)]/40"
+      aria-label="Onderzoek loopt"
+      className="text-[11px] font-300 italic"
+      style={{ color: 'var(--color-muted)' }}
+      animate={reduceMotion ? {} : { opacity: [0.45, 1, 0.45] }}
+      transition={
+        reduceMotion
+          ? undefined
+          : { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }
+      }
     >
-      <span className="flex items-center gap-0.5" aria-hidden="true">
-        {[0, 0.15, 0.3].map((delay, i) => (
-          <motion.span
-            key={i}
-            className="h-1 w-1 rounded-full bg-[var(--color-gold)]"
-            animate={
-              reduceMotion ? {} : { scale: [1, 1.4, 1], opacity: [0.4, 1, 0.4] }
-            }
-            transition={
-              reduceMotion
-                ? undefined
-                : {
-                    duration: 1.2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                    delay,
-                  }
-            }
-          />
-        ))}
-      </span>
-      onderzoek loopt
-    </span>
+      onderzoek loopt…
+    </motion.span>
   );
 }

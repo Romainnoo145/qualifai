@@ -182,7 +182,7 @@ describe('quotes router — multi-project isolation (TEST-03 / DATA-10)', () => 
 
     let thrown: TRPCError | null = null;
     try {
-      await caller.quotes.get({ id: 'q-other-project' });
+      await caller.quotes.get({ slug: 'q-other-project' });
     } catch (e) {
       thrown = e as TRPCError;
     }

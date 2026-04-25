@@ -2,15 +2,18 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Trash2 } from 'lucide-react';
 import { api } from '@/components/providers';
 import { PageLoader } from '@/components/ui/page-loader';
 import { QuoteStatusBadge } from '@/components/features/quotes/quote-status-badge';
 import { computeQuoteTotals, formatEuro } from '@/lib/quotes/quote-totals';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { QuoteStatus } from '@prisma/client';
 import { cn } from '@/lib/utils';
 
 type Row = {
   id: string;
+  slug: string | null;
   nummer: string;
   onderwerp: string;
   status: QuoteStatus;
@@ -46,7 +49,18 @@ function matchesFilter(status: QuoteStatus, filter: Filter): boolean {
 export default function QuotesListPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const list = (api.quotes.list as any).useQuery(undefined);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const deleteMut = (api.quotes.delete as any).useMutation({
+    onSuccess: () => {
+      list.refetch();
+      setConfirmId(null);
+    },
+  });
   const [filter, setFilter] = useState<Filter>('ALL');
+  const [confirmId, setConfirmId] = useState<{
+    id: string;
+    nummer: string;
+  } | null>(null);
   const [sortKey, setSortKey] = useState<
     'nummer' | 'bedrijf' | 'bedrag' | 'datum'
   >('datum');
@@ -78,6 +92,16 @@ export default function QuotesListPage() {
 
   return (
     <div className="max-w-[1400px] space-y-10">
+      {confirmId && (
+        <ConfirmDialog
+          title={`Offerte ${confirmId.nummer} verwijderen`}
+          description="Deze actie kan niet ongedaan worden gemaakt. Alle regels worden ook verwijderd."
+          confirmLabel="Ja, verwijderen"
+          isPending={deleteMut.isPending}
+          onConfirm={() => deleteMut.mutate({ id: confirmId.id })}
+          onCancel={() => setConfirmId(null)}
+        />
+      )}
       {/* Header */}
       <div className="flex items-baseline justify-between pb-6 border-b border-[var(--color-border)]">
         <h1 className="text-[48px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
@@ -193,7 +217,7 @@ export default function QuotesListPage() {
                     <tr
                       key={r.id}
                       onClick={() =>
-                        (window.location.href = `/admin/quotes/${r.id}`)
+                        (window.location.href = `/admin/quotes/${r.slug ?? r.id}`)
                       }
                       className="border-b border-[var(--color-surface-2)] hover:pl-1 hover:bg-[var(--color-surface-2)]/50 transition-all cursor-pointer"
                     >
@@ -222,6 +246,22 @@ export default function QuotesListPage() {
                       </td>
                       <td className="py-3.5 text-right text-[var(--color-muted)] tabular-nums text-[12px]">
                         {new Date(r.createdAt).toLocaleDateString('nl-NL')}
+                      </td>
+                      <td
+                        className="py-3.5 pl-4 text-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          title="Verwijder offerte"
+                          disabled={deleteMut.isPending}
+                          onClick={() =>
+                            setConfirmId({ id: r.id, nummer: r.nummer })
+                          }
+                          className="p-1.5 rounded text-[var(--color-muted)] hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </td>
                     </tr>
                   );
