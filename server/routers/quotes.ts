@@ -83,6 +83,7 @@ export const quotesRouter = router({
       z
         .object({
           status: z.enum(QUOTE_STATUS_VALUES).optional(),
+          prospectId: z.string().optional(),
         })
         .optional(),
     )
@@ -91,6 +92,7 @@ export const quotesRouter = router({
         where: {
           prospect: { projectId: ctx.projectId },
           ...(input?.status && { status: input.status }),
+          ...(input?.prospectId && { prospectId: input.prospectId }),
         },
         include: {
           lines: { orderBy: { position: 'asc' } },

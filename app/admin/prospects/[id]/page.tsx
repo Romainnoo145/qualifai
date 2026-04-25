@@ -530,6 +530,44 @@ export default function ProspectDetail() {
   const [copied, setCopied] = useState(false);
   const [feedFilter, setFeedFilter] = useState<'ALL' | EventType>('ALL');
 
+  // Contacts add-form state
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [newContact, setNewContact] = useState({
+    firstName: '',
+    lastName: '',
+    primaryEmail: '',
+    jobTitle: '',
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const createContactMut = (api.contacts.create as any).useMutation({
+    onSuccess: () => {
+      void prospectQuery.refetch();
+      setShowContactForm(false);
+      setNewContact({
+        firstName: '',
+        lastName: '',
+        primaryEmail: '',
+        jobTitle: '',
+      });
+    },
+  });
+  const submitContact = () => {
+    if (!newContact.firstName || !newContact.lastName) return;
+    createContactMut.mutate({
+      prospectId: id,
+      firstName: newContact.firstName,
+      lastName: newContact.lastName,
+      primaryEmail: newContact.primaryEmail || undefined,
+      jobTitle: newContact.jobTitle || undefined,
+    });
+  };
+
+  // Offertes for this prospect
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const quotesQuery = (api.quotes.list as any).useQuery({ prospectId: id });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const quotes: any[] = quotesQuery.data ?? [];
+
   // TODO: tRPC v11 inference — getProspect return type too deep for TS to infer.
   // Cast through unknown to avoid TS2589 excessively deep instantiation.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1061,44 +1099,165 @@ export default function ProspectDetail() {
               </div>
             </div>
 
+            {/* Contacts */}
             <div className="space-y-2.5">
-              <Eyebrow>Contacts · {p.contacts?.length ?? 0}</Eyebrow>
-              <div className="space-y-0.5 pt-1">
-                {(p.contacts ?? []).slice(0, 5).map((c, i) => {
-                  const name = [c.firstName, c.lastName]
-                    .filter(Boolean)
-                    .join(' ');
-                  const initials = name
-                    .split(/\s+/)
-                    .map((s) => s[0])
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .join('')
-                    .toUpperCase();
-                  const accents = [
-                    undefined,
-                    '#3d5f82',
-                    '#4a7a52',
-                    '#6e4780',
-                    '#b45a3b',
-                  ];
-                  return (
-                    <ContactRow
-                      key={c.id}
-                      initials={initials || '??'}
-                      name={name || c.primaryEmail || 'Onbekend'}
-                      role={c.jobTitle ?? '—'}
-                      isPrimary={i === 0}
-                      accent={accents[i % accents.length]}
-                    />
-                  );
-                })}
-                {(p.contacts?.length ?? 0) === 0 ? (
-                  <p className="text-[12px] text-[var(--color-muted)] px-2.5 py-2">
-                    Nog geen contacts.
-                  </p>
-                ) : null}
+              <div className="flex items-baseline justify-between">
+                <Eyebrow className="flex-1">
+                  Contacts · {p.contacts?.length ?? 0}
+                </Eyebrow>
+                {!showContactForm && (
+                  <button
+                    type="button"
+                    onClick={() => setShowContactForm(true)}
+                    className="ml-3 text-[11px] font-medium text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors whitespace-nowrap"
+                  >
+                    + Nieuwe
+                  </button>
+                )}
               </div>
+
+              {/* Existing contacts */}
+              {(p.contacts?.length ?? 0) > 0 ? (
+                <div className="space-y-0.5 pt-1">
+                  {(p.contacts ?? []).slice(0, 5).map((c, i) => {
+                    const name = [c.firstName, c.lastName]
+                      .filter(Boolean)
+                      .join(' ');
+                    const initials = name
+                      .split(/\s+/)
+                      .map((s) => s[0])
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .join('')
+                      .toUpperCase();
+                    const accents = [
+                      undefined,
+                      '#3d5f82',
+                      '#4a7a52',
+                      '#6e4780',
+                      '#b45a3b',
+                    ];
+                    return (
+                      <ContactRow
+                        key={c.id}
+                        initials={initials || '??'}
+                        name={name || c.primaryEmail || 'Onbekend'}
+                        role={c.jobTitle ?? '—'}
+                        isPrimary={i === 0}
+                        accent={accents[i % accents.length]}
+                      />
+                    );
+                  })}
+                </div>
+              ) : !showContactForm ? (
+                <p className="text-[12px] text-[var(--color-muted)] px-2.5 py-2">
+                  Nog geen contacts.
+                </p>
+              ) : null}
+
+              {/* Inline add form */}
+              {showContactForm && (
+                <div className="space-y-2 pt-2">
+                  <input
+                    type="text"
+                    placeholder="Voornaam"
+                    value={newContact.firstName}
+                    onChange={(e) =>
+                      setNewContact({
+                        ...newContact,
+                        firstName: e.target.value,
+                      })
+                    }
+                    className="input-minimal w-full text-[13px]"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Achternaam"
+                    value={newContact.lastName}
+                    onChange={(e) =>
+                      setNewContact({ ...newContact, lastName: e.target.value })
+                    }
+                    className="input-minimal w-full text-[13px]"
+                  />
+                  <input
+                    type="email"
+                    placeholder="email@bedrijf.nl"
+                    value={newContact.primaryEmail}
+                    onChange={(e) =>
+                      setNewContact({
+                        ...newContact,
+                        primaryEmail: e.target.value,
+                      })
+                    }
+                    className="input-minimal w-full text-[13px]"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Functie (optioneel)"
+                    value={newContact.jobTitle}
+                    onChange={(e) =>
+                      setNewContact({ ...newContact, jobTitle: e.target.value })
+                    }
+                    className="input-minimal w-full text-[13px]"
+                  />
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={submitContact}
+                      disabled={
+                        !newContact.firstName ||
+                        !newContact.lastName ||
+                        createContactMut.isPending
+                      }
+                      className="inline-flex items-center gap-1.5 rounded-[6px] border px-3 py-2 text-[12px] font-medium leading-none transition-colors bg-[var(--color-ink)] border-[var(--color-ink)] text-[var(--color-background)] hover:bg-[#1c1c44] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {createContactMut.isPending
+                        ? 'Toevoegen...'
+                        : 'Toevoegen'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowContactForm(false)}
+                      className="text-[12px] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors px-1"
+                    >
+                      Annuleer
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Offertes */}
+            <div className="space-y-2.5">
+              <Eyebrow>Offertes · {quotes.length}</Eyebrow>
+              {quotes.length > 0 ? (
+                <ul className="space-y-1 pt-1">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {quotes.map((q: any) => (
+                    <li key={q.id}>
+                      <Link
+                        href={`/admin/quotes/${q.slug}`}
+                        className="block hover:bg-[var(--color-surface-hover)] rounded-[6px] px-2.5 py-2 -mx-2.5 transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-[12px] text-[var(--color-ink)] leading-none flex items-center gap-1.5">
+                            {q.nummer}
+                            {q.isActiveProposal && (
+                              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-gold-hi)]" />
+                            )}
+                          </span>
+                          <QuoteStatusChip status={q.status} />
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[12px] text-[var(--color-muted)] px-2.5 py-2">
+                  Nog geen offertes. Klik &quot;Nieuwe offerte&quot; bovenin om
+                  er een aan te maken.
+                </p>
+              )}
             </div>
           </aside>
         </div>
@@ -1121,6 +1280,29 @@ function FactsRow({ k, children }: { k: string; children: React.ReactNode }) {
         {children}
       </dd>
     </div>
+  );
+}
+
+function QuoteStatusChip({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    DRAFT: 'bg-[var(--color-surface-2)] text-[var(--color-muted)]',
+    SENT: 'bg-[#e4c33c1a] text-[var(--color-gold-hi)]',
+    VIEWED: 'bg-blue-50 text-blue-700',
+    ACCEPTED: 'bg-emerald-50 text-emerald-700',
+    REJECTED: 'bg-red-50 text-red-700',
+    EXPIRED: 'bg-[var(--color-surface-2)] text-[var(--color-muted)]',
+    ARCHIVED: 'bg-[var(--color-surface-2)] text-[var(--color-muted)]',
+  };
+  const cls = styles[status] ?? styles.DRAFT;
+  return (
+    <span
+      className={cn(
+        'text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded',
+        cls,
+      )}
+    >
+      {status}
+    </span>
   );
 }
 
