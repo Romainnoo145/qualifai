@@ -779,6 +779,7 @@ model Quote {
 
   // Identity / meta
   nummer    String   @unique
+  slug      String?  @unique
   datum     DateTime
   geldigTot DateTime
 
@@ -821,6 +822,10 @@ model Quote {
   // Multi-tenant via Prospect (DATA-06 + DATA-10)
   prospectId String
   prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Restrict)
+
+  // Payment schedule — array of installments [{label, percentage, dueOn}]. Empty/null = default (100% post-delivery).
+  // TypeScript shape: { label: string; percentage: number; dueOn: string }[]
+  paymentSchedule Json?
 
   lines QuoteLine[]
 

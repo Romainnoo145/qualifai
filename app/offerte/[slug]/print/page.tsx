@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import { prettifyDomainToName } from '@/lib/enrichment/company-name';
 import { PrintTrigger } from './print-trigger';
+import type { PaymentInstallment } from '@/lib/quote-defaults';
 
 // ─── brand tokens (hardcoded — CSS vars don't survive print stylesheets reliably)
 const NAVY = '#0a0a2e';
@@ -566,6 +567,201 @@ export default async function PrintPage({
           <SectionLabel num="02" label="Akkoord" />
           <GoldPeriodHeading size={22}>Voorwaarden</GoldPeriodHeading>
 
+          {/* Betalingsschema — only shown when schedule is set */}
+          {Array.isArray(activeQuote.paymentSchedule) &&
+            (activeQuote.paymentSchedule as PaymentInstallment[]).length > 0 &&
+            (() => {
+              const schedule =
+                activeQuote.paymentSchedule as PaymentInstallment[];
+              const scheduleTotal = schedule.reduce(
+                (acc, r) => acc + r.percentage,
+                0,
+              );
+              const fmtCurrency = (n: number) =>
+                new Intl.NumberFormat('nl-NL', {
+                  style: 'currency',
+                  currency: 'EUR',
+                }).format(n);
+              return (
+                <div style={{ marginBottom: '24px' }}>
+                  <div
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 500,
+                      letterSpacing: '0.18em',
+                      textTransform: 'uppercase',
+                      color: GOLD,
+                      marginBottom: '12px',
+                    }}
+                  >
+                    Betalingsschema
+                  </div>
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${GREY}` }}>
+                        <th
+                          style={{
+                            textAlign: 'left',
+                            fontSize: '10px',
+                            fontWeight: 500,
+                            letterSpacing: '0.1em',
+                            textTransform: 'uppercase',
+                            color: MUTED,
+                            paddingBottom: '8px',
+                            paddingRight: '16px',
+                          }}
+                        >
+                          Termijn
+                        </th>
+                        <th
+                          style={{
+                            textAlign: 'right',
+                            fontSize: '10px',
+                            fontWeight: 500,
+                            letterSpacing: '0.1em',
+                            textTransform: 'uppercase',
+                            color: MUTED,
+                            paddingBottom: '8px',
+                            paddingRight: '16px',
+                            width: '48px',
+                          }}
+                        >
+                          %
+                        </th>
+                        <th
+                          style={{
+                            textAlign: 'right',
+                            fontSize: '10px',
+                            fontWeight: 500,
+                            letterSpacing: '0.1em',
+                            textTransform: 'uppercase',
+                            color: MUTED,
+                            paddingBottom: '8px',
+                            width: '120px',
+                          }}
+                        >
+                          Bedrag
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {schedule.map((item, idx) => {
+                        const bedrag = total * (item.percentage / 100);
+                        return (
+                          <tr
+                            key={idx}
+                            style={{ borderBottom: `1px solid ${GREY}` }}
+                          >
+                            <td
+                              style={{
+                                paddingTop: '10px',
+                                paddingBottom: '10px',
+                                paddingRight: '16px',
+                                verticalAlign: 'top',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  fontSize: '13px',
+                                  fontWeight: 500,
+                                  color: NAVY,
+                                }}
+                              >
+                                {item.label}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: '11px',
+                                  fontWeight: 300,
+                                  color: MUTED,
+                                  marginTop: '2px',
+                                }}
+                              >
+                                {item.dueOn}
+                              </div>
+                            </td>
+                            <td
+                              style={{
+                                paddingTop: '10px',
+                                paddingBottom: '10px',
+                                paddingRight: '16px',
+                                textAlign: 'right',
+                                fontSize: '13px',
+                                color: NAVY,
+                                fontVariantNumeric: 'tabular-nums',
+                                verticalAlign: 'top',
+                              }}
+                            >
+                              {item.percentage}%
+                            </td>
+                            <td
+                              style={{
+                                paddingTop: '10px',
+                                paddingBottom: '10px',
+                                textAlign: 'right',
+                                fontSize: '13px',
+                                fontWeight: 500,
+                                color: NAVY,
+                                fontVariantNumeric: 'tabular-nums',
+                                verticalAlign: 'top',
+                              }}
+                            >
+                              {fmtCurrency(bedrag)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td
+                          style={{
+                            paddingTop: '10px',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            color: NAVY,
+                          }}
+                        >
+                          Totaal
+                        </td>
+                        <td
+                          style={{
+                            paddingTop: '10px',
+                            textAlign: 'right',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            color: NAVY,
+                            fontVariantNumeric: 'tabular-nums',
+                            paddingRight: '16px',
+                          }}
+                        >
+                          {scheduleTotal}%
+                        </td>
+                        <td
+                          style={{
+                            paddingTop: '10px',
+                            textAlign: 'right',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            color: NAVY,
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {fmtCurrency(total)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              );
+            })()}
+
           <ul
             style={{
               margin: 0,
@@ -577,9 +773,12 @@ export default async function PrintPage({
             }}
           >
             {[
-              'Betaaltermijn 14 dagen na factuurdatum.',
+              Array.isArray(activeQuote.paymentSchedule) &&
+              (activeQuote.paymentSchedule as PaymentInstallment[]).length > 0
+                ? 'Betaling in termijnen volgens bovenstaand schema.'
+                : 'Betaaltermijn 14 dagen na factuurdatum.',
               `Intellectueel eigendom gaat over naar ${displayName} na volledige betaling.`,
-              '30 dagen garantie op opgeleverd werk.',
+              '60 dagen garantie op opgeleverd werk.',
               'Een op maat gemaakte verwerkersovereenkomst volgt samen met het contract, binnen 5 werkdagen na akkoord.',
               'Algemene voorwaarden zijn van toepassing. Zie klarifai.nl/legal/terms-and-conditions.',
             ].map((term) => (
@@ -770,39 +969,59 @@ export default async function PrintPage({
             gap: '20px',
           }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {/* Column 1 — Address */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
             <span
               style={{
                 fontSize: '10px',
                 fontWeight: 700,
                 color: NAVY,
                 letterSpacing: '0.05em',
+                marginBottom: '2px',
               }}
             >
-              KLARIFAI B.V.
-            </span>
-            {/* TODO: real address */}
-            <span style={{ fontSize: '10px', color: MUTED }}>
-              (TODO: straat + huisnummer)
+              Klarifai
             </span>
             <span style={{ fontSize: '10px', color: MUTED }}>
-              (TODO: postcode + plaatsnaam)
+              Le Mairekade 77
+            </span>
+            <span style={{ fontSize: '10px', color: MUTED }}>
+              1013 CB Amsterdam
             </span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {/* TODO: real KvK + BTW numbers */}
+
+          {/* Column 2 — Fiscal + contact */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <span style={{ fontSize: '10px', color: MUTED }}>KvK 95189335</span>
             <span style={{ fontSize: '10px', color: MUTED }}>
-              KvK (TODO: XX.XXX.XXX)
+              BTW NL005136262B35
             </span>
-            <span style={{ fontSize: '10px', color: MUTED }}>
-              BTW (TODO: NL...B01)
+            <span style={{ fontSize: '10px', color: MUTED, marginTop: '4px' }}>
+              +31 (0)6 823 26128
             </span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <span style={{ fontSize: '10px', color: MUTED }}>
               info@klarifai.nl
             </span>
             <span style={{ fontSize: '10px', color: MUTED }}>klarifai.nl</span>
+          </div>
+
+          {/* Column 3 — Banking */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                color: NAVY,
+                letterSpacing: '0.05em',
+                marginBottom: '2px',
+              }}
+            >
+              Bankgegevens
+            </span>
+            <span style={{ fontSize: '10px', color: MUTED }}>
+              IBAN NL54 FNOM 0541 6127 33
+            </span>
+            <span style={{ fontSize: '10px', color: MUTED }}>BIC FNOMNL22</span>
           </div>
         </div>
       </div>

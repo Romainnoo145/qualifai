@@ -2,6 +2,7 @@
 
 import type React from 'react';
 import { useRef, useEffect, useState, useCallback } from 'react';
+import type { PaymentInstallment } from '@/lib/quote-defaults';
 
 import {
   NAVY,
@@ -61,6 +62,7 @@ export type BrochureQuote = {
   introductie: string | null;
   uitdaging: string | null;
   aanpak: string | null;
+  paymentSchedule: PaymentInstallment[] | null;
   lines: {
     fase: string;
     omschrijving: string;
@@ -1973,6 +1975,90 @@ function Signing({
               </div>
             </div>
 
+            {/* Payment schedule block — only shown when schedule is set */}
+            {quote?.paymentSchedule && quote.paymentSchedule.length > 0 && (
+              <div
+                style={{
+                  marginTop: '8px',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  background: 'rgba(228, 195, 60, 0.07)',
+                  border: `1px solid rgba(228, 195, 60, 0.2)`,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 500,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color: GOLD_LIGHT,
+                    marginBottom: '12px',
+                  }}
+                >
+                  Betaling in termijnen
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  {quote.paymentSchedule.map((item, idx) => {
+                    const bedrag =
+                      total > 0 ? total * (item.percentage / 100) : 0;
+                    const fmtCurrency = new Intl.NumberFormat('nl-NL', {
+                      style: 'currency',
+                      currency: 'EUR',
+                    });
+                    return (
+                      <div key={idx}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'baseline',
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: '13px',
+                              fontWeight: 500,
+                              color: TEXT_ON_NAVY,
+                            }}
+                          >
+                            {item.label}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '13px',
+                              fontWeight: 500,
+                              color: TEXT_ON_NAVY,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {item.percentage}%{' '}
+                            {bedrag > 0 && `— ${fmtCurrency.format(bedrag)}`}
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 300,
+                            color: TEXT_MUTED_ON_NAVY,
+                            marginTop: '2px',
+                          }}
+                        >
+                          {item.dueOn}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Legal disclaimer — key terms + link to Klarifai terms page */}
             <p
               style={{
@@ -1987,8 +2073,12 @@ function Signing({
               <TermsLink href="https://klarifai.nl/legal/terms-and-conditions">
                 algemene voorwaarden
               </TermsLink>
-              . Betaaltermijn 14 dagen, intellectueel eigendom gaat over naar{' '}
-              {prospect.companyName ?? 'de klant'} na volledige betaling, 30
+              .{' '}
+              {quote?.paymentSchedule && quote.paymentSchedule.length > 0
+                ? 'Betaling in termijnen volgens bovenstaand schema,'
+                : 'Betaaltermijn 14 dagen,'}{' '}
+              intellectueel eigendom gaat over naar{' '}
+              {prospect.companyName ?? 'de klant'} na volledige betaling, 60
               dagen garantie op opgeleverd werk. Een op maat gemaakte
               verwerkersovereenkomst volgt samen met het contract, binnen 5
               werkdagen na akkoord.
