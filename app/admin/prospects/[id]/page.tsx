@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/components/providers';
 import { PageLoader } from '@/components/ui/page-loader';
+import { Popup } from '@/components/ui/popup';
 import { cn } from '@/lib/utils';
 import { buildDiscoverPath } from '@/lib/prospect-url';
 import { RerunLoadingScreen } from '@/components/features/research/rerun-loading-screen';
@@ -383,37 +384,42 @@ function ContactRow({
   onEdit?: () => void;
 }) {
   return (
-    <div className="group relative flex items-center gap-3 px-2.5 py-2 rounded-[6px] hover:bg-[var(--color-surface-hover)] transition-colors">
-      <div
-        className="flex h-7 w-7 items-center justify-center rounded-full flex-shrink-0"
-        style={{
-          background: accent ?? 'var(--color-ink)',
-          color: accent ? '#ffffff' : 'var(--color-gold-hi)',
-        }}
-      >
-        <span className="font-['Sora'] text-[10px] font-bold">{initials}</span>
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-[12px] font-semibold text-[var(--color-ink)] truncate">
-          {name}
+    <div className="flex flex-col gap-2 px-2.5 py-2.5 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-strong)] transition-colors">
+      <div className="flex items-center gap-3">
+        <div
+          className="flex h-7 w-7 items-center justify-center rounded-full flex-shrink-0"
+          style={{
+            background: accent ?? 'var(--color-ink)',
+            color: accent ? '#ffffff' : 'var(--color-gold-hi)',
+          }}
+        >
+          <span className="font-['Sora'] text-[10px] font-bold">
+            {initials}
+          </span>
         </div>
-        <div className="text-[10px] text-[var(--color-muted)] truncate">
-          {role}
+        <div className="min-w-0 flex-1">
+          <div className="text-[12px] font-semibold text-[var(--color-ink)] truncate">
+            {name}
+          </div>
+          <div className="text-[10px] text-[var(--color-muted)] truncate">
+            {role}
+          </div>
         </div>
+        {isPrimary ? (
+          <span className="text-[9px] text-[var(--color-tag-quality-text)] tracking-wider">
+            primair
+          </span>
+        ) : null}
       </div>
-      {isPrimary ? (
-        <span className="text-[9px] text-[var(--color-tag-quality-text)] tracking-wider">
-          primair
-        </span>
-      ) : null}
       {onEdit ? (
         <button
           type="button"
           onClick={onEdit}
-          className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--color-muted)] hover:text-[var(--color-ink)] ml-1 flex-shrink-0"
+          className="w-full flex items-center justify-center gap-1.5 rounded-[5px] border border-[var(--color-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-muted)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-colors"
           aria-label="Bewerk contact"
         >
-          <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
+          <Pencil className="h-3 w-3" strokeWidth={1.75} />
+          Bewerk
         </button>
       ) : null}
     </div>
@@ -543,8 +549,8 @@ export default function ProspectDetail() {
   const [copied, setCopied] = useState(false);
   const [feedFilter, setFeedFilter] = useState<'ALL' | EventType>('ALL');
 
-  // Contacts add-form state
-  const [showContactForm, setShowContactForm] = useState(false);
+  // Contact add modal state
+  const [showAddContact, setShowAddContact] = useState(false);
   const [newContact, setNewContact] = useState({
     firstName: '',
     lastName: '',
@@ -555,7 +561,7 @@ export default function ProspectDetail() {
   const createContactMut = (api.contacts.create as any).useMutation({
     onSuccess: () => {
       void prospectQuery.refetch();
-      setShowContactForm(false);
+      setShowAddContact(false);
       setNewContact({
         firstName: '',
         lastName: '',
@@ -575,8 +581,14 @@ export default function ProspectDetail() {
     });
   };
 
-  // Inline edit state for existing contacts
-  const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  // Contact edit modal state
+  const [editingContact, setEditingContact] = useState<{
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    primaryEmail: string | null;
+    jobTitle: string | null;
+  } | null>(null);
   const [editForm, setEditForm] = useState({
     firstName: '',
     lastName: '',
@@ -587,7 +599,7 @@ export default function ProspectDetail() {
   const updateContactMut = (api.contacts.update as any).useMutation({
     onSuccess: () => {
       void prospectQuery.refetch();
-      setEditingContactId(null);
+      setEditingContact(null);
     },
   });
   const startEdit = (c: {
@@ -597,7 +609,7 @@ export default function ProspectDetail() {
     primaryEmail: string | null;
     jobTitle: string | null;
   }) => {
-    setEditingContactId(c.id);
+    setEditingContact(c);
     setEditForm({
       firstName: c.firstName ?? '',
       lastName: c.lastName ?? '',
@@ -605,15 +617,24 @@ export default function ProspectDetail() {
       jobTitle: c.jobTitle ?? '',
     });
   };
-  const saveEdit = (contactId: string) => {
+  const saveEdit = () => {
+    if (!editingContact) return;
     updateContactMut.mutate({
-      id: contactId,
+      id: editingContact.id,
       firstName: editForm.firstName || undefined,
       lastName: editForm.lastName || undefined,
       primaryEmail: editForm.primaryEmail || null,
       jobTitle: editForm.jobTitle || null,
     });
   };
+
+  // Voorstel routing modal state
+  const [showVoorstelModal, setShowVoorstelModal] = useState(false);
+  // Draft values for the voorstel modal (so we only persist on Save)
+  const [draftMode, setDraftMode] = useState<'STANDARD' | 'BESPOKE'>(
+    'STANDARD',
+  );
+  const [draftUrl, setDraftUrl] = useState<string>('');
 
   // Offertes for this prospect
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -992,20 +1013,18 @@ export default function ProspectDetail() {
                 <Eyebrow className="flex-1">
                   Contacts · {p.contacts?.length ?? 0}
                 </Eyebrow>
-                {!showContactForm && (
-                  <button
-                    type="button"
-                    onClick={() => setShowContactForm(true)}
-                    className="ml-3 text-[11px] font-medium text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors whitespace-nowrap"
-                  >
-                    + Nieuwe
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setShowAddContact(true)}
+                  className="ml-3 text-[11px] font-medium text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors whitespace-nowrap"
+                >
+                  + Nieuwe
+                </button>
               </div>
 
               {/* Existing contacts */}
               {(p.contacts?.length ?? 0) > 0 ? (
-                <div className="space-y-0.5 pt-1">
+                <div className="space-y-1.5 pt-1">
                   {(p.contacts ?? []).slice(0, 5).map((c, i) => {
                     const name = [c.firstName, c.lastName]
                       .filter(Boolean)
@@ -1025,87 +1044,6 @@ export default function ProspectDetail() {
                       '#b45a3b',
                     ];
 
-                    if (editingContactId === c.id) {
-                      return (
-                        <div
-                          key={c.id}
-                          className="space-y-2 px-2.5 py-2 rounded-[6px] border border-[var(--color-border-strong)] bg-[var(--color-surface)]"
-                        >
-                          <input
-                            type="text"
-                            placeholder="Voornaam"
-                            value={editForm.firstName}
-                            onChange={(e) =>
-                              setEditForm({
-                                ...editForm,
-                                firstName: e.target.value,
-                              })
-                            }
-                            className="input-minimal w-full text-[13px]"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Achternaam"
-                            value={editForm.lastName}
-                            onChange={(e) =>
-                              setEditForm({
-                                ...editForm,
-                                lastName: e.target.value,
-                              })
-                            }
-                            className="input-minimal w-full text-[13px]"
-                          />
-                          <input
-                            type="email"
-                            placeholder="email@bedrijf.nl"
-                            value={editForm.primaryEmail}
-                            onChange={(e) =>
-                              setEditForm({
-                                ...editForm,
-                                primaryEmail: e.target.value,
-                              })
-                            }
-                            className="input-minimal w-full text-[13px]"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Functie (optioneel)"
-                            value={editForm.jobTitle}
-                            onChange={(e) =>
-                              setEditForm({
-                                ...editForm,
-                                jobTitle: e.target.value,
-                              })
-                            }
-                            className="input-minimal w-full text-[13px]"
-                          />
-                          <div className="flex gap-2 pt-1">
-                            <button
-                              type="button"
-                              onClick={() => saveEdit(c.id)}
-                              disabled={
-                                !editForm.firstName ||
-                                !editForm.lastName ||
-                                updateContactMut.isPending
-                              }
-                              className="inline-flex items-center gap-1.5 rounded-[6px] border px-3 py-2 text-[12px] font-medium leading-none transition-colors bg-[var(--color-ink)] border-[var(--color-ink)] text-[var(--color-background)] hover:bg-[#1c1c44] disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {updateContactMut.isPending
-                                ? 'Opslaan...'
-                                : 'Opslaan'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditingContactId(null)}
-                              className="text-[12px] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors px-1"
-                            >
-                              Annuleer
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    }
-
                     return (
                       <ContactRow
                         key={c.id}
@@ -1119,81 +1057,10 @@ export default function ProspectDetail() {
                     );
                   })}
                 </div>
-              ) : !showContactForm ? (
+              ) : (
                 <p className="text-[12px] text-[var(--color-muted)] px-2.5 py-2">
                   Nog geen contacts.
                 </p>
-              ) : null}
-
-              {/* Inline add form */}
-              {showContactForm && (
-                <div className="space-y-2 pt-2">
-                  <input
-                    type="text"
-                    placeholder="Voornaam"
-                    value={newContact.firstName}
-                    onChange={(e) =>
-                      setNewContact({
-                        ...newContact,
-                        firstName: e.target.value,
-                      })
-                    }
-                    className="input-minimal w-full text-[13px]"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Achternaam"
-                    value={newContact.lastName}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, lastName: e.target.value })
-                    }
-                    className="input-minimal w-full text-[13px]"
-                  />
-                  <input
-                    type="email"
-                    placeholder="email@bedrijf.nl"
-                    value={newContact.primaryEmail}
-                    onChange={(e) =>
-                      setNewContact({
-                        ...newContact,
-                        primaryEmail: e.target.value,
-                      })
-                    }
-                    className="input-minimal w-full text-[13px]"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Functie (optioneel)"
-                    value={newContact.jobTitle}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, jobTitle: e.target.value })
-                    }
-                    className="input-minimal w-full text-[13px]"
-                  />
-                  <div className="flex gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={submitContact}
-                      disabled={
-                        !newContact.firstName ||
-                        !newContact.lastName ||
-                        createContactMut.isPending
-                      }
-                      className="inline-flex items-center gap-1.5 rounded-[6px] border px-3 py-2 text-[12px] font-medium leading-none transition-colors bg-[var(--color-ink)] border-[var(--color-ink)] text-[var(--color-background)] hover:bg-[#1c1c44] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {createContactMut.isPending
-                        ? 'Toevoegen...'
-                        : 'Toevoegen'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowContactForm(false)}
-                      className="text-[12px] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors px-1"
-                    >
-                      Annuleer
-                    </button>
-                  </div>
-                </div>
               )}
             </div>
 
@@ -1325,79 +1192,253 @@ export default function ProspectDetail() {
             {/* Voorstel routing */}
             <div className="space-y-2.5">
               <Eyebrow>Voorstel routing</Eyebrow>
-              <div className="space-y-3 pt-1">
-                {/* Mode rectangle toggle — full width */}
-                <div>
-                  <div className="grid grid-cols-2 border border-[var(--color-border)] rounded-md overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (voorstelMode !== 'STANDARD') {
-                          setVoorstelMode('STANDARD');
-                          updateProspectMut.mutate({
-                            id,
-                            voorstelMode: 'STANDARD',
-                          });
-                        }
-                      }}
-                      disabled={updateProspectMut.isPending}
-                      className={
-                        voorstelMode === 'STANDARD'
-                          ? 'bg-[var(--color-ink)] text-white py-2.5 px-3 text-[13px] font-medium transition-colors'
-                          : 'bg-transparent text-[var(--color-muted)] py-2.5 px-3 text-[13px] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors'
-                      }
-                    >
-                      Standaard
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (voorstelMode !== 'BESPOKE') {
-                          setVoorstelMode('BESPOKE');
-                          updateProspectMut.mutate({
-                            id,
-                            voorstelMode: 'BESPOKE',
-                          });
-                        }
-                      }}
-                      disabled={updateProspectMut.isPending}
-                      className={
-                        voorstelMode === 'BESPOKE'
-                          ? 'bg-[var(--color-ink)] text-white py-2.5 px-3 text-[13px] font-medium transition-colors'
-                          : 'bg-transparent text-[var(--color-muted)] py-2.5 px-3 text-[13px] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors'
-                      }
-                    >
-                      Bespoke
-                    </button>
-                  </div>
-                </div>
-
-                {/* bespokeUrl — only when BESPOKE */}
-                {voorstelMode === 'BESPOKE' && (
-                  <div>
-                    <input
-                      type="url"
-                      value={bespokeUrl ?? ''}
-                      onChange={(e) => setBespokeUrl(e.target.value || null)}
-                      onBlur={() => {
-                        if (bespokeUrl !== p.bespokeUrl) {
-                          updateProspectMut.mutate({
-                            id,
-                            bespokeUrl: bespokeUrl || null,
-                          });
-                        }
-                      }}
-                      placeholder="https://maintix-design.vercel.app"
-                      className="input-minimal w-full text-[13px]"
-                      disabled={updateProspectMut.isPending}
-                    />
-                  </div>
-                )}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraftMode(voorstelMode);
+                    setDraftUrl(bespokeUrl ?? '');
+                    setShowVoorstelModal(true);
+                  }}
+                  className={cn(
+                    'w-full flex items-center gap-2.5 px-3.5 py-3 rounded-[6px] border text-[13px] font-medium text-left transition-all cursor-pointer',
+                    voorstelMode === 'BESPOKE'
+                      ? 'border-[var(--color-gold-hi)] text-[var(--color-gold-hi)] bg-[#e4c33c0d] hover:bg-[#e4c33c1a]'
+                      : 'border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-ink)]',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'inline-block h-2 w-2 rounded-full flex-shrink-0',
+                      voorstelMode === 'BESPOKE'
+                        ? 'bg-[var(--color-gold-hi)]'
+                        : 'bg-[var(--color-border-strong)]',
+                    )}
+                  />
+                  {voorstelMode === 'BESPOKE'
+                    ? bespokeUrl
+                      ? `Bespoke · ${bespokeUrl.replace(/^https?:\/\//, '').slice(0, 24)}${bespokeUrl.length > 30 ? '…' : ''}`
+                      : 'Bespoke · geen URL'
+                    : 'Standaard'}
+                </button>
               </div>
             </div>
           </aside>
         </div>
       )}
+
+      {/* ── Add Contact Modal ── */}
+      <Popup
+        isOpen={showAddContact}
+        onClose={() => setShowAddContact(false)}
+        title="Nieuw contact"
+        eyebrow="Contact"
+      >
+        <div className="space-y-2.5">
+          <input
+            type="text"
+            placeholder="Voornaam"
+            value={newContact.firstName}
+            onChange={(e) =>
+              setNewContact({ ...newContact, firstName: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+            autoFocus
+          />
+          <input
+            type="text"
+            placeholder="Achternaam"
+            value={newContact.lastName}
+            onChange={(e) =>
+              setNewContact({ ...newContact, lastName: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+          />
+          <input
+            type="email"
+            placeholder="email@bedrijf.nl"
+            value={newContact.primaryEmail}
+            onChange={(e) =>
+              setNewContact({ ...newContact, primaryEmail: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+          />
+          <input
+            type="text"
+            placeholder="Functie (optioneel)"
+            value={newContact.jobTitle}
+            onChange={(e) =>
+              setNewContact({ ...newContact, jobTitle: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+          />
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button
+            type="button"
+            onClick={submitContact}
+            disabled={
+              !newContact.firstName ||
+              !newContact.lastName ||
+              createContactMut.isPending
+            }
+            className="flex-1 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] bg-[var(--color-ink)] text-white border border-[var(--color-ink)] hover:opacity-90 transition-opacity disabled:opacity-40"
+          >
+            {createContactMut.isPending ? 'Even geduld…' : 'Toevoegen'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowAddContact(false)}
+            className="flex-1 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] border border-[var(--color-border)] text-[var(--color-muted-dark)] hover:border-[var(--color-ink)] transition-colors"
+          >
+            Annuleer
+          </button>
+        </div>
+      </Popup>
+
+      {/* ── Edit Contact Modal ── */}
+      <Popup
+        isOpen={!!editingContact}
+        onClose={() => setEditingContact(null)}
+        title="Contact bewerken"
+        eyebrow="Contact"
+      >
+        <div className="space-y-2.5">
+          <input
+            type="text"
+            placeholder="Voornaam"
+            value={editForm.firstName}
+            onChange={(e) =>
+              setEditForm({ ...editForm, firstName: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+            autoFocus
+          />
+          <input
+            type="text"
+            placeholder="Achternaam"
+            value={editForm.lastName}
+            onChange={(e) =>
+              setEditForm({ ...editForm, lastName: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+          />
+          <input
+            type="email"
+            placeholder="email@bedrijf.nl"
+            value={editForm.primaryEmail}
+            onChange={(e) =>
+              setEditForm({ ...editForm, primaryEmail: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+          />
+          <input
+            type="text"
+            placeholder="Functie (optioneel)"
+            value={editForm.jobTitle}
+            onChange={(e) =>
+              setEditForm({ ...editForm, jobTitle: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+          />
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button
+            type="button"
+            onClick={saveEdit}
+            disabled={
+              !editForm.firstName ||
+              !editForm.lastName ||
+              updateContactMut.isPending
+            }
+            className="flex-1 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] bg-[var(--color-ink)] text-white border border-[var(--color-ink)] hover:opacity-90 transition-opacity disabled:opacity-40"
+          >
+            {updateContactMut.isPending ? 'Even geduld…' : 'Opslaan'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditingContact(null)}
+            className="flex-1 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] border border-[var(--color-border)] text-[var(--color-muted-dark)] hover:border-[var(--color-ink)] transition-colors"
+          >
+            Annuleer
+          </button>
+        </div>
+      </Popup>
+
+      {/* ── Voorstel Routing Modal ── */}
+      <Popup
+        isOpen={showVoorstelModal}
+        onClose={() => setShowVoorstelModal(false)}
+        title="Voorstel routing"
+        eyebrow="Instellingen"
+      >
+        <div className="space-y-4">
+          {/* Mode toggle */}
+          <div className="grid grid-cols-2 border border-[var(--color-border)] rounded-md overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setDraftMode('STANDARD')}
+              className={
+                draftMode === 'STANDARD'
+                  ? 'bg-[var(--color-ink)] text-white py-2.5 px-3 text-[13px] font-medium transition-colors'
+                  : 'bg-transparent text-[var(--color-muted)] py-2.5 px-3 text-[13px] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors'
+              }
+            >
+              Standaard
+            </button>
+            <button
+              type="button"
+              onClick={() => setDraftMode('BESPOKE')}
+              className={
+                draftMode === 'BESPOKE'
+                  ? 'bg-[var(--color-ink)] text-white py-2.5 px-3 text-[13px] font-medium transition-colors'
+                  : 'bg-transparent text-[var(--color-muted)] py-2.5 px-3 text-[13px] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors'
+              }
+            >
+              Bespoke
+            </button>
+          </div>
+
+          {/* Bespoke URL — only when BESPOKE */}
+          {draftMode === 'BESPOKE' && (
+            <input
+              type="url"
+              value={draftUrl}
+              onChange={(e) => setDraftUrl(e.target.value)}
+              placeholder="https://maintix-design.vercel.app"
+              className="input-minimal w-full text-[13px]"
+              autoFocus
+            />
+          )}
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            type="button"
+            onClick={() => {
+              setVoorstelMode(draftMode);
+              setBespokeUrl(draftUrl || null);
+              updateProspectMut.mutate({
+                id,
+                voorstelMode: draftMode,
+                bespokeUrl: draftMode === 'BESPOKE' ? draftUrl || null : null,
+              });
+              setShowVoorstelModal(false);
+            }}
+            disabled={updateProspectMut.isPending}
+            className="flex-1 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] bg-[var(--color-ink)] text-white border border-[var(--color-ink)] hover:opacity-90 transition-opacity disabled:opacity-40"
+          >
+            {updateProspectMut.isPending ? 'Even geduld…' : 'Opslaan'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowVoorstelModal(false)}
+            className="flex-1 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] border border-[var(--color-border)] text-[var(--color-muted-dark)] hover:border-[var(--color-ink)] transition-colors"
+          >
+            Annuleer
+          </button>
+        </div>
+      </Popup>
     </div>
   );
 }
