@@ -974,56 +974,56 @@ export default function QuoteDetailPage() {
                   {clipboardFeedback ? 'Gekopieerd ✓' : 'Kopieer offerte-link'}
                 </button>
               )}
-              <div className="pt-1">
-                <QuoteVersionConfirm quoteId={quote.id} status={quote.status} />
-              </div>
+              <QuoteVersionConfirm quoteId={quote.id} status={quote.status} />
             </div>
           </div>
 
           {/* INSTELLINGEN */}
           <div>
             <SectionLabel>Instellingen</SectionLabel>
-            <label className="flex items-start gap-2 py-3 border-b border-[var(--color-surface-2)] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={!!isActiveProposal}
-                onChange={(e) =>
-                  activeProposalMutation.mutate({
-                    id: quote.id,
-                    active: e.target.checked,
-                  })
-                }
-                className="h-3.5 w-3.5 mt-0.5 accent-[var(--color-gold)] flex-shrink-0"
-              />
-              <div>
-                <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-muted-dark)] block">
-                  Live op klantpagina
-                </span>
-                <span className="text-[10px] font-light text-[var(--color-muted)] leading-[1.5] block mt-0.5">
-                  Slechts één offerte per klant kan tegelijk live zijn op
-                  /offerte/[slug]
-                </span>
-              </div>
-            </label>
-            {quote.status !== 'DRAFT' && (
+            <div className="space-y-1.5">
+              <label className="flex items-start gap-2 py-3 border-b border-[var(--color-surface-2)] cursor-pointer mb-1.5">
+                <input
+                  type="checkbox"
+                  checked={!!isActiveProposal}
+                  onChange={(e) =>
+                    activeProposalMutation.mutate({
+                      id: quote.id,
+                      active: e.target.checked,
+                    })
+                  }
+                  className="h-3.5 w-3.5 mt-0.5 accent-[var(--color-gold)] flex-shrink-0"
+                />
+                <div>
+                  <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-muted-dark)] block">
+                    Live op klantpagina
+                  </span>
+                  <span className="text-[10px] font-light text-[var(--color-muted)] leading-[1.5] block mt-0.5">
+                    Slechts één offerte per klant kan tegelijk live zijn op
+                    /offerte/[slug]
+                  </span>
+                </div>
+              </label>
+              {quote.status !== 'DRAFT' && (
+                <button
+                  type="button"
+                  onClick={() => setShowResetConfirm(true)}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink)] hover:border-[var(--color-ink)] transition-all text-left"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Reset naar concept
+                </button>
+              )}
               <button
                 type="button"
-                onClick={() => setShowResetConfirm(true)}
-                className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink)] hover:border-[var(--color-ink)] transition-all text-left mt-4"
+                disabled={deleteMutation.isPending || isReadOnly}
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-red-500 hover:border-red-300 hover:bg-red-50 transition-all disabled:opacity-40"
               >
-                <RotateCcw className="h-3.5 w-3.5" />
-                Reset naar concept
+                <Trash2 className="h-3.5 w-3.5" />
+                Verwijder offerte
               </button>
-            )}
-            <button
-              type="button"
-              disabled={deleteMutation.isPending || isReadOnly}
-              onClick={() => setShowDeleteConfirm(true)}
-              className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-red-500 hover:border-red-300 hover:bg-red-50 transition-all disabled:opacity-40 mt-4"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Verwijder offerte
-            </button>
+            </div>
           </div>
         </aside>
       </div>
