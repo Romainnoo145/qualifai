@@ -709,19 +709,6 @@ export default async function PrintPage({
         <div className="print-section-voorwaarden" style={{ paddingTop: '0' }}>
           {/* ── VOORWAARDEN ─────────────────────────────────────────────────── */}
           <div style={{ marginBottom: '40px' }}>
-            <div
-              style={{
-                fontSize: '9px',
-                fontWeight: 500,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                color: MUTED,
-                marginBottom: '16px',
-              }}
-            >
-              Voorwaarden
-            </div>
-
             {/* Betalingsschema — compact table, only when set */}
             {hasSchedule && (
               <div style={{ marginBottom: '24px' }}>
@@ -859,6 +846,19 @@ export default async function PrintPage({
                 </table>
               </div>
             )}
+
+            <div
+              style={{
+                fontSize: '9px',
+                fontWeight: 500,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: MUTED,
+                marginBottom: '16px',
+              }}
+            >
+              Voorwaarden
+            </div>
 
             <ol
               style={{
