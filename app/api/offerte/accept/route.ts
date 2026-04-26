@@ -154,14 +154,13 @@ async function notifyAdmin(
   }
 
   const { Resend } = await import('resend');
+  const { renderAdminNotificationEmail } =
+    await import('@/lib/email/admin-notification');
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const totals = computeQuoteTotals(quote.lines, quote.btwPercentage);
   const totalFormatted = formatEuro(totals.bruto);
   const companyName = prospect.companyName ?? 'Onbekend bedrijf';
-  const acceptedStr = acceptedAt.toLocaleString('nl-NL', {
-    timeZone: 'Europe/Amsterdam',
-  });
 
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
@@ -178,11 +177,14 @@ async function notifyAdmin(
     from,
     to: toAddr,
     subject: `🟢 Offerte geaccepteerd — ${companyName} (${quote.nummer})`,
-    html: `
-      <p><strong>${companyName}</strong> heeft offerte <strong>${quote.nummer}</strong> geaccepteerd.</p>
-      <p>Totaal incl. BTW: <strong>${totalFormatted}</strong></p>
-      <p>Geaccepteerd op: ${acceptedStr}</p>
-      <p><a href="${adminUrl}">Bekijk in admin →</a></p>
-    `.trim(),
+    html: renderAdminNotificationEmail({
+      type: 'accepted',
+      companyName,
+      quoteNummer: quote.nummer,
+      timestamp: acceptedAt,
+      adminUrl,
+      logoUrl: `${appUrl}/klarifai-logo.svg`,
+      total: totalFormatted,
+    }),
   });
 }

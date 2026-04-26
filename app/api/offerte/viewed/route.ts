@@ -69,12 +69,11 @@ async function notifyAdminOfFirstView(
   if (!process.env.RESEND_API_KEY) return;
 
   const { Resend } = await import('resend');
+  const { renderAdminNotificationEmail } =
+    await import('@/lib/email/admin-notification');
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const companyName = quote.companyName ?? 'Onbekend bedrijf';
-  const viewedStr = viewedAt.toLocaleString('nl-NL', {
-    timeZone: 'Europe/Amsterdam',
-  });
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL ?? 'https://qualifai.klarifai.nl';
   const adminUrl = quote.slug
@@ -89,10 +88,13 @@ async function notifyAdminOfFirstView(
     from,
     to: toAddr,
     subject: `👀 Offerte geopend — ${companyName} (${quote.nummer})`,
-    html: `
-      <p><strong>${companyName}</strong> heeft offerte <strong>${quote.nummer}</strong> voor het eerst geopend.</p>
-      <p>Geopend op: ${viewedStr}</p>
-      <p><a href="${adminUrl}">Bekijk in admin →</a></p>
-    `.trim(),
+    html: renderAdminNotificationEmail({
+      type: 'viewed',
+      companyName,
+      quoteNummer: quote.nummer,
+      timestamp: viewedAt,
+      adminUrl,
+      logoUrl: `${appUrl}/klarifai-logo.svg`,
+    }),
   });
 }
