@@ -19,7 +19,6 @@ import {
   ADMIN_TOKEN_STORAGE_KEY,
   normalizeAdminToken,
 } from '@/lib/admin-token';
-import { GOLD_GRADIENT } from '@/lib/brochure-tokens';
 
 type NavItem = {
   href: string;
@@ -158,25 +157,7 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
             <button
               type="submit"
               disabled={isVerifying || !tokenInput}
-              style={{
-                background: GOLD_GRADIENT,
-                borderRadius: '9999px',
-                color: '#040026',
-                fontFamily: 'var(--font-sora), sans-serif',
-                fontWeight: 700,
-                fontSize: '14px',
-                letterSpacing: '-0.005em',
-                padding: '16px 24px',
-                width: '100%',
-                border: 'none',
-                cursor: isVerifying || !tokenInput ? 'not-allowed' : 'pointer',
-                opacity: isVerifying || !tokenInput ? 0.45 : 1,
-                transition: 'opacity 0.15s ease, transform 0.15s ease',
-                boxShadow:
-                  isVerifying || !tokenInput
-                    ? 'none'
-                    : '0 1px 2px rgba(0,0,0,0.08), 0 8px 24px rgba(225, 195, 60, 0.28)',
-              }}
+              className="w-full rounded-md bg-[var(--color-gold)] px-4 py-3 text-[14px] font-semibold text-[var(--color-ink)] transition-opacity hover:opacity-90 disabled:opacity-45 disabled:cursor-not-allowed"
             >
               {isVerifying ? 'Verifiëren…' : 'Inloggen'}
             </button>

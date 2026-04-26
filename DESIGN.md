@@ -155,7 +155,15 @@ Tiny detail, high-impact brand signature.
 }
 ```
 
-**Pill buttons** (`--radius-full`) are the Klarifai signature CTA shape. Primary CTA is always a gold pill. Secondary is always a white pill with 1px navy border.
+**Button scope — read this before designing any CTA:**
+
+| Surface                                              | Primary CTA shape                                   | Background                                                | Text     | Reference               |
+| ---------------------------------------------------- | --------------------------------------------------- | --------------------------------------------------------- | -------- | ----------------------- |
+| Brochure pages (`/voorstel`, `/offerte`, `/analyse`) | pill (`--radius-full`)                              | gold gradient `linear-gradient(180deg, #e4c33c, #f4d95a)` | navy     | brochure-cover.tsx      |
+| Admin app (`/admin/*`), auth, transactional emails   | rectangle (`rounded-md`)                            | solid `var(--color-gold)` (#ebcb4b)                       | navy ink | layout.tsx login button |
+| Filter chips / toggle pills (admin lists)            | rectangle (`rounded-md` / `rounded-full` for chips) | navy `var(--color-ink)` when active                       | white    | quotes/page.tsx         |
+
+The gold gradient pill is brochure-only signature CTA — it's loud and conversion-focused. The app uses solid gold buttons because it's used many times per session and a gradient pill becomes visually exhausting. Don't apply the brochure pattern to admin/auth/email surfaces.
 
 ### 2.5 Borders
 

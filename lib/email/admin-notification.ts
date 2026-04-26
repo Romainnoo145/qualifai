@@ -17,10 +17,8 @@ type Input =
   | (BaseInput & { type: 'viewed' })
   | (BaseInput & { type: 'accepted'; total: string });
 
-const NAVY = '#040026';
-const NAVY_SOFT = '#0a0a2e';
-const GOLD_MID = '#e1c33c';
-const GOLD_LIGHT = '#fdf97b';
+const NAVY = '#0a0a2e';
+const GOLD = '#ebcb4b';
 const BG = '#f7f5ef';
 const SURFACE = '#ffffff';
 const BORDER = 'rgba(10, 10, 46, 0.08)';
@@ -50,7 +48,6 @@ function detailRow(label: string, value: string): string {
 
 export function renderAdminNotificationEmail(input: Input): string {
   const isViewed = input.type === 'viewed';
-  const sectionNumber = isViewed ? '01' : '02';
   const sectionLabel = isViewed ? 'OFFERTE GEOPEND' : 'OFFERTE GEACCEPTEERD';
   const heading = isViewed
     ? `${input.companyName} heeft je voorstel geopend`
@@ -92,13 +89,12 @@ export function renderAdminNotificationEmail(input: Input): string {
 
       <!-- Section label -->
       <p style="margin:0 0 18px;font-family:${FONT_STACK};font-size:11px;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">
-        <span style="color:${GOLD_MID};">[ ${sectionNumber} ]</span>
-        <span style="margin-left:10px;">${sectionLabel}</span>
+        ${sectionLabel}
       </p>
 
       <!-- Heading -->
       <h1 style="margin:0 0 16px;font-family:${FONT_STACK};font-size:26px;font-weight:700;line-height:1.2;letter-spacing:-0.015em;color:${NAVY};">
-        ${heading}<span style="color:${GOLD_MID};">.</span>
+        ${heading}<span style="color:${GOLD};">.</span>
       </h1>
 
       <!-- Intro -->
@@ -114,7 +110,7 @@ export function renderAdminNotificationEmail(input: Input): string {
       </table>
 
       <!-- CTA -->
-      <a href="${input.adminUrl}" style="display:block;text-align:center;background:linear-gradient(180deg, ${GOLD_MID} 0%, ${GOLD_LIGHT} 100%);color:${NAVY};text-decoration:none;font-family:${FONT_STACK};font-size:14px;font-weight:700;letter-spacing:-0.005em;padding:16px 24px;border-radius:9999px;box-shadow:0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(225, 195, 60, 0.25);">
+      <a href="${input.adminUrl}" style="display:block;text-align:center;background:${GOLD};color:${NAVY};text-decoration:none;font-family:${FONT_STACK};font-size:14px;font-weight:600;letter-spacing:-0.005em;padding:14px 24px;border-radius:6px;">
         ${ctaLabel} →
       </a>
 
@@ -123,7 +119,7 @@ export function renderAdminNotificationEmail(input: Input): string {
     <!-- Footer -->
     <p style="margin:32px 0 0;text-align:center;font-family:${FONT_STACK};font-size:12px;font-weight:400;color:${MUTED};line-height:1.6;">
       Automatische notificatie van Qualifai<br/>
-      <span style="color:${NAVY_SOFT};opacity:0.6;">klarifai.nl</span>
+      <span style="opacity:0.6;">klarifai.nl</span>
     </p>
 
   </div>
