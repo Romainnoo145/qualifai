@@ -70,7 +70,9 @@ type FeedItem = {
     | 'research_complete'
     | 'analysis_generated'
     | 'discover_visit'
-    | 'outreach_sent';
+    | 'outreach_sent'
+    | 'quote_viewed'
+    | 'quote_accepted';
   timestamp: Date | string;
   prospectId: string;
   prospectName: string;
@@ -116,6 +118,10 @@ const FEED_TAG_CLASS: Record<FeedItem['type'], string> = {
     'bg-[var(--color-tag-evidence-bg)] text-[var(--color-tag-evidence-text)] border-[var(--color-tag-evidence-border)]',
   outreach_sent:
     'bg-[var(--color-tag-outreach-bg)] text-[var(--color-tag-outreach-text)] border-[var(--color-tag-outreach-border)]',
+  quote_viewed:
+    'bg-[rgba(225,195,60,0.10)] text-[var(--color-ink)] border-[rgba(225,195,60,0.35)]',
+  quote_accepted:
+    'bg-[rgba(225,195,60,0.18)] text-[var(--color-ink)] border-[var(--color-gold)]',
 };
 
 const FEED_LABEL: Record<FeedItem['type'], string> = {
@@ -123,6 +129,8 @@ const FEED_LABEL: Record<FeedItem['type'], string> = {
   analysis_generated: 'Analyse',
   discover_visit: 'Visit',
   outreach_sent: 'Outreach',
+  quote_viewed: 'Geopend',
+  quote_accepted: 'Akkoord',
 };
 
 // --- Feed row ---
