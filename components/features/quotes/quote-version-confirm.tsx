@@ -78,7 +78,7 @@ export function QuoteVersionConfirm({ quoteId, status }: Props) {
     <>
       <button
         type="button"
-        className="btn-pill-secondary"
+        className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-ink)] bg-[var(--color-ink)] text-white text-[11px] font-medium uppercase tracking-[0.06em] hover:opacity-90 transition-opacity text-left"
         onClick={() => setOpen(true)}
         data-testid="quote-version-button"
       >
