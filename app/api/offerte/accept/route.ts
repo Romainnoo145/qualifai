@@ -11,11 +11,13 @@
  *  3. Atomic Prisma $transaction: set status=ACCEPTED, acceptedAt=now, signatureData.
  *     transitionQuote also syncs Prospect.status -> CONVERTED (via QUOTE_TO_PROSPECT_SYNC).
  *  4. Fire-and-forget admin notification email via Resend.
+ *  5. Fire-and-forget customer acceptance confirmation email with persistent kickoff link.
  */
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { transitionQuote } from '@/lib/state-machines/quote';
 import { computeQuoteTotals, formatEuro } from '@/lib/quotes/quote-totals';
+import { sendAcceptanceEmail } from '@/lib/email/acceptance-email';
 
 export async function POST(request: Request) {
   try {
@@ -66,7 +68,15 @@ export async function POST(request: Request) {
         btwPercentage: true,
         lines: { select: { uren: true, tarief: true } },
         prospect: {
-          select: { companyName: true },
+          select: {
+            companyName: true,
+            contacts: {
+              select: { primaryEmail: true, firstName: true, lastName: true },
+              where: { primaryEmail: { not: null } },
+              orderBy: { createdAt: 'asc' },
+              take: 1,
+            },
+          },
         },
       },
     });
@@ -119,6 +129,57 @@ export async function POST(request: Request) {
     ).catch((err) => {
       console.warn('[accept-notify] admin notification failed:', err);
     });
+
+    // Fire-and-forget customer acceptance email with persistent kickoff link.
+    // Look up the engagement that transitionQuote just created inside the transaction.
+    const primaryContact = quote.prospect.contacts[0];
+    const recipientEmail = primaryContact?.primaryEmail ?? null;
+
+    if (recipientEmail) {
+      void (async () => {
+        try {
+          const engagement = await prisma.engagement.findUnique({
+            where: { quoteId: quote.id },
+            select: { id: true },
+          });
+
+          if (!engagement) {
+            console.warn('[accept-notify] engagement not found for quoteId', {
+              quoteId: quote.id,
+            });
+            return;
+          }
+
+          const baseCalcomUrl =
+            process.env.NEXT_PUBLIC_CALCOM_BOOKING_URL ??
+            'https://cal.com/klarifai/kickoff';
+          const kickoffUrl = `${baseCalcomUrl}?metadata[engagementId]=${engagement.id}`;
+          const prospectName =
+            quote.prospect.companyName ??
+            (primaryContact
+              ? `${primaryContact.firstName} ${primaryContact.lastName}`.trim()
+              : 'lezer');
+
+          await sendAcceptanceEmail({
+            to: recipientEmail,
+            prospectName,
+            quoteNumber: quote.nummer,
+            kickoffUrl,
+          });
+        } catch (err) {
+          // Email failure must never break the acceptance flow — status is already committed.
+          console.error('[offerte/accept] acceptance email failed', {
+            quoteId: quote.id,
+            err,
+          });
+        }
+      })();
+    } else {
+      console.warn(
+        '[offerte/accept] no primary contact email found — skipping customer confirmation',
+        { quoteId: quote.id },
+      );
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
