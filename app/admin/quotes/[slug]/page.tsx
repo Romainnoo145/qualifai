@@ -421,58 +421,28 @@ export default function QuoteDetailPage() {
       </header>
 
       {/* Mega-stat bar */}
-      <section className="grid grid-cols-[repeat(4,minmax(0,1fr))] border-b border-[var(--color-ink)] mb-10">
-        <div className="py-5 pr-6">
-          <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
-            Status
-          </span>
-          <div className="mt-2 font-['Sora'] text-[32px] font-bold leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)]">
-            {quote.status === 'DRAFT'
+      <section className="grid grid-cols-[repeat(4,minmax(0,1fr))] border-t border-b border-[var(--color-ink)] mb-10">
+        <MegaStat
+          label="Status"
+          value={
+            quote.status === 'DRAFT'
               ? 'Concept'
               : quote.status === 'SENT'
                 ? 'Verstuurd'
                 : quote.status === 'ACCEPTED'
                   ? 'Geaccepteerd'
-                  : quote.status}
-            <span className="text-[var(--color-gold)]">.</span>
-          </div>
-          <div className="mt-1 text-[11px] font-light text-[var(--color-muted)]">
-            {quote.status === 'DRAFT' ? 'nog niet verstuurd' : 'actief'}
-          </div>
-        </div>
-        <div className="py-5 px-6 border-l border-[var(--color-border)]">
-          <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
-            Bedrag
-          </span>
-          <div className="mt-2 font-['Sora'] text-[32px] font-bold leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)]">
-            {formatEuro(totals.bruto)}
-          </div>
-          <div className="mt-1 text-[11px] font-light text-[var(--color-muted)]">
-            excl. BTW
-          </div>
-        </div>
-        <div className="py-5 px-6 border-l border-[var(--color-border)]">
-          <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
-            Datum
-          </span>
-          <div className="mt-2 font-['Sora'] text-[32px] font-bold leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)]">
-            {datumStr}
-          </div>
-          <div className="mt-1 text-[11px] font-light text-[var(--color-muted)]">
-            {datumYear}
-          </div>
-        </div>
-        <div className="py-5 pl-6 border-l border-[var(--color-border)]">
-          <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
-            Geldig tot
-          </span>
-          <div className="mt-2 font-['Sora'] text-[32px] font-bold leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)]">
-            {geldigStr}
-          </div>
-          <div className="mt-1 text-[11px] font-light text-[var(--color-muted)]">
-            30 dagen
-          </div>
-        </div>
+                  : quote.status
+          }
+          sub={quote.status === 'DRAFT' ? 'nog niet verstuurd' : 'actief'}
+          goldDot
+        />
+        <MegaStat
+          label="Bedrag"
+          value={formatEuro(totals.bruto)}
+          sub="excl. BTW"
+        />
+        <MegaStat label="Datum" value={datumStr} sub={String(datumYear)} />
+        <MegaStat label="Geldig tot" value={geldigStr} sub="30 dagen" />
       </section>
 
       {/* 2-column grid */}
@@ -855,6 +825,35 @@ export default function QuoteDetailPage() {
             </div>
           </div>
         </aside>
+      </div>
+    </div>
+  );
+}
+
+function MegaStat({
+  label,
+  value,
+  sub,
+  goldDot,
+}: {
+  label: string;
+  value: React.ReactNode;
+  sub: React.ReactNode;
+  goldDot?: boolean;
+}) {
+  return (
+    <div className="py-3 border-r border-[var(--color-border)] last:border-r-0 first:pl-0 pl-5 pr-5">
+      <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
+        {label}
+      </span>
+      <div className="mt-1.5 font-['Sora'] text-[26px] font-bold leading-[1.15] tracking-[-0.02em] text-[var(--color-ink)]">
+        {value}
+        {goldDot ? (
+          <span className="text-[var(--color-gold-hi)]">.</span>
+        ) : null}
+      </div>
+      <div className="mt-2 text-[12px] font-normal text-[var(--color-muted)]">
+        {sub}
       </div>
     </div>
   );
