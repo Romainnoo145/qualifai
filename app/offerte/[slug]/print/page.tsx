@@ -722,137 +722,143 @@ export default async function PrintPage({
               Voorwaarden
             </div>
 
-            {/* Betalingsschema — compact, only when set */}
-            {hasSchedule &&
-              (() => {
-                const fmtCurrency = (n: number) =>
-                  new Intl.NumberFormat('nl-NL', {
-                    style: 'currency',
-                    currency: 'EUR',
-                  }).format(n);
-                return (
-                  <div style={{ marginBottom: '24px' }}>
-                    <div
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: 500,
-                        letterSpacing: '0.14em',
-                        textTransform: 'uppercase',
-                        color: MUTED,
-                        marginBottom: '16px',
-                      }}
-                    >
-                      Betalingsschema
-                    </div>
+            {/* Betalingsschema — compact table, only when set */}
+            {hasSchedule && (
+              <div style={{ marginBottom: '24px' }}>
+                <div
+                  style={{
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color: MUTED,
+                    marginBottom: '10px',
+                  }}
+                >
+                  Betalingsschema
+                </div>
 
-                    {/* ── Horizontal timeline ── */}
-                    <div style={{ position: 'relative' }}>
-                      {/* Connecting line behind dots */}
-                      <div
+                <table style={{ marginBottom: 0 }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${LIGHT_BORDER}` }}>
+                      <th
                         style={{
-                          position: 'absolute',
-                          top: '41px', // aligns with center of dot row
-                          left: `${(0.5 / schedule.length) * 100}%`,
-                          right: `${(0.5 / schedule.length) * 100}%`,
-                          height: '2px',
-                          background: GOLD,
-                        }}
-                      />
-
-                      {/* Stops row */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'row',
-                          alignItems: 'stretch',
+                          textAlign: 'left',
+                          fontSize: '9px',
+                          fontWeight: 500,
+                          letterSpacing: '0.12em',
+                          textTransform: 'uppercase',
+                          color: MUTED,
+                          paddingBottom: '6px',
                         }}
                       >
-                        {schedule.map((item, idx) => {
-                          const bedrag = total * (item.percentage / 100);
-                          return (
+                        Moment
+                      </th>
+                      <th
+                        style={{
+                          width: '48px',
+                          textAlign: 'right',
+                          fontSize: '9px',
+                          fontWeight: 500,
+                          letterSpacing: '0.12em',
+                          textTransform: 'uppercase',
+                          color: MUTED,
+                          paddingBottom: '6px',
+                        }}
+                      >
+                        %
+                      </th>
+                      <th
+                        style={{
+                          width: '120px',
+                          textAlign: 'right',
+                          fontSize: '9px',
+                          fontWeight: 500,
+                          letterSpacing: '0.12em',
+                          textTransform: 'uppercase',
+                          color: MUTED,
+                          paddingBottom: '6px',
+                        }}
+                      >
+                        Bedrag
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schedule.map((item, idx) => {
+                      const bedrag = total * (item.percentage / 100);
+                      return (
+                        <tr
+                          key={idx}
+                          style={{ borderBottom: `1px solid ${LIGHT_BORDER}` }}
+                        >
+                          <td
+                            style={{
+                              paddingTop: '6px',
+                              paddingBottom: '6px',
+                              paddingRight: '16px',
+                              verticalAlign: 'top',
+                            }}
+                          >
                             <div
-                              key={idx}
                               style={{
-                                flex: 1,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                textAlign: 'center',
-                                position: 'relative',
+                                fontSize: '12px',
+                                fontWeight: 500,
+                                color: NAVY,
+                                lineHeight: 1.4,
                               }}
                             >
-                              {/* Label above */}
-                              <div
-                                style={{
-                                  fontSize: '11px',
-                                  fontWeight: 600,
-                                  color: NAVY,
-                                  marginBottom: '8px',
-                                  lineHeight: 1.3,
-                                  maxWidth: '120px',
-                                }}
-                              >
-                                {item.label}
-                              </div>
-
-                              {/* Gold dot */}
-                              <div
-                                style={{
-                                  width: '12px',
-                                  height: '12px',
-                                  borderRadius: '50%',
-                                  background: GOLD,
-                                  flexShrink: 0,
-                                  position: 'relative',
-                                  zIndex: 1,
-                                  marginBottom: '8px',
-                                }}
-                              />
-
-                              {/* Percentage + bedrag below */}
-                              <div
-                                style={{
-                                  fontSize: '11px',
-                                  fontWeight: 700,
-                                  color: NAVY,
-                                  fontVariantNumeric: 'tabular-nums',
-                                  lineHeight: 1.4,
-                                }}
-                              >
-                                {item.percentage}%
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: '11px',
-                                  fontWeight: 400,
-                                  color: NAVY,
-                                  fontVariantNumeric: 'tabular-nums',
-                                  lineHeight: 1.4,
-                                }}
-                              >
-                                {fmtCurrency(bedrag)}
-                              </div>
-                              {item.dueOn && (
-                                <div
-                                  style={{
-                                    fontSize: '10px',
-                                    fontWeight: 300,
-                                    color: MUTED,
-                                    marginTop: '3px',
-                                    lineHeight: 1.3,
-                                  }}
-                                >
-                                  {item.dueOn}
-                                </div>
-                              )}
+                              {item.label}
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+                            {item.dueOn && (
+                              <div
+                                style={{
+                                  fontSize: '10px',
+                                  fontWeight: 300,
+                                  color: MUTED,
+                                  lineHeight: 1.4,
+                                  marginTop: '1px',
+                                }}
+                              >
+                                {item.dueOn}
+                              </div>
+                            )}
+                          </td>
+                          <td
+                            style={{
+                              paddingTop: '6px',
+                              paddingBottom: '6px',
+                              textAlign: 'right',
+                              verticalAlign: 'top',
+                              fontSize: '12px',
+                              fontWeight: 400,
+                              color: NAVY,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {item.percentage}%
+                          </td>
+                          <td
+                            style={{
+                              paddingTop: '6px',
+                              paddingBottom: '6px',
+                              textAlign: 'right',
+                              verticalAlign: 'top',
+                              fontSize: '12px',
+                              fontWeight: 400,
+                              color: NAVY,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            € {formatEuroNL(bedrag)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             <ol
               style={{
@@ -864,17 +870,37 @@ export default async function PrintPage({
                 gap: '9px',
               }}
             >
-              {[
-                hasSchedule
-                  ? 'Betaling in termijnen volgens bovenstaand schema.'
-                  : 'Betaaltermijn 14 dagen na factuurdatum.',
-                `Intellectueel eigendom gaat over naar ${displayName} na volledige betaling.`,
-                '60 dagen garantie op opgeleverd werk.',
-                'Een op maat gemaakte verwerkersovereenkomst volgt samen met het contract, binnen 5 werkdagen na akkoord.',
-                'Algemene voorwaarden zijn van toepassing. Zie klarifai.nl/legal/terms-and-conditions.',
-              ].map((term, idx) => (
+              {(
+                [
+                  hasSchedule
+                    ? {
+                        keyword: 'Betaling:',
+                        body: 'in termijnen volgens bovenstaand schema.',
+                      }
+                    : {
+                        keyword: 'Betaaltermijn:',
+                        body: '14 dagen na factuurdatum.',
+                      },
+                  {
+                    keyword: 'Eigendom:',
+                    body: `intellectueel eigendom gaat over naar ${displayName} na volledige betaling.`,
+                  },
+                  {
+                    keyword: 'Garantie:',
+                    body: '60 dagen op opgeleverd werk.',
+                  },
+                  {
+                    keyword: 'Verwerkersovereenkomst:',
+                    body: 'binnen 5 werkdagen na akkoord, samen met het contract.',
+                  },
+                  {
+                    keyword: 'Algemene voorwaarden:',
+                    body: null, // rendered with link below
+                  },
+                ] as { keyword: string; body: string | null }[]
+              ).map((term, idx) => (
                 <li
-                  key={term}
+                  key={term.keyword}
                   style={{
                     display: 'flex',
                     alignItems: 'flex-start',
@@ -899,7 +925,23 @@ export default async function PrintPage({
                   >
                     {String(idx + 1).padStart(2, '0')}
                   </span>
-                  <span>{term}</span>
+                  <span>
+                    <span style={{ fontWeight: 600 }}>{term.keyword}</span>{' '}
+                    {term.body !== null ? (
+                      term.body
+                    ) : (
+                      <>
+                        zie{' '}
+                        <a
+                          href="https://klarifai.nl/legal/terms-and-conditions"
+                          style={{ color: NAVY }}
+                        >
+                          klarifai.nl/legal/terms-and-conditions
+                        </a>
+                        .
+                      </>
+                    )}
+                  </span>
                 </li>
               ))}
             </ol>
