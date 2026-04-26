@@ -701,6 +701,18 @@ const OFFERTE_RESPONSIVE_STYLES = `
     }
   }
 
+  /* Short-viewport scroll — allows signing page content to scroll on laptops with
+     limited vertical space (e.g. 13" MacBook, 1080p with taskbar) */
+  @media (max-height: 900px) {
+    .offerte-main {
+      overflow-y: auto !important;
+      scrollbar-width: none; /* Firefox */
+    }
+    .offerte-main::-webkit-scrollbar {
+      display: none; /* WebKit / Chromium */
+    }
+  }
+
   /* Page content wrappers — release absolute positioning on mobile for natural flow */
   .offerte-page-content {
     position: absolute;
@@ -874,9 +886,6 @@ function Investering({
   const subtotal = lines.reduce((acc, l) => acc + l.uren * l.rate, 0);
   const vat = subtotal * btwPct;
   const total = subtotal + vat;
-  const phase1 = total * 0.25;
-  const phase2 = total * 0.5;
-  const phase3 = total * 0.25;
 
   return (
     <main
@@ -1035,7 +1044,7 @@ function Investering({
                       fontVariantNumeric: 'tabular-nums',
                     }}
                   >
-                    {l.uren > 0 ? `${l.uren}u × €${l.rate}` : '—'}
+                    {l.uren > 0 ? `${l.uren}u` : '—'}
                   </div>
                   <div
                     style={{
@@ -1144,31 +1153,40 @@ function Investering({
               />
             </div>
 
-            <div
-              style={{
-                borderTop: `1px solid ${CONTAINER_BORDER}`,
-                paddingTop: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-              }}
-            >
+            {quote?.paymentSchedule && quote.paymentSchedule.length > 0 && (
               <div
                 style={{
-                  fontSize: '10px',
-                  fontWeight: 500,
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
-                  color: TEXT_MUTED_ON_NAVY,
-                  marginBottom: '4px',
+                  borderTop: `1px solid ${CONTAINER_BORDER}`,
+                  paddingTop: '20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
                 }}
               >
-                Betaalschema
+                <div
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 500,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color: TEXT_MUTED_ON_NAVY,
+                    marginBottom: '4px',
+                  }}
+                >
+                  Betaalschema
+                </div>
+                {quote.paymentSchedule.map((installment, idx) => {
+                  const amount = (total * installment.percentage) / 100;
+                  return (
+                    <Row
+                      key={idx}
+                      label={`${installment.percentage}% ${installment.label.toLowerCase()}`}
+                      value={`€ ${fmt(amount)}`}
+                    />
+                  );
+                })}
               </div>
-              <Row label="25% bij start" value={`€ ${fmt(phase1)}`} />
-              <Row label="50% bij oplevering" value={`€ ${fmt(phase2)}`} />
-              <Row label="25% na acceptatie" value={`€ ${fmt(phase3)}`} />
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -1873,6 +1891,87 @@ function Signing({
                 }}
               />
             </div>
+
+            {/* Payment schedule — under totaalbedrag in the left card */}
+            {quote?.paymentSchedule && quote.paymentSchedule.length > 0 && (
+              <div
+                style={{
+                  borderTop: `1px solid ${CONTAINER_BORDER}`,
+                  paddingTop: '20px',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 500,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color: GOLD_LIGHT,
+                    marginBottom: '12px',
+                  }}
+                >
+                  Betaling in termijnen
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  {quote.paymentSchedule.map((item, idx) => {
+                    const bedrag =
+                      total > 0 ? total * (item.percentage / 100) : 0;
+                    const fmtCurrency = new Intl.NumberFormat('nl-NL', {
+                      style: 'currency',
+                      currency: 'EUR',
+                    });
+                    return (
+                      <div key={idx}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'baseline',
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: '13px',
+                              fontWeight: 500,
+                              color: TEXT_ON_NAVY,
+                            }}
+                          >
+                            {item.label}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '13px',
+                              fontWeight: 500,
+                              color: TEXT_ON_NAVY,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {item.percentage}%{' '}
+                            {bedrag > 0 && `— ${fmtCurrency.format(bedrag)}`}
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 300,
+                            color: TEXT_MUTED_ON_NAVY,
+                            marginTop: '2px',
+                          }}
+                        >
+                          {item.dueOn}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* RIGHT — Signing form */}
@@ -1974,90 +2073,6 @@ function Signing({
                 {todayLabel}
               </div>
             </div>
-
-            {/* Payment schedule block — only shown when schedule is set */}
-            {quote?.paymentSchedule && quote.paymentSchedule.length > 0 && (
-              <div
-                style={{
-                  marginTop: '8px',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  background: 'rgba(228, 195, 60, 0.07)',
-                  border: `1px solid rgba(228, 195, 60, 0.2)`,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: '10px',
-                    fontWeight: 500,
-                    letterSpacing: '0.18em',
-                    textTransform: 'uppercase',
-                    color: GOLD_LIGHT,
-                    marginBottom: '12px',
-                  }}
-                >
-                  Betaling in termijnen
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '10px',
-                  }}
-                >
-                  {quote.paymentSchedule.map((item, idx) => {
-                    const bedrag =
-                      total > 0 ? total * (item.percentage / 100) : 0;
-                    const fmtCurrency = new Intl.NumberFormat('nl-NL', {
-                      style: 'currency',
-                      currency: 'EUR',
-                    });
-                    return (
-                      <div key={idx}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'baseline',
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: '13px',
-                              fontWeight: 500,
-                              color: TEXT_ON_NAVY,
-                            }}
-                          >
-                            {item.label}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: '13px',
-                              fontWeight: 500,
-                              color: TEXT_ON_NAVY,
-                              fontVariantNumeric: 'tabular-nums',
-                            }}
-                          >
-                            {item.percentage}%{' '}
-                            {bedrag > 0 && `— ${fmtCurrency.format(bedrag)}`}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: 300,
-                            color: TEXT_MUTED_ON_NAVY,
-                            marginTop: '2px',
-                          }}
-                        >
-                          {item.dueOn}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* Legal disclaimer — key terms + link to Klarifai terms page */}
             <p
