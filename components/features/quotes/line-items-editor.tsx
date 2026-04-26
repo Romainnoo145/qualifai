@@ -33,7 +33,7 @@ export function LineItemsEditor({
   };
 
   const addLine = () => {
-    onChange([...lines, { omschrijving: '', uren: 0, tarief: 95 }]);
+    onChange([...lines, { omschrijving: '', uren: 0, tarief: 80 }]);
   };
 
   const removeLine = (index: number) => {
