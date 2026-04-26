@@ -751,6 +751,41 @@ export default function QuoteDetailPage() {
 
         {/* Right: actions */}
         <aside className="space-y-8">
+          {/* ACTIES */}
+          <div>
+            <SectionLabel>Acties</SectionLabel>
+            <div className="space-y-1.5">
+              {quote.prospect.readableSlug && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.open(
+                      `/offerte/${quote.prospect.readableSlug}/print`,
+                      '_blank',
+                    )
+                  }
+                  className="flex w-full items-center gap-2 rounded-full border border-[#e4c33c] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink)] text-left"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Download als PDF
+                </button>
+              )}
+              {quote.prospect.readableSlug && (
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink)] hover:border-[var(--color-ink)] transition-all text-left"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  {clipboardFeedback ? 'Gekopieerd ✓' : 'Kopieer offerte-link'}
+                </button>
+              )}
+              <div className="pt-1">
+                <QuoteVersionConfirm quoteId={quote.id} status={quote.status} />
+              </div>
+            </div>
+          </div>
+
           {/* INSTELLINGEN */}
           <div>
             <SectionLabel>Instellingen</SectionLabel>
@@ -785,44 +820,6 @@ export default function QuoteDetailPage() {
               <Trash2 className="h-3.5 w-3.5" />
               Verwijder offerte
             </button>
-          </div>
-
-          {/* ACTIES */}
-          <div>
-            <SectionLabel>Acties</SectionLabel>
-            <div className="space-y-1.5">
-              {quote.prospect.readableSlug && (
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink)] hover:border-[var(--color-ink)] transition-all text-left"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  {clipboardFeedback ? 'Gekopieerd ✓' : 'Kopieer offerte-link'}
-                </button>
-              )}
-              {quote.prospect.readableSlug && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    window.open(
-                      `/offerte/${quote.prospect.readableSlug}/print`,
-                      '_blank',
-                    )
-                  }
-                  className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink)] hover:border-[var(--color-ink)] transition-all text-left"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  Download als PDF
-                  <span className="ml-auto text-[var(--color-border-strong)]">
-                    →
-                  </span>
-                </button>
-              )}
-              <div className="pt-1">
-                <QuoteVersionConfirm quoteId={quote.id} status={quote.status} />
-              </div>
-            </div>
           </div>
         </aside>
       </div>

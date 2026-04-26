@@ -236,6 +236,16 @@ export default async function PrintPage({
 
             @media print {
               body { background: white; }
+
+              .print-section-voorwaarden {
+                break-before: page;
+                page-break-before: always;
+              }
+
+              .print-section-handtekening {
+                break-inside: avoid;
+                page-break-inside: avoid;
+              }
             }
 
             /* typography */
@@ -620,6 +630,7 @@ export default async function PrintPage({
 
         {/* ── AKKOORD / VOORWAARDEN ─────────────────────────────────────── */}
         <div
+          className="print-section-voorwaarden"
           style={{
             marginBottom: '48px',
             paddingTop: '32px',
@@ -629,7 +640,7 @@ export default async function PrintPage({
           <SectionLabel num="02" label="Akkoord" />
           <GoldPeriodHeading size={22}>Voorwaarden</GoldPeriodHeading>
 
-          {/* Betalingsschema — only shown when schedule is set */}
+          {/* Betalingsschema — compact single-row-per-termijn, only shown when schedule is set */}
           {Array.isArray(activeQuote.paymentSchedule) &&
             (activeQuote.paymentSchedule as PaymentInstallment[]).length > 0 &&
             (() => {
@@ -645,7 +656,7 @@ export default async function PrintPage({
                   currency: 'EUR',
                 }).format(n);
               return (
-                <div style={{ marginBottom: '24px' }}>
+                <div style={{ marginBottom: '20px' }}>
                   <div
                     style={{
                       fontSize: '10px',
@@ -653,7 +664,7 @@ export default async function PrintPage({
                       letterSpacing: '0.18em',
                       textTransform: 'uppercase',
                       color: GOLD,
-                      marginBottom: '12px',
+                      marginBottom: '10px',
                     }}
                   >
                     Betalingsschema
@@ -670,12 +681,12 @@ export default async function PrintPage({
                         <th
                           style={{
                             textAlign: 'left',
-                            fontSize: '10px',
+                            fontSize: '9px',
                             fontWeight: 500,
                             letterSpacing: '0.1em',
                             textTransform: 'uppercase',
                             color: MUTED,
-                            paddingBottom: '8px',
+                            paddingBottom: '6px',
                             paddingRight: '16px',
                           }}
                         >
@@ -684,14 +695,14 @@ export default async function PrintPage({
                         <th
                           style={{
                             textAlign: 'right',
-                            fontSize: '10px',
+                            fontSize: '9px',
                             fontWeight: 500,
                             letterSpacing: '0.1em',
                             textTransform: 'uppercase',
                             color: MUTED,
-                            paddingBottom: '8px',
+                            paddingBottom: '6px',
                             paddingRight: '16px',
-                            width: '48px',
+                            width: '40px',
                           }}
                         >
                           %
@@ -699,13 +710,13 @@ export default async function PrintPage({
                         <th
                           style={{
                             textAlign: 'right',
-                            fontSize: '10px',
+                            fontSize: '9px',
                             fontWeight: 500,
                             letterSpacing: '0.1em',
                             textTransform: 'uppercase',
                             color: MUTED,
-                            paddingBottom: '8px',
-                            width: '120px',
+                            paddingBottom: '6px',
+                            width: '110px',
                           }}
                         >
                           Bedrag
@@ -715,6 +726,10 @@ export default async function PrintPage({
                     <tbody>
                       {schedule.map((item, idx) => {
                         const bedrag = total * (item.percentage / 100);
+                        const num = String(idx + 1).padStart(2, '0');
+                        const termijnText = item.dueOn
+                          ? `${item.label} · ${item.dueOn}`
+                          : item.label;
                         return (
                           <tr
                             key={idx}
@@ -722,56 +737,56 @@ export default async function PrintPage({
                           >
                             <td
                               style={{
-                                paddingTop: '10px',
-                                paddingBottom: '10px',
+                                paddingTop: '6px',
+                                paddingBottom: '6px',
                                 paddingRight: '16px',
-                                verticalAlign: 'top',
+                                verticalAlign: 'middle',
                               }}
                             >
-                              <div
+                              <span
                                 style={{
-                                  fontSize: '13px',
-                                  fontWeight: 500,
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  color: GOLD,
+                                  marginRight: '6px',
+                                }}
+                              >
+                                {num}·
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: '12px',
+                                  fontWeight: 300,
                                   color: NAVY,
                                 }}
                               >
-                                {item.label}
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: '11px',
-                                  fontWeight: 300,
-                                  color: MUTED,
-                                  marginTop: '2px',
-                                }}
-                              >
-                                {item.dueOn}
-                              </div>
+                                {termijnText}
+                              </span>
                             </td>
                             <td
                               style={{
-                                paddingTop: '10px',
-                                paddingBottom: '10px',
+                                paddingTop: '6px',
+                                paddingBottom: '6px',
                                 paddingRight: '16px',
                                 textAlign: 'right',
-                                fontSize: '13px',
+                                fontSize: '12px',
                                 color: NAVY,
                                 fontVariantNumeric: 'tabular-nums',
-                                verticalAlign: 'top',
+                                verticalAlign: 'middle',
                               }}
                             >
                               {item.percentage}%
                             </td>
                             <td
                               style={{
-                                paddingTop: '10px',
-                                paddingBottom: '10px',
+                                paddingTop: '6px',
+                                paddingBottom: '6px',
                                 textAlign: 'right',
-                                fontSize: '13px',
+                                fontSize: '12px',
                                 fontWeight: 500,
                                 color: NAVY,
                                 fontVariantNumeric: 'tabular-nums',
-                                verticalAlign: 'top',
+                                verticalAlign: 'middle',
                               }}
                             >
                               {fmtCurrency(bedrag)}
@@ -781,11 +796,11 @@ export default async function PrintPage({
                       })}
                     </tbody>
                     <tfoot>
-                      <tr>
+                      <tr style={{ borderTop: `1px solid ${GREY}` }}>
                         <td
                           style={{
-                            paddingTop: '10px',
-                            fontSize: '13px',
+                            paddingTop: '6px',
+                            fontSize: '12px',
                             fontWeight: 700,
                             color: NAVY,
                           }}
@@ -794,9 +809,9 @@ export default async function PrintPage({
                         </td>
                         <td
                           style={{
-                            paddingTop: '10px',
+                            paddingTop: '6px',
                             textAlign: 'right',
-                            fontSize: '13px',
+                            fontSize: '12px',
                             fontWeight: 700,
                             color: NAVY,
                             fontVariantNumeric: 'tabular-nums',
@@ -807,9 +822,9 @@ export default async function PrintPage({
                         </td>
                         <td
                           style={{
-                            paddingTop: '10px',
+                            paddingTop: '6px',
                             textAlign: 'right',
-                            fontSize: '13px',
+                            fontSize: '12px',
                             fontWeight: 700,
                             color: NAVY,
                             fontVariantNumeric: 'tabular-nums',
@@ -867,6 +882,7 @@ export default async function PrintPage({
 
         {/* ── HANDTEKENING ─────────────────────────────────────────────── */}
         <div
+          className="print-section-handtekening"
           style={{
             marginBottom: '56px',
             paddingTop: '32px',
