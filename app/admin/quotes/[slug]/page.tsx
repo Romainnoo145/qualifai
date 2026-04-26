@@ -64,7 +64,7 @@ type QuoteDetailRow = Prisma.QuoteGetPayload<{
       };
     };
   };
-}> & { recipientAddress?: string | null };
+}>;
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -128,8 +128,11 @@ export default function QuoteDetailPage() {
   const [uitdaging, setUitdaging] = useState('');
   const [aanpak, setAanpak] = useState('');
 
-  // Recipient address for print/PDF
-  const [recipientAddress, setRecipientAddress] = useState('');
+  // Geadresseerde fields for print/PDF
+  const [recipientCompany, setRecipientCompany] = useState('');
+  const [recipientContact, setRecipientContact] = useState('');
+  const [recipientStreet, setRecipientStreet] = useState('');
+  const [recipientCity, setRecipientCity] = useState('');
 
   // TODO: tRPC v11 inference gap — quotes.get
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -199,7 +202,10 @@ export default function QuoteDetailPage() {
     setIntroductie(quote.introductie ?? '');
     setUitdaging(quote.uitdaging ?? '');
     setAanpak(quote.aanpak ?? '');
-    setRecipientAddress(quote.recipientAddress ?? '');
+    setRecipientCompany(quote.recipientCompany ?? '');
+    setRecipientContact(quote.recipientContact ?? '');
+    setRecipientStreet(quote.recipientStreet ?? '');
+    setRecipientCity(quote.recipientCity ?? '');
     setLines(
       quote.lines.map((l) => ({
         omschrijving: l.omschrijving ?? '',
@@ -449,34 +455,118 @@ export default function QuoteDetailPage() {
         <MegaStat label="Geldig tot" value={geldigStr} sub="30 dagen" />
       </section>
 
-      {/* 2-column grid */}
-      <div className="grid grid-cols-[minmax(0,1fr)_280px] gap-10">
-        {/* Left: content */}
-        <div className="space-y-10">
-          {/* Geadresseerde — recipient address for print */}
-          <Block>
-            <SectionLabel>Geadresseerde</SectionLabel>
-            <textarea
-              value={recipientAddress}
-              onChange={(e) => setRecipientAddress(e.target.value)}
-              onBlur={() => {
-                if (!quote || quote.status !== 'DRAFT') return;
-                updateMutation.mutate({
-                  id: quote.id,
-                  recipientAddress: recipientAddress || null,
-                });
-              }}
-              rows={5}
-              disabled={isReadOnly}
-              placeholder={`Bedrijfsnaam B.V.\nT.a.v. Naam Achternaam\nStraat + huisnummer\nPostcode + Plaatsnaam`}
-              className="input-minimal w-full text-[13px] leading-[1.7] resize-none font-light"
-            />
-            <p className="mt-2 text-[10px] font-light text-[var(--color-muted)]">
-              Adresblok op de printversie. Eerste regel = bedrijfsnaam (bold).
-              Laat leeg om automatisch op te vullen.
-            </p>
-          </Block>
+      {/* 3-column grid: left meta | center content | right sidebar */}
+      <div className="grid grid-cols-[260px_minmax(0,1fr)_280px] gap-10">
+        {/* Left: meta column */}
+        <div className="space-y-8">
+          {/* PROSPECT — back link card */}
+          <div>
+            <SectionLabel>Prospect</SectionLabel>
+            <Link
+              href={`/admin/prospects/${quote.prospect.id}`}
+              className="group flex items-center justify-between gap-2 rounded-[8px] border border-[var(--color-border)] px-3 py-2.5 hover:bg-[var(--color-surface-2)] transition-colors"
+            >
+              <span className="text-[12px] font-medium text-[var(--color-ink)] truncate">
+                {quote.prospect.companyName ?? quote.prospect.slug}
+              </span>
+              <ChevronRight className="h-3.5 w-3.5 text-[var(--color-muted)] flex-shrink-0 group-hover:text-[var(--color-ink)] transition-colors" />
+            </Link>
+          </div>
 
+          {/* GEADRESSEERDE — 4 structured inputs */}
+          <div>
+            <SectionLabel>Geadresseerde</SectionLabel>
+            <div className="space-y-3">
+              <div>
+                <span className="block text-[9px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)] mb-1">
+                  Bedrijfsnaam
+                </span>
+                <input
+                  type="text"
+                  value={recipientCompany}
+                  onChange={(e) => setRecipientCompany(e.target.value)}
+                  onBlur={() => {
+                    if (!quote || quote.status !== 'DRAFT') return;
+                    updateMutation.mutate({
+                      id: quote.id,
+                      recipientCompany: recipientCompany || null,
+                    });
+                  }}
+                  disabled={isReadOnly}
+                  placeholder={quote.prospect.companyName ?? ''}
+                  className="input-minimal w-full text-[13px]"
+                />
+              </div>
+              <div>
+                <span className="block text-[9px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)] mb-1">
+                  T.a.v.
+                </span>
+                <input
+                  type="text"
+                  value={recipientContact}
+                  onChange={(e) => setRecipientContact(e.target.value)}
+                  onBlur={() => {
+                    if (!quote || quote.status !== 'DRAFT') return;
+                    updateMutation.mutate({
+                      id: quote.id,
+                      recipientContact: recipientContact || null,
+                    });
+                  }}
+                  disabled={isReadOnly}
+                  placeholder={
+                    quote.prospect.contacts?.[0]
+                      ? `${quote.prospect.contacts[0].firstName} ${quote.prospect.contacts[0].lastName}`.trim()
+                      : ''
+                  }
+                  className="input-minimal w-full text-[13px]"
+                />
+              </div>
+              <div>
+                <span className="block text-[9px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)] mb-1">
+                  Straat + huisnummer
+                </span>
+                <input
+                  type="text"
+                  value={recipientStreet}
+                  onChange={(e) => setRecipientStreet(e.target.value)}
+                  onBlur={() => {
+                    if (!quote || quote.status !== 'DRAFT') return;
+                    updateMutation.mutate({
+                      id: quote.id,
+                      recipientStreet: recipientStreet || null,
+                    });
+                  }}
+                  disabled={isReadOnly}
+                  placeholder=""
+                  className="input-minimal w-full text-[13px]"
+                />
+              </div>
+              <div>
+                <span className="block text-[9px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)] mb-1">
+                  Postcode + plaatsnaam
+                </span>
+                <input
+                  type="text"
+                  value={recipientCity}
+                  onChange={(e) => setRecipientCity(e.target.value)}
+                  onBlur={() => {
+                    if (!quote || quote.status !== 'DRAFT') return;
+                    updateMutation.mutate({
+                      id: quote.id,
+                      recipientCity: recipientCity || null,
+                    });
+                  }}
+                  disabled={isReadOnly}
+                  placeholder=""
+                  className="input-minimal w-full text-[13px]"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Center: content */}
+        <div className="space-y-10">
           {/* Investering (line items) */}
           <Block>
             <div className="flex items-center gap-3 mb-4">

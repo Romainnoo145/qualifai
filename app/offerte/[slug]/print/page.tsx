@@ -160,26 +160,25 @@ export default async function PrintPage({
   const btwAmount = subtotal * (activeQuote.btwPercentage / 100);
   const total = subtotal + btwAmount;
 
-  // ─── Recipient address block
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recipientAddress = (activeQuote as any).recipientAddress as
-    | string
-    | null
-    | undefined;
+  // ─── Recipient block — 4 structured fields (may all be null → fallback)
+  const recipientCompany = activeQuote.recipientCompany ?? null;
+  const recipientContact = activeQuote.recipientContact ?? null;
+  const recipientStreet = activeQuote.recipientStreet ?? null;
+  const recipientCity = activeQuote.recipientCity ?? null;
 
-  let recipientLines: string[];
-  if (recipientAddress && recipientAddress.trim()) {
-    recipientLines = recipientAddress.split('\n');
-  } else {
-    // Fallback: company name + primary contact
-    const contact = prospect.contacts[0];
-    recipientLines = [
-      displayName,
-      ...(contact
-        ? [`T.a.v. ${contact.firstName} ${contact.lastName}`.trim()]
-        : []),
-    ];
-  }
+  const hasAnyRecipientField = !!(
+    recipientCompany ||
+    recipientContact ||
+    recipientStreet ||
+    recipientCity
+  );
+
+  // Fallback when all 4 fields are empty
+  const fallbackContact = prospect.contacts[0];
+  const fallbackName = displayName;
+  const fallbackContactLine = fallbackContact
+    ? `T.a.v. ${fallbackContact.firstName} ${fallbackContact.lastName}`.trim()
+    : null;
 
   // ─── Payment schedule
   const hasSchedule =
@@ -191,7 +190,7 @@ export default async function PrintPage({
 
   // ─── Klant bedrijfsnaam for signature block
   const klantBedrijf =
-    (recipientLines[0] && recipientLines[0].trim()) || displayName;
+    (hasAnyRecipientField ? recipientCompany : null) ?? displayName;
 
   return (
     <>
@@ -323,20 +322,83 @@ export default async function PrintPage({
 
         {/* ── RECIPIENT BLOCK ─────────────────────────────────────────────── */}
         <div style={{ marginBottom: '40px', width: '55%' }}>
-          {recipientLines.map((line, i) => (
-            <div
-              key={i}
-              style={{
-                fontSize: '13px',
-                fontWeight: i === 0 ? 600 : 400,
-                color: NAVY,
-                lineHeight: 1.65,
-                whiteSpace: 'pre-wrap',
-              }}
-            >
-              {line}
-            </div>
-          ))}
+          {hasAnyRecipientField ? (
+            <>
+              {recipientCompany && (
+                <div
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: NAVY,
+                    lineHeight: 1.65,
+                  }}
+                >
+                  {recipientCompany}
+                </div>
+              )}
+              {recipientContact && (
+                <div
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    color: NAVY,
+                    lineHeight: 1.65,
+                  }}
+                >
+                  T.a.v. {recipientContact}
+                </div>
+              )}
+              {recipientStreet && (
+                <div
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    color: NAVY,
+                    lineHeight: 1.65,
+                  }}
+                >
+                  {recipientStreet}
+                </div>
+              )}
+              {recipientCity && (
+                <div
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    color: NAVY,
+                    lineHeight: 1.65,
+                  }}
+                >
+                  {recipientCity}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: NAVY,
+                  lineHeight: 1.65,
+                }}
+              >
+                {fallbackName}
+              </div>
+              {fallbackContactLine && (
+                <div
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    color: NAVY,
+                    lineHeight: 1.65,
+                  }}
+                >
+                  {fallbackContactLine}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* ── OFFERTE META: Nummer left · Datums right ────────────────────── */}
