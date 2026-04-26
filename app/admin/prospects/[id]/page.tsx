@@ -1186,11 +1186,17 @@ export default function ProspectDetail() {
 
             {/* Offerte routing */}
             <div className="space-y-2.5">
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
-                  Offerte routing
+              <div className="flex items-center justify-between">
+                <span
+                  className={cn(
+                    'text-[11px] font-medium uppercase tracking-[0.18em]',
+                    voorstelMode === 'BESPOKE'
+                      ? 'text-[var(--color-gold-hi)]'
+                      : 'text-[var(--color-muted)]',
+                  )}
+                >
+                  {voorstelMode === 'BESPOKE' ? 'Bespoke' : 'Standaard'}
                 </span>
-                <span className="flex-1 h-px bg-[var(--color-border)]" />
                 <button
                   type="button"
                   onClick={() => {
@@ -1204,23 +1210,11 @@ export default function ProspectDetail() {
                   <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
                 </button>
               </div>
-              <div className="flex flex-col gap-1 pt-0.5">
-                <span
-                  className={cn(
-                    'text-[11px] font-medium uppercase tracking-[0.18em]',
-                    voorstelMode === 'BESPOKE'
-                      ? 'text-[var(--color-gold-hi)]'
-                      : 'text-[var(--color-muted)]',
-                  )}
-                >
-                  {voorstelMode === 'BESPOKE' ? 'Bespoke' : 'Standaard'}
+              {voorstelMode === 'BESPOKE' && bespokeUrl && (
+                <span className="text-[11px] text-[var(--color-muted)] truncate max-w-[180px]">
+                  {bespokeUrl}
                 </span>
-                {voorstelMode === 'BESPOKE' && bespokeUrl && (
-                  <span className="text-[11px] text-[var(--color-muted)] truncate max-w-[180px]">
-                    {bespokeUrl}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           </aside>
         </div>
