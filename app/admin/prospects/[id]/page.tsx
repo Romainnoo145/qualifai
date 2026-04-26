@@ -1184,11 +1184,11 @@ export default function ProspectDetail() {
               )}
             </div>
 
-            {/* Voorstel routing */}
+            {/* Offerte routing */}
             <div className="space-y-2.5">
               <div className="flex items-center gap-3">
                 <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
-                  Voorstel routing
+                  Offerte routing
                 </span>
                 <span className="flex-1 h-px bg-[var(--color-border)]" />
                 <button
@@ -1199,23 +1199,15 @@ export default function ProspectDetail() {
                     setShowVoorstelModal(true);
                   }}
                   className="p-1 rounded-[4px] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
-                  aria-label="Bewerk voorstel routing"
+                  aria-label="Bewerk offerte routing"
                 >
                   <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
                 </button>
               </div>
-              <div className="flex items-center gap-2 pt-0.5">
+              <div className="flex flex-col gap-1 pt-0.5">
                 <span
                   className={cn(
-                    'inline-block h-2 w-2 rounded-full flex-shrink-0',
-                    voorstelMode === 'BESPOKE'
-                      ? 'bg-[var(--color-gold-hi)]'
-                      : 'bg-[var(--color-border-strong)]',
-                  )}
-                />
-                <span
-                  className={cn(
-                    'text-[13px]',
+                    'text-[11px] font-medium uppercase tracking-[0.18em]',
                     voorstelMode === 'BESPOKE'
                       ? 'text-[var(--color-gold-hi)]'
                       : 'text-[var(--color-muted)]',
@@ -1223,6 +1215,11 @@ export default function ProspectDetail() {
                 >
                   {voorstelMode === 'BESPOKE' ? 'Bespoke' : 'Standaard'}
                 </span>
+                {voorstelMode === 'BESPOKE' && bespokeUrl && (
+                  <span className="text-[11px] text-[var(--color-muted)] truncate max-w-[180px]">
+                    {bespokeUrl}
+                  </span>
+                )}
               </div>
             </div>
           </aside>
@@ -1367,11 +1364,11 @@ export default function ProspectDetail() {
         </div>
       </Popup>
 
-      {/* ── Voorstel Routing Modal ── */}
+      {/* ── Offerte Routing Modal ── */}
       <Popup
         isOpen={showVoorstelModal}
         onClose={() => setShowVoorstelModal(false)}
-        title="Voorstel routing"
+        title="Offerte routing."
         eyebrow="Instellingen"
       >
         <div className="space-y-4">
