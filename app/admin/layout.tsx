@@ -75,9 +75,14 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
     getAdminTokenSnapshot,
     () => null,
   );
+  const [mounted, setMounted] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [tokenInput, setTokenInput] = useState('');
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
@@ -108,6 +113,12 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
       setIsVerifying(false);
     }
   };
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[var(--color-background)]" aria-hidden />
+    );
+  }
 
   if (!token) {
     return (
