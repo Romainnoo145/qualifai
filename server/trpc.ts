@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { type TRPCContext } from './context';
-import { KLARIFAI_PROJECT_SLUG, resolveAdminProjectScope } from './admin-auth';
+import { resolveAdminProjectScope } from './admin-auth';
 import { PUBLIC_VISIBLE_STATUSES } from '@/lib/constants/prospect-statuses';
 
 const t = initTRPC.context<TRPCContext>().create();
@@ -9,7 +9,7 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 
 export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const scope = resolveAdminProjectScope(ctx.adminToken);
+  const scope = await resolveAdminProjectScope(ctx.adminToken);
   if (scope) {
     return next({
       ctx: {
@@ -27,7 +27,13 @@ export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
 
 export const projectAdminProcedure = adminProcedure.use(
   async ({ ctx, next }) => {
-    const scopedProjectSlug = ctx.allowedProjectSlug ?? KLARIFAI_PROJECT_SLUG;
+    const scopedProjectSlug = ctx.allowedProjectSlug;
+    if (!scopedProjectSlug) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Project scope missing — adminProcedure must run first',
+      });
+    }
 
     const project = await ctx.db.project.findUnique({
       where: { slug: scopedProjectSlug },

@@ -11,13 +11,13 @@ export function normalizeAdminToken(
   let token = rawToken.trim();
   if (!token) return null;
 
+  if (BEARER_PREFIX_REGEX.test(token)) {
+    token = token.replace(BEARER_PREFIX_REGEX, '').trim();
+  }
+
   const quotedMatch = token.match(WRAPPED_IN_QUOTES_REGEX);
   if (quotedMatch) {
     token = quotedMatch[2]?.trim() ?? '';
-  }
-
-  if (BEARER_PREFIX_REGEX.test(token)) {
-    token = token.replace(BEARER_PREFIX_REGEX, '').trim();
   }
 
   return token.length > 0 ? token : null;
