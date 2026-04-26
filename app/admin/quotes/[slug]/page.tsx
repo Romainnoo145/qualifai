@@ -7,7 +7,7 @@
  */
 
 import type { Prisma } from '@prisma/client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -71,6 +71,17 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+type SaveStatusState = 'idle' | 'saving' | 'saved';
+
+function SaveStatus({ status }: { status: SaveStatusState }) {
+  if (status === 'idle') return null;
+  return (
+    <span className="text-[11px] text-[var(--color-muted)] transition-opacity">
+      {status === 'saving' ? 'Bezig…' : 'Opgeslagen ✓'}
+    </span>
+  );
+}
+
 function Block({ children }: { children: React.ReactNode }) {
   return (
     <div className="pb-8 border-b border-[var(--color-surface-2)]">
@@ -95,6 +106,14 @@ export default function QuoteDetailPage() {
   // Payment schedule
   const [termijnen, setTermijnen] = useState(false);
   const [schedule, setSchedule] = useState<PaymentInstallment[]>([]);
+
+  // Auto-save guards: don't fire on initial hydration from server.
+  const hasLinesEdited = useRef(false);
+  const hasScheduleEdited = useRef(false);
+
+  // Global save status indicator.
+  const [saveStatus, setSaveStatus] = useState<SaveStatusState>('idle');
+  const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Narrative fields (editable inline via NarrativePreview)
   const [introductie, setIntroductie] = useState('');
@@ -125,6 +144,15 @@ export default function QuoteDetailPage() {
     onSuccess: () => {
       utils.quotes?.get?.invalidate?.({ slug });
       utils.quotes?.list?.invalidate?.();
+      setSaveStatus('saved');
+      if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+      saveStatusTimerRef.current = setTimeout(
+        () => setSaveStatus('idle'),
+        2000,
+      );
+    },
+    onMutate: () => {
+      setSaveStatus('saving');
     },
   });
 
@@ -151,6 +179,7 @@ export default function QuoteDetailPage() {
   });
 
   // Seed local state when quote loads / changes (updatedAt as change signal).
+  // Reset "hasEdited" guards so newly-hydrated state doesn't trigger auto-save.
   useEffect(() => {
     if (!quote) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -175,8 +204,61 @@ export default function QuoteDetailPage() {
       setTermijnen(false);
       setSchedule([]);
     }
+    // Reset guards — next change will be a genuine user edit.
+    hasLinesEdited.current = false;
+    hasScheduleEdited.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quote?.updatedAt]);
+
+  // Auto-save: line items — 500ms debounce after user edits.
+  useEffect(() => {
+    if (!quote || quote.status !== 'DRAFT') return;
+    if (!hasLinesEdited.current) {
+      // First render after hydration — mark ready, don't save.
+      hasLinesEdited.current = true;
+      return;
+    }
+    const timer = setTimeout(() => {
+      updateMutation.mutate({
+        id: quote.id,
+        lines: lines.map((l, idx) => ({
+          omschrijving: l.omschrijving || undefined,
+          uren: l.uren,
+          tarief: l.tarief,
+          position: idx,
+        })),
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lines]);
+
+  // Auto-save: payment schedule — 500ms debounce after user edits.
+  // Only commits when schedule is valid (100%) or termijnen is toggled off.
+  useEffect(() => {
+    if (!quote || quote.status !== 'DRAFT') return;
+    if (!hasScheduleEdited.current) {
+      hasScheduleEdited.current = true;
+      return;
+    }
+    // When termijnen is off, always save (clear schedule).
+    // When termijnen is on, only save when schedule totals 100%.
+    const currentTotal = schedule.reduce(
+      (acc, r) => acc + (r.percentage || 0),
+      0,
+    );
+    const currentValid = Math.round(currentTotal) === 100;
+    if (termijnen && !currentValid) return;
+
+    const timer = setTimeout(() => {
+      updateMutation.mutate({
+        id: quote.id,
+        paymentSchedule: termijnen && schedule.length > 0 ? schedule : null,
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schedule, termijnen]);
 
   // Redirect legacy CUID URLs to canonical slug URL.
   useEffect(() => {
@@ -221,25 +303,6 @@ export default function QuoteDetailPage() {
       introductie: field === 'introductie' ? value : introductie,
       uitdaging: field === 'uitdaging' ? value : uitdaging,
       aanpak: field === 'aanpak' ? value : aanpak,
-    });
-  };
-
-  const handleSaveLines = () => {
-    updateMutation.mutate({
-      id: quote.id,
-      lines: lines.map((l, idx) => ({
-        omschrijving: l.omschrijving || undefined,
-        uren: l.uren,
-        tarief: l.tarief,
-        position: idx,
-      })),
-    });
-  };
-
-  const handleSaveSchedule = () => {
-    updateMutation.mutate({
-      id: quote.id,
-      paymentSchedule: termijnen && schedule.length > 0 ? schedule : null,
     });
   };
 
@@ -444,30 +507,30 @@ export default function QuoteDetailPage() {
 
           {/* Line Items */}
           <Block>
-            <SectionLabel>Regels</SectionLabel>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+                Regels
+              </span>
+              <span className="flex-1 h-px bg-[var(--color-border)]" />
+              <SaveStatus status={saveStatus} />
+            </div>
             <LineItemsEditor
               lines={lines}
               btwPercentage={quote.btwPercentage}
               isReadOnly={isReadOnly}
               onChange={setLines}
             />
-            {!isReadOnly && (
-              <div className="mt-5 flex justify-end">
-                <button
-                  type="button"
-                  disabled={updateMutation.isPending}
-                  onClick={handleSaveLines}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-ink)] border border-[var(--color-border)] hover:border-[var(--color-ink)] transition-all disabled:opacity-50"
-                >
-                  {updateMutation.isPending ? 'Opslaan...' : 'Regels opslaan'}
-                </button>
-              </div>
-            )}
           </Block>
 
           {/* Payment Schedule */}
           <Block>
-            <SectionLabel>Betalingsschema</SectionLabel>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+                Betalingsschema
+              </span>
+              <span className="flex-1 h-px bg-[var(--color-border)]" />
+              <SaveStatus status={saveStatus} />
+            </div>
             <label className="flex items-center gap-2 mb-4 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -624,20 +687,7 @@ export default function QuoteDetailPage() {
                   </div>
                 )}
 
-                {!isReadOnly && (
-                  <div className="flex justify-end pt-2">
-                    <button
-                      type="button"
-                      disabled={updateMutation.isPending || !scheduleValid}
-                      onClick={handleSaveSchedule}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-[10px] font-medium uppercase tracking-[0.06em] bg-transparent text-[var(--color-ink)] border border-[var(--color-border)] hover:border-[var(--color-ink)] transition-all disabled:opacity-50"
-                    >
-                      {updateMutation.isPending
-                        ? 'Opslaan...'
-                        : 'Schema opslaan'}
-                    </button>
-                  </div>
-                )}
+                {/* Auto-saves when scheduleValid — no manual button needed */}
               </div>
             )}
           </Block>
