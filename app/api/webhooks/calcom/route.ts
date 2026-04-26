@@ -313,6 +313,30 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Kickoff booking branch: Cal.com URL includes ?metadata[engagementId]=<id>
+    // which Cal.com forwards as payload.metadata.engagementId. Short-circuit here
+    // so kickoff bookings never touch the cold-track OutreachLog matching below.
+    const engagementId = toObject(bookingPayload.metadata).engagementId;
+    if (typeof engagementId === 'string' && engagementId.length > 0) {
+      try {
+        await prisma.engagement.update({
+          where: { id: engagementId },
+          data: { kickoffBookedAt: new Date() },
+        });
+        return NextResponse.json({ ok: true, kind: 'kickoff' });
+      } catch (err) {
+        console.warn('[calcom] kickoff engagement not found', {
+          engagementId,
+          err,
+        });
+        return NextResponse.json({
+          ok: true,
+          kind: 'kickoff',
+          notFound: true,
+        });
+      }
+    }
+
     const bookingUid = bookingUidFromPayload(bookingPayload);
     if (await alreadyProcessed(eventType, bookingUid)) {
       return NextResponse.json({ success: true, deduplicated: true });
