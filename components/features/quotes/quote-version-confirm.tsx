@@ -104,7 +104,7 @@ export function QuoteVersionConfirm({ quoteId, status }: Props) {
             <div className="flex justify-end gap-3">
               <button
                 type="button"
-                className="btn-pill-secondary"
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-muted-dark)] hover:border-[var(--color-ink)] transition-colors"
                 onClick={() => setOpen(false)}
                 disabled={mutation.isPending}
               >
@@ -112,7 +112,7 @@ export function QuoteVersionConfirm({ quoteId, status }: Props) {
               </button>
               <button
                 type="button"
-                className="btn-pill-primary"
+                className="inline-flex items-center gap-2 rounded-full border border-[#e4c33c] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink)] disabled:opacity-50"
                 onClick={handleConfirm}
                 disabled={mutation.isPending}
                 data-testid="quote-version-confirm-button"

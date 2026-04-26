@@ -21,6 +21,7 @@ import {
   Loader2,
   Mail,
   Plus,
+  RotateCcw,
   Trash2,
   X,
 } from 'lucide-react';
@@ -30,6 +31,7 @@ import { Popup } from '@/components/ui/popup';
 import { api } from '@/components/providers';
 import { PageLoader } from '@/components/ui/page-loader';
 import { QuoteVersionConfirm } from '@/components/features/quotes/quote-version-confirm';
+import { QuoteStatusBadge } from '@/components/features/quotes/quote-status-badge';
 import { NarrativePreview } from '@/components/features/quotes/narrative-preview';
 import {
   LineItemsEditor,
@@ -208,25 +210,6 @@ export default function QuoteDetailPage() {
       setShowResetConfirm(false);
     },
   });
-
-  // TODO: tRPC v11 inference gap — quotes.transition
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const transitionMutation = (api.quotes as any).transition.useMutation({
-    onSuccess: () => {
-      utils.quotes?.get?.invalidate?.({ slug });
-      utils.quotes?.list?.invalidate?.();
-    },
-  });
-
-  const handleStatusChange = (newStatus: string) => {
-    if (!quote || newStatus === quote.status) return;
-    // Rolling back to DRAFT is destructive — require confirmation.
-    if (newStatus === 'DRAFT') {
-      setShowResetConfirm(true);
-      return;
-    }
-    transitionMutation.mutate({ id: quote.id, newStatus });
-  };
 
   // Seed local state when quote loads / changes (updatedAt as change signal).
   // Reset "hasEdited" guards so newly-hydrated state doesn't trigger auto-save.
@@ -587,9 +570,12 @@ export default function QuoteDetailPage() {
             <span className="text-[var(--color-gold)]">.</span>
           </h1>
           {quote.onderwerp && (
-            <p className="mt-2 text-[12px] text-[var(--color-muted)]">
-              {quote.onderwerp}
-            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <p className="text-[12px] text-[var(--color-muted)]">
+                {quote.onderwerp}
+              </p>
+              <QuoteStatusBadge status={quote.status} />
+            </div>
           )}
         </div>
         <div className="flex flex-col gap-2 items-end">
@@ -615,22 +601,6 @@ export default function QuoteDetailPage() {
               {showEmailCompose ? 'Annuleer' : 'Versturen'}
             </button>
           )}
-          {/* Status selector — replaces badge + reset button */}
-          <select
-            value={quote.status}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            disabled={transitionMutation.isPending || resetMut.isPending}
-            className="inline-flex items-center rounded-[6px] border border-[var(--color-border-strong)] px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink)] bg-[var(--color-surface)] hover:border-[var(--color-ink)] transition-colors cursor-pointer w-full disabled:opacity-50"
-            style={{ appearance: 'auto' }}
-          >
-            <option value="DRAFT">Concept</option>
-            <option value="SENT">Verstuurd</option>
-            <option value="VIEWED">Bekeken</option>
-            <option value="ACCEPTED">Geaccepteerd</option>
-            <option value="REJECTED">Afgewezen</option>
-            <option value="EXPIRED">Verlopen</option>
-            <option value="ARCHIVED">Gearchiveerd</option>
-          </select>
         </div>
       </header>
 
@@ -1035,6 +1005,16 @@ export default function QuoteDetailPage() {
                 </span>
               </div>
             </label>
+            {quote.status !== 'DRAFT' && (
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(true)}
+                className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink)] hover:border-[var(--color-ink)] transition-all text-left mt-4"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Reset naar concept
+              </button>
+            )}
             <button
               type="button"
               disabled={deleteMutation.isPending || isReadOnly}
