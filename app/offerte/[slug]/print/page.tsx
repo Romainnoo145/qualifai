@@ -950,7 +950,13 @@ export default async function PrintPage({
           {/* ── VOOR AKKOORD: 2-column signature block ───────────────────────── */}
           <div
             className="print-section-handtekening"
-            style={{ marginBottom: '56px' }}
+            style={{
+              marginBottom: '56px',
+              padding: '28px 32px',
+              background: '#F8F7F4',
+              borderTop: `2px solid ${NAVY}`,
+              borderRadius: '2px',
+            }}
           >
             <div
               style={{
