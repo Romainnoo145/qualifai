@@ -1186,35 +1186,17 @@ export default function ProspectDetail() {
 
             {/* Offerte routing */}
             <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span
-                  className={cn(
-                    'text-[11px] font-medium uppercase tracking-[0.18em]',
-                    voorstelMode === 'BESPOKE'
-                      ? 'text-[var(--color-gold-hi)]'
-                      : 'text-[var(--color-muted)]',
-                  )}
-                >
-                  {voorstelMode === 'BESPOKE' ? 'Bespoke' : 'Standaard'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDraftMode(voorstelMode);
-                    setDraftUrl(bespokeUrl ?? '');
-                    setShowVoorstelModal(true);
-                  }}
-                  className="p-1 rounded-[4px] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
-                  aria-label="Bewerk offerte routing"
-                >
-                  <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
-                </button>
-              </div>
-              {voorstelMode === 'BESPOKE' && bespokeUrl && (
-                <span className="text-[11px] text-[var(--color-muted)] truncate max-w-[180px]">
-                  {bespokeUrl}
-                </span>
-              )}
+              <Eyebrow>Offerte routing</Eyebrow>
+              <ActionRow
+                icon={ExternalLink}
+                label={voorstelMode === 'BESPOKE' ? 'Bespoke' : 'Standaard'}
+                variant={voorstelMode === 'BESPOKE' ? 'gold' : 'paper'}
+                onClick={() => {
+                  setDraftMode(voorstelMode);
+                  setDraftUrl(bespokeUrl ?? '');
+                  setShowVoorstelModal(true);
+                }}
+              />
             </div>
           </aside>
         </div>
