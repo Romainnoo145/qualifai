@@ -381,7 +381,7 @@ export default function QuoteDetailPage() {
       </div>
 
       {/* Hero */}
-      <header className="grid grid-cols-[1fr_auto] gap-10 items-end pb-7 mb-9 border-b border-[var(--color-ink)]">
+      <header className="grid grid-cols-[1fr_auto] gap-10 items-end pb-7 mb-9">
         <div>
           <h1 className="font-['Sora'] text-[clamp(32px,5vw,48px)] font-bold leading-[1.05] tracking-[-0.025em] text-[var(--color-ink)]">
             {quote.nummer}
