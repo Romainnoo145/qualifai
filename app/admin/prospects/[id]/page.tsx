@@ -1344,7 +1344,7 @@ export default function ProspectDetail() {
       <Popup
         isOpen={showVoorstelModal}
         onClose={() => setShowVoorstelModal(false)}
-        title="Offerte routing."
+        title="Offerte routing"
         eyebrow="Instellingen"
       >
         <div className="space-y-4">
@@ -1366,7 +1366,7 @@ export default function ProspectDetail() {
               onClick={() => setDraftMode('BESPOKE')}
               className={
                 draftMode === 'BESPOKE'
-                  ? 'bg-[var(--color-ink)] text-white py-2.5 px-3 text-[13px] font-medium transition-colors'
+                  ? 'bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] py-2.5 px-3 text-[13px] font-medium transition-colors'
                   : 'bg-transparent text-[var(--color-muted)] py-2.5 px-3 text-[13px] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors'
               }
             >
