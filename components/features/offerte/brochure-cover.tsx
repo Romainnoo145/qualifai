@@ -1561,11 +1561,17 @@ function Signing({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasSignature, setHasSignature] = useState(false);
+  const [signerName, setSignerName] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const trimmedName = signerName.trim();
+  const canSubmit =
+    hasSignature && trimmedName.length >= 2 && agreedToTerms && !submitting;
+
   const handleSubmitAccept = async () => {
-    if (!hasSignature || submitting) return;
+    if (!canSubmit) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -1574,7 +1580,12 @@ function Signing({
       const res = await fetch('/api/offerte/accept', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ prospectId: prospect.id, signatureData }),
+        body: JSON.stringify({
+          prospectId: prospect.id,
+          signatureData,
+          signerName: trimmedName,
+          agreedToTerms: true,
+        }),
       });
       if (!res.ok) {
         setSubmitError('Kon niet versturen, probeer opnieuw.');
@@ -2009,8 +2020,41 @@ function Signing({
               maxWidth: '560px',
             }}
           >
-            {/* Name input */}
-            <Field label="Naam" placeholder="Volledige naam" />
+            {/* Name input — controlled, required */}
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+            >
+              <label
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 500,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color: TEXT_MUTED_ON_NAVY,
+                }}
+              >
+                Naam *
+              </label>
+              <input
+                type="text"
+                placeholder="Volledige naam"
+                value={signerName}
+                onChange={(e) => setSignerName(e.target.value)}
+                disabled={submitting}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: `1px solid ${CONTAINER_BORDER}`,
+                  padding: '12px 0',
+                  fontFamily: 'var(--font-sora), sans-serif',
+                  fontSize: '18px',
+                  fontWeight: 500,
+                  color: TEXT_ON_NAVY,
+                  outline: 'none',
+                  letterSpacing: '-0.005em',
+                }}
+              />
+            </div>
 
             {/* Signature canvas */}
             <div
@@ -2100,30 +2144,53 @@ function Signing({
               </div>
             </div>
 
-            {/* Legal disclaimer — key terms + link to Klarifai terms page */}
-            <p
+            {/* Legal acceptance — required checkbox + key terms */}
+            <label
               style={{
-                fontSize: '13px',
-                fontWeight: 300,
-                lineHeight: 1.6,
-                color: TEXT_MUTED_ON_NAVY,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                cursor: submitting ? 'not-allowed' : 'pointer',
                 margin: '8px 0 0',
               }}
             >
-              Door te ondertekenen ga je akkoord met onze{' '}
-              <TermsLink href="https://klarifai.nl/legal/terms-and-conditions">
-                algemene voorwaarden
-              </TermsLink>
-              .{' '}
-              {quote?.paymentSchedule && quote.paymentSchedule.length > 0
-                ? 'Betaling in termijnen volgens bovenstaand schema,'
-                : 'Betaaltermijn 14 dagen,'}{' '}
-              intellectueel eigendom gaat over naar{' '}
-              {prospect.companyName ?? 'de klant'} na volledige betaling, 60
-              dagen garantie op opgeleverd werk. Een op maat gemaakte
-              verwerkersovereenkomst volgt samen met het contract, binnen 5
-              werkdagen na akkoord.
-            </p>
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                disabled={submitting}
+                style={{
+                  marginTop: '3px',
+                  width: '16px',
+                  height: '16px',
+                  accentColor: GOLD_MID,
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 300,
+                  lineHeight: 1.6,
+                  color: TEXT_MUTED_ON_NAVY,
+                }}
+              >
+                Ik ga akkoord met de{' '}
+                <TermsLink href="https://klarifai.nl/legal/terms-and-conditions">
+                  algemene voorwaarden
+                </TermsLink>
+                .{' '}
+                {quote?.paymentSchedule && quote.paymentSchedule.length > 0
+                  ? 'Betaling in termijnen volgens bovenstaand schema,'
+                  : 'Betaaltermijn 14 dagen,'}{' '}
+                intellectueel eigendom gaat over naar{' '}
+                {prospect.companyName ?? 'de klant'} na volledige betaling, 60
+                dagen garantie op opgeleverd werk. Een op maat gemaakte
+                verwerkersovereenkomst volgt samen met het contract, binnen 5
+                werkdagen na akkoord.
+              </span>
+            </label>
 
             {/* Gold pill CTA — full width, gated on signature being drawn */}
             {submitError && (
@@ -2141,26 +2208,24 @@ function Signing({
             <button
               type="button"
               onClick={handleSubmitAccept}
-              disabled={!hasSignature || submitting}
+              disabled={!canSubmit}
               style={{
                 marginTop: '8px',
                 padding: '20px 32px',
                 borderRadius: '9999px',
                 border: 'none',
-                background:
-                  hasSignature && !submitting
-                    ? GOLD_GRADIENT
-                    : 'rgba(53, 59, 102, 0.4)',
-                color: hasSignature && !submitting ? NAVY : TEXT_MUTED_ON_NAVY,
+                background: canSubmit
+                  ? GOLD_GRADIENT
+                  : 'rgba(53, 59, 102, 0.4)',
+                color: canSubmit ? NAVY : TEXT_MUTED_ON_NAVY,
                 fontFamily: 'var(--font-sora), sans-serif',
                 fontSize: '16px',
                 fontWeight: 700,
                 letterSpacing: '-0.01em',
-                cursor: hasSignature && !submitting ? 'pointer' : 'not-allowed',
-                boxShadow:
-                  hasSignature && !submitting
-                    ? '0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(225, 195, 60, 0.35)'
-                    : 'none',
+                cursor: canSubmit ? 'pointer' : 'not-allowed',
+                boxShadow: canSubmit
+                  ? '0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(225, 195, 60, 0.35)'
+                  : 'none',
                 transition:
                   'transform 150ms ease-out, box-shadow 150ms ease-out, background 200ms, color 200ms',
                 display: 'flex',
@@ -2169,13 +2234,13 @@ function Signing({
                 gap: '10px',
               }}
               onMouseEnter={(e) => {
-                if (!hasSignature || submitting) return;
+                if (!canSubmit) return;
                 e.currentTarget.style.transform = 'translateY(-1px)';
                 e.currentTarget.style.boxShadow =
                   '0 2px 4px rgba(0,0,0,0.2), 0 12px 32px rgba(225, 195, 60, 0.5)';
               }}
               onMouseLeave={(e) => {
-                if (!hasSignature || submitting) return;
+                if (!canSubmit) return;
                 e.currentTarget.style.transform = 'none';
                 e.currentTarget.style.boxShadow =
                   '0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(225, 195, 60, 0.35)';
@@ -2191,52 +2256,6 @@ function Signing({
       <BackArrow onClick={onBack} />
       {/* No next arrow — signing button IS the forward action */}
     </main>
-  );
-}
-
-function Field({
-  label,
-  placeholder,
-  defaultValue,
-  readOnly,
-}: {
-  label: string;
-  placeholder?: string;
-  defaultValue?: string;
-  readOnly?: boolean;
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <label
-        style={{
-          fontSize: '10px',
-          fontWeight: 500,
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase',
-          color: TEXT_MUTED_ON_NAVY,
-        }}
-      >
-        {label}
-      </label>
-      <input
-        type="text"
-        placeholder={placeholder}
-        defaultValue={defaultValue}
-        readOnly={readOnly}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          borderBottom: `1px solid ${CONTAINER_BORDER}`,
-          padding: '12px 0',
-          fontFamily: 'var(--font-sora), sans-serif',
-          fontSize: '18px',
-          fontWeight: 500,
-          color: TEXT_ON_NAVY,
-          outline: 'none',
-          letterSpacing: '-0.005em',
-        }}
-      />
-    </div>
   );
 }
 

@@ -19,14 +19,39 @@ import { computeQuoteTotals, formatEuro } from '@/lib/quotes/quote-totals';
 
 export async function POST(request: Request) {
   try {
-    const { prospectId, signatureData } = (await request.json()) as {
-      prospectId: string;
-      signatureData?: string;
-    };
+    const { prospectId, signatureData, signerName, agreedToTerms } =
+      (await request.json()) as {
+        prospectId: string;
+        signatureData?: string;
+        signerName?: string;
+        agreedToTerms?: boolean;
+      };
 
     if (!prospectId) {
       return NextResponse.json(
         { ok: false, reason: 'missing-prospect-id' },
+        { status: 400 },
+      );
+    }
+
+    const trimmedName = signerName?.trim() ?? '';
+    if (trimmedName.length < 2) {
+      return NextResponse.json(
+        { ok: false, reason: 'missing-signer-name' },
+        { status: 400 },
+      );
+    }
+
+    if (!agreedToTerms) {
+      return NextResponse.json(
+        { ok: false, reason: 'terms-not-accepted' },
+        { status: 400 },
+      );
+    }
+
+    if (!signatureData) {
+      return NextResponse.json(
+        { ok: false, reason: 'missing-signature' },
         { status: 400 },
       );
     }
@@ -69,8 +94,10 @@ export async function POST(request: Request) {
       await tx.quote.update({
         where: { id: quote.id },
         data: {
-          signatureData: signatureData ?? null,
+          signatureData,
+          signerName: trimmedName,
           acceptedAt,
+          termsAcceptedAt: acceptedAt,
         },
       });
       await transitionQuote(tx, quote.id, 'ACCEPTED');
