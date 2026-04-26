@@ -844,6 +844,9 @@ model Quote {
   // TypeScript shape: { label: string; percentage: number; dueOn: string }[]
   paymentSchedule Json?
 
+  // Recipient address block for print/PDF (multi-line, whitespace preserved)
+  recipientAddress String? @db.Text
+
   lines          QuoteLine[]
   outreachLogs   OutreachLog[]
 

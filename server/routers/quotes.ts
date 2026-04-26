@@ -229,6 +229,7 @@ export const quotesRouter = router({
           )
           .nullable()
           .optional(),
+        recipientAddress: z.string().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

@@ -37,6 +37,7 @@ const NAVY = '#0a0a2e';
 const GOLD = '#E4C33C';
 const GREY = '#E5E5EA';
 const MUTED = '#5A6878';
+const LIGHT_BORDER = '#D1D5DB';
 
 // ─── formatting helpers
 function formatEuroNL(amount: number): string {
@@ -54,66 +55,26 @@ function formatDateNL(date: Date): string {
   });
 }
 
-// ─── sub-components
-
-function SectionLabel({ num, label }: { num: string; label: string }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        fontSize: '10px',
-        fontWeight: 500,
-        letterSpacing: '0.18em',
-        textTransform: 'uppercase',
-        marginBottom: '18px',
-      }}
-    >
-      <span style={{ color: GOLD }}>[{num}]</span>
-      <span style={{ color: NAVY }}>{label}</span>
-    </div>
-  );
+function formatDateShortNL(date: Date): string {
+  return date.toLocaleDateString('nl-NL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 }
 
-function GoldPeriodHeading({
-  children,
-  size = 28,
-}: {
-  children: React.ReactNode;
-  size?: number;
-}) {
-  return (
-    <h2
-      style={{
-        fontSize: `${size}px`,
-        fontWeight: 700,
-        letterSpacing: '-0.02em',
-        color: NAVY,
-        margin: '0 0 20px',
-        lineHeight: 1.1,
-      }}
-    >
-      {children}
-      <span style={{ color: GOLD }}>.</span>
-    </h2>
-  );
-}
-
-// ─── signature field — used in the grid-aligned signature block
-// Each field has a fixed-height pre-filled slot so empty and filled cells
-// take identical vertical space, keeping rows aligned across columns.
-
+// ─── signature field — used in the two-column signature block
 function SignatureField({
   label,
   prefilled,
+  signatureHeight = false,
 }: {
   label: string;
   prefilled?: string;
+  signatureHeight?: boolean;
 }) {
   return (
-    <div style={{ paddingBottom: '24px' }}>
-      {/* Eyebrow label */}
+    <div style={{ marginBottom: '20px' }}>
       <div
         style={{
           fontSize: '9px',
@@ -121,24 +82,22 @@ function SignatureField({
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
           color: MUTED,
-          marginBottom: '8px',
+          marginBottom: '6px',
         }}
       >
         {label}
       </div>
-      {/* Pre-filled text slot — minHeight reserves space even when empty */}
       <div
         style={{
-          minHeight: '24px',
-          fontSize: '15px',
+          minHeight: signatureHeight ? '48px' : '24px',
+          fontSize: '14px',
           fontWeight: 500,
           color: NAVY,
-          marginBottom: '8px',
+          paddingBottom: '4px',
         }}
       >
         {prefilled ?? ''}
       </div>
-      {/* Underline */}
       <div style={{ borderBottom: `1px solid ${NAVY}`, width: '100%' }} />
     </div>
   );
@@ -159,6 +118,14 @@ export default async function PrintPage({
       id: true,
       companyName: true,
       domain: true,
+      contacts: {
+        select: {
+          firstName: true,
+          lastName: true,
+        },
+        orderBy: { firstName: 'asc' },
+        take: 1,
+      },
     },
   });
 
@@ -185,12 +152,46 @@ export default async function PrintPage({
     prettifyDomainToName(prospect.domain) ||
     slug;
 
+  // ─── Totals
   const subtotal = activeQuote.lines.reduce(
     (acc, l) => acc + l.uren * l.tarief,
     0,
   );
   const btwAmount = subtotal * (activeQuote.btwPercentage / 100);
   const total = subtotal + btwAmount;
+
+  // ─── Recipient address block
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recipientAddress = (activeQuote as any).recipientAddress as
+    | string
+    | null
+    | undefined;
+
+  let recipientLines: string[];
+  if (recipientAddress && recipientAddress.trim()) {
+    recipientLines = recipientAddress.split('\n');
+  } else {
+    // Fallback: company name + primary contact
+    const contact = prospect.contacts[0];
+    recipientLines = [
+      displayName,
+      ...(contact
+        ? [`T.a.v. ${contact.firstName} ${contact.lastName}`.trim()]
+        : []),
+    ];
+  }
+
+  // ─── Payment schedule
+  const hasSchedule =
+    Array.isArray(activeQuote.paymentSchedule) &&
+    (activeQuote.paymentSchedule as PaymentInstallment[]).length > 0;
+  const schedule = hasSchedule
+    ? (activeQuote.paymentSchedule as PaymentInstallment[])
+    : [];
+
+  // ─── Klant bedrijfsnaam for signature block
+  const klantBedrijf =
+    (recipientLines[0] && recipientLines[0].trim()) || displayName;
 
   return (
     <>
@@ -216,7 +217,7 @@ export default async function PrintPage({
               background: #ffffff;
               color: ${NAVY};
               font-family: 'Sora', 'Helvetica Neue', Arial, sans-serif;
-              font-size: 14px;
+              font-size: 13px;
               line-height: 1.5;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
@@ -254,796 +255,717 @@ export default async function PrintPage({
             /* table */
             table { width: 100%; border-collapse: collapse; }
             td, th { padding: 0; }
-
-            /* utilities */
-            .text-muted { color: ${MUTED}; }
-            .text-gold  { color: ${GOLD}; }
-            .font-mono  { font-family: 'Courier New', Courier, monospace; }
           `,
         }}
       />
 
       <div className="print-page">
-        {/* ── HEADER ───────────────────────────────────────────────────── */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* PAGE 1                                                            */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+
+        {/* ── TOP ROW: Logo left · Klarifai company info right ──────────── */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            marginBottom: '40px',
-            paddingBottom: '24px',
-            borderBottom: `1px solid ${GREY}`,
+            marginBottom: '64px',
           }}
         >
-          {/* Left: logo */}
+          {/* Logo */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/brand/klarifai-logo-full.png"
             alt="Klarifai"
-            width={150}
-            height="auto"
-            style={{ marginTop: '4px' }}
+            width={140}
+            style={{ display: 'block' }}
           />
 
-          {/* Right: quote nummer */}
-          <div style={{ textAlign: 'right' }}>
+          {/* Company info block */}
+          <div style={{ textAlign: 'right', lineHeight: 1.65 }}>
             <div
               style={{
-                fontSize: '9px',
-                fontWeight: 500,
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
-                color: GOLD,
-                marginBottom: '4px',
-              }}
-            >
-              Offertenummer
-            </div>
-            <div
-              className="font-mono"
-              style={{ fontSize: '15px', fontWeight: 600, color: NAVY }}
-            >
-              #{activeQuote.nummer}
-            </div>
-          </div>
-        </div>
-
-        {/* ── TITLE BLOCK ──────────────────────────────────────────────── */}
-        <div style={{ marginBottom: '36px' }}>
-          <h1
-            style={{
-              fontSize: '48px',
-              fontWeight: 700,
-              letterSpacing: '-0.028em',
-              color: NAVY,
-              margin: '0 0 10px',
-              lineHeight: 1.05,
-            }}
-          >
-            Offerte<span style={{ color: GOLD }}>.</span>
-          </h1>
-          <div
-            style={{
-              width: '80px',
-              height: '1px',
-              background: GOLD,
-            }}
-          />
-        </div>
-
-        {/* ── META ROW ─────────────────────────────────────────────────── */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
-            gap: '24px',
-            marginBottom: '44px',
-            paddingBottom: '28px',
-            borderBottom: `1px solid ${GREY}`,
-          }}
-        >
-          {[
-            { label: 'Datum', value: formatDateNL(activeQuote.datum) },
-            { label: 'Geldig tot', value: formatDateNL(activeQuote.geldigTot) },
-            { label: 'Status', value: activeQuote.status },
-          ].map(({ label, value }) => (
-            <div key={label}>
-              <div
-                style={{
-                  fontSize: '9px',
-                  fontWeight: 500,
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
-                  color: GOLD,
-                  marginBottom: '6px',
-                }}
-              >
-                {label}
-              </div>
-              <div style={{ fontSize: '14px', fontWeight: 500, color: NAVY }}>
-                {value}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* ── INTRODUCTIE ──────────────────────────────────────────────── */}
-        {activeQuote.introductie && activeQuote.introductie.trim() && (
-          <div style={{ marginBottom: '44px' }}>
-            <p
-              style={{
-                fontSize: '16px',
-                fontWeight: 300,
-                lineHeight: 1.6,
+                fontSize: '12px',
+                fontWeight: 700,
                 color: NAVY,
-                margin: 0,
-              }}
-            >
-              {activeQuote.introductie}
-            </p>
-          </div>
-        )}
-
-        {/* ── INVESTERING ──────────────────────────────────────────────── */}
-        <div style={{ marginBottom: '48px' }}>
-          <SectionLabel num="01" label="Investering" />
-          <GoldPeriodHeading size={28}>Het prijsvoorstel</GoldPeriodHeading>
-
-          {/* Line items */}
-          <table style={{ marginBottom: '24px' }}>
-            <thead>
-              <tr
-                style={{
-                  borderBottom: `1px solid ${GREY}`,
-                  paddingBottom: '10px',
-                }}
-              >
-                <th
-                  style={{
-                    width: '32px',
-                    textAlign: 'left',
-                    fontSize: '9px',
-                    fontWeight: 500,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: MUTED,
-                    paddingBottom: '10px',
-                  }}
-                >
-                  #
-                </th>
-                <th
-                  style={{
-                    textAlign: 'left',
-                    fontSize: '9px',
-                    fontWeight: 500,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: MUTED,
-                    paddingBottom: '10px',
-                  }}
-                >
-                  Fase
-                </th>
-                <th
-                  style={{
-                    width: '60px',
-                    textAlign: 'right',
-                    fontSize: '9px',
-                    fontWeight: 500,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: MUTED,
-                    paddingBottom: '10px',
-                  }}
-                >
-                  Uren
-                </th>
-                <th
-                  style={{
-                    width: '100px',
-                    textAlign: 'right',
-                    fontSize: '9px',
-                    fontWeight: 500,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: MUTED,
-                    paddingBottom: '10px',
-                  }}
-                >
-                  Bedrag
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeQuote.lines.map((line, i) => {
-                const lineTotal = line.uren * line.tarief;
-                return (
-                  <tr
-                    key={line.id}
-                    style={{ borderBottom: `1px solid ${GREY}` }}
-                  >
-                    <td
-                      style={{
-                        paddingTop: '14px',
-                        paddingBottom: '14px',
-                        verticalAlign: 'top',
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: '13px',
-                          fontWeight: 700,
-                          color: GOLD,
-                        }}
-                      >
-                        {String(i + 1).padStart(2, '0')}
-                      </span>
-                    </td>
-                    <td
-                      style={{
-                        paddingTop: '14px',
-                        paddingBottom: '14px',
-                        paddingRight: '16px',
-                        verticalAlign: 'top',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: '14px',
-                          fontWeight: 600,
-                          color: NAVY,
-                          marginBottom: '4px',
-                        }}
-                      >
-                        {line.fase}
-                      </div>
-                      {line.omschrijving && (
-                        <div
-                          style={{
-                            fontSize: '12px',
-                            fontWeight: 300,
-                            color: MUTED,
-                            lineHeight: 1.5,
-                          }}
-                        >
-                          {line.omschrijving}
-                        </div>
-                      )}
-                    </td>
-                    <td
-                      style={{
-                        paddingTop: '14px',
-                        paddingBottom: '14px',
-                        textAlign: 'right',
-                        verticalAlign: 'top',
-                        fontSize: '14px',
-                        color: NAVY,
-                        fontVariantNumeric: 'tabular-nums',
-                      }}
-                    >
-                      {line.uren}
-                    </td>
-                    <td
-                      style={{
-                        paddingTop: '14px',
-                        paddingBottom: '14px',
-                        textAlign: 'right',
-                        verticalAlign: 'top',
-                        fontSize: '14px',
-                        color: NAVY,
-                        fontVariantNumeric: 'tabular-nums',
-                        fontWeight: 500,
-                      }}
-                    >
-                      € {formatEuroNL(lineTotal)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          {/* Totals block */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-end',
-              gap: '8px',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                width: '280px',
-              }}
-            >
-              <span style={{ fontSize: '13px', color: MUTED }}>
-                Subtotaal excl. BTW
-              </span>
-              <span
-                style={{
-                  fontSize: '13px',
-                  color: NAVY,
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                € {formatEuroNL(subtotal)}
-              </span>
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                width: '280px',
-              }}
-            >
-              <span style={{ fontSize: '13px', color: MUTED }}>
-                BTW ({activeQuote.btwPercentage}%)
-              </span>
-              <span
-                style={{
-                  fontSize: '13px',
-                  color: NAVY,
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                € {formatEuroNL(btwAmount)}
-              </span>
-            </div>
-            {/* Separator */}
-            <div style={{ width: '280px', height: '2px', background: NAVY }} />
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                width: '280px',
-                alignItems: 'baseline',
-              }}
-            >
-              <span
-                style={{
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  color: NAVY,
-                  letterSpacing: '-0.01em',
-                }}
-              >
-                Totaal incl. BTW
-              </span>
-              <span
-                style={{
-                  fontSize: '22px',
-                  fontWeight: 700,
-                  color: NAVY,
-                  fontVariantNumeric: 'tabular-nums',
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                <span style={{ color: NAVY }}>€</span> {formatEuroNL(total)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* ── AKKOORD / VOORWAARDEN ─────────────────────────────────────── */}
-        <div
-          className="print-section-voorwaarden"
-          style={{
-            marginBottom: '48px',
-            paddingTop: '32px',
-            borderTop: `1px solid ${GREY}`,
-          }}
-        >
-          <SectionLabel num="02" label="Akkoord" />
-          <GoldPeriodHeading size={22}>Voorwaarden</GoldPeriodHeading>
-
-          {/* Betalingsschema — compact single-row-per-termijn, only shown when schedule is set */}
-          {Array.isArray(activeQuote.paymentSchedule) &&
-            (activeQuote.paymentSchedule as PaymentInstallment[]).length > 0 &&
-            (() => {
-              const schedule =
-                activeQuote.paymentSchedule as PaymentInstallment[];
-              const scheduleTotal = schedule.reduce(
-                (acc, r) => acc + r.percentage,
-                0,
-              );
-              const fmtCurrency = (n: number) =>
-                new Intl.NumberFormat('nl-NL', {
-                  style: 'currency',
-                  currency: 'EUR',
-                }).format(n);
-              return (
-                <div style={{ marginBottom: '20px' }}>
-                  <div
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: 500,
-                      letterSpacing: '0.18em',
-                      textTransform: 'uppercase',
-                      color: GOLD,
-                      marginBottom: '10px',
-                    }}
-                  >
-                    Betalingsschema
-                  </div>
-                  <table
-                    style={{
-                      width: '100%',
-                      borderCollapse: 'collapse',
-                      marginBottom: '4px',
-                    }}
-                  >
-                    <thead>
-                      <tr style={{ borderBottom: `1px solid ${GREY}` }}>
-                        <th
-                          style={{
-                            textAlign: 'left',
-                            fontSize: '9px',
-                            fontWeight: 500,
-                            letterSpacing: '0.1em',
-                            textTransform: 'uppercase',
-                            color: MUTED,
-                            paddingBottom: '6px',
-                            paddingRight: '16px',
-                          }}
-                        >
-                          Termijn
-                        </th>
-                        <th
-                          style={{
-                            textAlign: 'right',
-                            fontSize: '9px',
-                            fontWeight: 500,
-                            letterSpacing: '0.1em',
-                            textTransform: 'uppercase',
-                            color: MUTED,
-                            paddingBottom: '6px',
-                            paddingRight: '16px',
-                            width: '40px',
-                          }}
-                        >
-                          %
-                        </th>
-                        <th
-                          style={{
-                            textAlign: 'right',
-                            fontSize: '9px',
-                            fontWeight: 500,
-                            letterSpacing: '0.1em',
-                            textTransform: 'uppercase',
-                            color: MUTED,
-                            paddingBottom: '6px',
-                            width: '110px',
-                          }}
-                        >
-                          Bedrag
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {schedule.map((item, idx) => {
-                        const bedrag = total * (item.percentage / 100);
-                        const num = String(idx + 1).padStart(2, '0');
-                        const termijnText = item.dueOn
-                          ? `${item.label} · ${item.dueOn}`
-                          : item.label;
-                        return (
-                          <tr
-                            key={idx}
-                            style={{ borderBottom: `1px solid ${GREY}` }}
-                          >
-                            <td
-                              style={{
-                                paddingTop: '6px',
-                                paddingBottom: '6px',
-                                paddingRight: '16px',
-                                verticalAlign: 'middle',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  fontSize: '12px',
-                                  fontWeight: 700,
-                                  color: GOLD,
-                                  marginRight: '6px',
-                                }}
-                              >
-                                {num}·
-                              </span>
-                              <span
-                                style={{
-                                  fontSize: '12px',
-                                  fontWeight: 300,
-                                  color: NAVY,
-                                }}
-                              >
-                                {termijnText}
-                              </span>
-                            </td>
-                            <td
-                              style={{
-                                paddingTop: '6px',
-                                paddingBottom: '6px',
-                                paddingRight: '16px',
-                                textAlign: 'right',
-                                fontSize: '12px',
-                                color: NAVY,
-                                fontVariantNumeric: 'tabular-nums',
-                                verticalAlign: 'middle',
-                              }}
-                            >
-                              {item.percentage}%
-                            </td>
-                            <td
-                              style={{
-                                paddingTop: '6px',
-                                paddingBottom: '6px',
-                                textAlign: 'right',
-                                fontSize: '12px',
-                                fontWeight: 500,
-                                color: NAVY,
-                                fontVariantNumeric: 'tabular-nums',
-                                verticalAlign: 'middle',
-                              }}
-                            >
-                              {fmtCurrency(bedrag)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                    <tfoot>
-                      <tr style={{ borderTop: `1px solid ${GREY}` }}>
-                        <td
-                          style={{
-                            paddingTop: '6px',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            color: NAVY,
-                          }}
-                        >
-                          Totaal
-                        </td>
-                        <td
-                          style={{
-                            paddingTop: '6px',
-                            textAlign: 'right',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            color: NAVY,
-                            fontVariantNumeric: 'tabular-nums',
-                            paddingRight: '16px',
-                          }}
-                        >
-                          {scheduleTotal}%
-                        </td>
-                        <td
-                          style={{
-                            paddingTop: '6px',
-                            textAlign: 'right',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            color: NAVY,
-                            fontVariantNumeric: 'tabular-nums',
-                          }}
-                        >
-                          {fmtCurrency(total)}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              );
-            })()}
-
-          <ul
-            style={{
-              margin: 0,
-              padding: 0,
-              listStyle: 'none',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px',
-            }}
-          >
-            {[
-              Array.isArray(activeQuote.paymentSchedule) &&
-              (activeQuote.paymentSchedule as PaymentInstallment[]).length > 0
-                ? 'Betaling in termijnen volgens bovenstaand schema.'
-                : 'Betaaltermijn 14 dagen na factuurdatum.',
-              `Intellectueel eigendom gaat over naar ${displayName} na volledige betaling.`,
-              '60 dagen garantie op opgeleverd werk.',
-              'Een op maat gemaakte verwerkersovereenkomst volgt samen met het contract, binnen 5 werkdagen na akkoord.',
-              'Algemene voorwaarden zijn van toepassing. Zie klarifai.nl/legal/terms-and-conditions.',
-            ].map((term) => (
-              <li
-                key={term}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '10px',
-                  fontSize: '13px',
-                  fontWeight: 300,
-                  color: NAVY,
-                  lineHeight: 1.55,
-                }}
-              >
-                <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0 }}>
-                  —
-                </span>
-                <span>{term}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* ── HANDTEKENING ─────────────────────────────────────────────── */}
-        <div
-          className="print-section-handtekening"
-          style={{
-            marginBottom: '56px',
-            paddingTop: '32px',
-            borderTop: `1px solid ${GREY}`,
-          }}
-        >
-          <SectionLabel num="03" label="Handtekening" />
-          <GoldPeriodHeading size={22}>Voor akkoord</GoldPeriodHeading>
-
-          {/* Sub-labels: one per column, side by side */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              columnGap: '48px',
-              marginBottom: '20px',
-            }}
-          >
-            <div style={{ fontSize: '12px', fontWeight: 300, color: MUTED }}>
-              Voor akkoord namens{' '}
-              <strong style={{ color: NAVY }}>{displayName}</strong>
-            </div>
-            <div style={{ fontSize: '12px', fontWeight: 300, color: MUTED }}>
-              Voor akkoord namens{' '}
-              <strong style={{ color: NAVY }}>Klarifai</strong>
-            </div>
-          </div>
-
-          {/*
-           * Signature grid: 2 columns × 3 rows.
-           * Items flow left-to-right: [NAAM left] [NAAM right] [HANDTEKENING left] …
-           * Every row is sized to its tallest cell — the minHeight on the pre-filled
-           * slot in SignatureField ensures the empty left cell matches the filled
-           * right cell (Romano Kanters), keeping underlines perfectly aligned.
-           */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              columnGap: '48px',
-              rowGap: '0',
-            }}
-          >
-            {/* Row 1: NAAM */}
-            <SignatureField label="Naam" />
-            <SignatureField label="Naam" prefilled="Romano Kanters" />
-
-            {/* Row 2: HANDTEKENING */}
-            <SignatureField label="Handtekening" />
-            <SignatureField label="Handtekening" />
-
-            {/* Row 3: DATUM */}
-            <SignatureField label="Datum" />
-            <SignatureField label="Datum" />
-          </div>
-        </div>
-
-        {/* ── FOOTER ───────────────────────────────────────────────────── */}
-        <div
-          style={{
-            paddingTop: '20px',
-            borderTop: `1px solid ${GREY}`,
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
-            gap: '20px',
-          }}
-        >
-          {/* Column 1 — Klarifai (Address + Contact) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div
-              style={{
-                fontSize: '9px',
-                fontWeight: 500,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                color: GOLD,
                 marginBottom: '4px',
               }}
             >
               Klarifai
             </div>
-            <div
-              style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}
-            >
-              <span style={{ fontSize: '10px', color: MUTED }}>
-                Le Mairekade 77
-              </span>
-              <span style={{ fontSize: '10px', color: MUTED }}>
-                1013 CB Amsterdam
-              </span>
+            <div style={{ fontSize: '11px', color: MUTED }}>
+              Le Mairekade 77
             </div>
             <div
+              style={{ fontSize: '11px', color: MUTED, marginBottom: '8px' }}
+            >
+              1013 CB Amsterdam
+            </div>
+            <div style={{ fontSize: '11px', color: MUTED }}>
+              Btw-nummer: NL005136262B35
+            </div>
+            <div style={{ fontSize: '11px', color: MUTED }}>
+              KVK-nummer: 95189335
+            </div>
+            <div style={{ fontSize: '11px', color: MUTED }}>
+              Tel.: +31 (0)6 823 26128
+            </div>
+            <div style={{ fontSize: '11px', color: MUTED }}>
+              Website: klarifai.nl
+            </div>
+            <div style={{ fontSize: '11px', color: MUTED }}>
+              IBAN: NL54 FNOM 0541 6127 33
+            </div>
+            <div style={{ fontSize: '11px', color: MUTED }}>BIC: FNOMNL22</div>
+          </div>
+        </div>
+
+        {/* ── RECIPIENT BLOCK ─────────────────────────────────────────────── */}
+        <div style={{ marginBottom: '40px', width: '55%' }}>
+          {recipientLines.map((line, i) => (
+            <div
+              key={i}
               style={{
+                fontSize: '13px',
+                fontWeight: i === 0 ? 600 : 400,
+                color: NAVY,
+                lineHeight: 1.65,
+                whiteSpace: 'pre-wrap',
+              }}
+            >
+              {line}
+            </div>
+          ))}
+        </div>
+
+        {/* ── OFFERTE META: Nummer left · Datums right ────────────────────── */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            marginBottom: '12px',
+            paddingBottom: '12px',
+            borderBottom: `1px solid ${LIGHT_BORDER}`,
+          }}
+        >
+          {/* Offerte nummer */}
+          <div>
+            <div
+              style={{
+                fontSize: '20px',
+                fontWeight: 700,
+                color: NAVY,
+                letterSpacing: '-0.01em',
+              }}
+            >
+              Offerte: {activeQuote.nummer}
+              <span style={{ color: GOLD }}>.</span>
+            </div>
+          </div>
+
+          {/* Datums right-aligned */}
+          <div style={{ textAlign: 'right', lineHeight: 1.7 }}>
+            <div style={{ fontSize: '11px', color: NAVY }}>
+              <span style={{ color: MUTED }}>Offertedatum:</span>{' '}
+              {formatDateShortNL(activeQuote.datum)}
+            </div>
+            <div style={{ fontSize: '11px', color: NAVY }}>
+              <span style={{ color: MUTED }}>Vervaldatum:</span>{' '}
+              {formatDateShortNL(activeQuote.geldigTot)}
+            </div>
+          </div>
+        </div>
+
+        {/* ── BETREFT ──────────────────────────────────────────────────────── */}
+        {activeQuote.onderwerp && (
+          <div style={{ fontSize: '12px', color: MUTED, marginBottom: '40px' }}>
+            <span style={{ color: NAVY, fontWeight: 500 }}>Betreft:</span>{' '}
+            {activeQuote.onderwerp}
+          </div>
+        )}
+
+        {/* ── LINE ITEMS TABLE ──────────────────────────────────────────────── */}
+        <table style={{ marginBottom: '20px' }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${LIGHT_BORDER}` }}>
+              <th
+                style={{
+                  width: '56px',
+                  textAlign: 'left',
+                  fontSize: '9px',
+                  fontWeight: 500,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: MUTED,
+                  paddingBottom: '8px',
+                }}
+              >
+                Aantal
+              </th>
+              <th
+                style={{
+                  textAlign: 'left',
+                  fontSize: '9px',
+                  fontWeight: 500,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: MUTED,
+                  paddingBottom: '8px',
+                }}
+              >
+                Beschrijving
+              </th>
+              <th
+                style={{
+                  width: '130px',
+                  textAlign: 'right',
+                  fontSize: '9px',
+                  fontWeight: 500,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: MUTED,
+                  paddingBottom: '8px',
+                }}
+              >
+                Bedrag excl. btw
+              </th>
+              <th
+                style={{
+                  width: '130px',
+                  textAlign: 'right',
+                  fontSize: '9px',
+                  fontWeight: 500,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: MUTED,
+                  paddingBottom: '8px',
+                }}
+              >
+                Bedrag incl. btw
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {activeQuote.lines.map((line) => {
+              const lineExcl = line.uren * line.tarief;
+              const lineIncl = lineExcl * (1 + activeQuote.btwPercentage / 100);
+              return (
+                <tr key={line.id} style={{ borderBottom: `1px solid ${GREY}` }}>
+                  {/* Aantal */}
+                  <td
+                    style={{
+                      paddingTop: '12px',
+                      paddingBottom: '12px',
+                      paddingRight: '12px',
+                      verticalAlign: 'top',
+                      fontSize: '13px',
+                      color: NAVY,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {line.uren}
+                  </td>
+                  {/* Beschrijving */}
+                  <td
+                    style={{
+                      paddingTop: '12px',
+                      paddingBottom: '12px',
+                      paddingRight: '16px',
+                      verticalAlign: 'top',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        color: NAVY,
+                        marginBottom: line.omschrijving ? '3px' : 0,
+                      }}
+                    >
+                      {line.fase}
+                    </div>
+                    {line.omschrijving && (
+                      <div
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 300,
+                          color: MUTED,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {line.omschrijving}
+                      </div>
+                    )}
+                  </td>
+                  {/* Bedrag excl. btw */}
+                  <td
+                    style={{
+                      paddingTop: '12px',
+                      paddingBottom: '12px',
+                      textAlign: 'right',
+                      verticalAlign: 'top',
+                      fontSize: '13px',
+                      color: NAVY,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    € {formatEuroNL(lineExcl)}
+                  </td>
+                  {/* Bedrag incl. btw */}
+                  <td
+                    style={{
+                      paddingTop: '12px',
+                      paddingBottom: '12px',
+                      textAlign: 'right',
+                      verticalAlign: 'top',
+                      fontSize: '13px',
+                      color: NAVY,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    € {formatEuroNL(lineIncl)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* ── TOTALS BLOCK (right-aligned) ──────────────────────────────────── */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: '6px',
+            marginBottom: '40px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              width: '300px',
+              gap: '16px',
+            }}
+          >
+            <span style={{ fontSize: '12px', color: MUTED }}>
+              Totaalbedrag excl. btw
+            </span>
+            <span
+              style={{
+                fontSize: '12px',
+                color: NAVY,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              € {formatEuroNL(subtotal)}
+            </span>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              width: '300px',
+              gap: '16px',
+            }}
+          >
+            <span style={{ fontSize: '12px', color: MUTED }}>
+              Btw hoog ({activeQuote.btwPercentage}%)
+            </span>
+            <span
+              style={{
+                fontSize: '12px',
+                color: NAVY,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              € {formatEuroNL(btwAmount)}
+            </span>
+          </div>
+          {/* Separator */}
+          <div style={{ width: '300px', height: '1px', background: NAVY }} />
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              width: '300px',
+              gap: '16px',
+              alignItems: 'baseline',
+            }}
+          >
+            <span style={{ fontSize: '13px', fontWeight: 700, color: NAVY }}>
+              Totaalbedrag incl. btw
+            </span>
+            <span
+              style={{
+                fontSize: '16px',
+                fontWeight: 700,
+                color: NAVY,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              € <span style={{ color: GOLD }}>{formatEuroNL(total)}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* ── CLOSING LINE ─────────────────────────────────────────────────── */}
+        <div
+          style={{
+            fontSize: '12px',
+            fontWeight: 300,
+            color: NAVY,
+            lineHeight: 1.6,
+            marginBottom: '48px',
+          }}
+        >
+          Deze offerte is geldig tot {formatDateNL(activeQuote.geldigTot)},
+          indien je akkoord gaat met deze offerte kun je deze getekend
+          terugsturen of digitaal ondertekenen.
+        </div>
+
+        {/* ── PAGE 1 FOOTER ────────────────────────────────────────────────── */}
+        <div
+          style={{
+            textAlign: 'center',
+            fontSize: '10px',
+            color: MUTED,
+            paddingTop: '16px',
+            borderTop: `1px solid ${GREY}`,
+          }}
+        >
+          Pagina 1 / 2
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* PAGE 2 — forced page break                                        */}
+        {/* ══════════════════════════════════════════════════════════════════ */}
+
+        <div className="print-section-voorwaarden" style={{ paddingTop: '0' }}>
+          {/* ── VOORWAARDEN ─────────────────────────────────────────────────── */}
+          <div style={{ marginBottom: '40px' }}>
+            <div
+              style={{
+                fontSize: '9px',
+                fontWeight: 500,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                color: MUTED,
+                marginBottom: '16px',
+              }}
+            >
+              Voorwaarden
+            </div>
+
+            {/* Betalingsschema — compact, only when set */}
+            {hasSchedule &&
+              (() => {
+                const scheduleTotal = schedule.reduce(
+                  (acc, r) => acc + r.percentage,
+                  0,
+                );
+                const fmtCurrency = (n: number) =>
+                  new Intl.NumberFormat('nl-NL', {
+                    style: 'currency',
+                    currency: 'EUR',
+                  }).format(n);
+                return (
+                  <div style={{ marginBottom: '20px' }}>
+                    <div
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 500,
+                        letterSpacing: '0.14em',
+                        textTransform: 'uppercase',
+                        color: MUTED,
+                        marginBottom: '8px',
+                      }}
+                    >
+                      Betalingsschema
+                    </div>
+                    <table style={{ marginBottom: '4px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: `1px solid ${GREY}` }}>
+                          <th
+                            style={{
+                              textAlign: 'left',
+                              fontSize: '9px',
+                              fontWeight: 500,
+                              letterSpacing: '0.1em',
+                              textTransform: 'uppercase',
+                              color: MUTED,
+                              paddingBottom: '6px',
+                              paddingRight: '16px',
+                            }}
+                          >
+                            Termijn
+                          </th>
+                          <th
+                            style={{
+                              textAlign: 'right',
+                              fontSize: '9px',
+                              fontWeight: 500,
+                              letterSpacing: '0.1em',
+                              textTransform: 'uppercase',
+                              color: MUTED,
+                              paddingBottom: '6px',
+                              paddingRight: '16px',
+                              width: '40px',
+                            }}
+                          >
+                            %
+                          </th>
+                          <th
+                            style={{
+                              textAlign: 'right',
+                              fontSize: '9px',
+                              fontWeight: 500,
+                              letterSpacing: '0.1em',
+                              textTransform: 'uppercase',
+                              color: MUTED,
+                              paddingBottom: '6px',
+                              width: '110px',
+                            }}
+                          >
+                            Bedrag
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {schedule.map((item, idx) => {
+                          const bedrag = total * (item.percentage / 100);
+                          const num = String(idx + 1).padStart(2, '0');
+                          const termijnText = item.dueOn
+                            ? `${item.label} · ${item.dueOn}`
+                            : item.label;
+                          return (
+                            <tr
+                              key={idx}
+                              style={{ borderBottom: `1px solid ${GREY}` }}
+                            >
+                              <td
+                                style={{
+                                  paddingTop: '6px',
+                                  paddingBottom: '6px',
+                                  paddingRight: '16px',
+                                  verticalAlign: 'middle',
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    color: GOLD,
+                                    marginRight: '6px',
+                                  }}
+                                >
+                                  {num}·
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: '12px',
+                                    fontWeight: 300,
+                                    color: NAVY,
+                                  }}
+                                >
+                                  {termijnText}
+                                </span>
+                              </td>
+                              <td
+                                style={{
+                                  paddingTop: '6px',
+                                  paddingBottom: '6px',
+                                  paddingRight: '16px',
+                                  textAlign: 'right',
+                                  fontSize: '12px',
+                                  color: NAVY,
+                                  fontVariantNumeric: 'tabular-nums',
+                                  verticalAlign: 'middle',
+                                }}
+                              >
+                                {item.percentage}%
+                              </td>
+                              <td
+                                style={{
+                                  paddingTop: '6px',
+                                  paddingBottom: '6px',
+                                  textAlign: 'right',
+                                  fontSize: '12px',
+                                  fontWeight: 500,
+                                  color: NAVY,
+                                  fontVariantNumeric: 'tabular-nums',
+                                  verticalAlign: 'middle',
+                                }}
+                              >
+                                {fmtCurrency(bedrag)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr style={{ borderTop: `1px solid ${GREY}` }}>
+                          <td
+                            style={{
+                              paddingTop: '6px',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              color: NAVY,
+                            }}
+                          >
+                            Totaal
+                          </td>
+                          <td
+                            style={{
+                              paddingTop: '6px',
+                              textAlign: 'right',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              color: NAVY,
+                              fontVariantNumeric: 'tabular-nums',
+                              paddingRight: '16px',
+                            }}
+                          >
+                            {scheduleTotal}%
+                          </td>
+                          <td
+                            style={{
+                              paddingTop: '6px',
+                              textAlign: 'right',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              color: NAVY,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {fmtCurrency(total)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                );
+              })()}
+
+            <ul
+              style={{
+                margin: 0,
+                padding: 0,
+                listStyle: 'none',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '3px',
-                marginTop: '8px',
+                gap: '9px',
               }}
             >
-              <span style={{ fontSize: '10px', color: MUTED }}>
-                +31 (0)6 823 26128
-              </span>
-              <span style={{ fontSize: '10px', color: MUTED }}>
-                info@klarifai.nl
-              </span>
-              <span style={{ fontSize: '10px', color: MUTED }}>
-                klarifai.nl
-              </span>
+              {[
+                hasSchedule
+                  ? 'Betaling in termijnen volgens bovenstaand schema.'
+                  : 'Betaaltermijn 14 dagen na factuurdatum.',
+                `Intellectueel eigendom gaat over naar ${displayName} na volledige betaling.`,
+                '60 dagen garantie op opgeleverd werk.',
+                'Een op maat gemaakte verwerkersovereenkomst volgt samen met het contract, binnen 5 werkdagen na akkoord.',
+                'Algemene voorwaarden zijn van toepassing. Zie klarifai.nl/legal/terms-and-conditions.',
+              ].map((term) => (
+                <li
+                  key={term}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '10px',
+                    fontSize: '12px',
+                    fontWeight: 300,
+                    color: NAVY,
+                    lineHeight: 1.55,
+                  }}
+                >
+                  <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0 }}>
+                    —
+                  </span>
+                  <span>{term}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* ── VOOR AKKOORD: 2-column signature block ───────────────────────── */}
+          <div
+            className="print-section-handtekening"
+            style={{ marginBottom: '56px' }}
+          >
+            <div
+              style={{
+                fontSize: '15px',
+                fontWeight: 700,
+                color: NAVY,
+                marginBottom: '24px',
+              }}
+            >
+              Voor akkoord:
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                columnGap: '48px',
+              }}
+            >
+              {/* Left: Klarifai */}
+              <div>
+                <div
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: NAVY,
+                    marginBottom: '16px',
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  Klarifai
+                </div>
+                <SignatureField label="Naam" prefilled="Romano Kanters" />
+                <SignatureField label="Bedrijf" prefilled="Klarifai" />
+                <SignatureField label="Datum" />
+                <SignatureField label="Plaats" />
+                <SignatureField label="Handtekening" signatureHeight />
+              </div>
+
+              {/* Right: Klant */}
+              <div>
+                <div
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: NAVY,
+                    marginBottom: '16px',
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  Klant
+                </div>
+                <SignatureField label="Naam" />
+                <SignatureField label="Bedrijf" prefilled={klantBedrijf} />
+                <SignatureField label="Datum" />
+                <SignatureField label="Plaats" />
+                <SignatureField label="Handtekening" signatureHeight />
+              </div>
             </div>
           </div>
 
-          {/* Column 2 — Fiscaal (KvK + BTW) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div
-              style={{
-                fontSize: '9px',
-                fontWeight: 500,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                color: GOLD,
-                marginBottom: '4px',
-              }}
-            >
-              Fiscaal
-            </div>
-            <div
-              style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}
-            >
-              <span style={{ fontSize: '10px', color: MUTED }}>
-                KvK 95189335
-              </span>
-              <span style={{ fontSize: '10px', color: MUTED }}>
-                BTW NL005136262B35
-              </span>
-            </div>
-          </div>
-
-          {/* Column 3 — Bank (IBAN + BIC) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div
-              style={{
-                fontSize: '9px',
-                fontWeight: 500,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                color: GOLD,
-                marginBottom: '4px',
-              }}
-            >
-              Bank
-            </div>
-            <div
-              style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}
-            >
-              <span style={{ fontSize: '10px', color: MUTED }}>
-                IBAN NL54 FNOM 0541 6127 33
-              </span>
-              <span style={{ fontSize: '10px', color: MUTED }}>
-                BIC FNOMNL22
-              </span>
-            </div>
+          {/* ── PAGE 2 FOOTER ────────────────────────────────────────────────── */}
+          <div
+            style={{
+              textAlign: 'center',
+              fontSize: '10px',
+              color: MUTED,
+              paddingTop: '16px',
+              borderTop: `1px solid ${GREY}`,
+            }}
+          >
+            Pagina 2 / 2
           </div>
         </div>
       </div>

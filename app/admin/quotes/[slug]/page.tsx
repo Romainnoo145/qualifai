@@ -64,7 +64,7 @@ type QuoteDetailRow = Prisma.QuoteGetPayload<{
       };
     };
   };
-}>;
+}> & { recipientAddress?: string | null };
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -127,6 +127,9 @@ export default function QuoteDetailPage() {
   const [introductie, setIntroductie] = useState('');
   const [uitdaging, setUitdaging] = useState('');
   const [aanpak, setAanpak] = useState('');
+
+  // Recipient address for print/PDF
+  const [recipientAddress, setRecipientAddress] = useState('');
 
   // TODO: tRPC v11 inference gap — quotes.get
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -196,6 +199,7 @@ export default function QuoteDetailPage() {
     setIntroductie(quote.introductie ?? '');
     setUitdaging(quote.uitdaging ?? '');
     setAanpak(quote.aanpak ?? '');
+    setRecipientAddress(quote.recipientAddress ?? '');
     setLines(
       quote.lines.map((l) => ({
         omschrijving: l.omschrijving ?? '',
@@ -449,6 +453,30 @@ export default function QuoteDetailPage() {
       <div className="grid grid-cols-[minmax(0,1fr)_280px] gap-10">
         {/* Left: content */}
         <div className="space-y-10">
+          {/* Geadresseerde — recipient address for print */}
+          <Block>
+            <SectionLabel>Geadresseerde</SectionLabel>
+            <textarea
+              value={recipientAddress}
+              onChange={(e) => setRecipientAddress(e.target.value)}
+              onBlur={() => {
+                if (!quote || quote.status !== 'DRAFT') return;
+                updateMutation.mutate({
+                  id: quote.id,
+                  recipientAddress: recipientAddress || null,
+                });
+              }}
+              rows={5}
+              disabled={isReadOnly}
+              placeholder={`Bedrijfsnaam B.V.\nT.a.v. Naam Achternaam\nStraat + huisnummer\nPostcode + Plaatsnaam`}
+              className="input-minimal w-full text-[13px] leading-[1.7] resize-none font-light"
+            />
+            <p className="mt-2 text-[10px] font-light text-[var(--color-muted)]">
+              Adresblok op de printversie. Eerste regel = bedrijfsnaam (bold).
+              Laat leeg om automatisch op te vullen.
+            </p>
+          </Block>
+
           {/* Investering (line items) */}
           <Block>
             <div className="flex items-center gap-3 mb-4">
