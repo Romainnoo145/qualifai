@@ -218,6 +218,7 @@ async function runTransition(
           companyName: true,
           voorstelMode: true,
           bespokeUrl: true,
+          projectId: true,
         },
       },
       lines: true,
@@ -271,6 +272,40 @@ async function runTransition(
       where: { id: quote.prospect.id },
       data: { status: targetProspectStatus },
     });
+  }
+
+  // 4. Engagement creation on ACCEPTED — same transaction for atomicity
+  if (newStatus === 'ACCEPTED') {
+    const paymentSchedule = (quote.paymentSchedule ?? []) as Array<{
+      label: string;
+      percentage: number;
+    }>;
+
+    const engagement = await tx.engagement.create({
+      data: {
+        quoteId: quote.id,
+        prospectId: quote.prospect.id,
+        projectId: quote.prospect.projectId,
+        acceptedAt: new Date(),
+        milestones: {
+          create: paymentSchedule.map((term, idx) => ({
+            ordering: idx,
+            label: term.label,
+          })),
+        },
+      },
+      include: {
+        milestones: { orderBy: { ordering: 'asc' }, take: 1 },
+      },
+    });
+
+    // First milestone ("bij ondertekening") is reached AT acceptance
+    if (engagement.milestones[0]) {
+      await tx.engagementMilestone.update({
+        where: { id: engagement.milestones[0].id },
+        data: { completedAt: new Date() },
+      });
+    }
   }
 
   return updatedQuote;
