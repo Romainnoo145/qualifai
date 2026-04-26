@@ -1,0 +1,102 @@
+{
+  "capturedAt": "2026-04-21T17:58:16.817Z",
+  "prospect": {
+    "slug": "gStHk4OG",
+    "readableSlug": null,
+    "companyName": "Brainport Eindhoven",
+    "domain": "brainporteindhoven.com"
+  },
+  "analysis": {
+    "id": "cmnzjg9s0029d7pw2mshfi17q",
+    "version": "analysis-v2",
+    "createdAt": "2026-04-15T04:16:31.872Z",
+    "modelUsed": "gemini-2.5-pro",
+    "content": {
+      "version": "analysis-v2",
+      "sections": [
+        {
+          "id": "kennisdeling-schaalbaarheid",
+          "body": "Brainport Eindhoven beheert een enorme hoeveelheid gespecialiseerde kennis, van doorbraken in fotonica tot nieuwe samenwerkingen in halfgeleiders met Zuid-Korea en de vestiging van innovatieve bedrijven zoals Lionvolt op de Brainport Industries Campus. Uw rol als centrale hub vereist dat deze informatie accuraat en contextueel wordt gedeeld met een zeer divers publiek: van investeerders en publieke delegaties tot de meer dan 6.000 aangesloten bedrijven. Het handmatig cureren en distribueren van deze diepgaande, technische informatie per doelgroep is een fundamentele belemmering voor de schaalbaarheid. Een investeerder geïnteresseerd in MedTech-innovatieplannen heeft andere informatie nodig dan een startup die de energietransitie wil versnellen. Het huidige model, gebaseerd op publicaties en directe interactie, kan deze vraag niet efficiënt en op maat beantwoorden, waardoor waardevolle connecties en kansen onbenut blijven.",
+          "title": "De Schaalbaarheid van Kennisdeling als Groeibeperking",
+          "citations": [
+            "Bron: WEBSITE — ...over 6,000 companies, knowledge institutes, startups, and governments...",
+            "Bron: WEBSITE — ...photonics-offers-eindhoven-and-the-netherlands-great-opportunities",
+            "Bron: WEBSITE — ...new-tu/e-collaboration-with-south-korea-and-industry-in-brainport-region-on-semicon",
+            "Bron: WEBSITE — ...lionvolt-chooses-brainport-industries-campus-for-the-production-of-its-solid-state-batteries",
+            "Bron: WEBSITE — ...new-medtech-growth-plan-stimulates-innovation-in-healthcare",
+            "Bron: WEBSITE — ...help-startups-fulfill-the-energy-transition"
+          ]
+        },
+        {
+          "id": "communicatie-fragmentatie",
+          "body": "Uw communicatie-inspanningen zijn essentieel voor de internationale promotie en het aantrekken van talent. Echter, het proces om cruciale ontwikkelingen te vertalen naar content voor diverse kanalen en doelgroepen is arbeidsintensief. Een strategische investering, zoals de bijna €1,6 miljard in de infrastructuur, moet anders worden gecommuniceerd aan internationale talenten dan aan publieke delegaties of lokale MKB-partners. Het handmatig aanpassen van de boodschap voor uw website, nieuwsbrieven, sociale media en presentaties voor delegaties kost uw compacte team kostbare tijd. Dit leidt tot een vertraging in de informatiedistributie en een risico op inconsistente berichtgeving. De capaciteit om snel en coherent te communiceren over successen, zoals de samenwerking tussen Mikrocentrum en Brainport Development, bepaalt direct de perceptie en het momentum van het ecosysteem.",
+          "title": "Operationele Frictie door Gefragmenteerde Communicatie",
+          "citations": [
+            "Bron: WEBSITE — ...the-state-and-the-region-invest-almost-16-billion-in-improving-the-infrastructure-of-brainport-eindhoven",
+            "Bron: WEBSITE — ...visit/international-talent",
+            "Bron: WEBSITE — ...visit/international-policy-public-delegations",
+            "Bron: WEBSITE — ...mikrocentrum-and-brainport-development-join-forces-to-bring-additive-manufacturing-to-a-global-market"
+          ]
+        },
+        {
+          "id": "informatievoorziening-inefficientie",
+          "body": "Een aanzienlijk deel van de werkzaamheden bestaat waarschijnlijk uit het beantwoorden van terugkerende vragen van potentiële talenten, investeerders en nieuwe bedrijven. Vragen over de kwaliteit van de gezondheidszorg, het Nederlandse belastingstelsel of huisvestingsmogelijkheden zijn cruciaal voor de doelgroep, maar de beantwoording ervan is een repetitief en reactief proces. Deze tijd wordt niet besteed aan proactieve, strategische taken zoals het smeden van nieuwe partnerschappen of het ondersteunen van baanbrekende innovaties, zoals die van het Máxima Medisch Centrum met draadloze monitoring. Door deze fundamentele informatievragen te automatiseren, kan uw team zich volledig richten op de complexe, hoogwaardige interacties die de economische vitaliteit en het innovatieleiderschap van de regio daadwerkelijk versterken.",
+          "title": "Onbenut Potentieel door Reactieve Informatievoorziening",
+          "citations": [
+            "Bron: WEBSITE — ...outstanding-healthcare",
+            "Bron: WEBSITE — ...the-dutch-tax-system",
+            "Bron: WEBSITE — ...diversity-in-housing",
+            "Bron: WEBSITE — ...mmc-is-the-first-hospital-to-introduce-wireless-monitoring-for-premature-babies"
+          ]
+        }
+      ],
+      "modelUsed": "gemini-2.5-pro",
+      "generatedAt": "2026-04-15T04:16:31.869Z",
+      "openingHook": "Brainport Eindhoven fungeert als het zenuwcentrum voor meer dan 6.000 bedrijven en instellingen. Deze spilfunctie creëert een exponentiële informatiestroom die, zonder de juiste systemen, de capaciteit van uw team dreigt te overstijgen en de impact van uw boodschap verdunt.",
+      "fallbackUsed": false,
+      "executiveSummary": "Uw organisatie is de facilitator van een van 's werelds meest dynamische tech-ecosystemen. De kerntaak – het verbinden, informeren en promoten van dit netwerk – is echter inherent gelimiteerd door de mankracht van uw team van 11-50 medewerkers. De huidige processen voor kennisdeling en contentdistributie zijn niet schaalbaar om de informatiediepte van het netwerk effectief te ontsluiten voor duizenden stakeholders. Dit resulteert in operationele frictie, gefragmenteerde communicatie en een rem op de strategische impact. Wij stellen een transitie voor naar een intelligent informatiemanagementsysteem dat routinetaken automatiseert, kennis direct toegankelijk maakt en uw team vrijmaakt voor hoogwaardige, strategische taken die de groei van de regio versnellen.",
+      "useCaseRecommendations": [
+        {
+          "category": "content",
+          "useCaseTitle": "Centrale, Intelligente Kennisbasis voor Stakeholders",
+          "applicableOutcomes": [
+            "Directe en accurate beantwoording van complexe stakeholdervragen",
+            "Drastisch verminderde tijd voor het opzoeken van informatie",
+            "Verbeterde databeveiliging en gecontroleerde toegang per doelgroep"
+          ],
+          "relevanceNarrative": "Uw organisatie beheert een schat aan documenten, van onderzoeksrapporten tot investeringsplannen en partnerovereenkomsten. Deze oplossing centraliseert al deze kennis in een beveiligd, doorzoekbaar systeem. Externe stakeholders (investeerders, bedrijven) en interne teams kunnen in natuurlijke taal vragen stellen en direct precieze antwoorden krijgen, gebaseerd op de inhoud van uw documenten. Dit schaalt uw vermogen om informatie op maat te leveren zonder de werkdruk te verhogen."
+        },
+        {
+          "category": "content",
+          "useCaseTitle": "Geautomatiseerde Generatie van Doelgroep-Specifieke Content",
+          "applicableOutcomes": [
+            "Verhoogde content-output met gelijkblijvend team",
+            "Gegarandeerde consistentie in merkstem en boodschap",
+            "Snellere verspreiding van nieuws en successen binnen het ecosysteem"
+          ],
+          "relevanceNarrative": "Deze dienst analyseert uw bestaande publicaties en de unieke 'stem' van Brainport Eindhoven. Vervolgens kan het systeem op basis van een enkel nieuwsbericht – zoals een nieuwe campusontwikkeling – automatisch concepten genereren voor nieuwsbrieven, social media updates en samenvattingen voor internationale briefings. Dit garandeert een consistente, professionele boodschap over alle kanalen en reduceert de productietijd van content significant."
+        },
+        {
+          "category": "content",
+          "useCaseTitle": "Intelligent Vraagbaken voor Internationale Oriëntatie",
+          "applicableOutcomes": [
+            "Verhoogde betrokkenheid van potentiële talenten en investeerders",
+            "Gereduceerde werkdruk op uw ondersteunende teams",
+            "Verbeterde en versnelde informatievoorziening aan cruciale doelgroepen"
+          ],
+          "relevanceNarrative": "Implementeer een systeem op uw website dat 24/7 de meest gestelde vragen van internationaal talent en investeerders kan beantwoorden over leven en werken in de regio. Door vragen over gezondheidszorg, belastingen, onderwijs en huisvesting direct en accuraat te beantwoorden op basis van uw officiële bronnen, verbetert u de service en ontlast u uw team van repetitieve communicatietaken."
+        }
+      ]
+    },
+    "inputSnapshot": {
+      "useCaseCount": 20,
+      "evidenceCount": 46,
+      "crossConnectionCount": 0
+    }
+  },
+  "researchRun": {
+    "id": "cmnzjeoh500007pw2bzov1ha8",
+    "createdAt": "2026-04-15T04:15:17.609Z",
+    "status": "COMPLETED"
+  }
+}

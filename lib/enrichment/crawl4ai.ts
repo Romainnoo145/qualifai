@@ -8,6 +8,7 @@ interface Crawl4AiResult {
   metadata?: {
     title?: string;
   };
+  status_code?: number; // v0.8.x: HTTP status code of the crawled page
 }
 
 interface Crawl4AiResponse {
@@ -17,7 +18,7 @@ interface Crawl4AiResponse {
 
 export async function extractMarkdown(
   url: string,
-): Promise<{ markdown: string; title: string }> {
+): Promise<{ markdown: string; title: string; statusCode: number }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 60000);
 
@@ -50,18 +51,19 @@ export async function extractMarkdown(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      return { markdown: '', title: '' };
+      return { markdown: '', title: '', statusCode: 0 };
     }
 
     const data = (await response.json()) as Crawl4AiResponse;
     const first = data.results?.[0];
     const markdown = first?.markdown ?? '';
     const title = first?.metadata?.title ?? '';
+    const statusCode = first?.status_code ?? 200;
 
-    return { markdown, title };
+    return { markdown, title, statusCode };
   } catch {
     clearTimeout(timeoutId);
-    return { markdown: '', title: '' };
+    return { markdown: '', title: '', statusCode: 0 };
   }
 }
 
@@ -88,7 +90,13 @@ export async function ingestCrawl4aiEvidenceDrafts(
   const drafts: EvidenceDraft[] = [];
 
   for (const url of capped) {
-    const { markdown, title } = await extractMarkdown(url);
+    const { markdown, title, statusCode } = await extractMarkdown(url);
+
+    // HTTP 4xx/5xx — target returned error; skip entirely, never create evidence
+    if (statusCode >= 400) {
+      console.log(`[crawl4ai] Skipping ${url} — HTTP ${statusCode}`);
+      continue;
+    }
 
     // Minimal content — page exists but browser extraction failed; create fallback stub
     if (!markdown || markdown.length < 80) {

@@ -1,0 +1,98 @@
+{
+  "capturedAt": "2026-04-21T17:58:16.817Z",
+  "prospect": {
+    "slug": "qXGQngut",
+    "readableSlug": null,
+    "companyName": "De Ondernemer",
+    "domain": "deondernemer.nl"
+  },
+  "analysis": {
+    "id": "cmnzjhv2i0hqf7pw2g5u02hhy",
+    "version": "analysis-v2",
+    "createdAt": "2026-04-15T04:17:46.122Z",
+    "modelUsed": "gemini-2.5-pro",
+    "content": {
+      "version": "analysis-v2",
+      "sections": [
+        {
+          "id": "content-velocity-scaling",
+          "body": "Uw platform onderhoudt een indrukwekkend publicatieritme over meerdere formats, waaronder diepgaande video-interviews, podcasts en thematische dossiers over bijvoorbeeld het 'overvolle stroomnet'. Voor een kernteam van 11-50 medewerkers is het handhaven van deze output en kwaliteit een significante operationele belasting. Elke contentvorm vereist een eigen, vaak manueel, proces van research, briefing, creatie en distributie. Dit model beperkt de capaciteit om de contentproductie verder op te schalen of snel in te spelen op nieuwe markttrends, wat essentieel is in het dynamische medialandschap.",
+          "title": "Uitdaging 1: Schaalvergroting van de Contentproductie",
+          "citations": [
+            "Bron: WEBSITE — deondernemer.nl/video",
+            "Bron: WEBSITE — deondernemer.nl/podcast",
+            "Bron: WEBSITE — deondernemer.nl/dossier/overvol-stroomnet-capaciteit-elektriciteitsnet-Nederland"
+          ]
+        },
+        {
+          "id": "partner-value-deepening",
+          "body": "Uw omzetmodel leunt zwaar op branded content en strategische partnerschappen met partijen als ING, ABN AMRO MeesPierson, en Vodafone Business. Elke partner vereist een unieke benadering en content die naadloos aansluit bij hun specifieke merkidentiteit en kennisdomein. Het huidige proces om voor elke partner de juiste tone-of-voice te garanderen, relevante achtergrondinformatie te verzamelen en contentvoorstellen af te stemmen is arbeidsintensief. Dit verhoogt de doorlooptijd en creëert een risico op inconsistenties, wat de waarde van het partnerschap voor beide partijen kan verminderen.",
+          "title": "Uitdaging 2: Verdieping van Commerciële Partnerschappen",
+          "citations": [
+            "Bron: WEBSITE — deondernemer.nl/ing-nederland",
+            "Bron: WEBSITE — deondernemer.nl/abn-amro-meespierson",
+            "Bron: WEBSITE — deondernemer.nl/vodafone-business",
+            "Bron: WEBSITE — deondernemer.nl/adverteren"
+          ]
+        },
+        {
+          "id": "archive-asset-activation",
+          "body": "Gedurende jaren heeft De Ondernemer een omvangrijk en waardevol archief opgebouwd met inzichten, interviews en rapportages, zoals die van de 'Week van de Ondernemer' en de 'MKB Finance Week'. Voor uw doelgroep is deze informatie van onschatbare waarde, maar de vindbaarheid is beperkt tot traditionele zoekfunctionaliteit. Een ondernemer die een specifieke, contextuele vraag heeft, kan moeilijk een direct antwoord vinden in de veelheid aan artikelen en video's. Hierdoor blijft een significant deel van de waarde van uw intellectueel eigendom onbenut en wordt de gebruiker niet optimaal bediend.",
+          "title": "Uitdaging 3: Activering van het Kennisarchief",
+          "citations": [
+            "Bron: WEBSITE — deondernemer.nl/week-van-de-ondernemer-1",
+            "Bron: WEBSITE — deondernemer.nl/mkb-finance-week",
+            "Bron: WEBSITE — deondernemer.nl/financien/durfkapitaal-groeigeld-nederland-startups-scaleups-investeringen-ondernemers-pwc-ronald-kleverlaan-mkb-financiering~7a6645c"
+          ]
+        }
+      ],
+      "modelUsed": "gemini-2.5-pro",
+      "generatedAt": "2026-04-15T04:17:46.120Z",
+      "openingHook": "De Ondernemer is de hoeksteen voor ondernemend Nederland, van zzp'ers tot het mkb. Het bedienen van deze diverse doelgroep met relevante, actuele content over uiteenlopende thema's — van de 'Dag van de ZZP'er' tot de complexiteit van 'durfkapitaal' — vereist een uitzonderlijk efficiënte contentoperatie.",
+      "fallbackUsed": false,
+      "executiveSummary": "Deze briefing analyseert drie kritieke operationele domeinen waar De Ondernemer substantiële efficiëntiewinst kan boeken. We identificeren knelpunten in de schaalbaarheid van uw contentproductie, de diepgang van uw partner-samenwerkingen, en de ontsluiting van uw waardevolle contentarchief. De voorgestelde oplossingen zijn gericht op het automatiseren van repetitieve taken in uw content-workflow, waardoor uw team van experts zich kan richten op hoogwaardige journalistiek en strategische groei.",
+      "useCaseRecommendations": [
+        {
+          "category": "content",
+          "useCaseTitle": "Systematisch Hergebruik van Kerncontent",
+          "applicableOutcomes": [
+            "Verhoogde content-output met gelijkblijvend team",
+            "Verkorte doorlooptijd van concept naar multi-platform publicatie",
+            "Verbeterde distributie en bereik van uw kerncontent"
+          ],
+          "relevanceNarrative": "Deze oplossing stelt uw redactie in staat om één diepte-interview of podcast automatisch om te zetten in meerdere content-assets: een transcript voor een artikel, korte videoclips voor social media, en kerncitaten voor nieuwsbrieven. Dit versnelt de contentdistributie en maximaliseert de impact van elke productie."
+        },
+        {
+          "category": "content",
+          "useCaseTitle": "Gepersonaliseerde Partner-Content Generatie",
+          "applicableOutcomes": [
+            "Snellere creatie van branded content met hogere relevantie",
+            "Verhoogde partnertevredenheid door consistente en correcte merkuitingen",
+            "Minder handmatige correctierondes tussen redactie en partner"
+          ],
+          "relevanceNarrative": "Implementeer een systeem dat de unieke merkstem, stijl en productkennis van elke commerciële partner, zoals ANWB voor de Zaak of Centraal Beheer, analyseert en internaliseert. Uw team kan vervolgens met ondersteuning van dit systeem content creëren die consistent en perfect afgestemd is, wat het afstemmingsproces drastisch reduceert."
+        },
+        {
+          "category": "content",
+          "useCaseTitle": "Interactieve Kennisbank voor Ondernemers",
+          "applicableOutcomes": [
+            "Hogere gebruiker-engagement en langere sessieduur op het platform",
+            "Volledige ontsluiting van de waarde van uw bestaande content-assets",
+            "Introductie van een nieuwe, premium servicepropositie"
+          ],
+          "relevanceNarrative": "Transformeer uw statische archief in een dynamische, conversationele kennisbron. Hiermee kunnen uw gebruikers in natuurlijke taal vragen stellen ('Wat zijn de fiscale voordelen voor start-ups in 2024?') en direct een samengevat, bron-onderbouwd antwoord ontvangen, gebaseerd op al uw gepubliceerde content. Dit verhoogt de platformwaarde en gebruikersbinding significant."
+        }
+      ]
+    },
+    "inputSnapshot": {
+      "useCaseCount": 20,
+      "evidenceCount": 46,
+      "crossConnectionCount": 0
+    }
+  },
+  "researchRun": {
+    "id": "cmnzjgecw029j7pw2rdsqch8y",
+    "createdAt": "2026-04-15T04:16:37.808Z",
+    "status": "COMPLETED"
+  }
+}

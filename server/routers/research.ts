@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { adminProcedure, router } from '../trpc';
+import { adminProcedure, publicProcedure, router } from '../trpc';
 import {
   executeResearchRun,
   manualUrlsFromSnapshot,
@@ -19,6 +19,16 @@ import {
   type ResearchUrlCandidate,
 } from '@/lib/enrichment/url-selection';
 import type { Prisma } from '@prisma/client';
+import { currentStepLabel, isActiveStatus } from '@/lib/research/status-labels';
+import { discoverLookupCandidates } from '@/lib/prospect-url';
+import { PUBLIC_VISIBLE_STATUSES } from '@/lib/constants/prospect-statuses';
+
+const INACTIVE_STATUS = {
+  isActive: false,
+  status: null,
+  currentStep: null,
+  startedAt: null,
+} as const;
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -111,6 +121,58 @@ export const researchRouter = router({
         deepCrawl: input.deepCrawl,
         hypothesisModel: input.hypothesisModel,
       });
+    }),
+
+  getActiveStatusByProspectId: adminProcedure
+    .input(z.object({ prospectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const run = await ctx.db.researchRun.findFirst({
+        where: { prospectId: input.prospectId },
+        orderBy: { createdAt: 'desc' },
+        select: { status: true, startedAt: true },
+      });
+      if (!run) {
+        return INACTIVE_STATUS;
+      }
+      return {
+        isActive: isActiveStatus(run.status),
+        status: run.status,
+        currentStep: currentStepLabel(run.status),
+        startedAt: run.startedAt,
+      };
+    }),
+
+  getActiveStatusBySlug: publicProcedure
+    .input(z.object({ slug: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const candidates = discoverLookupCandidates(input.slug);
+      if (candidates.length === 0) {
+        return INACTIVE_STATUS;
+      }
+      const prospect = await ctx.db.prospect.findFirst({
+        where: {
+          OR: candidates.flatMap((c) => [{ slug: c }, { readableSlug: c }]),
+          status: { in: [...PUBLIC_VISIBLE_STATUSES] },
+        },
+        select: { id: true },
+      });
+      if (!prospect) {
+        return INACTIVE_STATUS;
+      }
+      const run = await ctx.db.researchRun.findFirst({
+        where: { prospectId: prospect.id },
+        orderBy: { createdAt: 'desc' },
+        select: { status: true, startedAt: true },
+      });
+      if (!run) {
+        return INACTIVE_STATUS;
+      }
+      return {
+        isActive: isActiveStatus(run.status),
+        status: run.status,
+        currentStep: currentStepLabel(run.status),
+        startedAt: run.startedAt,
+      };
     }),
 
   retryRun: adminProcedure

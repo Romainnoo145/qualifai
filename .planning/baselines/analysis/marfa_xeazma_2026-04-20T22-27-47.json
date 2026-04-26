@@ -1,0 +1,123 @@
+{
+  "capturedAt": "2026-04-20T22:27:47.584Z",
+  "prospect": {
+    "slug": "_JHTy2L6",
+    "readableSlug": "marfa",
+    "companyName": "Marfa",
+    "domain": "marfa.nl"
+  },
+  "analysis": {
+    "id": "cmnytce00002jf2xgvoxeazma",
+    "version": "analysis-v2",
+    "createdAt": "2026-04-14T16:05:40.704Z",
+    "modelUsed": "gemini-2.5-flash",
+    "content": {
+      "version": "analysis-v2",
+      "sections": [
+        {
+          "id": "operationele-inefficientie",
+          "body": "marfa.nl opereert in B2B-diensten met een inherente workflowcomplexiteit over planning, overdracht en oplevering (Bron: WEBSITE — marfa.nl operates in B2B services with workflow complexity across planning, handoff, and delivery.). De vacature voor een administratief medewerker met een salaris van €2.475,93 - €3.539,89 per maand (Bron: NEWS — administratief medewerker - 5951 Belfeld) is een directe indicator van de significante personeelskosten die verbonden zijn aan handmatige administratie. Het beheer van projectdocumenten, planningen en communicatie over diverse projecten zoals 'betonwerk Attero' (Bron: WEBSITE — Manual source seed - betonwerk attero speciale projecten) of 'een schitterend project in de binnenstad van Venlo' (Bron: WEBSITE — Manual source seed - een schitterend project in de binnenstad van venlo) is arbeidsintensief en vatbaar voor fouten. De huidige aanpak creëert knelpunten die de productiviteit van uw kerntaken verminderen en vertragingen in projectdoorlooptijden veroorzaken.",
+          "title": "Operationele Inefficiëntie en Administratieve Last",
+          "citations": [
+            "Bron: WEBSITE — marfa.nl operates in B2B services with workflow complexity across planning, handoff, and delivery.",
+            "Bron: NEWS — administratief medewerker - 5951 Belfeld",
+            "Bron: WEBSITE — Manual source seed - betonwerk attero speciale projecten",
+            "Bron: WEBSITE — Manual source seed - een schitterend project in de binnenstad van venlo"
+          ]
+        },
+        {
+          "id": "inzicht-en-gemiste-kansen",
+          "body": "Met een bedrijfsgrootte van 2-10 medewerkers (Bron: NEWS — Marfa Vochtwering & Renovatie) is elke gemiste deadline of onopgemerkte serviceaanvraag direct van invloed op de rentabiliteit en klantrelaties. Zonder een geïntegreerd systeem om leads, projecten en financiën te monitoren, ontbreekt marfa.nl een holistisch overzicht van de bedrijfsprestaties. Dit bemoeilijkt proactieve besluitvorming en het snel reageren op cruciale gebeurtenissen, zoals de voortgang van 'marfa-betonrenovatie' of 'marfa-gevelrenovatie' projecten (Bron: WEBSITE — Manual source seed - marfa-betonrenovatie; Bron: WEBSITE — Manual source seed - marfa-gevelrenovatie). De afhankelijkheid van handmatige processen voor het volgen van de workflow over planning, overdracht en oplevering (Bron: WEBSITE — marfa.nl operates in B2B services with workflow complexity across planning, handoff, and delivery.) leidt tot vertraagde reacties en een verhoogd risico op operationele knelpunten.",
+          "title": "Beperkt Inzicht en Risico op Gemiste Kansen",
+          "citations": [
+            "Bron: NEWS — Marfa Vochtwering & Renovatie",
+            "Bron: WEBSITE — Manual source seed - marfa-betonrenovatie",
+            "Bron: WEBSITE — Manual source seed - marfa-gevelrenovatie",
+            "Bron: WEBSITE — marfa.nl operates in B2B services with workflow complexity across planning, handoff, and delivery."
+          ]
+        },
+        {
+          "id": "commerciele-en-financiele-processen",
+          "body": "Het proces van offerteaanvragen (Bron: WEBSITE — Manual source seed - marfa-offerte-aanvragen) tot facturatie is cruciaal voor elke B2B-dienstverlener. De handmatige aard van deze processen, mogelijk ondersteund door administratieve medewerkers (Bron: NEWS — administratief medewerker - 5951 Belfeld), introduceert inefficiëntie en verhoogt de kans op fouten in prijsstelling of facturatie. Het nauwkeurig beheren van productspecificaties en prijsregels voor diensten zoals 'Marfa Vochtwering & Renovatie' (Bron: NEWS — Marfa Vochtwering & Renovatie - Belfeld) is essentieel voor winstgevendheid. Vertragingen in het genereren van offertes of het versturen van facturen beïnvloeden de cashflow en de professionele uitstraling van marfa.nl.",
+          "title": "Inefficiënte Commerciële en Financiële Processen",
+          "citations": [
+            "Bron: WEBSITE — Manual source seed - marfa-offerte-aanvragen",
+            "Bron: NEWS — administratief medewerker - 5951 Belfeld",
+            "Bron: NEWS — Marfa Vochtwering & Renovatie - Belfeld"
+          ]
+        }
+      ],
+      "modelUsed": "gemini-2.5-flash",
+      "generatedAt": "2026-04-14T16:05:40.703Z",
+      "openingHook": "marfa.nl staat bekend om haar gespecialiseerde B2B-diensten in onder meer vochtwering en renovatie, maar de groei en efficiëntie worden significant belemmerd door complexe handmatige processen. De huidige operationele aanpak leidt tot vermijdbare kosten en een trager traject van planning tot oplevering.",
+      "fallbackUsed": true,
+      "executiveSummary": "Deze briefing identificeert de kernuitdagingen van marfa.nl, met name de administratieve overhead, het gebrek aan real-time workflowtransparantie en inefficiënte commerciële processen. Door specifieke automatiseringsoplossingen en een intelligente assistent te integreren, kan marfa.nl de operationele kosten drastisch verlagen, projectdoorlooptijden versnellen en de nauwkeurigheid van offertes en facturatie verbeteren. Het resultaat is een robuuste basis voor duurzame groei en verhoogde klanttevredenheid.",
+      "useCaseRecommendations": [
+        {
+          "category": "automation",
+          "useCaseTitle": "Notificaties & Alerts",
+          "applicableOutcomes": [
+            "Verbeterde reactietijden op kritieke gebeurtenissen",
+            "Verminderde gemiste kansen"
+          ],
+          "relevanceNarrative": "marfa.nl kan met dit systeem tijdige waarschuwingen ontvangen voor ongelezen leads, openstaande offertes, achterstallige facturen en nieuwe serviceaanvragen, wat een snelle actie garandeert en gemiste kansen voorkomt. Dit is direct relevant voor de workflowcomplexiteit over planning, overdracht en oplevering (Bron: WEBSITE — marfa.nl operates in B2B services with workflow complexity across planning, handoff, and delivery.)."
+        },
+        {
+          "category": "analytics",
+          "useCaseTitle": "Dashboard & Analytics",
+          "applicableOutcomes": [
+            "Verbeterde bedrijfstransparantie",
+            "Datagestuurde besluitvorming"
+          ],
+          "relevanceNarrative": "Dit biedt marfa.nl een administratief dashboard met realtime gegevens over leads, offertes, facturen en serviceaanvragen. Dit zorgt voor datagestuurde besluitvorming en een beter overzicht van de projecten zoals 'Marfa Betonrenovatie' of 'Marfa Gevelrenovatie' (Bron: WEBSITE — Manual source seed - marfa-betonrenovatie; Bron: WEBSITE — Manual source seed - marfa-gevelrenovatie), cruciaal voor een bedrijf van 2-10 medewerkers (Bron: NEWS — Marfa Vochtwering & Renovatie)."
+        },
+        {
+          "category": "crm",
+          "useCaseTitle": "Factuurbeheer",
+          "applicableOutcomes": [
+            "Gestroomlijnd facturatieproces",
+            "Verbeterde cashflow"
+          ],
+          "relevanceNarrative": "Het factuurbeheersysteem stelt marfa.nl in staat om facturen efficiënt aan te maken, te beheren en te volgen, inclusief het genereren van facturen vanuit projecten en het beheren van betalingen. Dit vermindert de administratieve last die nu mogelijk wordt opgevangen door een medewerker met een salaris tot €3.539,89 per maand (Bron: NEWS — administratief medewerker - 5951 Belfeld)."
+        },
+        {
+          "category": "crm",
+          "useCaseTitle": "Offertebeheer & Synchronisatie",
+          "applicableOutcomes": [
+            "Verbeterde offertenauwkeurigheid",
+            "Snellere offertegeneratie"
+          ],
+          "relevanceNarrative": "Deze functionaliteit stroomlijnt het aanmaken en beheren van offertes voor marfa.nl, inclusief synchronisatie met externe systemen. Dit versnelt het proces vanaf de offerteaanvraag (Bron: WEBSITE — Manual source seed - marfa-offerte-aanvragen) en zorgt voor accurate en actuele informatie, wat de efficiëntie van uw commerciële afdeling aanzienlijk verbetert."
+        },
+        {
+          "category": "content",
+          "useCaseTitle": "Product- & Elementbeheer",
+          "applicableOutcomes": [
+            "Gecentraliseerde productinformatie",
+            "Verhoogde verkoopefficiëntie"
+          ],
+          "relevanceNarrative": "Met een gecentraliseerde productcatalogus kan marfa.nl productspecificaties, prijsregels en op maat gemaakte elementen voor offertes efficiënt beheren. Dit is direct toepasbaar op de diverse diensten zoals 'Marfa Vochtwering & Renovatie' en 'Marfa Vloer- en Wandcoating' (Bron: NEWS — Marfa Vochtwering & Renovatie - Belfeld; Bron: WEBSITE — Manual source seed - marfa-vloer-en-wandcoating), wat de nauwkeurigheid en snelheid van offertecreatie verhoogt."
+        },
+        {
+          "category": "content",
+          "useCaseTitle": "Intelligente Document Assistent",
+          "applicableOutcomes": [
+            "Verminderde zoektijd in documenten",
+            "Verbeterde toegang tot kennis en inzichten"
+          ],
+          "relevanceNarrative": "Medewerkers van marfa.nl kunnen documenten uploaden en vragen stellen in natuurlijke taal, waardoor ze direct antwoorden krijgen uit de kennisbank. Dit reduceert de tijd besteed aan het zoeken naar informatie in projectdocumenten, contracten en specificaties, wat bijdraagt aan de efficiëntie van de complexe workflows (Bron: WEBSITE — marfa.nl operates in B2B services with workflow complexity across planning, handoff, and delivery.)."
+        }
+      ]
+    },
+    "inputSnapshot": {
+      "useCaseCount": 20,
+      "evidenceCount": 32,
+      "crossConnectionCount": 0
+    }
+  },
+  "researchRun": {
+    "id": "cmnyta29x001mf2xgk5oxman2",
+    "createdAt": "2026-04-14T16:03:52.197Z",
+    "status": "COMPLETED"
+  }
+}

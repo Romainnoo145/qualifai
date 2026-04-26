@@ -13,7 +13,7 @@ export const DEFAULT_BTW_PERCENTAGE = 21;
 
 /**
  * Tarief unit policy (O10): integer euros.
- *   tarief: 95    means €95/hour.
+ *   tarief: 80    means €80/hour.
  *   tarief: -800  means a -€800 discount line.
  * totals math is plain arithmetic on these integers — NO cent division.
  */

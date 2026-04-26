@@ -1,0 +1,94 @@
+{
+  "capturedAt": "2026-04-21T17:58:16.817Z",
+  "prospect": {
+    "slug": "3Bi1vv2M",
+    "readableSlug": "mujjo",
+    "companyName": "Mujjo",
+    "domain": "mujjo.com"
+  },
+  "analysis": {
+    "id": "cmmq47vq90000u5ijwiy5q324",
+    "version": "analysis-v2",
+    "createdAt": "2026-03-14T09:20:28.257Z",
+    "modelUsed": "gemini-2.5-pro",
+    "content": {
+      "version": "analysis-v2",
+      "sections": [
+        {
+          "id": "inconsistente-klantinteractie",
+          "body": "De publieke perceptie van Mujjo's service is gepolariseerd. Enerzijds prijzen klanten de \"snelle e-mailrespons\" en \"zeer persoonlijke\" antwoorden op vragen. Anderzijds melden potentiële kopers \"geen reactie van het bedrijf na e-mailen en bellen\". Deze discrepantie is een symptoom van handmatige, persoonsafhankelijke processen. De huidige contact- en aanvraagmethoden op uw website brengen een risico op manuele intake en routering met zich mee. Voor een premium merk is deze onvoorspelbaarheid schadelijk; een klant die geen antwoord krijgt, associeert die ervaring direct met de waarde van het merk, ongeacht de productkwaliteit. Elke gemiste interactie is een deuk in de zorgvuldig opgebouwde reputatie.",
+          "title": "Inconsistente Klantinteractie Ondermijnt Premium Merkbeleving",
+          "citations": [
+            "Bron: REVIEWS | Review signal 3 (trustpilot) | confidence: 78%",
+            "Bron: REVIEWS | Review signal 1 (trustpilot) | confidence: 74%",
+            "Bron: REVIEWS | Mujjo - Google Review (Dom Sturgis) | confidence: 64%",
+            "Bron: WEBSITE | Lead intake and first response workflow | confidence: 61%"
+          ]
+        },
+        {
+          "id": "operationele-bottlenecks",
+          "body": "Interne signalen duiden op operationele frictie die de groei van Mujjo kan belemmeren. Historische vacatures wijzen op knelpunten in planning, operationele overdrachten en een hoge rapportagelast. In een groeiend bedrijf met 11-50 medewerkers zijn dit klassieke indicatoren dat processen niet meeschalen met het volume. Wanneer teams afhankelijk zijn van handmatige updates en rapportages, vertraagt dit niet alleen de dagelijkse operatie, maar neemt het ook de focus weg van strategische initiatieven zoals productinnovatie en marktontwikkeling. Het risico is dat het team reactief bezig is met het oplossen van interne coördinatieproblemen in plaats van proactief te bouwen aan de toekomst van het merk.",
+          "title": "Operationele Bottlenecks Remmen Schaalbaarheid",
+          "citations": [
+            "Bron: CAREERS | Hiring and role pain signals | confidence: 72%"
+          ]
+        },
+        {
+          "id": "onbenut-groeipotentieel",
+          "body": "Mujjo heeft een loyale klantenkring, zoals blijkt uit reviews van klanten die al \"sinds de eerste iPhone\" uw producten gebruiken. Deze loyaliteit is een waardevol bezit, maar de data die eruit voortvloeit lijkt versnipperd. Met een e-commerce platform als Shopify verzamelt u data over aankoopgedrag, maar de huidige processen laten waarschijnlijk na om kwalitatieve feedback uit reviews en supportvragen systematisch te analyseren. Inzichten over gewenste nieuwe productlijnen, feedback op de duurzaamheid van het leer, of specifieke gebruikspatronen blijven hierdoor verborgen. Zonder een geautomatiseerd systeem om deze signalen te vangen en te analyseren, baseert u productontwikkeling en marketingstrategie op aannames in plaats van op harde data van uw meest betrokken gebruikers.",
+          "title": "Onbenut Groeipotentieel in Klantdata en Feedback",
+          "citations": [
+            "Bron: REVIEWS | Mujjo - Google Review (Lian van Wanrooij) | confidence: 51%",
+            "Bron: WEBSITE | Luxury Leather iPhone Cases and Tech Accessories – Mujjo - stack clues | confidence: 62%"
+          ]
+        }
+      ],
+      "modelUsed": "gemini-2.5-pro",
+      "generatedAt": "2026-03-14T09:20:28.253Z",
+      "openingHook": "Mujjo heeft een ijzersterke reputatie opgebouwd rond Nederlands design en duurzaam vakmanschap. De uitdaging voor een premium D2C-merk is nu om die persoonlijke, hoogwaardige ervaring te schalen zonder dat de operationele complexiteit de groei remt of de merkbelofte uitholt.",
+      "executiveSummary": "Ons onderzoek toont aan dat de premium merkervaring van Mujjo, die klanten prijzen, kwetsbaar is door inconsistente operationele processen. Conflicterende klantreviews—van \"snelle, persoonlijke service\" tot \"geen enkele reactie\"—wijzen op handmatige workflows die niet betrouwbaar schalen. Dit vormt een direct risico voor de merkloyaliteit die u zorgvuldig heeft opgebouwd. De oplossing ligt in het automatiseren van de routine-interacties en het centraliseren van operationele data, zodat elk klantcontact en elke interne overdracht de uitzonderlijke kwaliteit van uw producten weerspiegelt en de weg vrijmaakt voor duurzame groei.",
+      "useCaseRecommendations": [
+        {
+          "category": "automation",
+          "useCaseTitle": "Intelligente Automatisering van Klantenservice",
+          "applicableOutcomes": [
+            "Verbeterde responstijden op klantvragen",
+            "Consistente merkcommunicatie",
+            "Verlaagde werkdruk op support team"
+          ],
+          "relevanceNarrative": "Garandeert een directe, consistente respons op 80% van de binnenkomende vragen (o.a. orderstatus, productinformatie, retourbeleid). Dit lost het 'geen reactie'-probleem direct op en stelt uw team in staat zich te focussen op complexe vragen waar de 'persoonlijke touch' het verschil maakt."
+        },
+        {
+          "category": "analytics",
+          "useCaseTitle": "Gecentraliseerd Operationeel Dashboard",
+          "applicableOutcomes": [
+            "Verbeterd zicht op de gehele operatie",
+            "Data-gedreven besluitvorming",
+            "Efficiëntere toewijzing van middelen"
+          ],
+          "relevanceNarrative": "Pakt de gesignaleerde knelpunten in planning en rapportage aan door een real-time overzicht te bieden van kerncijfers – van voorraadniveaus tot openstaande support tickets. Proactieve meldingen bij afwijkingen vervangen handmatige controles en stroomlijnen de operationele overdrachten."
+        },
+        {
+          "category": "analytics",
+          "useCaseTitle": "Systematische Analyse van Klantinzichten",
+          "applicableOutcomes": [
+            "Snellere toegang tot klantinzichten",
+            "Verbeterde besluitvorming voor productontwikkeling",
+            "Verhoogde klantloyaliteit door gerichte innovatie"
+          ],
+          "relevanceNarrative": "Transformeert ongestructureerde klantfeedback uit reviews en e-mails in bruikbare strategische inzichten. Identificeer direct de meest gevraagde productvarianten of terugkerende kwaliteitsthema's om uw productontwikkeling en marketing te sturen op basis van concrete klantdata, niet op aannames."
+        }
+      ]
+    },
+    "inputSnapshot": {
+      "useCaseCount": 20,
+      "evidenceCount": 60,
+      "crossConnectionCount": 0
+    }
+  },
+  "researchRun": {
+    "id": "cmm826p10006t9rij53uoeybq",
+    "createdAt": "2026-03-01T18:03:42.516Z",
+    "status": "COMPLETED"
+  }
+}

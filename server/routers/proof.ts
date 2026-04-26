@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { adminProcedure, router } from '../trpc';
 import { matchProofs } from '@/lib/workflow-engine';
+import { industryToSector } from '@/lib/constants/sectors';
 
 export const proofRouter = router({
   matchForRun: adminProcedure
@@ -11,7 +12,7 @@ export const proofRouter = router({
       });
       const prospectScope = await ctx.db.prospect.findUniqueOrThrow({
         where: { id: run.prospectId },
-        select: { projectId: true },
+        select: { projectId: true, industry: true },
       });
 
       const [hypotheses, opportunities] = await Promise.all([
@@ -34,6 +35,7 @@ export const proofRouter = router({
         const query = `${hypothesis.title} ${hypothesis.problemStatement}`;
         const matches = await matchProofs(ctx.db, query, 4, {
           projectId: prospectScope.projectId,
+          sector: industryToSector(prospectScope.industry),
         });
         for (const match of matches) {
           await ctx.db.proofMatch.create({
@@ -62,6 +64,7 @@ export const proofRouter = router({
         const query = `${opportunity.title} ${opportunity.description}`;
         const matches = await matchProofs(ctx.db, query, 4, {
           projectId: prospectScope.projectId,
+          sector: industryToSector(prospectScope.industry),
         });
         for (const match of matches) {
           await ctx.db.proofMatch.create({

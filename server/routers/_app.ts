@@ -12,7 +12,6 @@ import { quotesRouter } from './quotes';
 import { researchRouter } from './research';
 import { searchRouter } from './search';
 import { sequencesRouter } from './sequences';
-import { signalsRouter } from './signals';
 import { useCasesRouter } from './use-cases';
 import { wizardRouter } from './wizard';
 
@@ -30,7 +29,6 @@ export const appRouter = router({
   research: researchRouter,
   search: searchRouter,
   sequences: sequencesRouter,
-  signals: signalsRouter,
   useCases: useCasesRouter,
   wizard: wizardRouter,
 });

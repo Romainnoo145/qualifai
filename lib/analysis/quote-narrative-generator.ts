@@ -52,7 +52,7 @@ Produceer een JSON object met exact deze structuur:
   "uitdaging": "2-3 alinea's: wat er stuk is of beter kan, onderbouwd met feiten uit het gesprek en onderzoek",
   "aanpak": "2-3 alinea's: hoe Klarifai dit oplost, concreet en gefaseerd",
   "suggestedLines": [
-    { "omschrijving": "Wat wordt opgeleverd", "uren": 20, "tarief": 95 }
+    { "omschrijving": "Wat wordt opgeleverd", "uren": 20, "tarief": 80 }
   ]
 }
 

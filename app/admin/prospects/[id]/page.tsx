@@ -2,8 +2,8 @@
 
 import type { Prisma } from '@prisma/client';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Copy,
@@ -11,14 +11,21 @@ import {
   RefreshCw,
   Play,
   PenLine,
+  Pencil,
   Send,
   ExternalLink,
   Check,
 } from 'lucide-react';
 import { api } from '@/components/providers';
 import { PageLoader } from '@/components/ui/page-loader';
+import { Popup } from '@/components/ui/popup';
 import { cn } from '@/lib/utils';
 import { buildDiscoverPath } from '@/lib/prospect-url';
+import { RerunLoadingScreen } from '@/components/features/research/rerun-loading-screen';
+import {
+  ProspectDetailLoadingB,
+  ProspectDetailLoadingC,
+} from '@/components/features/research/prospect-detail-loading';
 
 // ─────────────────────────────────────────────────────────────────────
 // Prospect Detail — Editorial layout (Fase A Step 3)
@@ -43,13 +50,7 @@ type ResearchRunRow = Prisma.ResearchRunGetPayload<{
   };
 }>;
 
-type EventType =
-  | 'ENRICH'
-  | 'QUALITY'
-  | 'RUN'
-  | 'QUOTE'
-  | 'OUTREACH'
-  | 'EVIDENCE';
+type EventType = 'ENRICH' | 'QUALITY' | 'RUN' | 'QUOTE' | 'OUTREACH';
 
 type ActivityEvent = {
   id: string;
@@ -69,8 +70,6 @@ const TAG_CLASS: Record<EventType, string> = {
     'bg-[var(--color-surface-2)] text-[var(--color-foreground)] border-[var(--color-border-strong)]',
   OUTREACH:
     'bg-[var(--color-tag-outreach-bg)] text-[var(--color-tag-outreach-text)] border-[var(--color-tag-outreach-border)]',
-  EVIDENCE:
-    'bg-[var(--color-tag-evidence-bg)] text-[var(--color-tag-evidence-text)] border-[var(--color-tag-evidence-border)]',
 };
 
 const DATE_TZ: Intl.DateTimeFormatOptions = {
@@ -221,6 +220,9 @@ type ProspectShape = Record<string, unknown> & {
   slug: string;
   readableSlug: string | null;
   lastEnrichedAt: Date | null;
+  voorstelMode: 'STANDARD' | 'BESPOKE';
+  bespokeUrl: string | null;
+  _count?: { evidenceItems: number };
   contacts?: Array<{
     id: string;
     firstName: string | null;
@@ -372,17 +374,19 @@ function ContactRow({
   role,
   isPrimary,
   accent,
+  onEdit,
 }: {
   initials: string;
   name: string;
   role: string;
   isPrimary?: boolean;
   accent?: string;
+  onEdit?: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 px-2.5 py-2 rounded-[6px] hover:bg-[var(--color-surface-hover)] transition-colors">
+    <div className="relative flex items-center gap-3 py-1.5 pr-7">
       <div
-        className="flex h-7 w-7 items-center justify-center rounded-full"
+        className="flex h-7 w-7 items-center justify-center rounded-full flex-shrink-0"
         style={{
           background: accent ?? 'var(--color-ink)',
           color: accent ? '#ffffff' : 'var(--color-gold-hi)',
@@ -391,17 +395,27 @@ function ContactRow({
         <span className="font-['Sora'] text-[10px] font-bold">{initials}</span>
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[12px] font-semibold text-[var(--color-ink)] truncate">
+        <div className="text-[12px] font-semibold text-[var(--color-ink)] truncate leading-snug">
           {name}
+          {isPrimary ? (
+            <span className="ml-1.5 text-[9px] font-normal text-[var(--color-tag-quality-text)] tracking-wider">
+              primair
+            </span>
+          ) : null}
         </div>
-        <div className="text-[10px] text-[var(--color-muted)] truncate">
+        <div className="text-[10px] text-[var(--color-muted)] truncate leading-snug">
           {role}
         </div>
       </div>
-      {isPrimary ? (
-        <span className="text-[9px] text-[var(--color-tag-quality-text)] tracking-wider">
-          primair
-        </span>
+      {onEdit ? (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="absolute right-0 top-1/2 -translate-y-1/2 p-1 rounded-[4px] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
+          aria-label="Bewerk contact"
+        >
+          <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
+        </button>
       ) : null}
     </div>
   );
@@ -442,10 +456,11 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
 // Main component
 // ─────────────────────────────────────────────────────────────────────
 
-const FEED_TABS: { id: 'ALL' | EventType; label: string }[] = [
+const ALL_FEED_TABS: { id: 'ALL' | EventType; label: string }[] = [
   { id: 'ALL', label: 'Alles' },
-  { id: 'EVIDENCE', label: 'Evidence' },
   { id: 'RUN', label: 'Runs' },
+  { id: 'ENRICH', label: 'Enrichment' },
+  { id: 'QUALITY', label: 'Kwaliteit' },
   { id: 'OUTREACH', label: 'Outreach' },
   { id: 'QUOTE', label: 'Offertes' },
 ];
@@ -454,9 +469,40 @@ export default function ProspectDetail() {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const previewVariant = searchParams.get('preview');
+  const isPreviewMode = previewVariant === 'B' || previewVariant === 'C';
+
+  const utils = api.useUtils();
 
   const prospectQuery = api.admin.getProspect.useQuery({ id });
   const runsQuery = api.research.listRuns.useQuery({ prospectId: id });
+
+  const activeRun = api.research.getActiveStatusByProspectId.useQuery(
+    { prospectId: id },
+    {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      refetchInterval: (q: any) => (q.state.data?.isActive ? 5000 : false),
+      refetchOnWindowFocus: true,
+    },
+  );
+
+  const refetchProspect = prospectQuery.refetch;
+  const refetchRuns = runsQuery.refetch;
+  const wasActiveRef = useRef(false);
+  useEffect(() => {
+    const isActive = activeRun.data?.isActive ?? false;
+    if (isActive) {
+      wasActiveRef.current = true;
+      return;
+    }
+    if (wasActiveRef.current) {
+      wasActiveRef.current = false;
+      void refetchProspect();
+      void refetchRuns();
+    }
+  }, [activeRun.data?.isActive, refetchProspect, refetchRuns]);
+
   const enrichMut = api.admin.enrichProspect.useMutation({
     onSuccess: () => {
       void prospectQuery.refetch();
@@ -465,9 +511,21 @@ export default function ProspectDetail() {
   const runResearchMut = api.admin.runResearchRun.useMutation({
     onSuccess: () => {
       void runsQuery.refetch();
+      void utils.research.getActiveStatusByProspectId.invalidate({
+        prospectId: id,
+      });
     },
   });
   const runAnalysisMut = api.admin.runMasterAnalysis.useMutation({
+    onSuccess: () => {
+      void prospectQuery.refetch();
+      void utils.research.getActiveStatusByProspectId.invalidate({
+        prospectId: id,
+      });
+    },
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateProspectMut = (api.admin.updateProspect as any).useMutation({
     onSuccess: () => {
       void prospectQuery.refetch();
     },
@@ -486,10 +544,115 @@ export default function ProspectDetail() {
   const [copied, setCopied] = useState(false);
   const [feedFilter, setFeedFilter] = useState<'ALL' | EventType>('ALL');
 
+  // Contact add modal state
+  const [showAddContact, setShowAddContact] = useState(false);
+  const [newContact, setNewContact] = useState({
+    firstName: '',
+    lastName: '',
+    primaryEmail: '',
+    jobTitle: '',
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const createContactMut = (api.contacts.create as any).useMutation({
+    onSuccess: () => {
+      void prospectQuery.refetch();
+      setShowAddContact(false);
+      setNewContact({
+        firstName: '',
+        lastName: '',
+        primaryEmail: '',
+        jobTitle: '',
+      });
+    },
+  });
+  const submitContact = () => {
+    if (!newContact.firstName || !newContact.lastName) return;
+    createContactMut.mutate({
+      prospectId: id,
+      firstName: newContact.firstName,
+      lastName: newContact.lastName,
+      primaryEmail: newContact.primaryEmail || undefined,
+      jobTitle: newContact.jobTitle || undefined,
+    });
+  };
+
+  // Contact edit modal state
+  const [editingContact, setEditingContact] = useState<{
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    primaryEmail: string | null;
+    jobTitle: string | null;
+  } | null>(null);
+  const [editForm, setEditForm] = useState({
+    firstName: '',
+    lastName: '',
+    primaryEmail: '',
+    jobTitle: '',
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateContactMut = (api.contacts.update as any).useMutation({
+    onSuccess: () => {
+      void prospectQuery.refetch();
+      setEditingContact(null);
+    },
+  });
+  const startEdit = (c: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    primaryEmail: string | null;
+    jobTitle: string | null;
+  }) => {
+    setEditingContact(c);
+    setEditForm({
+      firstName: c.firstName ?? '',
+      lastName: c.lastName ?? '',
+      primaryEmail: c.primaryEmail ?? '',
+      jobTitle: c.jobTitle ?? '',
+    });
+  };
+  const saveEdit = () => {
+    if (!editingContact) return;
+    updateContactMut.mutate({
+      id: editingContact.id,
+      firstName: editForm.firstName || undefined,
+      lastName: editForm.lastName || undefined,
+      primaryEmail: editForm.primaryEmail || null,
+      jobTitle: editForm.jobTitle || null,
+    });
+  };
+
+  // Voorstel routing modal state
+  const [showVoorstelModal, setShowVoorstelModal] = useState(false);
+  // Draft values for the voorstel modal (so we only persist on Save)
+  const [draftMode, setDraftMode] = useState<'STANDARD' | 'BESPOKE'>(
+    'STANDARD',
+  );
+  const [draftUrl, setDraftUrl] = useState<string>('');
+
+  // Offertes for this prospect
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const quotesQuery = (api.quotes.list as any).useQuery({ prospectId: id });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const quotes: any[] = quotesQuery.data ?? [];
+
   // TODO: tRPC v11 inference — getProspect return type too deep for TS to infer.
   // Cast through unknown to avoid TS2589 excessively deep instantiation.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const p = prospectQuery.data as any as ProspectShape | null;
+
+  // Local state for voorstel routing — initialised from prospect data once loaded
+  const [voorstelMode, setVoorstelMode] = useState<'STANDARD' | 'BESPOKE'>(
+    'STANDARD',
+  );
+  const [bespokeUrl, setBespokeUrl] = useState<string | null>(null);
+  // Sync local state when prospect data arrives (handles initial load + refetch)
+  useEffect(() => {
+    if (!p) return;
+    setVoorstelMode(p.voorstelMode ?? 'STANDARD');
+    setBespokeUrl(p.bespokeUrl ?? null);
+  }, [p?.voorstelMode, p?.bespokeUrl]); // eslint-disable-line react-hooks/exhaustive-deps
   const runs = runsQuery.data as ResearchRunRow[] | undefined;
   const latestRun = runs?.[0] ?? null;
 
@@ -504,6 +667,19 @@ export default function ProspectDetail() {
         ? events
         : events.filter((e) => e.type === feedFilter),
     [events, feedFilter],
+  );
+
+  // Only show tabs that have at least one event (ALL always visible)
+  const eventTypes = useMemo(
+    () => new Set(events.map((e) => e.type)),
+    [events],
+  );
+  const feedTabs = useMemo(
+    () =>
+      ALL_FEED_TABS.filter(
+        (tab) => tab.id === 'ALL' || eventTypes.has(tab.id as EventType),
+      ),
+    [eventTypes],
   );
 
   // Capture "now" once at mount — stable across renders.
@@ -522,16 +698,31 @@ export default function ProspectDetail() {
 
   const onCopyLink = () => {
     if (!p) return;
-    const url = `${window.location.origin}${buildDiscoverPath({
-      slug: p.slug,
-      readableSlug: p.readableSlug ?? null,
-      companyName: p.companyName ?? null,
-      domain: p.domain ?? null,
-    })}`;
+    const url =
+      voorstelMode === 'BESPOKE' && p.readableSlug
+        ? `${window.location.origin}/voorstel/${p.readableSlug}`
+        : `${window.location.origin}${buildDiscoverPath({
+            slug: p.slug,
+            readableSlug: p.readableSlug ?? null,
+            companyName: p.companyName ?? null,
+            domain: p.domain ?? null,
+          })}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const pitchHref =
+    voorstelMode === 'BESPOKE' && p
+      ? `/voorstel/${p.readableSlug ?? p.slug}`
+      : p
+        ? buildDiscoverPath({
+            slug: p.slug,
+            readableSlug: p.readableSlug ?? null,
+            companyName: p.companyName ?? null,
+            domain: p.domain ?? null,
+          })
+        : '#';
 
   if (prospectQuery.isLoading) {
     return (
@@ -563,7 +754,8 @@ export default function ProspectDetail() {
   // the signal surfaced on this page. Score itself comes from evidence items
   // (aggregated in a future admin.getProspectActivity procedure).
   const qualityApproved = latestRun?.qualityApproved === true;
-  const evidenceCount = latestRun?._count?.evidenceItems ?? 0;
+  // Single source of truth: DB count on prospect, not derived from runs
+  const evidenceCount = p._count?.evidenceItems ?? 0;
 
   const displayName = p.companyName ?? p.domain ?? 'Prospect';
   const location = [p.city, p.country].filter(Boolean).join(', ') || null;
@@ -597,6 +789,19 @@ export default function ProspectDetail() {
       <header className="grid grid-cols-[1fr_auto] gap-10 items-end pb-5 mb-5">
         <div>
           <HeroName name={displayName} />
+          <div className="mt-3">
+            <span
+              className={
+                voorstelMode === 'BESPOKE'
+                  ? 'inline-flex items-center gap-1 rounded-full border border-[var(--color-gold-hi)] px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-gold-hi)]'
+                  : 'inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[var(--color-muted)]'
+              }
+            >
+              {voorstelMode === 'BESPOKE'
+                ? 'Warm · Bespoke'
+                : 'Koud · Standaard'}
+            </span>
+          </div>
           {p.description ? (
             <p className="mt-5 text-[15px] font-light leading-[1.55] text-[var(--color-muted-dark)]">
               {p.description}
@@ -615,23 +820,34 @@ export default function ProspectDetail() {
           )}
         </div>
         <div className="flex flex-col gap-2">
-          <HeroBtn
-            variant="paper"
-            onClick={onCopyLink}
-            title="Kopieer link naar /discover"
-          >
-            {copied ? (
-              <>
-                <Check className="h-3.5 w-3.5" strokeWidth={1.75} />
-                Gekopieerd
-              </>
-            ) : (
-              <>
-                <Copy className="h-3.5 w-3.5" strokeWidth={1.75} />
-                Kopieer voorstel-link
-              </>
-            )}
-          </HeroBtn>
+          <div className="flex gap-2">
+            <HeroBtn
+              variant="paper"
+              onClick={onCopyLink}
+              title="Kopieer pitch-link"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  Gekopieerd
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  Kopieer pitch-link
+                </>
+              )}
+            </HeroBtn>
+            <a
+              href={pitchHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-[6px] border px-4 py-2.5 text-[13px] font-medium leading-none transition-colors cursor-pointer bg-[var(--color-surface)] border-[var(--color-border-strong)] text-[var(--color-ink)] hover:border-[var(--color-ink)]"
+            >
+              <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.75} />
+              Bekijk pitch
+            </a>
+          </div>
           <HeroBtn
             variant="gold"
             onClick={() => {
@@ -653,7 +869,7 @@ export default function ProspectDetail() {
             }}
             disabled={createQuoteMut.isPending}
           >
-            {createQuoteMut.isPending ? 'Aanmaken...' : 'Start voorstel'}
+            {createQuoteMut.isPending ? 'Aanmaken...' : 'Nieuwe offerte'}
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.75} />
           </HeroBtn>
         </div>
@@ -719,187 +935,485 @@ export default function ProspectDetail() {
         />
       </section>
 
-      {/* Main grid: facts · activity · actions */}
-      <div className="grid grid-cols-[260px_minmax(0,1fr)_240px] gap-10">
-        {/* Left: facts */}
-        <aside className="space-y-2">
-          <Eyebrow>Feiten</Eyebrow>
-          <dl className="space-y-2 pt-1">
-            {p.domain ? (
-              <FactsRow k="Domein">
-                <a
-                  href={`https://${p.domain}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 border-b border-[var(--color-border-strong)] hover:border-[var(--color-ink)]"
-                >
-                  {p.domain}
-                  <ExternalLink className="h-2.5 w-2.5" strokeWidth={2} />
-                </a>
-              </FactsRow>
-            ) : null}
-            {p.industry ? (
-              <FactsRow k="Industrie">
-                {p.industry}
-                {p.subIndustry ? ` / ${p.subIndustry}` : ''}
-              </FactsRow>
-            ) : null}
-            {location ? <FactsRow k="Locatie">{location}</FactsRow> : null}
-            {employees ? <FactsRow k="Team">{employees}</FactsRow> : null}
-            {p.foundedYear ? (
-              <FactsRow k="Opgericht">{p.foundedYear}</FactsRow>
-            ) : null}
-            {p.linkedinUrl ? (
-              <FactsRow k="LinkedIn">
-                <a
-                  href={p.linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 border-b border-[var(--color-border-strong)] hover:border-[var(--color-ink)]"
-                >
-                  Bekijk
-                  <ExternalLink className="h-2.5 w-2.5" strokeWidth={2} />
-                </a>
-              </FactsRow>
-            ) : null}
-            {p.lastEnrichedAt ? (
-              <FactsRow k="Verrijkt">
-                {new Date(p.lastEnrichedAt).toLocaleDateString('nl-NL')}
-              </FactsRow>
-            ) : null}
-          </dl>
-
-          {/* Dossier quick links — stand-in for sub-routes */}
-          <div className="pt-8">
-            <Eyebrow>Dossier</Eyebrow>
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <DossierLink
-                href={`/admin/prospects/${id}/evidence`}
-                label="Evidence"
-                count={evidenceCount}
-              />
-              <DossierLink
-                href={`/admin/prospects/${id}/analyse`}
-                label="Analyse"
-              />
-              <DossierLink
-                href={`/admin/prospects/${id}/outreach`}
-                label="Outreach"
-              />
-              <DossierLink
-                href={`/admin/prospects/${id}/resultaten`}
-                label="Resultaten"
-              />
-            </div>
-          </div>
-        </aside>
-
-        {/* Center: activity */}
-        <main>
-          <Eyebrow className="mb-4">Activiteit</Eyebrow>
-          <div className="flex gap-1.5 mb-5">
-            {FEED_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setFeedFilter(tab.id)}
-                className={cn(
-                  'px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded border transition-all',
-                  feedFilter === tab.id
-                    ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
-                    : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          {visibleEvents.length === 0 ? (
-            <p className="py-12 text-center text-[13px] text-[var(--color-muted)]">
-              Geen events{' '}
-              {feedFilter !== 'ALL' ? `in filter "${feedFilter}"` : 'nog'}.
-            </p>
+      {/* Main grid: facts · activity · actions — replaced by loading state during active run */}
+      {isPreviewMode ? (
+        <div className="py-12">
+          {previewVariant === 'B' ? (
+            <ProspectDetailLoadingB currentStatus="CRAWLING" />
           ) : (
-            <div>
-              {visibleEvents.map((event) => (
-                <ActivityRow key={event.id} event={event} />
-              ))}
-            </div>
+            <ProspectDetailLoadingC currentStatus="CRAWLING" />
           )}
-        </main>
+        </div>
+      ) : activeRun.data?.isActive ? (
+        <div className="py-12">
+          <RerunLoadingScreen
+            variant="inline"
+            currentStep={activeRun.data.currentStep}
+            currentStatus={activeRun.data.status}
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-[260px_minmax(0,1fr)_240px] gap-10">
+          {/* Left: facts + contacts + dossier */}
+          <aside className="space-y-2">
+            <Eyebrow>Bedrijf</Eyebrow>
+            <dl className="space-y-2 pt-1">
+              {p.domain ? (
+                <FactsRow k="Domein">
+                  <a
+                    href={`https://${p.domain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 border-b border-[var(--color-border-strong)] hover:border-[var(--color-ink)]"
+                  >
+                    {p.domain}
+                    <ExternalLink className="h-2.5 w-2.5" strokeWidth={2} />
+                  </a>
+                </FactsRow>
+              ) : null}
+              {p.industry ? (
+                <FactsRow k="Industrie">
+                  {p.industry}
+                  {p.subIndustry ? ` / ${p.subIndustry}` : ''}
+                </FactsRow>
+              ) : null}
+              {location ? <FactsRow k="Locatie">{location}</FactsRow> : null}
+              {employees ? <FactsRow k="Team">{employees}</FactsRow> : null}
+              {p.foundedYear ? (
+                <FactsRow k="Opgericht">{p.foundedYear}</FactsRow>
+              ) : null}
+              {p.linkedinUrl ? (
+                <FactsRow k="LinkedIn">
+                  <a
+                    href={p.linkedinUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 border-b border-[var(--color-border-strong)] hover:border-[var(--color-ink)]"
+                  >
+                    Bekijk
+                    <ExternalLink className="h-2.5 w-2.5" strokeWidth={2} />
+                  </a>
+                </FactsRow>
+              ) : null}
+              {p.lastEnrichedAt ? (
+                <FactsRow k="Verrijkt">
+                  {new Date(p.lastEnrichedAt).toLocaleDateString('nl-NL')}
+                </FactsRow>
+              ) : null}
+            </dl>
 
-        {/* Right: actions + contacts */}
-        <aside className="space-y-8">
-          <div className="space-y-2.5">
-            <Eyebrow>Acties</Eyebrow>
-            <div className="space-y-1.5 pt-1">
-              <ActionRow
-                icon={RefreshCw}
-                label="Re-enrich"
-                onClick={() => enrichMut.mutate({ id })}
-              />
-              <ActionRow
-                icon={Play}
-                label="Nieuwe run"
-                kbd="⌘R"
-                onClick={() => runResearchMut.mutate({ id })}
-              />
-              <ActionRow
-                icon={PenLine}
-                label="Genereer analyse"
-                onClick={() => runAnalysisMut.mutate({ id })}
-              />
-              <ActionRow
-                icon={Send}
-                label="Start outreach"
-                kbd="⌘↵"
-                variant="gold"
-                onClick={() => router.push(`/admin/prospects/${id}/outreach`)}
-              />
-            </div>
-          </div>
+            {/* Contacts */}
+            <div className="pt-8 space-y-2.5">
+              <div className="flex items-baseline justify-between">
+                <Eyebrow className="flex-1">
+                  Contacts · {p.contacts?.length ?? 0}
+                </Eyebrow>
+                <button
+                  type="button"
+                  onClick={() => setShowAddContact(true)}
+                  className="ml-3 text-[11px] font-medium text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors whitespace-nowrap"
+                >
+                  + Nieuwe
+                </button>
+              </div>
 
-          <div className="space-y-2.5">
-            <Eyebrow>Contacts · {p.contacts?.length ?? 0}</Eyebrow>
-            <div className="space-y-0.5 pt-1">
-              {(p.contacts ?? []).slice(0, 5).map((c, i) => {
-                const name = [c.firstName, c.lastName]
-                  .filter(Boolean)
-                  .join(' ');
-                const initials = name
-                  .split(/\s+/)
-                  .map((s) => s[0])
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .join('')
-                  .toUpperCase();
-                const accents = [
-                  undefined,
-                  '#3d5f82',
-                  '#4a7a52',
-                  '#6e4780',
-                  '#b45a3b',
-                ];
-                return (
-                  <ContactRow
-                    key={c.id}
-                    initials={initials || '??'}
-                    name={name || c.primaryEmail || 'Onbekend'}
-                    role={c.jobTitle ?? '—'}
-                    isPrimary={i === 0}
-                    accent={accents[i % accents.length]}
-                  />
-                );
-              })}
-              {(p.contacts?.length ?? 0) === 0 ? (
+              {/* Existing contacts */}
+              {(p.contacts?.length ?? 0) > 0 ? (
+                <div className="space-y-1.5 pt-1">
+                  {(p.contacts ?? []).slice(0, 5).map((c, i) => {
+                    const name = [c.firstName, c.lastName]
+                      .filter(Boolean)
+                      .join(' ');
+                    const initials = name
+                      .split(/\s+/)
+                      .map((s) => s[0])
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .join('')
+                      .toUpperCase();
+                    const accents = [
+                      undefined,
+                      '#3d5f82',
+                      '#4a7a52',
+                      '#6e4780',
+                      '#b45a3b',
+                    ];
+
+                    return (
+                      <ContactRow
+                        key={c.id}
+                        initials={initials || '??'}
+                        name={name || c.primaryEmail || 'Onbekend'}
+                        role={c.jobTitle ?? '—'}
+                        isPrimary={i === 0}
+                        accent={accents[i % accents.length]}
+                        onEdit={() => startEdit(c)}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
                 <p className="text-[12px] text-[var(--color-muted)] px-2.5 py-2">
                   Nog geen contacts.
                 </p>
-              ) : null}
+              )}
             </div>
+
+            {/* Dossier quick links — stand-in for sub-routes */}
+            <div className="pt-8">
+              <Eyebrow>Dossier</Eyebrow>
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <DossierLink
+                  href={`/admin/prospects/${id}/evidence`}
+                  label="Evidence"
+                  count={evidenceCount}
+                />
+                <DossierLink
+                  href={`/admin/prospects/${id}/analyse`}
+                  label="Analyse"
+                />
+                <DossierLink
+                  href={`/admin/prospects/${id}/outreach`}
+                  label="Outreach"
+                  disabled
+                />
+                <DossierLink
+                  href={`/admin/prospects/${id}/resultaten`}
+                  label="Resultaten"
+                  disabled
+                />
+              </div>
+            </div>
+          </aside>
+
+          {/* Center: activity */}
+          <main>
+            <Eyebrow className="mb-4">Activiteit</Eyebrow>
+            <div className="flex gap-1.5 mb-5">
+              {feedTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setFeedFilter(tab.id)}
+                  className={cn(
+                    'px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded border transition-all',
+                    feedFilter === tab.id
+                      ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                      : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {visibleEvents.length === 0 ? (
+              <p className="py-12 text-center text-[13px] text-[var(--color-muted)]">
+                Geen events{' '}
+                {feedFilter !== 'ALL' ? `in filter "${feedFilter}"` : 'nog'}.
+              </p>
+            ) : (
+              <div>
+                {visibleEvents.map((event) => (
+                  <ActivityRow key={event.id} event={event} />
+                ))}
+              </div>
+            )}
+          </main>
+
+          {/* Right: actions + offertes + voorstel routing */}
+          <aside className="space-y-8">
+            <div className="space-y-2.5">
+              <Eyebrow>Acties</Eyebrow>
+              <div className="space-y-1.5 pt-1">
+                <ActionRow
+                  icon={RefreshCw}
+                  label="Re-enrich"
+                  onClick={() => enrichMut.mutate({ id })}
+                />
+                <ActionRow
+                  icon={Play}
+                  label="Nieuwe run"
+                  kbd="⌘R"
+                  onClick={() => runResearchMut.mutate({ id })}
+                />
+                <ActionRow
+                  icon={PenLine}
+                  label="Genereer analyse"
+                  onClick={() => runAnalysisMut.mutate({ id })}
+                />
+                <ActionRow
+                  icon={Send}
+                  label="Start outreach"
+                  kbd="⌘↵"
+                  variant="gold"
+                  onClick={() => router.push(`/admin/prospects/${id}/outreach`)}
+                />
+              </div>
+            </div>
+
+            {/* Offertes */}
+            <div className="space-y-2.5">
+              <Eyebrow>Offertes · {quotes.length}</Eyebrow>
+              {quotes.length > 0 ? (
+                <ul className="space-y-1 pt-1">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {quotes.map((q: any) => (
+                    <li key={q.id}>
+                      <Link
+                        href={`/admin/quotes/${q.slug}`}
+                        className="block hover:bg-[var(--color-surface-hover)] rounded-[6px] px-2.5 py-2 -mx-2.5 transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-[12px] text-[var(--color-ink)] leading-none flex items-center gap-1.5">
+                            {q.nummer}
+                            {q.isActiveProposal && (
+                              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-gold-hi)]" />
+                            )}
+                          </span>
+                          <QuoteStatusChip status={q.status} />
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[12px] text-[var(--color-muted)] px-2.5 py-2">
+                  Nog geen offertes. Klik &quot;Nieuwe offerte&quot; bovenin om
+                  er een aan te maken.
+                </p>
+              )}
+            </div>
+
+            {/* Offerte routing */}
+            <div className="space-y-2.5">
+              <Eyebrow>Offerte routing</Eyebrow>
+              <ActionRow
+                icon={ExternalLink}
+                label={voorstelMode === 'BESPOKE' ? 'Bespoke' : 'Standaard'}
+                variant={voorstelMode === 'BESPOKE' ? 'gold' : 'paper'}
+                onClick={() => {
+                  setDraftMode(voorstelMode);
+                  setDraftUrl(bespokeUrl ?? '');
+                  setShowVoorstelModal(true);
+                }}
+              />
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* ── Add Contact Modal ── */}
+      <Popup
+        isOpen={showAddContact}
+        onClose={() => setShowAddContact(false)}
+        title="Nieuw contact"
+        eyebrow="Contact"
+      >
+        <div className="space-y-2.5">
+          <input
+            type="text"
+            placeholder="Voornaam"
+            value={newContact.firstName}
+            onChange={(e) =>
+              setNewContact({ ...newContact, firstName: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+            autoFocus
+          />
+          <input
+            type="text"
+            placeholder="Achternaam"
+            value={newContact.lastName}
+            onChange={(e) =>
+              setNewContact({ ...newContact, lastName: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+          />
+          <input
+            type="email"
+            placeholder="email@bedrijf.nl"
+            value={newContact.primaryEmail}
+            onChange={(e) =>
+              setNewContact({ ...newContact, primaryEmail: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+          />
+          <input
+            type="text"
+            placeholder="Functie (optioneel)"
+            value={newContact.jobTitle}
+            onChange={(e) =>
+              setNewContact({ ...newContact, jobTitle: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+          />
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button
+            type="button"
+            onClick={submitContact}
+            disabled={
+              !newContact.firstName ||
+              !newContact.lastName ||
+              createContactMut.isPending
+            }
+            className="flex-1 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] bg-[var(--color-ink)] text-white border border-[var(--color-ink)] hover:opacity-90 transition-opacity disabled:opacity-40"
+          >
+            {createContactMut.isPending ? 'Even geduld…' : 'Toevoegen'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowAddContact(false)}
+            className="flex-1 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] border border-[var(--color-border)] text-[var(--color-muted-dark)] hover:border-[var(--color-ink)] transition-colors"
+          >
+            Annuleer
+          </button>
+        </div>
+      </Popup>
+
+      {/* ── Edit Contact Modal ── */}
+      <Popup
+        isOpen={!!editingContact}
+        onClose={() => setEditingContact(null)}
+        title="Contact bewerken"
+        eyebrow="Contact"
+      >
+        <div className="space-y-2.5">
+          <input
+            type="text"
+            placeholder="Voornaam"
+            value={editForm.firstName}
+            onChange={(e) =>
+              setEditForm({ ...editForm, firstName: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+            autoFocus
+          />
+          <input
+            type="text"
+            placeholder="Achternaam"
+            value={editForm.lastName}
+            onChange={(e) =>
+              setEditForm({ ...editForm, lastName: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+          />
+          <input
+            type="email"
+            placeholder="email@bedrijf.nl"
+            value={editForm.primaryEmail}
+            onChange={(e) =>
+              setEditForm({ ...editForm, primaryEmail: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+          />
+          <input
+            type="text"
+            placeholder="Functie (optioneel)"
+            value={editForm.jobTitle}
+            onChange={(e) =>
+              setEditForm({ ...editForm, jobTitle: e.target.value })
+            }
+            className="input-minimal w-full text-[13px]"
+          />
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button
+            type="button"
+            onClick={saveEdit}
+            disabled={
+              !editForm.firstName ||
+              !editForm.lastName ||
+              updateContactMut.isPending
+            }
+            className="flex-1 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] bg-[var(--color-ink)] text-white border border-[var(--color-ink)] hover:opacity-90 transition-opacity disabled:opacity-40"
+          >
+            {updateContactMut.isPending ? 'Even geduld…' : 'Opslaan'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditingContact(null)}
+            className="flex-1 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] border border-[var(--color-border)] text-[var(--color-muted-dark)] hover:border-[var(--color-ink)] transition-colors"
+          >
+            Annuleer
+          </button>
+        </div>
+      </Popup>
+
+      {/* ── Offerte Routing Modal ── */}
+      <Popup
+        isOpen={showVoorstelModal}
+        onClose={() => setShowVoorstelModal(false)}
+        title="Offerte routing"
+        eyebrow="Instellingen"
+      >
+        <div className="space-y-4">
+          {/* Mode toggle */}
+          <div className="grid grid-cols-2 border border-[var(--color-border)] rounded-md overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setDraftMode('STANDARD')}
+              className={
+                draftMode === 'STANDARD'
+                  ? 'bg-[var(--color-ink)] text-white py-2.5 px-3 text-[13px] font-medium transition-colors'
+                  : 'bg-transparent text-[var(--color-muted)] py-2.5 px-3 text-[13px] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors'
+              }
+            >
+              Standaard
+            </button>
+            <button
+              type="button"
+              onClick={() => setDraftMode('BESPOKE')}
+              className={
+                draftMode === 'BESPOKE'
+                  ? 'bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] py-2.5 px-3 text-[13px] font-medium transition-colors'
+                  : 'bg-transparent text-[var(--color-muted)] py-2.5 px-3 text-[13px] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)] transition-colors'
+              }
+            >
+              Bespoke
+            </button>
           </div>
-        </aside>
-      </div>
+
+          {/* Bespoke URL — only when BESPOKE */}
+          {draftMode === 'BESPOKE' && (
+            <input
+              type="url"
+              value={draftUrl}
+              onChange={(e) => setDraftUrl(e.target.value)}
+              placeholder="https://maintix-design.vercel.app"
+              className="input-minimal w-full text-[13px]"
+              autoFocus
+            />
+          )}
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            type="button"
+            onClick={() => {
+              setVoorstelMode(draftMode);
+              setBespokeUrl(draftUrl || null);
+              updateProspectMut.mutate({
+                id,
+                voorstelMode: draftMode,
+                bespokeUrl: draftMode === 'BESPOKE' ? draftUrl || null : null,
+              });
+              setShowVoorstelModal(false);
+            }}
+            disabled={updateProspectMut.isPending}
+            className="flex-1 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] bg-[var(--color-ink)] text-white border border-[var(--color-ink)] hover:opacity-90 transition-opacity disabled:opacity-40"
+          >
+            {updateProspectMut.isPending ? 'Even geduld…' : 'Opslaan'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowVoorstelModal(false)}
+            className="flex-1 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] border border-[var(--color-border)] text-[var(--color-muted-dark)] hover:border-[var(--color-ink)] transition-colors"
+          >
+            Annuleer
+          </button>
+        </div>
+      </Popup>
     </div>
   );
 }
@@ -921,15 +1435,52 @@ function FactsRow({ k, children }: { k: string; children: React.ReactNode }) {
   );
 }
 
+function QuoteStatusChip({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    DRAFT: 'bg-[var(--color-surface-2)] text-[var(--color-muted)]',
+    SENT: 'bg-[#e4c33c1a] text-[var(--color-gold-hi)]',
+    VIEWED: 'bg-blue-50 text-blue-700',
+    ACCEPTED: 'bg-emerald-50 text-emerald-700',
+    REJECTED: 'bg-red-50 text-red-700',
+    EXPIRED: 'bg-[var(--color-surface-2)] text-[var(--color-muted)]',
+    ARCHIVED: 'bg-[var(--color-surface-2)] text-[var(--color-muted)]',
+  };
+  const cls = styles[status] ?? styles.DRAFT;
+  return (
+    <span
+      className={cn(
+        'text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded',
+        cls,
+      )}
+    >
+      {status}
+    </span>
+  );
+}
+
 function DossierLink({
   href,
   label,
   count,
+  disabled,
 }: {
   href: string;
   label: string;
   count?: number;
+  disabled?: boolean;
 }) {
+  if (disabled) {
+    return (
+      <div className="flex flex-col gap-1 p-3 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface)] opacity-40 cursor-not-allowed">
+        <span className="text-[12px] font-semibold text-[var(--color-muted)]">
+          {label}
+        </span>
+        <span className="text-[10px] text-[var(--color-muted)]">
+          binnenkort
+        </span>
+      </div>
+    );
+  }
   return (
     <Link
       href={href}

@@ -91,27 +91,29 @@ const atlantisCampaignBlueprints: Array<{
   },
 ];
 
-const atlantisCampaignSeeds = atlantisCampaignBlueprints.flatMap((blueprint) => {
-  const spv = atlantisSpvs.find((item) => item.slug === blueprint.spvSlug);
-  if (!spv) return [];
+const atlantisCampaignSeeds = atlantisCampaignBlueprints.flatMap(
+  (blueprint) => {
+    const spv = atlantisSpvs.find((item) => item.slug === blueprint.spvSlug);
+    if (!spv) return [];
 
-  return blueprint.countryCodes.map((countryCode, index) => {
-    const isPrimary = index === 0;
-    return {
-      slug: isPrimary
-        ? `atlantis-${spv.slug}-partnership`
-        : `atlantis-${spv.slug}-${countryCode.toLowerCase()}-partnership`,
-      name: `${spv.name} | ${blueprint.sector} | ${countryCode} | 51-100 medewerkers`,
-      nicheKey: isPrimary
-        ? `atlantis_${spv.slug}_partnership`
-        : `atlantis_${spv.slug}_${countryCode.toLowerCase()}_partnership`,
-      language: 'en',
-      tone: 'Strategic and board-ready partnership outreach',
-      strictGate: true,
-      isActive: true,
-    };
-  });
-});
+    return blueprint.countryCodes.map((countryCode, index) => {
+      const isPrimary = index === 0;
+      return {
+        slug: isPrimary
+          ? `atlantis-${spv.slug}-partnership`
+          : `atlantis-${spv.slug}-${countryCode.toLowerCase()}-partnership`,
+        name: `${spv.name} | ${blueprint.sector} | ${countryCode} | 51-100 medewerkers`,
+        nicheKey: isPrimary
+          ? `atlantis_${spv.slug}_partnership`
+          : `atlantis_${spv.slug}_${countryCode.toLowerCase()}_partnership`,
+        language: 'en',
+        tone: 'Strategic and board-ready partnership outreach',
+        strictGate: true,
+        isActive: true,
+      };
+    });
+  },
+);
 
 const templates = [
   {
@@ -761,9 +763,19 @@ const templates = [
 ];
 
 async function main() {
-  console.log('Seeding projects...');
+  // Gate Atlantis seeding behind env flag — production runs Klarifai-only.
+  // Set SEED_ATLANTIS=true to include Atlantis project + SPVs + campaigns.
+  const seedAtlantis = process.env.SEED_ATLANTIS === 'true';
 
-  for (const project of projects) {
+  console.log(
+    `Seeding projects... (Atlantis: ${seedAtlantis ? 'INCLUDED' : 'SKIPPED — set SEED_ATLANTIS=true to include'})`,
+  );
+
+  const projectsToSeed = seedAtlantis
+    ? projects
+    : projects.filter((p) => p.projectType !== 'ATLANTIS');
+
+  for (const project of projectsToSeed) {
     await prisma.project.upsert({
       where: { slug: project.slug },
       update: {
@@ -783,6 +795,42 @@ async function main() {
       },
     });
     console.log(`  Seeded project: ${project.slug}`);
+  }
+
+  if (!seedAtlantis) {
+    console.log('Seeding industry templates...');
+    for (const template of templates) {
+      await prisma.industryTemplate.upsert({
+        where: {
+          industry_subIndustry: {
+            industry: template.industry,
+            subIndustry: template.subIndustry ?? '',
+          },
+        },
+        update: {
+          displayName: template.displayName,
+          icon: template.icon,
+          colorAccent: template.colorAccent,
+          dataOpportunityPrompts: template.dataOpportunityPrompts,
+          automationPrompts: template.automationPrompts,
+          successStoryTemplates: template.successStoryTemplates,
+          roadmapTemplates: template.roadmapTemplates,
+        },
+        create: {
+          industry: template.industry,
+          subIndustry: template.subIndustry,
+          displayName: template.displayName,
+          icon: template.icon,
+          colorAccent: template.colorAccent,
+          dataOpportunityPrompts: template.dataOpportunityPrompts,
+          automationPrompts: template.automationPrompts,
+          successStoryTemplates: template.successStoryTemplates,
+          roadmapTemplates: template.roadmapTemplates,
+        },
+      });
+    }
+    console.log(`Done! Seeded ${templates.length} industry templates.`);
+    return;
   }
 
   const atlantisProject = await prisma.project.findUniqueOrThrow({

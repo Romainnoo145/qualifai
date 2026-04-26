@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import { BrochureCover } from '@/components/features/offerte/brochure-cover';
 import { prettifyDomainToName } from '@/lib/enrichment/company-name';
+import type { PaymentInstallment } from '@/lib/quote-defaults';
 
 export default async function OffertePage({
   params,
@@ -34,6 +35,7 @@ export default async function OffertePage({
     include: {
       lines: { orderBy: { position: 'asc' } },
     },
+    // paymentSchedule is a Json? column — selected implicitly via include
   });
 
   // Display name priority:
@@ -49,6 +51,7 @@ export default async function OffertePage({
 
   return (
     <BrochureCover
+      mode="offerte"
       slug={slug}
       prospect={{
         id: prospect.id,
@@ -65,6 +68,9 @@ export default async function OffertePage({
               introductie: activeQuote.introductie ?? null,
               uitdaging: activeQuote.uitdaging ?? null,
               aanpak: activeQuote.aanpak ?? null,
+              paymentSchedule: Array.isArray(activeQuote.paymentSchedule)
+                ? (activeQuote.paymentSchedule as PaymentInstallment[])
+                : null,
               lines: activeQuote.lines.map((l) => ({
                 fase: l.fase,
                 omschrijving: l.omschrijving ?? '',

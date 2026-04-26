@@ -1,0 +1,150 @@
+{
+  "capturedAt": "2026-04-21T17:58:16.817Z",
+  "prospect": {
+    "slug": "_JHTy2L6",
+    "readableSlug": "marfa",
+    "companyName": "Marfa",
+    "domain": "marfa.nl"
+  },
+  "analysis": {
+    "id": "cmo8x51l0001baww2wsnz7p9r",
+    "version": "analysis-v2",
+    "createdAt": "2026-04-21T17:49:38.244Z",
+    "modelUsed": "gemini-2.5-pro",
+    "content": {
+      "version": "analysis-v2",
+      "sections": [
+        {
+          "id": "kosten-handmatige-processen",
+          "body": "Marfa investeert significant in het werven en onderhouden van administratief personeel. Vacatures voor functies als 'administratief medewerker', 'facturatie medewerker' en 'office manager' verschijnen met regelmaat, met salarisindicaties die oplopen tot boven de € 3.500 per maand. Deze directe personeelskosten vormen slechts het topje van de ijsberg. De indirecte kosten – zoals wervingstijd, inwerkperiodes en het risico op fouten bij handmatige data-invoer – leggen een continue druk op uw operationele efficiëntie.\n\nDe taken die in uw vacatures worden beschreven, zoals 'voorbereiden van aanvragen voor opnames en offertes' en 'digitaal beheren en archiveren van bestanden & documenten', zijn essentieel maar repetitief. Processen die afhankelijk zijn van handmatige coördinatie zijn inherent kwetsbaar voor vertragingen en inconsistenties. Dit leidt tot een operationeel model waarbij de overheadkosten lineair meestijgen met de projectvolume, wat de winstmarge per project erodeert.",
+          "title": "Analyse: De Operationele Last van Administratie",
+          "citations": [
+            "Bron: NEWS — administratief medewerker - 5951 Belfeld",
+            "Bron: REVIEWS — Marfa - 17 vacatures voor facturatie medewerker in Limburg - Glassdoor",
+            "Bron: REVIEWS — Marfa - kantoor medewerker vacatures in limburg"
+          ],
+          "punchline": "Uw administratieve last is geen bedrijfskost, maar een directe rem op uw winstgevendheid.",
+          "visualData": {
+            "items": [
+              {
+                "label": "Salaris Administratief Medewerker",
+                "value": "€ 2.475 - € 3.539",
+                "context": "per maand (bron: NEWS [1])"
+              },
+              {
+                "label": "Openstaande Vacatures",
+                "value": "17",
+                "context": "voor facturatie medewerker (bron: REVIEWS [2])"
+              }
+            ]
+          },
+          "visualType": "stats"
+        },
+        {
+          "id": "complexiteit-als-groeirem",
+          "body": "Uw eigen positionering benadrukt de 'workflow complexity across planning, handoff, and delivery' die inherent is aan uw gespecialiseerde B2B-diensten in renovatie en vochtwering. Deze complexiteit wordt momenteel beheerd door menselijke tussenkomst, wat een natuurlijk plafond creëert voor het aantal projecten dat Marfa gelijktijdig kan uitvoeren zonder kwaliteitsverlies.\n\nElke overdracht – van offerte naar planning, van planning naar uitvoering – is een potentieel knelpunt waar informatie verloren kan gaan of vertraging kan optreden. Het opschalen van uw operatie vereist nu een proportionele toename van administratief personeel om deze overdrachten te managen. Een geïntegreerd systeem dat deze workflows stroomlijnt, maakt de afhankelijkheid van handmatige coördinatie overbodig. Hierdoor kan uw team zich richten op hoogwaardige taken en kan het bedrijf groeien zonder de overhead navenant te vergroten.",
+          "title": "Diagnose: Workflow Complexiteit als Belemmering voor Schaalvergroting",
+          "citations": [
+            "Bron: WEBSITE — Marfa - company context",
+            "Bron: NEWS — Marfa Vochtwering & Renovatie"
+          ],
+          "punchline": "U kunt niet sneller groeien dan uw handmatige processen het toelaten.",
+          "visualData": {
+            "quote": "workflow complexity across planning, handoff, and delivery",
+            "attribution": "Marfa's eigen positionering (bron: WEBSITE [5])"
+          },
+          "visualType": "quote"
+        },
+        {
+          "id": "strategische-waarde-data",
+          "body": "De huidige focus op 'digitaal beheren en archiveren van bestanden & documenten' behandelt uw projectdata als een administratieve verplichting. In werkelijkheid is deze data een van uw meest waardevolle, maar onbenutte, strategische activa. Elk afgerond project – van kelderafdichting tot gevelrenovatie – bevat cruciale informatie over kostprijzen, doorlooptijden, materiaalgebruik en winstmarges.\n\nDoor deze informatie te structureren en centraal toegankelijk te maken, transformeert u een passief archief in een actieve kennisbank. Toekomstige offertes kunnen sneller en accurater worden opgesteld op basis van historische data. U kunt patronen identificeren in de meest winstgevende projecttypes en uw verkoopinspanningen daarop richten. In plaats van data te archiveren, creëert u een systeem dat van elk project leert en Marfa systematisch slimmer maakt.",
+          "title": "Opportuniteit: Van Digitaal Archief naar Strategisch Kapitaal",
+          "citations": [
+            "Bron: REVIEWS — Marfa - kantoor medewerker vacatures in limburg",
+            "Bron: NEWS — Carrières en werken bij Marfa"
+          ],
+          "punchline": "Uw projecthistorie is geen archief, maar de blauwdruk voor toekomstig succes.",
+          "visualData": {
+            "items": [
+              {
+                "after": "Strategisch kapitaal (lerend systeem)",
+                "label": "Huidige aanpak",
+                "before": "Digitaal archiveren (bron: REVIEWS [3])"
+              },
+              {
+                "after": "Actieve kennisbank",
+                "label": "Waarde van data",
+                "before": "Passief archief"
+              }
+            ]
+          },
+          "visualType": "comparison"
+        }
+      ],
+      "modelUsed": "gemini-2.5-pro",
+      "generatedAt": "2026-04-21T17:47:55.183Z",
+      "openingHook": "Marfa's specialisatie in renovatie en vochtwering vereist precisie, van offerte tot oplevering. Uw herhaalde en aanhoudende zoektocht naar administratieve ondersteuning signaleert echter een operationele frictie die uw groei en winstgevendheid direct beïnvloedt.",
+      "fallbackUsed": false,
+      "executiveSummary": "Onze analyse van Marfa's publieke data toont een sterke afhankelijkheid van handmatige administratieve processen om uw complexe B2B-workflows te beheren. Dit resulteert in aanzienlijke, terugkerende personeelskosten, beperkt de schaalbaarheid van uw operatie en laat de strategische waarde van uw projectdata onbenut. Door de kern van uw offerte-, plannings- en archiveringsprocessen te automatiseren, kan Marfa niet alleen kosten reduceren, maar ook de doorvoercapaciteit van projecten verhogen en datagestuurde beslissingen nemen die uw concurrentiepositie versterken.",
+      "useCaseRecommendations": [
+        {
+          "category": "",
+          "useCaseTitle": "Unified CRM and proposal management system",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "This system integrates with Offorte API to provide real-time synchronization of customer data, proposals, and installations.  It solves the problem of fragmented data sources and inefficient workflows for window installation companies."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Enterprise Admin Portal & CRM Implementation",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Development and deployment of a custom full-stack application replacing Airtable for Redfort, an architectural mesh supplier.  This provides a unified lead management system, project portfolio, product catalog, technical documentation management, and real-time analytics, eliminating data silos and manual data entry."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Custom CRM and Proposal Management System",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "A custom CRM and proposal management system replaces disjointed tools like Airtable and Offorte, streamlining customer and proposal management.  It features real-time synchronization, route planning, and automated invoicing, enabling efficient operations and improved customer service."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Proposal Generator with Proof Snippets",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Builds proposal drafts using reusable proof blocks and outcome language tied to specific client goals."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Propdex Dutch Property Intelligence Platform",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "A B2B platform that automates due-diligence workflows for Dutch projectontwikkelaars using area scans, melding monitoring, parcel matching, and report generation. It solves the problem of time-consuming and manual property due diligence processes."
+        },
+        {
+          "category": "crm",
+          "useCaseTitle": "Proposal Management & Sync",
+          "applicableOutcomes": [
+            "Improved proposal accuracy",
+            "Faster proposal generation",
+            "Better tracking of proposal status",
+            "Reduced manual data entry"
+          ],
+          "relevanceNarrative": "This capability streamlines the creation and management of proposals, including synchronizing them with external systems like Offorte. It enables users to create, track, and sync proposals, ensuring accurate and up-to-date information."
+        }
+      ]
+    },
+    "inputSnapshot": {
+      "useCaseCount": 20,
+      "evidenceCount": 7,
+      "sourceBreakdown": {
+        "NEWS": 4,
+        "REVIEWS": 2,
+        "WEBSITE": 1
+      },
+      "crossConnectionCount": 0,
+      "recommendationSource": "matchProofs"
+    }
+  },
+  "researchRun": {
+    "id": "cmo8x1c3a0013aww2qbpcjmtc",
+    "createdAt": "2026-04-21T17:46:45.238Z",
+    "status": "COMPLETED"
+  }
+}

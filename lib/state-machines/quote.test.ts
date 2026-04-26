@@ -12,6 +12,9 @@
  *   - transitionQuote SENT -> VIEWED: no prospect change
  *   - Invalid transition (ACCEPTED -> DRAFT): PRECONDITION_FAILED, no writes
  *   - NOT_FOUND propagates
+ *   - Bespoke HTML snapshot: captured for BESPOKE on DRAFT->SENT
+ *   - Bespoke HTML snapshot: not fetched for STANDARD (null in update)
+ *   - Bespoke HTML snapshot: fetch failure does not block transition (null)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
@@ -22,7 +25,9 @@ import {
   buildSnapshotFromQuote,
 } from './quote';
 
-// Helper to build a mock Prisma client with a $transaction passthrough
+// Helper to build a mock Prisma client with a $transaction passthrough.
+// The top-level `quote.findUnique` is used by the pre-fetch in transitionQuote
+// (outside the transaction) for the bespoke snapshot lookup.
 function mockDb(quote: unknown) {
   const tx = {
     quote: {
@@ -38,10 +43,28 @@ function mockDb(quote: unknown) {
       update: vi.fn().mockResolvedValue(undefined),
     },
   };
+  // Top-level quote.findUnique mirrors the shape the pre-fetch expects:
+  // { status, prospect: { voorstelMode, bespokeUrl } }
+  const q = quote as Record<string, unknown> | null;
+  const topLevelFindUnique = vi.fn().mockResolvedValue(
+    q
+      ? {
+          status: q.status,
+          prospect: {
+            voorstelMode:
+              (q.prospect as Record<string, unknown>)?.voorstelMode ??
+              'STANDARD',
+            bespokeUrl:
+              (q.prospect as Record<string, unknown>)?.bespokeUrl ?? null,
+          },
+        }
+      : null,
+  );
   return {
     $transaction: vi
       .fn()
       .mockImplementation(async (cb: (txArg: typeof tx) => unknown) => cb(tx)),
+    quote: { findUnique: topLevelFindUnique },
     _tx: tx,
   };
 }
@@ -103,6 +126,8 @@ const BASE_QUOTE = {
     status: 'ENGAGED' as const,
     slug: 'marfa-12char',
     companyName: 'Marfa',
+    voorstelMode: 'STANDARD' as const,
+    bespokeUrl: null as string | null,
   },
 };
 
@@ -285,5 +310,98 @@ describe('transitionQuote', () => {
     ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     });
+  });
+});
+
+describe('transitionQuote — bespoke HTML snapshot', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    global.fetch = vi.fn();
+  });
+
+  it('captures bespoke HTML when prospect is BESPOKE on DRAFT -> SENT', async () => {
+    const mockFetch = global.fetch as ReturnType<typeof vi.fn>;
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      text: async () => '<html>frozen</html>',
+    });
+
+    const bespokeQuote = {
+      ...BASE_QUOTE,
+      prospect: {
+        ...BASE_QUOTE.prospect,
+        voorstelMode: 'BESPOKE' as const,
+        bespokeUrl: 'https://example.com/voorstel',
+      },
+    };
+    const db = mockDb(bespokeQuote);
+
+    await transitionQuote(
+      db as unknown as Parameters<typeof transitionQuote>[0],
+      'q1',
+      'SENT',
+    );
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://example.com/voorstel',
+      expect.objectContaining({ cache: 'no-store' }),
+    );
+    expect(db._tx.quote.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          bespokeHtmlSnapshot: '<html>frozen</html>',
+          status: 'SENT',
+        }),
+      }),
+    );
+  });
+
+  it('does NOT fetch for STANDARD prospect (bespokeHtmlSnapshot null in update)', async () => {
+    const mockFetch = global.fetch as ReturnType<typeof vi.fn>;
+    // BASE_QUOTE has voorstelMode: 'STANDARD' — fetch should never be called
+    const db = mockDb(BASE_QUOTE);
+
+    await transitionQuote(
+      db as unknown as Parameters<typeof transitionQuote>[0],
+      'q1',
+      'SENT',
+    );
+
+    expect(mockFetch).not.toHaveBeenCalled();
+    const updateCall = db._tx.quote.update.mock.calls[0]![0] as {
+      data: Record<string, unknown>;
+    };
+    // bespokeHtmlSnapshot is explicitly null for STANDARD prospects (no snapshot taken)
+    expect(updateCall.data.bespokeHtmlSnapshot).toBeNull();
+  });
+
+  it('proceeds with SENT transition even when bespoke fetch fails (network down)', async () => {
+    const mockFetch = global.fetch as ReturnType<typeof vi.fn>;
+    mockFetch.mockRejectedValueOnce(new Error('network down'));
+
+    const bespokeQuote = {
+      ...BASE_QUOTE,
+      prospect: {
+        ...BASE_QUOTE.prospect,
+        voorstelMode: 'BESPOKE' as const,
+        bespokeUrl: 'https://unreachable.example.com',
+      },
+    };
+    const db = mockDb(bespokeQuote);
+
+    await transitionQuote(
+      db as unknown as Parameters<typeof transitionQuote>[0],
+      'q1',
+      'SENT',
+    );
+
+    expect(db._tx.quote.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'SENT',
+          bespokeHtmlSnapshot: null,
+        }),
+      }),
+    );
   });
 });

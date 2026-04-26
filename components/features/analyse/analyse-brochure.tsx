@@ -68,26 +68,90 @@ const statLabelStyle: React.CSSProperties = {
 };
 
 const RESPONSIVE_STYLES = `
+  /* ── Cover: video only at full desktop (≥1280px), static everywhere smaller ── */
+  .analyse-cover-video { display: none; }
+  .analyse-cover-static { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  @media (min-width: 1280px) {
+    .analyse-cover-video { display: block !important; }
+    .analyse-cover-static { display: none !important; }
+  }
+  /* ── Tablet layout ── */
   @media (max-width: 1024px) {
-    .analyse-page { padding: 100px 48px 110px !important; }
-    .analyse-split { grid-template-columns: 1fr 1fr !important; gap: 36px !important; }
+    .analyse-page { padding: 28px 40px !important; }
+    .analyse-split { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
     .analyse-pillars-grid { grid-template-columns: repeat(2, 1fr) !important; }
     .analyse-kansen-grid { grid-template-columns: 1fr 1fr !important; }
   }
+  /* ── Mobile ── */
   @media (max-width: 768px) {
+    /* Align chrome to 24px sides, matching content padding */
+    .analyse-chrome-brand { left: 24px !important; }
+    .analyse-chrome-progress { right: 24px !important; }
+    .analyse-chrome-back { left: 24px !important; }
+    .analyse-chrome-next { right: 24px !important; }
+    /* Main: scroll-capable */
     .analyse-main {
       position: relative !important;
       overflow-y: auto !important;
       min-height: 100vh !important;
     }
-    .analyse-page { padding: 88px 24px 120px !important; }
-    .analyse-split { grid-template-columns: 1fr !important; gap: 24px !important; }
+    /* Page: clear top chrome (90px) and bottom arrows (140px) */
+    .analyse-page {
+      position: relative !important;
+      top: 0 !important; left: 0 !important; right: 0 !important; bottom: auto !important;
+      width: 100% !important;
+      height: auto !important;
+      overflow-y: visible !important;
+      padding: 90px 24px 180px !important;
+    }
+    .analyse-split { grid-template-columns: 1fr !important; gap: 20px !important; }
     .analyse-pillars-grid { grid-template-columns: 1fr !important; }
-    .analyse-kansen-grid { grid-template-columns: 1fr !important; }
+    /* Kansen: vertical flex list with gaps instead of flush border grid */
+    .analyse-kansen-grid {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 12px !important;
+      border: none !important;
+      border-radius: 0 !important;
+      overflow: visible !important;
+      height: auto !important;
+    }
+    .analyse-kansen-card {
+      padding: 24px 20px !important;
+      border: 1px solid ${CONTAINER_BORDER} !important;
+      border-radius: 16px !important;
+    }
     .analyse-hero { font-size: 28px !important; }
-    .analyse-hero-mega { font-size: 36px !important; }
+    .analyse-hero-mega { font-size: 32px !important; }
     .analyse-cta-row { flex-direction: column !important; }
+    /* Gradient masks: hide content scrolling under fixed chrome */
+    .analyse-main::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 90px;
+      background: linear-gradient(to bottom, #0a0a2e 55%, transparent);
+      z-index: 15;
+      pointer-events: none;
+    }
+    .analyse-main::after {
+      content: '';
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 110px;
+      background: linear-gradient(to top, #0a0a2e 55%, transparent);
+      z-index: 15;
+      pointer-events: none;
+    }
   }
+  /* ── Scrollbar suppression ── */
+  .analyse-kansen-scroll::-webkit-scrollbar { display: none; }
+  .analyse-kansen-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+  .analyse-content-scroll::-webkit-scrollbar { display: none; }
+  .analyse-content-scroll { scrollbar-width: none; -ms-overflow-style: none; overflow-y: auto !important; }
+  .analyse-modal-scroll::-webkit-scrollbar { display: none; }
+  .analyse-modal-scroll { scrollbar-width: none; -ms-overflow-style: none; overflow-y: auto !important; }
 `;
 
 export function AnalyseBrochure({
@@ -211,68 +275,146 @@ export function AnalyseBrochure({
     return (
       <main className="analyse-main" style={pageBase}>
         <style dangerouslySetInnerHTML={{ __html: RESPONSIVE_STYLES }} />
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          preload="auto"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-          }}
-        >
-          <source src="/video/klarifai-analyse.mp4" type="video/mp4" />
-        </video>
-
         <BrandChrome companyName={prospect.companyName} />
         <ProgressIndicator label={progressLabel} />
 
-        {/* Dynamic overlay — positioned where video keywords were:
-            right side, above the gold line (~75% height), no own divider */}
+        {/* Desktop: video cover — CSS hides on mobile, avoids JS hydration flash */}
         <div
-          style={{
-            position: 'absolute',
-            right: '15%',
-            bottom: '30%',
-            fontFamily: 'var(--font-sora), sans-serif',
-            zIndex: 10,
-            opacity: overlayVisible ? 1 : 0,
-            transform: overlayVisible ? 'translateY(0)' : 'translateY(8px)',
-            transition: 'opacity 400ms ease-out, transform 400ms ease-out',
-            pointerEvents: overlayVisible ? 'auto' : 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end',
-            gap: '12px',
-          }}
+          className="analyse-cover-video"
+          style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}
         >
-          {/* Stats — tabular grid, numbers right-aligned, labels left */}
-          <div
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'auto auto',
-              gap: '8px 18px',
-              alignItems: 'baseline',
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
             }}
           >
-            <span style={{ ...statLabelStyle, justifySelf: 'end' }}>
-              {'B\u2009R\u2009O\u2009N\u2009N\u2009E\u2009N'}
-            </span>
-            <span style={statNumberStyle}>{researchStats.bronnen}</span>
+            <source src="/video/klarifai-analyse.mp4" type="video/mp4" />
+          </video>
 
-            <span style={{ ...statLabelStyle, justifySelf: 'end' }}>
-              {'B\u2009R\u2009O\u2009N\u2009T\u2009Y\u2009P\u2009E\u2009N'}
-            </span>
-            <span style={statNumberStyle}>{researchStats.brontypen}</span>
+          <div
+            className="analyse-cover-overlay"
+            style={{
+              position: 'absolute',
+              right: '15%',
+              bottom: '30%',
+              fontFamily: 'var(--font-sora), sans-serif',
+              zIndex: 10,
+              opacity: overlayVisible ? 1 : 0,
+              transform: overlayVisible ? 'translateY(0)' : 'translateY(8px)',
+              transition: 'opacity 400ms ease-out, transform 400ms ease-out',
+              pointerEvents: overlayVisible ? 'auto' : 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end',
+              gap: '12px',
+            }}
+          >
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'auto auto',
+                gap: '8px 18px',
+                alignItems: 'baseline',
+              }}
+            >
+              <span style={{ ...statLabelStyle, justifySelf: 'end' }}>
+                {'B\u2009R\u2009O\u2009N\u2009N\u2009E\u2009N'}
+              </span>
+              <span style={statNumberStyle}>{researchStats.bronnen}</span>
 
-            <span style={{ ...statLabelStyle, justifySelf: 'end' }}>
-              {'I\u2009N\u2009Z\u2009I\u2009C\u2009H\u2009T\u2009E\u2009N'}
-            </span>
-            <span style={statNumberStyle}>{researchStats.inzichten}</span>
+              <span style={{ ...statLabelStyle, justifySelf: 'end' }}>
+                {'B\u2009R\u2009O\u2009N\u2009T\u2009Y\u2009P\u2009E\u2009N'}
+              </span>
+              <span style={statNumberStyle}>{researchStats.brontypen}</span>
+
+              <span style={{ ...statLabelStyle, justifySelf: 'end' }}>
+                {'I\u2009N\u2009Z\u2009I\u2009C\u2009H\u2009T\u2009E\u2009N'}
+              </span>
+              <span style={statNumberStyle}>{researchStats.inzichten}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Static branded cover — CSS class controls visibility; shown below 1280px */}
+        <div
+          className="analyse-cover-static"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '90px 24px 120px',
+            fontFamily: 'var(--font-sora), sans-serif',
+            zIndex: 1,
+          }}
+        >
+          <GeometricBackdrop />
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '11px',
+                fontWeight: 500,
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+                color: TEXT_MUTED_ON_NAVY,
+                marginBottom: '20px',
+              }}
+            >
+              AI-analyse gereed
+            </div>
+            <h1
+              style={{
+                fontSize: 'clamp(28px, 8vw, 48px)',
+                fontWeight: 700,
+                lineHeight: 1.08,
+                letterSpacing: '-0.025em',
+                margin: '0 0 36px',
+                textAlign: 'center',
+                color: TEXT_ON_NAVY,
+              }}
+            >
+              {prospect.companyName}
+              <GoldDot />
+            </h1>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'auto auto',
+                gap: '10px 24px',
+                alignItems: 'baseline',
+              }}
+            >
+              <span style={{ ...statLabelStyle, justifySelf: 'end' }}>
+                BRONNEN
+              </span>
+              <span style={statNumberStyle}>{researchStats.bronnen}</span>
+              <span style={{ ...statLabelStyle, justifySelf: 'end' }}>
+                BRONTYPEN
+              </span>
+              <span style={statNumberStyle}>{researchStats.brontypen}</span>
+              <span style={{ ...statLabelStyle, justifySelf: 'end' }}>
+                INZICHTEN
+              </span>
+              <span style={statNumberStyle}>{researchStats.inzichten}</span>
+            </div>
           </div>
         </div>
 
@@ -299,15 +441,18 @@ export function AnalyseBrochure({
         <ProgressIndicator label={progressLabel} />
 
         <div
-          className="analyse-page"
+          className="analyse-page analyse-content-scroll"
           style={{
             position: 'absolute',
-            inset: 0,
-            padding: '120px 72px 160px',
+            top: '80px',
+            bottom: '120px',
+            left: 0,
+            right: 0,
+            padding: '32px 72px 32px',
             fontFamily: 'var(--font-sora), sans-serif',
             color: TEXT_ON_NAVY,
             zIndex: 1,
-            overflow: 'hidden',
+            overflowY: 'auto',
           }}
         >
           {layout === 'visual' && (
@@ -348,14 +493,17 @@ export function AnalyseBrochure({
           className="analyse-page"
           style={{
             position: 'absolute',
-            inset: 0,
+            top: '80px',
+            bottom: '120px',
+            left: 0,
+            right: 0,
             display: 'grid',
             gridTemplateRows: 'auto auto 1fr',
-            padding: '120px 72px 160px',
+            padding: '32px 72px 24px',
             fontFamily: 'var(--font-sora), sans-serif',
             color: TEXT_ON_NAVY,
             zIndex: 1,
-            gap: '32px',
+            gap: '24px',
           }}
         >
           <SectionLabel num={pageNum} title="Kansen" />
@@ -365,15 +513,17 @@ export function AnalyseBrochure({
           />
 
           <div
-            className="analyse-kansen-grid"
+            className="analyse-kansen-grid analyse-kansen-scroll"
             style={{
               display: 'grid',
               gridTemplateColumns:
                 recommendations.length === 1 ? '1fr' : '1fr 1fr',
-              gap: '24px',
+              gap: '0',
               alignItems: 'start',
               alignContent: 'start',
               overflow: 'auto',
+              border: `1px solid ${CONTAINER_BORDER}`,
+              borderRadius: '16px',
             }}
           >
             {recommendations.map((rec, i) => (
@@ -382,6 +532,7 @@ export function AnalyseBrochure({
                 rec={rec}
                 index={i}
                 type={recommendationType}
+                totalCols={recommendations.length === 1 ? 1 : 2}
               />
             ))}
           </div>
@@ -408,12 +559,15 @@ export function AnalyseBrochure({
         className="analyse-page"
         style={{
           position: 'absolute',
-          inset: 0,
+          top: '80px',
+          bottom: '120px',
+          left: 0,
+          right: 0,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '120px 72px 160px',
+          padding: '32px 72px 32px',
           fontFamily: 'var(--font-sora), sans-serif',
           color: TEXT_ON_NAVY,
           zIndex: 1,
@@ -634,28 +788,35 @@ function SectionLabel({ num, title }: { num: string; title: string }) {
       style={{
         ...sectionLabelStyle,
         gap: '14px',
+        flexWrap: 'wrap',
+        rowGap: '4px',
       }}
     >
-      <span style={goldGradientText}>[ {num} ]</span>
+      <span
+        style={{ ...goldGradientText, whiteSpace: 'nowrap', flexShrink: 0 }}
+      >
+        [ {num} ]
+      </span>
       <span style={{ color: TEXT_ON_NAVY }}>{title}</span>
     </div>
   );
 }
 
 function HeroHeading({ title }: { title: string }) {
+  const text = title.replace(/\.+$/, '');
   return (
     <h1
       style={{
-        fontSize: 'clamp(36px, 4.5vw, 60px)',
+        fontSize: 'clamp(28px, 3.8vw, 56px)',
         fontWeight: 700,
-        lineHeight: 1.05,
+        lineHeight: 1.08,
         letterSpacing: '-0.025em',
         margin: 0,
         maxWidth: '1000px',
         color: TEXT_ON_NAVY,
       }}
     >
-      {title}
+      {text}
       <GoldDot />
     </h1>
   );
@@ -675,10 +836,56 @@ function GoldDot() {
   );
 }
 
+/** Split narrative into a lead sentence + 1–2 body paragraphs for the modal. */
+function splitForModal(text: string): { lead: string; paragraphs: string[] } {
+  const firstDot = text.indexOf('. ');
+  if (firstDot < 0 || firstDot > 200) return { lead: text, paragraphs: [] };
+  const lead = text.slice(0, firstDot + 1);
+  const rest = text.slice(firstDot + 2).trim();
+  if (!rest) return { lead, paragraphs: [] };
+  // Split rest near the midpoint at a sentence boundary
+  const mid = Math.floor(rest.length / 2);
+  let split = -1;
+  for (let i = mid; i < Math.min(rest.length - 1, mid + 140); i++) {
+    if ((rest[i] === '.' || rest[i] === '!') && rest[i + 1] === ' ') {
+      split = i + 1;
+      break;
+    }
+  }
+  if (split > 0) {
+    return {
+      lead,
+      paragraphs: [
+        rest.slice(0, split).trim(),
+        rest.slice(split).trim(),
+      ].filter(Boolean),
+    };
+  }
+  return { lead, paragraphs: [rest] };
+}
+
+/** Truncate text at the last complete sentence boundary within maxChars.
+ *  Never cuts mid-sentence — returns full text if no boundary found. */
+function sentenceTruncate(text: string, maxChars: number): string {
+  if (text.length <= maxChars) return text;
+  let lastEnd = -1;
+  for (let i = 0; i < maxChars; i++) {
+    const c = text[i];
+    const next = text[i + 1];
+    if (
+      (c === '.' || c === '!' || c === '?') &&
+      (next === ' ' || next === undefined)
+    ) {
+      lastEnd = i + 1;
+    }
+  }
+  return lastEnd > 0 ? text.slice(0, lastEnd) : text;
+}
+
 function Narrative({
   paragraphs,
-  maxParagraphs = 2,
-  maxCharsPerParagraph = 280,
+  maxParagraphs = 4,
+  maxCharsPerParagraph = 400,
 }: {
   paragraphs: string[];
   maxParagraphs?: number;
@@ -698,7 +905,7 @@ function Narrative({
             margin: 0,
           }}
         >
-          {truncate(p, maxCharsPerParagraph)}
+          {sentenceTruncate(p, maxCharsPerParagraph)}
         </p>
       ))}
     </div>
@@ -760,13 +967,6 @@ function CitationsBar({ citations }: { citations: string[] }) {
 // Section layouts
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Derive insight cards from body paragraphs */
-function truncate(text: string, max: number): string {
-  if (text.length <= max) return text;
-  const cut = text.lastIndexOf(' ', max);
-  return text.slice(0, cut > 0 ? cut : max) + '...';
-}
-
 function deriveInsights(body: string): { title: string; desc: string }[] {
   const paragraphs = body.split('\n\n').filter(Boolean);
   return paragraphs.slice(0, 3).map((p) => {
@@ -774,30 +974,25 @@ function deriveInsights(body: string): { title: string; desc: string }[] {
     if (firstDot > 0 && firstDot < 80) {
       return {
         title: p.slice(0, firstDot + 1),
-        desc: truncate(p.slice(firstDot + 2), 100),
+        desc: sentenceTruncate(p.slice(firstDot + 2), 280),
       };
     }
-    return { title: truncate(p, 50), desc: truncate(p, 100) };
+    return { title: '', desc: sentenceTruncate(p, 280) };
   });
 }
 
-/** Derive pillars from body paragraphs — short title + max 2 lines desc */
+/** Derive pillars from body paragraphs — only use sentence as title if it fits cleanly */
 function derivePillars(body: string): { title: string; desc: string }[] {
   const paragraphs = body.split('\n\n').filter(Boolean);
   return paragraphs.slice(0, 3).map((p) => {
-    // Title: first sentence or first ~6 words
     const firstDot = p.indexOf('. ');
-    let title: string;
-    let rest: string;
-    if (firstDot > 0 && firstDot < 60) {
-      title = p.slice(0, firstDot + 1);
-      rest = p.slice(firstDot + 2);
-    } else {
-      const words = p.split(' ');
-      title = words.slice(0, 6).join(' ');
-      rest = words.slice(6).join(' ');
+    if (firstDot > 0 && firstDot < 72) {
+      return {
+        title: p.slice(0, firstDot + 1),
+        desc: sentenceTruncate(p.slice(firstDot + 2), 280),
+      };
     }
-    return { title: truncate(title, 50), desc: truncate(rest || p, 120) };
+    return { title: '', desc: sentenceTruncate(p, 280) };
   });
 }
 
@@ -833,8 +1028,7 @@ function SectionVisualLayout({
     <div
       style={{
         display: 'grid',
-        gridTemplateRows: 'auto auto 1fr auto',
-        height: '100%',
+        gridTemplateRows: 'auto auto auto auto',
         gap: '28px',
       }}
     >
@@ -853,7 +1047,7 @@ function SectionVisualLayout({
             maxWidth: '800px',
           }}
         >
-          {section.punchline}
+          {section.punchline.replace(/\.+$/, '')}
           <GoldDot />
         </h1>
       ) : (
@@ -861,7 +1055,7 @@ function SectionVisualLayout({
       )}
 
       {/* Visual element as primary content */}
-      <div style={{ overflow: 'hidden' }}>
+      <div>
         <SectionVisual visualData={section.visualData!} />
         {/* Body text as secondary */}
         <div
@@ -875,10 +1069,10 @@ function SectionVisualLayout({
         >
           {section.body
             .split('\n\n')
-            .slice(0, 2)
+            .filter(Boolean)
             .map((p, i) => (
               <p key={i} style={{ margin: i > 0 ? '12px 0 0' : 0 }}>
-                {truncate(p, 250)}
+                {p}
               </p>
             ))}
         </div>
@@ -1094,13 +1288,12 @@ function SectionSplit({
     <div
       style={{
         display: 'grid',
-        gridTemplateRows: 'auto auto 1fr auto',
-        height: '100%',
+        gridTemplateRows: 'auto auto auto auto',
         gap: '28px',
       }}
     >
       <SectionLabel num={pageNum} title={section.title} />
-      <HeroHeading title={section.title} />
+      <HeroHeading title={section.punchline ?? section.title} />
 
       <div
         className="analyse-split"
@@ -1109,7 +1302,6 @@ function SectionSplit({
           gridTemplateColumns: '1.4fr 1fr',
           gap: '48px',
           alignItems: 'start',
-          overflow: 'hidden',
         }}
       >
         {/* Left — narrative */}
@@ -1187,8 +1379,7 @@ function SectionPillars({
     <div
       style={{
         display: 'grid',
-        gridTemplateRows: 'auto 1fr auto auto',
-        height: '100%',
+        gridTemplateRows: 'auto auto auto auto',
         gap: '24px',
       }}
     >
@@ -1198,22 +1389,22 @@ function SectionPillars({
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           justifyContent: 'flex-start',
         }}
       >
         <h1
           style={{
-            fontSize: 'clamp(48px, 6vw, 88px)',
+            fontSize: 'clamp(28px, 3.8vw, 60px)',
             fontWeight: 700,
-            lineHeight: 1.02,
+            lineHeight: 1.08,
             letterSpacing: '-0.03em',
             margin: 0,
             maxWidth: '1100px',
             color: TEXT_ON_NAVY,
           }}
         >
-          {section.title}
+          {(section.punchline ?? section.title).replace(/\.+$/, '')}
           <GoldDot />
         </h1>
       </div>
@@ -1282,22 +1473,24 @@ function PillarCard({
       >
         {num}
       </div>
-      <div
-        style={{
-          fontSize: '18px',
-          fontWeight: 500,
-          color: TEXT_ON_NAVY,
-          letterSpacing: '-0.01em',
-          lineHeight: 1.25,
-        }}
-      >
-        {title}
-      </div>
+      {title && (
+        <div
+          style={{
+            fontSize: '18px',
+            fontWeight: 500,
+            color: TEXT_ON_NAVY,
+            letterSpacing: '-0.01em',
+            lineHeight: 1.25,
+          }}
+        >
+          {title}
+        </div>
+      )}
       <div
         style={{
           fontSize: '14px',
           fontWeight: 300,
-          lineHeight: 1.55,
+          lineHeight: 1.6,
           color: TEXT_MUTED_ON_NAVY,
         }}
       >
@@ -1330,13 +1523,12 @@ function SectionQuote({
     <div
       style={{
         display: 'grid',
-        gridTemplateRows: 'auto auto 1fr auto',
-        height: '100%',
+        gridTemplateRows: 'auto auto auto auto',
         gap: '28px',
       }}
     >
       <SectionLabel num={pageNum} title={section.title} />
-      <HeroHeading title={section.title} />
+      <HeroHeading title={section.punchline ?? section.title} />
 
       <div
         className="analyse-split"
@@ -1345,7 +1537,6 @@ function SectionQuote({
           gridTemplateColumns: '1.4fr 1fr',
           gap: '48px',
           alignItems: 'start',
-          overflow: 'hidden',
         }}
       >
         {/* Left — pull quote + narrative */}
@@ -1442,44 +1633,76 @@ function PullQuote({ text, source }: { text: string; source: string }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Recommendation card
+// Recommendation card (modal)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function RecommendationCard({
   rec,
   index,
   type,
+  totalCols,
 }: {
   rec: SPVRecommendation | UseCaseRecommendation;
   index: number;
   type: 'spv' | 'usecase';
+  totalCols: number;
 }) {
+  const [modalOpen, setModalOpen] = useState(false);
   const num = String(index + 1).padStart(2, '0');
+
+  // Border logic: flush grid — each cell gets right/bottom border only,
+  // right-column cells skip the right border.
+  const col = index % totalCols;
+  const isRightCol = col === totalCols - 1;
+  const borderRight = isRightCol ? 'none' : `1px solid ${CONTAINER_BORDER}`;
+  const borderBottom = `1px solid ${CONTAINER_BORDER}`;
+
+  let label: string;
+  let title: string;
+  let body: string;
+  let tags: string[] = [];
 
   if (type === 'spv') {
     const spv = rec as SPVRecommendation;
+    label = `${spv.spvName} Partnership`;
     const firstDot = spv.relevanceNarrative.indexOf('. ');
-    const title =
+    title =
       firstDot > 0
         ? spv.relevanceNarrative.slice(0, firstDot + 1)
         : spv.relevanceNarrative.slice(0, 80);
-    const narrative = spv.relevanceNarrative;
+    body = spv.relevanceNarrative;
+    tags = spv.strategicTags;
+  } else {
+    const uc = rec as UseCaseRecommendation;
+    label = uc.category;
+    title = uc.useCaseTitle;
+    body = uc.relevanceNarrative;
+    tags = uc.applicableOutcomes;
+  }
 
-    return (
+  return (
+    <>
+      {/* Card */}
       <div
+        className="analyse-kansen-card"
         style={{
           background: CONTAINER_GRADIENT,
-          border: `1px solid ${CONTAINER_BORDER}`,
-          borderRadius: '16px',
-          padding: '28px 28px 32px',
+          borderRight,
+          borderBottom,
           display: 'flex',
           flexDirection: 'column',
+          padding: '36px 32px',
           gap: '14px',
+          cursor: 'pointer',
         }}
+        onClick={() => setModalOpen(true)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && setModalOpen(true)}
       >
-        <div
+        <span
           style={{
-            fontSize: '44px',
+            fontSize: '32px',
             fontWeight: 700,
             lineHeight: 1,
             ...goldGradientText,
@@ -1487,157 +1710,252 @@ function RecommendationCard({
           }}
         >
           {num}
-        </div>
-        <div
+        </span>
+        <span
           style={{
-            fontSize: '10px',
-            fontWeight: 500,
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
-            color: TEXT_MUTED_ON_NAVY,
-          }}
-        >
-          {spv.spvName} Partnership
-        </div>
-        <div
-          style={{
-            fontSize: '20px',
+            fontSize: '16px',
             fontWeight: 500,
             color: TEXT_ON_NAVY,
             letterSpacing: '-0.01em',
-            lineHeight: 1.25,
+            lineHeight: 1.3,
           }}
         >
           {title}
-        </div>
-        <div
+        </span>
+        <span
           style={{
-            fontSize: '15px',
-            fontWeight: 300,
-            lineHeight: 1.55,
-            color: TEXT_MUTED_ON_NAVY,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: GOLD_MID,
           }}
         >
-          {narrative}
-        </div>
-        {spv.strategicTags.length > 0 && (
-          <div
-            style={{
-              display: 'flex',
-              gap: '8px',
-              flexWrap: 'wrap',
-              marginTop: '4px',
-            }}
-          >
-            {spv.strategicTags.map((tag) => (
-              <span
-                key={tag}
-                style={{
-                  fontSize: '10px',
-                  fontWeight: 500,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color: TEXT_MUTED_ON_NAVY,
-                  border: `1px solid ${CONTAINER_BORDER}`,
-                  borderRadius: '9999px',
-                  padding: '4px 12px',
-                }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+          Meer details <span style={{ fontSize: '14px' }}>→</span>
+        </span>
       </div>
-    );
-  }
 
-  // UseCase type
-  const uc = rec as UseCaseRecommendation;
-  return (
-    <div
-      style={{
-        background: CONTAINER_GRADIENT,
-        border: `1px solid ${CONTAINER_BORDER}`,
-        borderRadius: '16px',
-        padding: '28px 28px 32px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '14px',
-      }}
-    >
-      <div
-        style={{
-          fontSize: '44px',
-          fontWeight: 700,
-          lineHeight: 1,
-          ...goldGradientText,
-          letterSpacing: '-0.02em',
-        }}
-      >
-        {num}
-      </div>
-      <div
-        style={{
-          fontSize: '10px',
-          fontWeight: 500,
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase',
-          color: TEXT_MUTED_ON_NAVY,
-        }}
-      >
-        {uc.category}
-      </div>
-      <div
-        style={{
-          fontSize: '20px',
-          fontWeight: 500,
-          color: TEXT_ON_NAVY,
-          letterSpacing: '-0.01em',
-          lineHeight: 1.25,
-        }}
-      >
-        {uc.useCaseTitle}
-      </div>
-      <div
-        style={{
-          fontSize: '15px',
-          fontWeight: 300,
-          lineHeight: 1.55,
-          color: TEXT_MUTED_ON_NAVY,
-        }}
-      >
-        {uc.relevanceNarrative}
-      </div>
-      {uc.applicableOutcomes.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            gap: '8px',
-            flexWrap: 'wrap',
-            marginTop: '4px',
-          }}
-        >
-          {uc.applicableOutcomes.map((outcome) => (
-            <span
-              key={outcome}
+      {/* Modal */}
+      {modalOpen &&
+        (() => {
+          const { lead, paragraphs } = splitForModal(body);
+          return (
+            <div
               style={{
-                fontSize: '10px',
-                fontWeight: 500,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                color: TEXT_MUTED_ON_NAVY,
-                border: `1px solid ${CONTAINER_BORDER}`,
-                borderRadius: '9999px',
-                padding: '4px 12px',
+                position: 'fixed',
+                inset: 0,
+                zIndex: 9999,
+                background: 'rgba(0, 0, 0, 0.80)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '40px 24px',
               }}
+              onClick={() => setModalOpen(false)}
             >
-              {outcome}
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
+              <div
+                className="analyse-modal-scroll"
+                style={{
+                  background: '#0d0d38',
+                  border: `1px solid ${CONTAINER_BORDER}`,
+                  borderRadius: '20px',
+                  maxWidth: '580px',
+                  width: '100%',
+                  maxHeight: '82vh',
+                  overflow: 'auto',
+                  padding: '36px 36px 40px',
+                  position: 'relative',
+                  fontFamily: 'var(--font-sora), sans-serif',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Close */}
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '20px',
+                    background: 'none',
+                    border: `1px solid ${CONTAINER_BORDER}`,
+                    borderRadius: '9999px',
+                    width: '30px',
+                    height: '30px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: TEXT_MUTED_ON_NAVY,
+                    fontSize: '16px',
+                    lineHeight: 1,
+                  }}
+                  aria-label="Sluiten"
+                >
+                  ×
+                </button>
+
+                {/* Category label */}
+                <div
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 500,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color: TEXT_MUTED_ON_NAVY,
+                    marginBottom: '20px',
+                  }}
+                >
+                  {label}
+                </div>
+
+                {/* Number stacked above title */}
+                <div style={{ marginBottom: '24px' }}>
+                  <span
+                    style={{
+                      display: 'block',
+                      fontSize: '40px',
+                      fontWeight: 700,
+                      lineHeight: 1,
+                      ...goldGradientText,
+                      letterSpacing: '-0.02em',
+                      marginBottom: '10px',
+                    }}
+                  >
+                    {num}
+                  </span>
+                  <h2
+                    style={{
+                      fontSize: '22px',
+                      fontWeight: 700,
+                      color: TEXT_ON_NAVY,
+                      margin: 0,
+                      letterSpacing: '-0.02em',
+                      lineHeight: 1.25,
+                    }}
+                  >
+                    {title}
+                  </h2>
+                </div>
+
+                {/* Hook — first sentence, visually separated */}
+                <div
+                  style={{
+                    borderLeft: `3px solid ${GOLD_MID}`,
+                    paddingLeft: '16px',
+                    marginBottom: '20px',
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: '15px',
+                      fontWeight: 500,
+                      lineHeight: 1.55,
+                      color: TEXT_ON_NAVY,
+                      margin: 0,
+                    }}
+                  >
+                    {lead}
+                  </p>
+                </div>
+
+                {/* Body paragraphs */}
+                {paragraphs.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      marginBottom: '28px',
+                    }}
+                  >
+                    {paragraphs.map((p, i) => (
+                      <p
+                        key={i}
+                        style={{
+                          fontSize: '14px',
+                          fontWeight: 300,
+                          lineHeight: 1.7,
+                          color: TEXT_MUTED_ON_NAVY,
+                          margin: 0,
+                        }}
+                      >
+                        {p}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {/* Outcomes checklist */}
+                {tags.length > 0 && (
+                  <div
+                    style={{
+                      paddingTop: '20px',
+                      borderTop: `1px solid ${CONTAINER_BORDER}`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 500,
+                        letterSpacing: '0.16em',
+                        textTransform: 'uppercase',
+                        color: TEXT_MUTED_ON_NAVY,
+                        marginBottom: '14px',
+                      }}
+                    >
+                      Wat levert dit op
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px',
+                      }}
+                    >
+                      {tags.map((tag) => (
+                        <div
+                          key={tag}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '12px',
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: GOLD_MID,
+                              fontWeight: 700,
+                              fontSize: '13px',
+                              lineHeight: '1.4',
+                              flexShrink: 0,
+                            }}
+                          >
+                            →
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '13px',
+                              fontWeight: 400,
+                              color: TEXT_ON_NAVY,
+                              lineHeight: 1.45,
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+    </>
   );
 }
 

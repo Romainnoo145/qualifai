@@ -277,6 +277,13 @@ const SOFT_404_INDICATORS = [
   'bestaat niet',
   '404 error',
   '404 not found',
+  'deze pagina bestaat niet',
+  'oops!',
+  'helaas',
+  'the page you',
+  'de pagina die je zoekt',
+  'er ging iets mis',
+  'something went wrong',
 ];
 
 const SOFT_404_RECOVERY_HINTS = [
@@ -286,6 +293,10 @@ const SOFT_404_RECOVERY_HINTS = [
   'back to homepage',
   'zoek opnieuw',
   'search again',
+  'naar de homepage',
+  'terug naar de',
+  'ga terug',
+  'return to',
 ];
 
 function hasSoft404Marker(text: string): boolean {
@@ -311,7 +322,8 @@ function looksLikeSoft404(html: string): boolean {
  */
 function looksLikeCrawled404(markdown: string): boolean {
   const lower = markdown.toLowerCase();
-  const headingMatch = /^\s{0,3}#{0,4}\s*(404|page not found|pagina niet gevonden)\b/im;
+  const headingMatch =
+    /^\s{0,3}#{0,4}\s*(404|page not found|pagina niet gevonden)\b/im;
   if (headingMatch.test(lower)) return true;
 
   const leadText = lower.slice(0, 1600);
@@ -526,7 +538,9 @@ function processCrawl4aiResult(
   sourceType: EvidenceSourceType,
   markdown: string,
   title: string,
+  statusCode: number,
 ): EvidenceDraft | 'skip' {
+  if (statusCode >= 400) return 'skip';
   if (!markdown) return fallbackDraft(sourceUrl, sourceType);
   if (looksLikeCrawled404(markdown)) return 'skip';
   if (markdown.length < 80) return fallbackDraft(sourceUrl, sourceType);
@@ -575,7 +589,10 @@ export async function ingestWebsiteEvidenceDrafts(
     };
   },
 ): Promise<EvidenceDraft[]> {
-  const maxDrafts = Math.max(1, options?.tuning?.maxDrafts ?? WEBSITE_DRAFT_MAX);
+  const maxDrafts = Math.max(
+    1,
+    options?.tuning?.maxDrafts ?? WEBSITE_DRAFT_MAX,
+  );
   const browserBudgetMax = Math.max(
     1,
     options?.tuning?.browserBudgetMax ?? BROWSER_BUDGET_MAX,
@@ -633,12 +650,14 @@ export async function ingestWebsiteEvidenceDrafts(
           continue;
         }
         browserBudget--;
-        const { markdown, title } = await extractMarkdown(sourceUrl);
+        const { markdown, title, statusCode } =
+          await extractMarkdown(sourceUrl);
         const result = processCrawl4aiResult(
           sourceUrl,
           sourceType,
           markdown,
           title,
+          statusCode,
         );
         if (result !== 'skip') pushDraft(result);
         continue;
@@ -648,6 +667,12 @@ export async function ingestWebsiteEvidenceDrafts(
       // Tier 2: Stealth-first path
       // ------------------------------------------------------------------
       const stealth = await fetchStealth(sourceUrl);
+
+      // Hard HTTP error (4xx/5xx) — skip entirely, never create evidence
+      if (stealth.statusCode >= 400) {
+        continue;
+      }
+
       const stealthHtml = stealth.ok ? stealth.html : '';
       const isStealthSufficient = stealthHtml.length >= 500;
 
@@ -660,12 +685,14 @@ export async function ingestWebsiteEvidenceDrafts(
           continue;
         }
         browserBudget--;
-        const { markdown, title } = await extractMarkdown(sourceUrl);
+        const { markdown, title, statusCode } =
+          await extractMarkdown(sourceUrl);
         const result = processCrawl4aiResult(
           sourceUrl,
           sourceType,
           markdown,
           title,
+          statusCode,
         );
         if (result !== 'skip') {
           if (riskySeedGuess && fallbackMetadata(result.metadata)) {

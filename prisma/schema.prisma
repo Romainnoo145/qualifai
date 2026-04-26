@@ -66,6 +66,12 @@ enum OutreachType {
   PDF_REPORT
   FOLLOW_UP
   SIGNAL_TRIGGERED
+  QUOTE_DELIVERY
+}
+
+enum VoorstelMode {
+  STANDARD
+  BESPOKE
 }
 
 enum ResearchStatus {
@@ -177,6 +183,10 @@ model Prospect {
   // Status tracking
   status        ProspectStatus @default(DRAFT)
   internalNotes String?
+
+  // Voorstel routing — STANDARD = render via standard 7-page brochure, BESPOKE = proxy from bespokeUrl
+  voorstelMode VoorstelMode @default(STANDARD)
+  bespokeUrl   String?      @db.VarChar(500)
 
   // Project scoping
   projectId String  @default("project_klarifai")
@@ -297,6 +307,9 @@ model OutreachLog {
   prospectId String?
   prospect   Prospect? @relation(fields: [prospectId], references: [id], onDelete: SetNull)
 
+  quoteId String?
+  quote   Quote?  @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+
   type    OutreachType
   channel String       @default("email")
   status  String       @default("draft")
@@ -314,6 +327,7 @@ model OutreachLog {
   @@index([type])
   @@index([status])
   @@index([prospectId])
+  @@index([quoteId])
 }
 
 model CreditUsage {
@@ -478,6 +492,7 @@ model EvidenceItem {
   confidenceScore Float
   isApproved      Boolean            @default(false)
   metadata        Json?
+  contentHash     String?   @map("content_hash")
 
   researchRunId String
   researchRun   ResearchRun @relation(fields: [researchRunId], references: [id], onDelete: Cascade)
@@ -489,6 +504,7 @@ model EvidenceItem {
   @@index([researchRunId])
   @@index([prospectId, createdAt])
   @@index([workflowTag])
+  @@unique([prospectId, sourceType, contentHash])
 }
 
 model WorkflowHypothesis {
@@ -584,6 +600,19 @@ model ProofMatch {
   @@index([useCaseId])
 }
 
+enum UseCaseSector {
+  BOUW
+  INSTALLATIE
+  ONDERHOUD
+  PRODUCTIE
+  LOGISTIEK
+  ZORG
+  BOUW_DIENSTEN
+  ZAKELIJK
+  ACCOUNTANCY
+  ENERGIE
+}
+
 model UseCase {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -592,6 +621,7 @@ model UseCase {
   title         String
   summary       String
   category      String
+  sector        UseCaseSector?
   outcomes      String[]
   tags          String[]
   caseStudyRefs String[]
@@ -607,6 +637,7 @@ model UseCase {
 
   @@index([isActive, isShipped])
   @@index([category])
+  @@index([sector])
   @@index([projectId, updatedAt])
   @@index([projectId, sourceRef])
 }
@@ -762,6 +793,7 @@ model Quote {
 
   // Identity / meta
   nummer    String   @unique
+  slug      String?  @unique
   datum     DateTime
   geldigTot DateTime
 
@@ -788,6 +820,9 @@ model Quote {
   snapshotPdfUrl  String?
   snapshotStatus  SnapshotStatus?
 
+  // Bespoke voorstel HTML — frozen at SENT for BESPOKE prospects (immune to bespokeUrl drift post-akkoord)
+  bespokeHtmlSnapshot String? @db.Text
+
   // Versioning (Q9 — research recommendation #5: add now to avoid second migration in Phase 61)
   replacesId String?
   replaces   Quote?  @relation("QuoteVersion", fields: [replacesId], references: [id], onDelete: SetNull)
@@ -798,6 +833,12 @@ model Quote {
   narrativeGeneratedAt DateTime?
   viewedAt             DateTime?
 
+  // Acceptance — signature image (base64 PNG) + timestamp + signer identity
+  signatureData   String?   @db.Text
+  acceptedAt      DateTime?
+  signerName      String?   @db.VarChar(120)
+  termsAcceptedAt DateTime?
+
   // Active voorstel flag — only one per prospect (Fase B)
   isActiveProposal Boolean @default(false)
 
@@ -805,7 +846,18 @@ model Quote {
   prospectId String
   prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Restrict)
 
-  lines QuoteLine[]
+  // Payment schedule — array of installments [{label, percentage, dueOn}]. Empty/null = default (100% post-delivery).
+  // TypeScript shape: { label: string; percentage: number; dueOn: string }[]
+  paymentSchedule Json?
+
+  // Geadresseerde — for printable offerte / PDF
+  recipientCompany String? @db.VarChar(120)
+  recipientContact String? @db.VarChar(120)
+  recipientStreet  String? @db.VarChar(120)
+  recipientCity    String? @db.VarChar(120)
+
+  lines          QuoteLine[]
+  outreachLogs   OutreachLog[]
 
   @@index([prospectId])
   @@index([prospectId, isActiveProposal])

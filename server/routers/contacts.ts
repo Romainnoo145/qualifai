@@ -387,7 +387,6 @@ export const contactsRouter = router({
               logoUrl: true,
             },
           },
-          signals: { orderBy: { createdAt: 'desc' }, take: 20 },
           outreachLogs: { orderBy: { createdAt: 'desc' }, take: 20 },
         },
       });
@@ -397,6 +396,10 @@ export const contactsRouter = router({
     .input(
       z.object({
         id: z.string(),
+        firstName: z.string().min(1).optional(),
+        lastName: z.string().min(1).optional(),
+        primaryEmail: z.string().email().nullable().optional(),
+        jobTitle: z.string().nullable().optional(),
         outreachNotes: z.string().optional(),
         outreachStatus: z
           .enum([
@@ -415,6 +418,12 @@ export const contactsRouter = router({
       return ctx.db.contact.update({
         where: { id: input.id },
         data: {
+          ...(input.firstName !== undefined && { firstName: input.firstName }),
+          ...(input.lastName !== undefined && { lastName: input.lastName }),
+          ...(input.primaryEmail !== undefined && {
+            primaryEmail: input.primaryEmail,
+          }),
+          ...(input.jobTitle !== undefined && { jobTitle: input.jobTitle }),
           ...(input.outreachNotes !== undefined && {
             outreachNotes: input.outreachNotes,
           }),

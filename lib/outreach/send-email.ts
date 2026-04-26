@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import type { OutreachType } from '@prisma/client';
 import { createUnsubscribeToken } from '@/lib/outreach/unsubscribe';
 import { assessEmailForOutreach } from '@/lib/outreach/quality';
+import { getEmailSignature } from '@/lib/email/signatures';
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -23,6 +24,7 @@ interface SendOutreachOptions {
   bodyText: string;
   type: OutreachType;
   metadata?: Record<string, unknown>;
+  quoteId?: string | null;
 }
 
 function buildUnsubscribeUrl(contactId: string, email: string): string {
@@ -32,25 +34,34 @@ function buildUnsubscribeUrl(contactId: string, email: string): string {
   return url.toString();
 }
 
-function withComplianceFooter(
+function withSignatureAndCompliance(
   bodyHtml: string,
   bodyText: string,
   unsubscribeUrl: string,
 ): { bodyHtml: string; bodyText: string } {
-  const htmlFooter = `<p style="margin-top:24px;font-size:12px;color:#667085;">Geen verdere emails ontvangen? <a href="${unsubscribeUrl}">Direct uitschrijven</a>.</p>`;
-  const textFooter = `\n\nGeen verdere emails ontvangen? Direct uitschrijven: ${unsubscribeUrl}`;
+  const sig = getEmailSignature('klarifai');
+  const htmlFooter = `<p style="margin-top:32px;font-size:11px;color:#9ca3af;">Geen verdere emails ontvangen? <a href="${unsubscribeUrl}" style="color:#9ca3af;">Direct uitschrijven</a>.</p>`;
+  const textFooter = `\n\n--\nGeen verdere emails ontvangen? Direct uitschrijven: ${unsubscribeUrl}`;
 
   return {
-    bodyHtml: `${bodyHtml}${htmlFooter}`,
-    bodyText: `${bodyText}${textFooter}`,
+    bodyHtml: `${bodyHtml}${sig.html}${htmlFooter}`,
+    bodyText: `${bodyText}\n\n${sig.text}${textFooter}`,
   };
 }
 
 export async function sendOutreachEmail(
   options: SendOutreachOptions,
 ): Promise<{ success: boolean; logId: string }> {
-  const { contactId, to, subject, bodyHtml, bodyText, type, metadata } =
-    options;
+  const {
+    contactId,
+    to,
+    subject,
+    bodyHtml,
+    bodyText,
+    type,
+    metadata,
+    quoteId,
+  } = options;
   const emailAssessment = assessEmailForOutreach(to);
   if (emailAssessment.status === 'blocked') {
     throw new Error(
@@ -81,7 +92,7 @@ export async function sendOutreachEmail(
   }
 
   const unsubscribeUrl = buildUnsubscribeUrl(contactId, to);
-  const compliantContent = withComplianceFooter(
+  const compliantContent = withSignatureAndCompliance(
     bodyHtml,
     bodyText,
     unsubscribeUrl,
@@ -134,6 +145,7 @@ export async function sendOutreachEmail(
       bodyText: compliantContent.bodyText,
       metadata: messageMetadata as never,
       sentAt,
+      quoteId: quoteId ?? null,
     },
   });
 

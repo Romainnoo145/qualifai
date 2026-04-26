@@ -1,0 +1,6 @@
+{"type":"server-started","port":49623,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:49623","screen_dir":"/home/klarifai/Documents/klarifai/projects/qualifai/.superpowers/brainstorm/962252-1776672101/content","state_dir":"/home/klarifai/Documents/klarifai/projects/qualifai/.superpowers/brainstorm/962252-1776672101/state"}
+{"type":"screen-added","file":"/home/klarifai/Documents/klarifai/projects/qualifai/.superpowers/brainstorm/962252-1776672101/content/visual-sections.html"}
+{"type":"screen-added","file":"/home/klarifai/Documents/klarifai/projects/qualifai/.superpowers/brainstorm/962252-1776672101/content/klarifai-visual-section.html"}
+{"type":"screen-added","file":"/home/klarifai/Documents/klarifai/projects/qualifai/.superpowers/brainstorm/962252-1776672101/content/klarifai-v2.html"}
+{"type":"screen-added","file":"/home/klarifai/Documents/klarifai/projects/qualifai/.superpowers/brainstorm/962252-1776672101/content/klarifai-v3.html"}
+{"type":"server-stopped","reason":"idle timeout"}

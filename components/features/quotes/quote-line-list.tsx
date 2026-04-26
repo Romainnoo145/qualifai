@@ -20,7 +20,7 @@ interface Props {
 }
 
 export function emptyLine(): LineDraft {
-  return { fase: '', omschrijving: '', oplevering: '', uren: 0, tarief: 95 };
+  return { fase: '', omschrijving: '', oplevering: '', uren: 0, tarief: 80 };
 }
 
 export function addLine(xs: LineDraft[]): LineDraft[] {

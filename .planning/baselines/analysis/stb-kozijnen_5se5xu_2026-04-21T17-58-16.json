@@ -1,0 +1,147 @@
+{
+  "capturedAt": "2026-04-21T17:58:16.817Z",
+  "prospect": {
+    "slug": "MZ5XcUVa",
+    "readableSlug": "stb-kozijnen",
+    "companyName": "STB-kozijnen",
+    "domain": "stb-kozijnen.nl"
+  },
+  "analysis": {
+    "id": "cmo8wjujr00055fw2q55se5xu",
+    "version": "analysis-v2",
+    "createdAt": "2026-04-21T17:33:09.351Z",
+    "modelUsed": "gemini-2.5-pro",
+    "content": {
+      "version": "analysis-v2",
+      "sections": [
+        {
+          "id": "operationele-bottlenecks",
+          "body": "De structuur van uw personeelsvraag duidt op een systematisch knelpunt. De herhaaldelijke en gelijktijdige vacatures voor functies als 'Werkvoorbereider' en 'Planner Kozijnenmontage' in Maasbree, Ysselsteyn en Venlo zijn geen losstaande incidenten, maar symptomen van processen die onder druk staan door uw snelle groei.\n\nUw eigen analyse benoemt al de \"workflow complexity across planning, handoff, and delivery\". In de praktijk betekent dit dat elke nieuwe opdracht een disproportionele last legt op de schouders van enkele sleutelfiguren. Deze afhankelijkheid van manuele coördinatie en planning vormt een inherent risico voor de doorlooptijden en de uniformiteit van de kwaliteit die u levert. De processen die u tot dit punt succesvol hebben gemaakt, worden nu de rem op verdere schaalvergroting.",
+          "title": "Groeipijn in de Operationele As: Planning en Voorbereiding",
+          "citations": [
+            "Bron: NEWS | Werkvoorbereider voor STB-Kozijnen in Maasbree",
+            "Bron: NEWS | 4 vacatures bij STB-Kozijnen in Ysselsteyn",
+            "Bron: NEWS | Carrières en werken bij STB-Kozijnen B.V.",
+            "Bron: WEBSITE | STB-kozijnen - company context"
+          ],
+          "punchline": "Uw groei wordt geremd door de processen die u succesvol hebben gemaakt.",
+          "visualData": {
+            "type": "signals",
+            "items": [
+              {
+                "label": "Vacatures Werkvoorbereider",
+                "trend": "neutral",
+                "value": "2"
+              },
+              {
+                "label": "Vacatures Planner Kozijnenmontage",
+                "trend": "neutral",
+                "value": "1"
+              }
+            ]
+          },
+          "visualType": "signals"
+        },
+        {
+          "id": "verborgen-kosten-coordinatie",
+          "body": "De overdrachtsmomenten tussen planning, werkvoorbereiding en de (ZZP) monteurs zijn de zwakke schakels in uw operatie. Zonder een centraal, intelligent systeem is informatie gefragmenteerd en is de kans op miscommunicatie, fouten en vertragingen aanzienlijk. Dit leidt tot verborgen kosten: dubbel werk bij de voorbereiding, suboptimale route- en personeelsplanning, en wachttijden op de bouwplaats.\n\nElke fout in deze keten resulteert direct in margeverlies en kan de klanttevredenheid negatief beïnvloeden. Het stroomlijnen van deze coördinatie is meer dan een efficiëntieslag; het is een directe investering in de winstgevendheid van elk project. Door de informatiestroom te automatiseren, wordt de foutmarge significant verkleind en wordt de beschikbare montagecapaciteit maximaal benut.",
+          "title": "De Verborgen Kosten van Handmatige Coördinatie",
+          "citations": [
+            "Bron: NEWS | 4 vacatures bij STB-Kozijnen in Ysselsteyn",
+            "Bron: WEBSITE | STB-kozijnen - company context"
+          ],
+          "punchline": "Handmatige coördinatie is de onzichtbare rem op uw winstgevendheid en schaalbaarheid."
+        },
+        {
+          "id": "fundament-voor-schaalbaarheid",
+          "body": "Uw 'snelle groei' is een feit, maar het huidige operationele model is niet ontworpen voor de volgende fase van STB-kozijnen. Om duurzaam door te groeien is een transformatie van uw operationele ruggengraat noodzakelijk. Door de kernprocessen – van opdrachtacceptatie tot montageplanning en oplevering – te digitaliseren en te ondersteunen met slimme systemen, bouwt u een schaalbaar platform.\n\nDit stelt u in staat om met dezelfde overhead aanzienlijk meer projecten te realiseren. U vermindert de afhankelijkheid van individuele planners, verkrijgt real-time inzicht in projectstatussen en capaciteit, en creëert een voorspelbare, controleerbare operatie. Dit is geen incrementele verbetering, maar een strategische keuze om uw operationele motor te versterken voor de toekomst.",
+          "title": "Een Fundament voor Toekomstige Schaalbaarheid",
+          "citations": [
+            "Bron: NEWS | Werkvoorbereider voor STB-Kozijnen in Maasbree",
+            "Bron: WEBSITE | STB-kozijnen - company context"
+          ],
+          "punchline": "Transformeer uw operationele ruggengraat van een bottleneck naar een groeimotor.",
+          "visualData": {
+            "type": "comparison",
+            "items": [
+              {
+                "after": "Aanzienlijk meer",
+                "label": "Aantal projecten per overhead",
+                "before": "Beperkt"
+              },
+              {
+                "after": "Verminderd",
+                "label": "Afhankelijkheid planners",
+                "before": "Hoog"
+              },
+              {
+                "after": "Real-time",
+                "label": "Inzicht projectstatus",
+                "before": "Beperkt"
+              }
+            ]
+          },
+          "visualType": "comparison"
+        }
+      ],
+      "modelUsed": "gemini-2.5-pro",
+      "generatedAt": "2026-04-21T17:31:27.396Z",
+      "openingHook": "De snelle groei van STB-kozijnen is een duidelijk teken van succes. De aanhoudende vraag naar operationele sleutelposities, zoals planners en werkvoorbereiders, signaleert echter een toenemende complexiteit die de schaalbaarheid van uw onderneming kan remmen.",
+      "fallbackUsed": false,
+      "executiveSummary": "Uw huidige groei overstijgt de capaciteit van uw operationele processen. De handmatige coördinatie tussen planning, werkvoorbereiding en montage vormt een groeiend knelpunt, wat leidt tot inefficiëntie en risico's voor de doorlooptijden. Dit belemmert verdere expansie. De oplossing ligt in het systematiseren van deze kernworkflows met intelligente automatisering, waardoor een schaalbaar fundament wordt gecreëerd en de afhankelijkheid van specifieke personen wordt gereduceerd. Dit stelt STB-kozijnen in staat de volgende groeifase gecontroleerd en winstgevend te realiseren.",
+      "useCaseRecommendations": [
+        {
+          "category": "",
+          "useCaseTitle": "Unified CRM and proposal management system",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "This system integrates with Offorte API to provide real-time synchronization of customer data, proposals, and installations.  It solves the problem of fragmented data sources and inefficient workflows for window installation companies."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Digitale werkbon app voor bouwteams",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Een eenvoudige mobiele app waarmee uitvoerders en timmermannen uren, materialen en foto's per klus registreren, automatisch gekoppeld aan planning en facturatie."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Slimme planning voor bouwprojecten",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Een planningsbord dat mensen, onderaannemers en leveringen plant via drag-and-drop, met automatische signalen bij overbezetting of overlap."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Projectvoortgangsdashboard voor kleine bouwprojecten",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Een eenvoudig dashboard dat per project budget, uren, meerwerk en planning toont, gevoed vanuit werkbonnen en boekhouding."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "AI-offertescan voor aannemers",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Een tool die aangeleverde bestekken, tekeningen en klantmails automatisch uitleest en omzet naar een eerste kostenraming en takenlijst, zodat kleine bouwbedrijven sneller kunnen offreren terwijl ze weinig tijd en digitale kennis hebben."
+        },
+        {
+          "category": "",
+          "useCaseTitle": "Materieel- en gereedschap planning",
+          "applicableOutcomes": [],
+          "relevanceNarrative": "Een eenvoudig reserveringssysteem voor steigers, busjes en gereedschap zodat teams niet op de bouwplaats zonder materiaal staan."
+        }
+      ]
+    },
+    "inputSnapshot": {
+      "useCaseCount": 20,
+      "evidenceCount": 4,
+      "sourceBreakdown": {
+        "NEWS": 3,
+        "WEBSITE": 1
+      },
+      "crossConnectionCount": 0,
+      "recommendationSource": "matchProofs"
+    }
+  },
+  "researchRun": {
+    "id": "cmo8wgkwy00005fw2sqnyvqv0",
+    "createdAt": "2026-04-21T17:30:36.898Z",
+    "status": "COMPLETED"
+  }
+}

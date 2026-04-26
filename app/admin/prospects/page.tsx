@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 import { computePipelineStage, type PipelineStage } from '@/lib/pipeline-stage';
 import { PageLoader } from '@/components/ui/page-loader';
 import { ProspectLogo } from '@/components/features/prospects/prospect-logo';
+import { ResearchRunBadge } from '@/components/features/research/research-run-badge';
+import { isActiveStatus } from '@/lib/research/status-labels';
 
 type View = 'all' | 'search-companies' | 'search-contacts';
 type SearchGuardrail = {
@@ -131,7 +133,28 @@ export default function ProspectList() {
 }
 
 function AllCompanies() {
-  const prospects = api.admin.listProspects.useQuery();
+  const prospects = api.admin.listProspects.useQuery(undefined, {
+    // Poll every 10s while at least one row has an active research run.
+    // Note: once this returns `false`, the interval only re-engages when the query
+    // settles again (e.g., focus-refetch). Reruns started in another tab without
+    // refocus will only show up on the next settle event.
+    // TODO: tRPC v11 inference — q must be `any` to avoid TS2589 deep instantiation
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    refetchInterval: (q: any) => {
+      const data = q.state.data as
+        | {
+            prospects?: Array<{
+              researchRuns?: Array<{ status?: string | null }>;
+            }>;
+          }
+        | undefined;
+      const rows = data?.prospects ?? [];
+      const anyActive = rows.some((r) =>
+        isActiveStatus(r.researchRuns?.[0]?.status),
+      );
+      return anyActive ? 10_000 : false;
+    },
+  });
   const [stageFilter, setStageFilter] = useState<StageFilterKey>('all');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -350,9 +373,11 @@ function AllCompanies() {
                   className="border border-[var(--color-border)] bg-[var(--color-surface-2)]"
                 />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[17px] font-medium text-[var(--color-ink)] tracking-[-0.01em]">
-                    {prospect.companyName ?? prospect.domain}
-                  </span>
+                  <div>
+                    <span className="text-[17px] font-medium text-[var(--color-ink)] tracking-[-0.01em]">
+                      {prospect.companyName ?? prospect.domain}
+                    </span>
+                  </div>
                   <div className="flex items-center gap-2 mt-1 text-[12px] font-light text-[var(--color-muted)]">
                     <span>{prospect.domain}</span>
                     {prospect.industry && (
@@ -361,6 +386,7 @@ function AllCompanies() {
                         <span>{prospect.industry}</span>
                       </>
                     )}
+                    <ResearchRunBadge status={run?.status} />
                   </div>
                 </div>
 

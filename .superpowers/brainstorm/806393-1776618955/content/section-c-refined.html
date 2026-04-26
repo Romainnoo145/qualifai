@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optie C — Refined</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Sora', sans-serif;
+    color: #fefefe;
+    background: #040026;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* Geometric backdrop */
+  .geo { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+
+  /* Chrome — fixed */
+  .logo {
+    position: fixed; top: 32px; left: 48px; z-index: 20;
+    width: 36px; height: 36px; background: #e1c33c; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #040026;
+  }
+  .progress-label {
+    position: fixed; top: 36px; right: 36px; z-index: 20;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.15em; color: #fdf97b;
+  }
+  .arrow-back {
+    position: fixed; left: 48px; bottom: 48px; z-index: 20;
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.04);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: background 150ms;
+  }
+  .arrow-back:hover { background: rgba(255,255,255,0.08); }
+  .arrow-next {
+    position: fixed; right: 48px; bottom: 48px; z-index: 20;
+    width: 56px; height: 56px; border-radius: 50%; border: none;
+    background: linear-gradient(180deg, #e1c33c, #fdf97b);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(225,195,60,0.35);
+    transition: transform 150ms, box-shadow 150ms;
+  }
+  .arrow-next:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(225,195,60,0.5); }
+
+  /* Content layout */
+  .content {
+    position: relative; z-index: 1;
+    padding: 110px 72px 120px;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 20px;
+    min-height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Section label */
+  .section-label {
+    font-size: 12px; font-weight: 500; letter-spacing: 0.18em;
+    text-transform: uppercase; display: flex; align-items: center; gap: 14px;
+  }
+  .num {
+    background: linear-gradient(180deg, #e1c33c, #fdf97b);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .dot {
+    background: linear-gradient(180deg, #e1c33c, #fdf97b);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .gold-gradient {
+    background: linear-gradient(180deg, #e1c33c, #fdf97b);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  /* Hero heading */
+  .hero {
+    font-size: clamp(36px, 4.5vw, 60px); font-weight: 700;
+    line-height: 1.06; letter-spacing: -0.025em; max-width: 800px;
+  }
+
+  /* Two columns */
+  .split {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 56px;
+    align-items: start;
+  }
+
+  .narrative {
+    font-size: 17px; font-weight: 300; line-height: 1.7; color: #898999;
+  }
+  .narrative p { margin-bottom: 18px; }
+  .narrative p:last-child { margin-bottom: 0; }
+
+  /* Insight cards */
+  .insights-label {
+    font-size: 10px; font-weight: 500; letter-spacing: 0.18em;
+    text-transform: uppercase; color: #898999; margin-bottom: 16px;
+  }
+  .insight-card {
+    background: linear-gradient(180deg, #040026 0%, #080054 100%);
+    border: 1px solid rgba(53, 59, 102, 0.55);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 12px;
+  }
+  .insight-card:last-child { margin-bottom: 0; }
+  .insight-header {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;
+  }
+  .insight-num { font-size: 14px; font-weight: 700; }
+  .insight-title { font-size: 15px; font-weight: 500; color: #fefefe; }
+  .insight-desc {
+    font-size: 13px; font-weight: 300; color: #898999;
+    line-height: 1.55; padding-left: 26px;
+  }
+
+  /* Citations — full width bottom bar */
+  .citations-bar {
+    font-size: 11px; color: rgba(137,137,153,0.6); font-weight: 300;
+    letter-spacing: 0.01em; line-height: 1.5;
+    padding-top: 16px;
+    border-top: 1px solid rgba(53,59,102,0.25);
+  }
+  .citations-bar span {
+    font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    font-size: 9px; color: rgba(137,137,153,0.5); margin-right: 12px;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* Responsive: tablet                         */
+  /* ═══════════════════════════════════════════ */
+  @media (max-width: 1024px) {
+    .content { padding: 100px 48px 110px; gap: 16px; }
+    .hero { font-size: clamp(32px, 4vw, 48px); }
+    .split { grid-template-columns: 1fr 1fr; gap: 36px; }
+    .narrative { font-size: 15px; }
+    .insight-card { padding: 16px 18px; }
+    .insight-title { font-size: 14px; }
+    .insight-desc { font-size: 12px; }
+    .logo { top: 24px; left: 32px; width: 32px; height: 32px; font-size: 14px; border-radius: 8px; }
+    .progress-label { top: 28px; right: 28px; font-size: 10px; }
+    .arrow-back, .arrow-next { width: 48px; height: 48px; bottom: 32px; }
+    .arrow-back { left: 32px; }
+    .arrow-next { right: 32px; }
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* Responsive: mobile                         */
+  /* ═══════════════════════════════════════════ */
+  @media (max-width: 768px) {
+    body { overflow-y: auto; }
+    .content {
+      padding: 88px 24px 120px;
+      grid-template-rows: auto auto auto auto;
+      gap: 20px;
+      min-height: auto;
+    }
+    .hero { font-size: 28px; max-width: 100%; }
+    .split {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+    .narrative { font-size: 15px; line-height: 1.65; }
+    .insight-card { padding: 16px; border-radius: 12px; }
+    .insight-num { font-size: 12px; }
+    .insight-title { font-size: 14px; }
+    .insight-desc { font-size: 12px; padding-left: 22px; }
+    .logo { top: 20px; left: 20px; width: 28px; height: 28px; font-size: 12px; border-radius: 7px; }
+    .progress-label { top: 24px; right: 20px; font-size: 9px; }
+    .arrow-back, .arrow-next { width: 44px; height: 44px; bottom: 24px; }
+    .arrow-back { left: 20px; }
+    .arrow-next { right: 20px; }
+    .citations-bar { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="geo" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+  <defs><linearGradient id="sf" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#000319" stop-opacity="0.7"/><stop offset="100%" stop-color="#000319" stop-opacity="0.15"/></linearGradient></defs>
+  <g fill="url(#sf)">
+    <rect x="-120" y="-40" width="320" height="320" rx="40" transform="rotate(18 40 120)"/>
+    <rect x="60" y="420" width="260" height="260" rx="32" transform="rotate(18 190 550)"/>
+    <rect x="1180" y="-80" width="360" height="360" rx="44" transform="rotate(18 1360 100)"/>
+    <rect x="1080" y="520" width="280" height="280" rx="36" transform="rotate(18 1220 660)"/>
+  </g>
+</svg>
+
+<div class="logo">K</div>
+<div class="progress-label">02 / 07</div>
+<div class="arrow-back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fefefe" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></div>
+<div class="arrow-next"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#040026" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+
+<div class="content">
+  <!-- Row 1: Section label -->
+  <div class="section-label">
+    <span class="num">[ 02 ]</span>
+    <span>Strategische positie</span>
+  </div>
+
+  <!-- Row 2: Hero heading -->
+  <h1 class="hero">
+    Onmiskenbare positie in<br>Europese infrastructuur<span class="dot">.</span>
+  </h1>
+
+  <!-- Row 3: Split — narrative left, insights right -->
+  <div class="split">
+    <div class="narrative">
+      <p>Nedri Spanstaal heeft een onmiskenbare positie als een van Europa's grootste spanstaalproducenten, met een reputatie gebouwd op vakmanschap en betrouwbaarheid sinds 1925.</p>
+      <p>Uw cruciale rol in de realisatie van grootschalige infrastructurele projecten, zoals het 'Vierpaardjes' viaduct en diverse bruggen in samenwerking met vooraanstaande partners als Heijmans en De Vries Voorspantechnieken, onderstreept uw technische competentie.</p>
+      <p>Hoewel u de eigen markt omschrijft als 'meer competitief dan innovatief', wijst extern bewijs op een continue drang naar verbetering, zoals de ontwikkeling van een nieuwe testmethode voor spanningscorrosie.</p>
+    </div>
+
+    <div>
+      <div class="insights-label">Kerninzichten</div>
+      <div class="insight-card">
+        <div class="insight-header">
+          <span class="insight-num gold-gradient">01</span>
+          <span class="insight-title">Vakmanschap sinds 1925</span>
+        </div>
+        <div class="insight-desc">Bijna 100 jaar expertise in spanstaal voor kritische Europese infrastructuur.</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-header">
+          <span class="insight-num gold-gradient">02</span>
+          <span class="insight-title">Continue innovatie</span>
+        </div>
+        <div class="insight-desc">Nieuwe testmethode voor spanningscorrosie, ondanks 'competitieve' marktomgeving.</div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-header">
+          <span class="insight-num gold-gradient">03</span>
+          <span class="insight-title">Bewezen partnerships</span>
+        </div>
+        <div class="insight-desc">Heijmans, De Vries Voorspantechnieken, Deutsche Bahn — groot en betrouwbaar.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 4: Citations — full width, subtle -->
+  <div class="citations-bar">
+    <span>Bronnen</span>
+    Prospect Profiel · Website (Van staalstreng tot brugdek) · LinkedIn (Nedri Spanstaal BV) · Website (Testmethode spanningscorrosie) · Volume-VIII DefenceCo
+  </div>
+</div>
+
+</body>
+</html>

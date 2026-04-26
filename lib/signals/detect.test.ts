@@ -21,6 +21,7 @@ function makeEvidence(overrides: Partial<EvidenceItem> = {}): EvidenceItem {
     researchRunId: 'run-1',
     prospectId: 'prospect-1',
     isApproved: false,
+    contentHash: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

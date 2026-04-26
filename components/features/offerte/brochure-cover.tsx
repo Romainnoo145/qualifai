@@ -2,6 +2,7 @@
 
 import type React from 'react';
 import { useRef, useEffect, useState, useCallback } from 'react';
+import type { PaymentInstallment } from '@/lib/quote-defaults';
 
 import {
   NAVY,
@@ -13,7 +14,6 @@ import {
   TEXT_ON_NAVY,
   TEXT_MUTED_ON_NAVY,
   pageBase,
-  sectionLabelStyle,
 } from '@/lib/brochure-tokens';
 import {
   BrandChrome,
@@ -35,7 +35,18 @@ import {
  *   subtle geometric backdrop echoing the video's motion graphics
  */
 
-const TOTAL_PAGES = 7;
+// Page identifiers — order within each mode array determines navigation order
+type PageId =
+  | 'cover'
+  | 'uitdaging'
+  | 'aanpak'
+  | 'investering'
+  | 'scope'
+  | 'signing'
+  | 'bevestigd';
+
+const VOORSTEL_PAGES: PageId[] = ['cover', 'uitdaging', 'aanpak', 'scope'];
+const OFFERTE_PAGES: PageId[] = ['investering', 'signing', 'bevestigd'];
 
 interface BrochureProspect {
   id: string;
@@ -51,6 +62,7 @@ export type BrochureQuote = {
   introductie: string | null;
   uitdaging: string | null;
   aanpak: string | null;
+  paymentSchedule: PaymentInstallment[] | null;
   lines: {
     fase: string;
     omschrijving: string;
@@ -60,20 +72,26 @@ export type BrochureQuote = {
 } | null;
 
 export function BrochureCover({
-  slug: _slug,
+  slug,
   prospect,
   quote,
+  mode,
 }: {
   slug: string;
   prospect: BrochureProspect;
   quote?: BrochureQuote;
+  mode: 'voorstel' | 'offerte';
 }) {
+  const visiblePages: PageId[] =
+    mode === 'offerte' ? OFFERTE_PAGES : VOORSTEL_PAGES;
+  const totalPages = visiblePages.length;
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentPage, setCurrentPage] = useState(0);
 
   const handleNext = useCallback(() => {
-    setCurrentPage((p) => Math.min(p + 1, TOTAL_PAGES - 1));
-  }, []);
+    setCurrentPage((p) => Math.min(p + 1, totalPages - 1));
+  }, [totalPages]);
 
   const handleBack = useCallback(() => {
     setCurrentPage((p) => Math.max(p - 1, 0));
@@ -107,9 +125,17 @@ export function BrochureCover({
     }).catch(() => {});
   }, [prospect?.id]);
 
-  const progressLabel = `${String(currentPage + 1).padStart(2, '0')} / ${String(TOTAL_PAGES).padStart(2, '0')}`;
+  const progressLabel = `${String(currentPage + 1).padStart(2, '0')} / ${String(totalPages).padStart(2, '0')}`;
 
-  if (currentPage === 0) {
+  // visiblePages is always non-empty (VOORSTEL_PAGES / OFFERTE_PAGES both have ≥1 item)
+  const pageId = (visiblePages[currentPage] ?? visiblePages[0]) as PageId;
+
+  // Section numbering: computed from position within visiblePages (cover has no label).
+  const visibleIndex = visiblePages.indexOf(pageId);
+  const sectionLabel =
+    visibleIndex >= 0 && pageId !== 'cover' ? `[ 0${visibleIndex + 1} ]` : '';
+
+  if (pageId === 'cover') {
     return (
       <main style={pageBase}>
         <video
@@ -136,141 +162,73 @@ export function BrochureCover({
     );
   }
 
-  if (currentPage === 1) {
-    return (
-      <Uitdaging
-        onNext={handleNext}
-        onBack={handleBack}
-        progressLabel={progressLabel}
-        prospect={prospect}
-        quote={quote ?? null}
-      />
-    );
-  }
-
-  if (currentPage === 2) {
-    return (
-      <Aanpak
-        onNext={handleNext}
-        onBack={handleBack}
-        progressLabel={progressLabel}
-        prospect={prospect}
-        quote={quote ?? null}
-      />
-    );
-  }
-
-  if (currentPage === 3) {
-    return (
-      <Investering
-        onNext={handleNext}
-        onBack={handleBack}
-        progressLabel={progressLabel}
-        prospect={prospect}
-        quote={quote ?? null}
-      />
-    );
-  }
-
-  if (currentPage === 4) {
-    return (
-      <Scope
-        onNext={handleNext}
-        onBack={handleBack}
-        progressLabel={progressLabel}
-        prospect={prospect}
-      />
-    );
-  }
-
-  if (currentPage === 5) {
-    return (
-      <Signing
-        onBack={handleBack}
-        onNext={handleNext}
-        progressLabel={progressLabel}
-        prospect={prospect}
-        quote={quote ?? null}
-      />
-    );
-  }
-
-  if (currentPage === 6) {
-    return (
-      <Bevestigd
-        onBack={handleBack}
-        progressLabel={progressLabel}
-        prospect={prospect}
-      />
-    );
-  }
-
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
-      <GeometricBackdrop />
-      <ProgressIndicator label={progressLabel} />
-      <div
-        style={{
-          position: 'relative',
-          zIndex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          gap: '24px',
-          color: TEXT_ON_NAVY,
-          fontFamily: 'var(--font-sora), sans-serif',
-        }}
-      >
-        <div style={sectionLabelStyle}>
-          <span
-            style={{
-              background: GOLD_GRADIENT,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            [ 0{currentPage} ]
-          </span>
-          <span style={{ marginLeft: '12px' }}>PAGINA {currentPage + 1}</span>
-        </div>
-        <h1
-          style={{
-            fontSize: '64px',
-            fontWeight: 700,
-            margin: 0,
-            letterSpacing: '-0.02em',
-          }}
-        >
-          Placeholder
-          <span
-            style={{
-              background: GOLD_GRADIENT,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            .
-          </span>
-        </h1>
-        <p
-          style={{
-            fontSize: '18px',
-            fontWeight: 300,
-            color: TEXT_MUTED_ON_NAVY,
-            maxWidth: '560px',
-            textAlign: 'center',
-            margin: 0,
-            lineHeight: 1.6,
-          }}
-        >
-          Deze pagina wordt gebouwd in de volgende iteratie tegen DESIGN.md §4.
-        </p>
-      </div>
-      <BackArrow onClick={handleBack} />
-      {currentPage < TOTAL_PAGES - 1 && <NextArrow onClick={handleNext} />}
-    </main>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: OFFERTE_RESPONSIVE_STYLES }} />
+      {pageId === 'uitdaging' && (
+        <Uitdaging
+          onNext={handleNext}
+          onBack={handleBack}
+          progressLabel={progressLabel}
+          sectionLabel={sectionLabel}
+          prospect={prospect}
+          quote={quote ?? null}
+        />
+      )}
+
+      {pageId === 'aanpak' && (
+        <Aanpak
+          onNext={handleNext}
+          onBack={handleBack}
+          progressLabel={progressLabel}
+          sectionLabel={sectionLabel}
+          prospect={prospect}
+          quote={quote ?? null}
+        />
+      )}
+
+      {pageId === 'investering' && (
+        <Investering
+          onNext={handleNext}
+          onBack={currentPage === 0 ? undefined : handleBack}
+          progressLabel={progressLabel}
+          sectionLabel={sectionLabel}
+          prospect={prospect}
+          quote={quote ?? null}
+        />
+      )}
+
+      {pageId === 'scope' && (
+        <Scope
+          onNext={handleNext}
+          onBack={handleBack}
+          progressLabel={progressLabel}
+          sectionLabel={sectionLabel}
+          prospect={prospect}
+        />
+      )}
+
+      {pageId === 'signing' && (
+        <Signing
+          onBack={handleBack}
+          onNext={handleNext}
+          progressLabel={progressLabel}
+          sectionLabel={sectionLabel}
+          prospect={prospect}
+          quote={quote ?? null}
+        />
+      )}
+
+      {pageId === 'bevestigd' && (
+        <Bevestigd
+          onBack={handleBack}
+          progressLabel={progressLabel}
+          sectionLabel={sectionLabel}
+          prospect={prospect}
+          slug={slug}
+        />
+      )}
+    </>
   );
 }
 
@@ -282,12 +240,14 @@ function Uitdaging({
   onNext,
   onBack,
   progressLabel,
+  sectionLabel,
   prospect,
   quote,
 }: {
   onNext: () => void;
   onBack: () => void;
   progressLabel: string;
+  sectionLabel: string;
   prospect: BrochureProspect;
   quote: BrochureQuote;
 }) {
@@ -310,13 +270,17 @@ function Uitdaging({
   ];
 
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
+    <main
+      className="offerte-main"
+      style={{ ...pageBase, backgroundColor: NAVY }}
+    >
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       {/* Viewport-fit content — hero statement top, 3 cards below */}
       <div
+        className="offerte-page-content"
         style={{
           position: 'absolute',
           inset: 0,
@@ -348,7 +312,7 @@ function Uitdaging({
               fontWeight: 500,
             }}
           >
-            [ 02 ]
+            {sectionLabel}
           </span>
           <span style={{ color: TEXT_ON_NAVY }}>De uitdaging</span>
         </div>
@@ -484,12 +448,14 @@ function Aanpak({
   onNext,
   onBack,
   progressLabel,
+  sectionLabel,
   prospect,
   quote,
 }: {
   onNext: () => void;
   onBack: () => void;
   progressLabel: string;
+  sectionLabel: string;
   prospect: BrochureProspect;
   quote: BrochureQuote;
 }) {
@@ -521,12 +487,16 @@ function Aanpak({
   ];
 
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
+    <main
+      className="offerte-main"
+      style={{ ...pageBase, backgroundColor: NAVY }}
+    >
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       <div
+        className="offerte-page-content"
         style={{
           position: 'absolute',
           inset: 0,
@@ -559,7 +529,7 @@ function Aanpak({
               fontWeight: 500,
             }}
           >
-            [ 03 ]
+            {sectionLabel}
           </span>
           <span style={{ color: TEXT_ON_NAVY }}>Onze aanpak</span>
         </div>
@@ -715,16 +685,173 @@ function Aanpak({
 // Page 4 — Investering (split: phase breakdown + summary card)
 // ─────────────────────────────────────────────────────────────────────────────
 
+const OFFERTE_RESPONSIVE_STYLES = `
+  /* Mobile scroll — overrides pageBase position:fixed on small viewports */
+  @media (max-width: 768px) {
+    .offerte-main {
+      position: relative !important;
+      overflow-y: auto !important;
+      height: auto !important;
+      min-height: 100vh !important;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; /* Firefox */
+    }
+    .offerte-main::-webkit-scrollbar {
+      display: none; /* WebKit / Chromium */
+    }
+  }
+
+  /* Short-viewport scroll — allows signing page content to scroll on laptops with
+     limited vertical space (e.g. 13" MacBook, 1080p with taskbar) */
+  @media (max-height: 900px) {
+    .offerte-main {
+      overflow-y: auto !important;
+      scrollbar-width: none; /* Firefox */
+    }
+    .offerte-main::-webkit-scrollbar {
+      display: none; /* WebKit / Chromium */
+    }
+  }
+
+  /* Page content wrappers — release absolute positioning on mobile for natural flow */
+  .offerte-page-content {
+    position: absolute;
+    inset: 0;
+  }
+  @media (max-width: 768px) {
+    .offerte-page-content {
+      position: relative !important;
+      inset: auto !important;
+      width: 100% !important;
+      height: auto !important;
+    }
+  }
+
+  .offerte-page-4 { padding: 120px 72px 160px; }
+  @media (max-width: 1024px) {
+    .offerte-page-4 { padding: 28px 40px !important; }
+  }
+  @media (max-width: 768px) {
+    .offerte-page-4 { padding: 90px 24px 180px !important; }
+  }
+
+  .offerte-page-6 { padding: 120px 72px 160px; }
+  @media (max-width: 1024px) {
+    .offerte-page-6 { padding: 28px 40px !important; }
+  }
+  @media (max-width: 768px) {
+    .offerte-page-6 { padding: 90px 24px 180px !important; }
+  }
+
+  .offerte-page-7 { padding: 120px 72px 160px; }
+  @media (max-width: 1024px) {
+    .offerte-page-7 { padding: 28px 40px !important; }
+  }
+  @media (max-width: 768px) {
+    .offerte-page-7 { padding: 90px 24px 180px !important; }
+  }
+
+  .offerte-line-header {
+    display: grid;
+    grid-template-columns: 32px 1fr 64px 120px;
+    gap: 16px;
+  }
+  .offerte-line-row {
+    display: grid;
+    grid-template-columns: 32px 1fr 64px 120px;
+    gap: 16px;
+    align-items: baseline;
+  }
+  .col-uren-bedrag { display: contents; }
+  .col-uren-bedrag > div { text-align: right; }
+
+  .offerte-investering-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 48px;
+  }
+
+  .offerte-signing-split {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 48px;
+    align-items: start;
+  }
+
+  /* Bevestigd — 3-card grid */
+  .offerte-bevestigd-steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    max-width: 1000px;
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  /* Bevestigd — action buttons */
+  .offerte-bevestigd-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  @media (max-width: 768px) {
+    .offerte-signing-split {
+      grid-template-columns: 1fr !important;
+      gap: 24px !important;
+    }
+    .offerte-page-4 { padding: 90px 24px 180px !important; }
+    .offerte-line-header { display: none !important; }
+    .offerte-line-row {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(53, 59, 102, 0.55);
+    }
+    .offerte-line-row .col-omschrijving { font-weight: 600; }
+    /* Issue 1: prevent description text from touching the right edge on mobile */
+    .offerte-line-row .col-omschrijving .description-text {
+      max-width: 85%;
+    }
+    .col-uren-bedrag {
+      display: flex !important;
+      justify-content: space-between;
+      color: #898999;
+      font-size: 13px;
+    }
+    .offerte-investering-split {
+      grid-template-columns: 1fr !important;
+      gap: 24px !important;
+    }
+    /* Issue 3: 3-card grid collapses to 1 column on mobile */
+    .offerte-bevestigd-steps {
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+    }
+    /* Issue 3: action buttons stack on mobile */
+    .offerte-bevestigd-actions {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 12px !important;
+    }
+    .offerte-bevestigd-actions a {
+      justify-content: center;
+    }
+  }
+`;
+
 function Investering({
   onNext,
   onBack,
   progressLabel,
+  sectionLabel,
   prospect,
   quote,
 }: {
   onNext: () => void;
-  onBack: () => void;
+  onBack?: () => void;
   progressLabel: string;
+  sectionLabel: string;
   prospect: BrochureProspect;
   quote: BrochureQuote;
 }) {
@@ -759,23 +886,23 @@ function Investering({
   const subtotal = lines.reduce((acc, l) => acc + l.uren * l.rate, 0);
   const vat = subtotal * btwPct;
   const total = subtotal + vat;
-  const phase1 = total * 0.25;
-  const phase2 = total * 0.5;
-  const phase3 = total * 0.25;
 
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
+    <main
+      className="offerte-main"
+      style={{ ...pageBase, backgroundColor: NAVY }}
+    >
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       <div
+        className="offerte-page-4 offerte-page-content"
         style={{
           position: 'absolute',
           inset: 0,
           display: 'grid',
           gridTemplateRows: 'auto auto 1fr',
-          padding: '120px 72px 160px',
           fontFamily: 'var(--font-sora), sans-serif',
           color: TEXT_ON_NAVY,
           zIndex: 1,
@@ -802,7 +929,7 @@ function Investering({
               fontWeight: 500,
             }}
           >
-            [ 04 ]
+            {sectionLabel}
           </span>
           <span style={{ color: TEXT_ON_NAVY }}>Investering</span>
         </div>
@@ -810,7 +937,7 @@ function Investering({
         {/* Hero statement */}
         <h1
           style={{
-            fontSize: 'clamp(40px, 4.5vw, 68px)',
+            fontSize: 'clamp(36px, 5vw, 64px)',
             fontWeight: 700,
             lineHeight: 1.05,
             letterSpacing: '-0.025em',
@@ -832,10 +959,8 @@ function Investering({
 
         {/* Split: phase breakdown (left) + summary card (right) */}
         <div
+          className="offerte-investering-split"
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)',
-            gap: '48px',
             alignItems: 'start',
             paddingTop: '16px',
           }}
@@ -849,10 +974,8 @@ function Investering({
             }}
           >
             <div
+              className="offerte-line-header"
               style={{
-                display: 'grid',
-                gridTemplateColumns: '32px 1fr 64px 120px',
-                gap: '16px',
                 padding: '0 0 12px',
                 fontSize: '10px',
                 fontWeight: 500,
@@ -871,13 +994,10 @@ function Investering({
             {lines.map((l) => (
               <div
                 key={l.num}
+                className="offerte-line-row"
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: '32px 1fr 64px 120px',
-                  gap: '16px',
                   padding: '20px 0',
                   borderBottom: `1px solid ${CONTAINER_BORDER}`,
-                  alignItems: 'baseline',
                 }}
               >
                 <span
@@ -892,7 +1012,7 @@ function Investering({
                 >
                   {l.num}
                 </span>
-                <div>
+                <div className="col-omschrijving">
                   <div
                     style={{
                       fontSize: '17px',
@@ -904,6 +1024,7 @@ function Investering({
                     {l.fase}
                   </div>
                   <div
+                    className="description-text"
                     style={{
                       fontSize: '13px',
                       fontWeight: 300,
@@ -914,28 +1035,28 @@ function Investering({
                     {l.desc}
                   </div>
                 </div>
-                <div
-                  style={{
-                    fontSize: '15px',
-                    fontWeight: 500,
-                    color: TEXT_ON_NAVY,
-                    textAlign: 'right',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                >
-                  {l.uren > 0 ? `${l.uren}u × €${l.rate}` : '—'}
-                </div>
-                <div
-                  style={{
-                    fontSize: '17px',
-                    fontWeight: 500,
-                    color: TEXT_ON_NAVY,
-                    textAlign: 'right',
-                    fontVariantNumeric: 'tabular-nums',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  {l.uren > 0 ? `€\u00a0${fmt(l.uren * l.rate)}` : '—'}
+                <div className="col-uren-bedrag">
+                  <div
+                    style={{
+                      fontSize: '15px',
+                      fontWeight: 500,
+                      color: TEXT_ON_NAVY,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {l.uren > 0 ? `${l.uren}u` : '—'}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '17px',
+                      fontWeight: 500,
+                      color: TEXT_ON_NAVY,
+                      fontVariantNumeric: 'tabular-nums',
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {l.uren > 0 ? `€\u00a0${fmt(l.uren * l.rate)}` : '—'}
+                  </div>
                 </div>
               </div>
             ))}
@@ -1032,36 +1153,45 @@ function Investering({
               />
             </div>
 
-            <div
-              style={{
-                borderTop: `1px solid ${CONTAINER_BORDER}`,
-                paddingTop: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-              }}
-            >
+            {quote?.paymentSchedule && quote.paymentSchedule.length > 0 && (
               <div
                 style={{
-                  fontSize: '10px',
-                  fontWeight: 500,
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
-                  color: TEXT_MUTED_ON_NAVY,
-                  marginBottom: '4px',
+                  borderTop: `1px solid ${CONTAINER_BORDER}`,
+                  paddingTop: '20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
                 }}
               >
-                Betaalschema
+                <div
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 500,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color: TEXT_MUTED_ON_NAVY,
+                    marginBottom: '4px',
+                  }}
+                >
+                  Betaalschema
+                </div>
+                {quote.paymentSchedule.map((installment, idx) => {
+                  const amount = (total * installment.percentage) / 100;
+                  return (
+                    <Row
+                      key={idx}
+                      label={`${installment.percentage}% ${installment.label.toLowerCase()}`}
+                      value={`€ ${fmt(amount)}`}
+                    />
+                  );
+                })}
               </div>
-              <Row label="25% bij start" value={`€ ${fmt(phase1)}`} />
-              <Row label="50% bij oplevering" value={`€ ${fmt(phase2)}`} />
-              <Row label="25% na acceptatie" value={`€ ${fmt(phase3)}`} />
-            </div>
+            )}
           </div>
         </div>
       </div>
 
-      <BackArrow onClick={onBack} />
+      {onBack && <BackArrow onClick={onBack} />}
       <NextArrow onClick={onNext} />
     </main>
   );
@@ -1117,11 +1247,13 @@ function Scope({
   onNext,
   onBack,
   progressLabel,
+  sectionLabel,
   prospect,
 }: {
   onNext: () => void;
   onBack: () => void;
   progressLabel: string;
+  sectionLabel: string;
   prospect: BrochureProspect;
 }) {
   const inScope = [
@@ -1143,12 +1275,16 @@ function Scope({
   ];
 
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
+    <main
+      className="offerte-main"
+      style={{ ...pageBase, backgroundColor: NAVY }}
+    >
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       <div
+        className="offerte-page-content"
         style={{
           position: 'absolute',
           inset: 0,
@@ -1181,7 +1317,7 @@ function Scope({
               fontWeight: 500,
             }}
           >
-            [ 05 ]
+            {sectionLabel}
           </span>
           <span style={{ color: TEXT_ON_NAVY }}>Scope & afsluiting</span>
         </div>
@@ -1412,17 +1548,56 @@ function Signing({
   onBack,
   onNext,
   progressLabel,
+  sectionLabel,
   prospect,
   quote,
 }: {
   onBack: () => void;
   onNext: () => void;
   progressLabel: string;
+  sectionLabel: string;
   prospect: BrochureProspect;
   quote: BrochureQuote;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasSignature, setHasSignature] = useState(false);
+  const [signerName, setSignerName] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const trimmedName = signerName.trim();
+  const canSubmit =
+    hasSignature && trimmedName.length >= 2 && agreedToTerms && !submitting;
+
+  const handleSubmitAccept = async () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const signatureData =
+        canvasRef.current?.toDataURL('image/png') ?? undefined;
+      const res = await fetch('/api/offerte/accept', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          prospectId: prospect.id,
+          signatureData,
+          signerName: trimmedName,
+          agreedToTerms: true,
+        }),
+      });
+      if (!res.ok) {
+        setSubmitError('Kon niet versturen, probeer opnieuw.');
+        setSubmitting(false);
+        return;
+      }
+      onNext();
+    } catch {
+      setSubmitError('Netwerkfout, probeer opnieuw.');
+      setSubmitting(false);
+    }
+  };
 
   // Client-side computed — rendered inside a suppressHydrationWarning span
   // below. Safe because the date is a display-only string, never part of
@@ -1455,12 +1630,24 @@ function Signing({
       ctx.lineJoin = 'round';
     };
 
+    // Track the last measured size so we only reset the canvas when the
+    // CSS box actually changes (not on every ResizeObserver tick).
+    let lastW = 0;
+    let lastH = 0;
+
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
+      // Only re-initialise when the visible size has actually changed.
+      if (Math.round(rect.width) === lastW && Math.round(rect.height) === lastH)
+        return;
+      lastW = Math.round(rect.width);
+      lastH = Math.round(rect.height);
       const dpr = window.devicePixelRatio || 1;
+      // Resizing the canvas attribute clears its content — reset signature state.
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
+      setHasSignature(false);
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       ctx.scale(dpr, dpr);
@@ -1468,6 +1655,12 @@ function Signing({
     };
 
     resize();
+
+    // ResizeObserver catches devtools panel open/close and orientation changes
+    // that don't fire a window resize event.
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+    // Keep window resize as a fallback for browsers without ResizeObserver.
     window.addEventListener('resize', resize);
 
     let drawing = false;
@@ -1530,6 +1723,7 @@ function Signing({
     canvas.addEventListener('touchcancel', end);
 
     return () => {
+      ro.disconnect();
       window.removeEventListener('resize', resize);
       canvas.removeEventListener('mousedown', start);
       window.removeEventListener('mousemove', move);
@@ -1564,18 +1758,21 @@ function Signing({
     }).format(n);
 
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
+    <main
+      className="offerte-main"
+      style={{ ...pageBase, backgroundColor: NAVY }}
+    >
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       <div
+        className="offerte-page-6 offerte-page-content"
         style={{
           position: 'absolute',
           inset: 0,
           display: 'grid',
           gridTemplateRows: 'auto auto 1fr',
-          padding: '120px 72px 160px',
           fontFamily: 'var(--font-sora), sans-serif',
           color: TEXT_ON_NAVY,
           zIndex: 1,
@@ -1602,7 +1799,7 @@ function Signing({
               fontWeight: 500,
             }}
           >
-            [ 06 ]
+            {sectionLabel}
           </span>
           <span style={{ color: TEXT_ON_NAVY }}>Akkoord</span>
         </div>
@@ -1631,14 +1828,7 @@ function Signing({
         </h1>
 
         {/* Split: summary (left) + signing form (right) */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 0.8fr) minmax(0, 1.2fr)',
-            gap: '48px',
-            alignItems: 'start',
-          }}
-        >
+        <div className="offerte-signing-split">
           {/* LEFT — Summary card */}
           <div
             style={{
@@ -1738,6 +1928,87 @@ function Signing({
                 }}
               />
             </div>
+
+            {/* Payment schedule — under totaalbedrag in the left card */}
+            {quote?.paymentSchedule && quote.paymentSchedule.length > 0 && (
+              <div
+                style={{
+                  borderTop: `1px solid ${CONTAINER_BORDER}`,
+                  paddingTop: '20px',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 500,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color: GOLD_LIGHT,
+                    marginBottom: '12px',
+                  }}
+                >
+                  Betaling in termijnen
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  {quote.paymentSchedule.map((item, idx) => {
+                    const bedrag =
+                      total > 0 ? total * (item.percentage / 100) : 0;
+                    const fmtCurrency = new Intl.NumberFormat('nl-NL', {
+                      style: 'currency',
+                      currency: 'EUR',
+                    });
+                    return (
+                      <div key={idx}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'baseline',
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: '13px',
+                              fontWeight: 500,
+                              color: TEXT_ON_NAVY,
+                            }}
+                          >
+                            {item.label}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '13px',
+                              fontWeight: 500,
+                              color: TEXT_ON_NAVY,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {item.percentage}%{' '}
+                            {bedrag > 0 && `— ${fmtCurrency.format(bedrag)}`}
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 300,
+                            color: TEXT_MUTED_ON_NAVY,
+                            marginTop: '2px',
+                          }}
+                        >
+                          {item.dueOn}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* RIGHT — Signing form */}
@@ -1749,8 +2020,41 @@ function Signing({
               maxWidth: '560px',
             }}
           >
-            {/* Name input */}
-            <Field label="Naam" placeholder="Volledige naam" />
+            {/* Name input — controlled, required */}
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+            >
+              <label
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 500,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color: TEXT_MUTED_ON_NAVY,
+                }}
+              >
+                Naam *
+              </label>
+              <input
+                type="text"
+                placeholder="Volledige naam"
+                value={signerName}
+                onChange={(e) => setSignerName(e.target.value)}
+                disabled={submitting}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: `1px solid ${CONTAINER_BORDER}`,
+                  padding: '12px 0',
+                  fontFamily: 'var(--font-sora), sans-serif',
+                  fontSize: '18px',
+                  fontWeight: 500,
+                  color: TEXT_ON_NAVY,
+                  outline: 'none',
+                  letterSpacing: '-0.005em',
+                }}
+              />
+            </div>
 
             {/* Signature canvas */}
             <div
@@ -1840,47 +2144,86 @@ function Signing({
               </div>
             </div>
 
-            {/* Legal disclaimer — key terms + link to Klarifai terms page */}
-            <p
+            {/* Legal acceptance — required checkbox + key terms */}
+            <label
               style={{
-                fontSize: '13px',
-                fontWeight: 300,
-                lineHeight: 1.6,
-                color: TEXT_MUTED_ON_NAVY,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                cursor: submitting ? 'not-allowed' : 'pointer',
                 margin: '8px 0 0',
               }}
             >
-              Door te ondertekenen ga je akkoord met onze{' '}
-              <TermsLink href="https://klarifai.nl/legal/terms-and-conditions">
-                algemene voorwaarden
-              </TermsLink>
-              . Betaaltermijn 14 dagen, intellectueel eigendom gaat over naar{' '}
-              {prospect.companyName ?? 'de klant'} na volledige betaling, 30
-              dagen garantie op opgeleverd werk. Een op maat gemaakte
-              verwerkersovereenkomst volgt samen met het contract, binnen 5
-              werkdagen na akkoord.
-            </p>
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                disabled={submitting}
+                style={{
+                  marginTop: '3px',
+                  width: '16px',
+                  height: '16px',
+                  accentColor: GOLD_MID,
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 300,
+                  lineHeight: 1.6,
+                  color: TEXT_MUTED_ON_NAVY,
+                }}
+              >
+                Ik ga akkoord met de{' '}
+                <TermsLink href="https://klarifai.nl/legal/terms-and-conditions">
+                  algemene voorwaarden
+                </TermsLink>
+                .{' '}
+                {quote?.paymentSchedule && quote.paymentSchedule.length > 0
+                  ? 'Betaling in termijnen volgens bovenstaand schema,'
+                  : 'Betaaltermijn 14 dagen,'}{' '}
+                intellectueel eigendom gaat over naar{' '}
+                {prospect.companyName ?? 'de klant'} na volledige betaling, 60
+                dagen garantie op opgeleverd werk. Een op maat gemaakte
+                verwerkersovereenkomst volgt samen met het contract, binnen 5
+                werkdagen na akkoord.
+              </span>
+            </label>
 
             {/* Gold pill CTA — full width, gated on signature being drawn */}
+            {submitError && (
+              <p
+                style={{
+                  margin: '0 0 4px',
+                  fontSize: '13px',
+                  color: '#ff6b6b',
+                  fontWeight: 500,
+                }}
+              >
+                {submitError}
+              </p>
+            )}
             <button
               type="button"
-              onClick={onNext}
-              disabled={!hasSignature}
+              onClick={handleSubmitAccept}
+              disabled={!canSubmit}
               style={{
                 marginTop: '8px',
                 padding: '20px 32px',
                 borderRadius: '9999px',
                 border: 'none',
-                background: hasSignature
+                background: canSubmit
                   ? GOLD_GRADIENT
                   : 'rgba(53, 59, 102, 0.4)',
-                color: hasSignature ? NAVY : TEXT_MUTED_ON_NAVY,
+                color: canSubmit ? NAVY : TEXT_MUTED_ON_NAVY,
                 fontFamily: 'var(--font-sora), sans-serif',
                 fontSize: '16px',
                 fontWeight: 700,
                 letterSpacing: '-0.01em',
-                cursor: hasSignature ? 'pointer' : 'not-allowed',
-                boxShadow: hasSignature
+                cursor: canSubmit ? 'pointer' : 'not-allowed',
+                boxShadow: canSubmit
                   ? '0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(225, 195, 60, 0.35)'
                   : 'none',
                 transition:
@@ -1891,20 +2234,20 @@ function Signing({
                 gap: '10px',
               }}
               onMouseEnter={(e) => {
-                if (!hasSignature) return;
+                if (!canSubmit) return;
                 e.currentTarget.style.transform = 'translateY(-1px)';
                 e.currentTarget.style.boxShadow =
                   '0 2px 4px rgba(0,0,0,0.2), 0 12px 32px rgba(225, 195, 60, 0.5)';
               }}
               onMouseLeave={(e) => {
-                if (!hasSignature) return;
+                if (!canSubmit) return;
                 e.currentTarget.style.transform = 'none';
                 e.currentTarget.style.boxShadow =
                   '0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(225, 195, 60, 0.35)';
               }}
             >
               <CheckIconSolid />
-              Bevestig en teken
+              {submitting ? 'Versturen...' : 'Bevestig en teken'}
             </button>
           </div>
         </div>
@@ -1913,52 +2256,6 @@ function Signing({
       <BackArrow onClick={onBack} />
       {/* No next arrow — signing button IS the forward action */}
     </main>
-  );
-}
-
-function Field({
-  label,
-  placeholder,
-  defaultValue,
-  readOnly,
-}: {
-  label: string;
-  placeholder?: string;
-  defaultValue?: string;
-  readOnly?: boolean;
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <label
-        style={{
-          fontSize: '10px',
-          fontWeight: 500,
-          letterSpacing: '0.18em',
-          textTransform: 'uppercase',
-          color: TEXT_MUTED_ON_NAVY,
-        }}
-      >
-        {label}
-      </label>
-      <input
-        type="text"
-        placeholder={placeholder}
-        defaultValue={defaultValue}
-        readOnly={readOnly}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          borderBottom: `1px solid ${CONTAINER_BORDER}`,
-          padding: '12px 0',
-          fontFamily: 'var(--font-sora), sans-serif',
-          fontSize: '18px',
-          fontWeight: 500,
-          color: TEXT_ON_NAVY,
-          outline: 'none',
-          letterSpacing: '-0.005em',
-        }}
-      />
-    </div>
   );
 }
 
@@ -2012,11 +2309,15 @@ function CheckIconSolid() {
 function Bevestigd({
   onBack,
   progressLabel,
+  sectionLabel: _sectionLabel,
   prospect,
+  slug,
 }: {
   onBack: () => void;
   progressLabel: string;
+  sectionLabel: string;
   prospect: BrochureProspect;
+  slug: string;
 }) {
   // Client-side computed — rendered inside a suppressHydrationWarning span
   // below. Safe because the date is a display-only label, never part of
@@ -2051,12 +2352,16 @@ function Bevestigd({
   ];
 
   return (
-    <main style={{ ...pageBase, backgroundColor: NAVY }}>
+    <main
+      className="offerte-main"
+      style={{ ...pageBase, backgroundColor: NAVY }}
+    >
       <GeometricBackdrop />
       <BrandChrome companyName={prospect.companyName} />
       <ProgressIndicator label={progressLabel} />
 
       <div
+        className="offerte-page-7 offerte-page-content"
         style={{
           position: 'absolute',
           inset: 0,
@@ -2064,7 +2369,6 @@ function Bevestigd({
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '120px 72px 160px',
           fontFamily: 'var(--font-sora), sans-serif',
           color: TEXT_ON_NAVY,
           zIndex: 1,
@@ -2130,7 +2434,7 @@ function Bevestigd({
         {/* Lead */}
         <p
           style={{
-            fontSize: '20px',
+            fontSize: 'clamp(15px, 2.2vw, 20px)',
             fontWeight: 500,
             lineHeight: 1.45,
             letterSpacing: '-0.005em',
@@ -2144,17 +2448,8 @@ function Bevestigd({
           voorstel en het contract. Daarna plannen we de kick-off.
         </p>
 
-        {/* Next steps — 3 columns */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: '20px',
-            maxWidth: '1000px',
-            width: '100%',
-            marginTop: '16px',
-          }}
-        >
+        {/* Next steps — 3 columns (collapses to 1 on mobile via .offerte-bevestigd-steps) */}
+        <div className="offerte-bevestigd-steps">
           {steps.map((s) => (
             <div
               key={s.num}
@@ -2206,17 +2501,12 @@ function Bevestigd({
           ))}
         </div>
 
-        {/* Action buttons */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '16px',
-            marginTop: '8px',
-          }}
-        >
+        {/* Action buttons (stacks on mobile via .offerte-bevestigd-actions) */}
+        <div className="offerte-bevestigd-actions">
           <a
-            href="/voorstel.pdf"
-            download
+            href={`/offerte/${slug}/print`}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -2244,8 +2534,9 @@ function Bevestigd({
             Download voorstel (PDF)
           </a>
           <a
-            href="/calendar.ics"
-            download
+            href="https://cal.com/romano-kanters-klarifai/kick-off"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -2276,7 +2567,7 @@ function Bevestigd({
             }}
           >
             <CalendarIcon />
-            Agenda uitnodiging
+            Plan kick-off in
           </a>
         </div>
       </div>

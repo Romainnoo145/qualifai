@@ -97,7 +97,7 @@ function ProcessSignalsButton() {
     <button
       onClick={() => process.mutate()}
       disabled={process.isPending}
-      className="inline-flex items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] bg-[var(--color-ink)] text-white border-none rounded-md"
+      className="inline-flex items-center gap-2 px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] rounded-full"
     >
       {process.isPending ? (
         <>

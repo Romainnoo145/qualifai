@@ -23,16 +23,20 @@ interface ProspectForStage {
 export function computePipelineStage(p: ProspectForStage): PipelineStage {
   // Priority order: most advanced stage first
   if (p.hasBookedSession || p.status === 'CONVERTED') return 'Booked';
-  if (p.status === 'ENGAGED') return 'Engaged';
   if (p.status === 'SENT') return 'Sending';
   const hasActiveResearch =
     p.hasActiveResearch === true ||
     (p.researchRun?.status
-      ? ['PENDING', 'CRAWLING', 'EXTRACTING', 'HYPOTHESIS', 'BRIEFING'].includes(
-          p.researchRun.status,
-        )
+      ? [
+          'PENDING',
+          'CRAWLING',
+          'EXTRACTING',
+          'HYPOTHESIS',
+          'BRIEFING',
+        ].includes(p.researchRun.status)
       : false);
   if (p.status === 'GENERATING' || hasActiveResearch) return 'Researching';
+  if (p.status === 'ENGAGED') return 'Engaged';
   if (
     p.researchRun?.qualityApproved === true &&
     p.status !== 'DRAFT' &&

@@ -6,6 +6,7 @@ import {
   generateOpportunityDrafts,
   runSummaryPayload,
   reviewSeedUrls,
+  matchProofs,
 } from '@/lib/workflow-engine';
 import {
   retrieveRagPassages,
@@ -34,7 +35,12 @@ import {
 import { fetchEmployeeReviews } from '@/lib/enrichment/employee-reviews';
 import { fetchLinkedInJobs } from '@/lib/enrichment/linkedin-jobs';
 import { fetchCustomerReviews } from '@/lib/enrichment/google-reviews';
-import { scoreEvidenceBatch, type ScoredEvidence } from '@/lib/evidence-scorer';
+import {
+  scoreEvidenceBatch,
+  type ScoredEvidence,
+  RELEVANCE_THRESHOLDS,
+  DEFAULT_RELEVANCE_THRESHOLD,
+} from '@/lib/evidence-scorer';
 import {
   discoverSitemapUrls,
   type SitemapCandidate,
@@ -70,6 +76,25 @@ import type {
   KlarifaiNarrativeInput,
 } from '@/lib/analysis/types';
 import type { Prisma, PrismaClient } from '@prisma/client';
+import { industryToSector } from '@/lib/constants/sectors';
+import {
+  selectEvidenceForPrompt,
+  buildSourceBreakdown,
+} from '@/lib/analysis/evidence-selector';
+import { generateSectionVisuals } from '@/lib/analysis/visual-generator';
+import { createHash } from 'node:crypto';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GEMINI_MODEL_FLASH } from '@/lib/ai/constants';
+
+let _descGenAI: GoogleGenerativeAI | null = null;
+function getDescGenAI(): GoogleGenerativeAI {
+  if (!_descGenAI) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) throw new Error('GEMINI_API_KEY not set');
+    _descGenAI = new GoogleGenerativeAI(key);
+  }
+  return _descGenAI;
+}
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -365,6 +390,33 @@ function dedupeEvidenceDrafts<
   return unique;
 }
 
+/** Normalize snippet for content hashing: lowercase, collapse whitespace, trim */
+export function normalizeSnippet(snippet: string): string {
+  return snippet.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/** SHA-256 hash of normalized snippet text */
+export function computeContentHash(snippet: string): string {
+  const normalized = normalizeSnippet(snippet);
+  return createHash('sha256').update(normalized, 'utf8').digest('hex');
+}
+
+/**
+ * Phase 67: Returns true if the evidence item should be KEPT (passes the relevance gate).
+ * Returns false if the item should be DROPPED.
+ * Items with no aiScore always pass (scorer failure fallback — never penalise unscored items).
+ * Items at exactly the threshold value pass — check is strictly less-than (<).
+ */
+export function passesRelevanceGate(
+  aiScore: { aiRelevance: number } | undefined,
+  sourceType: string,
+): boolean {
+  if (!aiScore) return true; // No score = pass through
+  const threshold =
+    RELEVANCE_THRESHOLDS[sourceType] ?? DEFAULT_RELEVANCE_THRESHOLD;
+  return aiScore.aiRelevance >= threshold;
+}
+
 function isFallbackEvidenceDraft(
   draft: { metadata?: unknown } | null | undefined,
 ): boolean {
@@ -644,6 +696,13 @@ export async function executeResearchRun(
     sourceSet: initialSourceSet,
   });
 
+  // Fresh runs replace all prior evidence — delete old ResearchRuns (cascades to EvidenceItem).
+  if (!input.existingRunId) {
+    await db.researchRun.deleteMany({
+      where: { prospectId: input.prospectId },
+    });
+  }
+
   const run = input.existingRunId
     ? await db.researchRun.update({
         where: { id: input.existingRunId },
@@ -665,9 +724,7 @@ export async function executeResearchRun(
         },
       });
 
-  // Re-runs update the same ResearchRun row.
-  // Clear prior generated rows first so stale evidence URLs from older logic
-  // do not persist (for example historical guessed /contact|/services pages).
+  // Re-runs (existingRunId path) clear the same run's rows before re-populating.
   if (input.existingRunId) {
     await db.$transaction([
       db.evidenceItem.deleteMany({ where: { researchRunId: run.id } }),
@@ -1232,10 +1289,15 @@ export async function executeResearchRun(
   const evidenceDraftCap = input.deepCrawl
     ? DEEP_EVIDENCE_DRAFT_CAP
     : INTERACTIVE_EVIDENCE_DRAFT_CAP;
-  const evidenceDrafts = dedupeEvidenceDrafts(allDrafts).slice(
-    0,
-    evidenceDraftCap,
-  );
+  const rawDrafts = dedupeEvidenceDrafts(allDrafts).slice(0, evidenceDraftCap);
+
+  // Filter out fallback/notFound stubs — these are noise, not evidence
+  const evidenceDrafts = rawDrafts.filter((draft) => {
+    const meta = draft.metadata as Record<string, unknown> | null;
+    if (meta?.fallback === true) return false;
+    if (meta?.notFound === true) return false;
+    return true;
+  });
 
   // AI evidence scoring — score all items for workflow/automation relevance
   const scoredMap = new Map<number, ScoredEvidence>();
@@ -1249,6 +1311,11 @@ export async function executeResearchRun(
       snippet: draft.snippet,
       metadata: draft.metadata,
     }));
+
+    await db.researchRun.update({
+      where: { id: run.id },
+      data: { status: 'EXTRACTING' },
+    });
 
     const scored = await scoreEvidenceBatch(toScore, {
       companyName: prospect.companyName,
@@ -1290,6 +1357,11 @@ export async function executeResearchRun(
     const draft = evidenceDrafts[i]!;
     const aiScore = scoredMap.get(i);
 
+    // Phase 67: Relevance gate — drop below-threshold items before DB insert
+    if (aiScore && !passesRelevanceGate(aiScore, draft.sourceType as string)) {
+      continue; // Below threshold — never reaches DB
+    }
+
     // Use AI-scored confidence if available, otherwise keep original
     const finalConfidence = aiScore
       ? aiScore.finalConfidence
@@ -1307,6 +1379,21 @@ export async function executeResearchRun(
         : {}),
     };
 
+    const contentHash = computeContentHash(draft.snippet);
+
+    // Dedup: skip if same content already exists for this prospect + sourceType
+    const existingEvidence = await db.evidenceItem.findFirst({
+      where: {
+        prospectId: input.prospectId,
+        sourceType: draft.sourceType,
+        contentHash,
+      },
+      select: { id: true },
+    });
+    if (existingEvidence) {
+      continue; // Already stored — skip duplicate
+    }
+
     const record = await db.evidenceItem.create({
       data: {
         researchRunId: run.id,
@@ -1317,6 +1404,7 @@ export async function executeResearchRun(
         snippet: draft.snippet,
         workflowTag: draft.workflowTag,
         confidenceScore: finalConfidence,
+        contentHash,
         metadata: toJson(metadata),
       },
       select: {
@@ -1331,6 +1419,45 @@ export async function executeResearchRun(
       },
     });
     evidenceRecords.push(record);
+  }
+
+  // Generate prospect description if missing (uses website evidence snippets + Gemini Flash)
+  let prospectDescription = prospect.description ?? null;
+  if (!prospectDescription) {
+    try {
+      const websiteSnippets = evidenceRecords
+        .filter(
+          (r) =>
+            r.sourceType === 'WEBSITE' && r.snippet && r.snippet.length > 40,
+        )
+        .slice(0, 4)
+        .map((r) => r.snippet)
+        .join('\n\n');
+
+      if (websiteSnippets.length > 60) {
+        const descModel = getDescGenAI().getGenerativeModel({
+          model: GEMINI_MODEL_FLASH,
+        });
+        const descPrompt = `Je bent een B2B-analist. Schrijf één zin in het Nederlands die beschrijft wat ${prospect.companyName ?? prospect.domain} doet, gebaseerd op onderstaande websitecontent. Maximaal 20 woorden. Geen aanhalingstekens, geen punt aan het einde.\n\n${websiteSnippets}`;
+        const descResult = await descModel.generateContent(descPrompt);
+        const generated = descResult.response
+          .text()
+          .trim()
+          .replace(/^["']|["']$/g, '');
+        if (generated) {
+          await db.prospect.update({
+            where: { id: prospect.id },
+            data: { description: generated },
+          });
+          prospectDescription = generated;
+        }
+      }
+    } catch (err) {
+      console.error(
+        '[Description Gen] Failed to generate prospect description:',
+        err,
+      );
+    }
   }
 
   // Phase 42: Intent extraction for Atlantis prospects (before RAG retrieval)
@@ -1356,7 +1483,7 @@ export async function executeResearchRun(
         {
           companyName: prospect.companyName ?? prospect.domain,
           industry: prospect.industry ?? null,
-          description: prospect.description ?? null,
+          description: prospectDescription,
           specialties: prospect.specialties,
         },
       );
@@ -1411,7 +1538,7 @@ export async function executeResearchRun(
       const aiQueryInputs = await buildEvidenceAwareQueries({
         companyName: prospect.companyName ?? prospect.domain,
         industry: prospect.industry,
-        description: prospect.description,
+        description: prospectDescription,
         spvName: prospect.spv?.name ?? null,
         evidence: nonRagEvidence,
       });
@@ -1436,7 +1563,7 @@ export async function executeResearchRun(
           {
             companyName: prospect.companyName ?? prospect.domain,
             industry: prospect.industry,
-            description: prospect.description,
+            description: prospectDescription,
             specialties: prospect.specialties,
             technologies: prospect.technologies,
             country: prospect.country ?? null,
@@ -1488,7 +1615,7 @@ export async function executeResearchRun(
         {
           companyName: prospect.companyName ?? prospect.domain,
           industry: prospect.industry,
-          description: prospect.description,
+          description: prospectDescription,
           specialties: prospect.specialties,
           technologies: prospect.technologies,
           country: prospect.country ?? null,
@@ -1535,6 +1662,22 @@ export async function executeResearchRun(
           inheritedWorkflowTag: passage.workflowTag,
           chunkMetadata: passage.chunkMetadata,
         };
+        const ragSnippet = passage.content.slice(0, 1800);
+        const ragContentHash = computeContentHash(ragSnippet);
+
+        // Dedup: skip if same RAG passage already exists for this prospect
+        const existingRag = await db.evidenceItem.findFirst({
+          where: {
+            prospectId: input.prospectId,
+            sourceType: 'RAG_DOCUMENT',
+            contentHash: ragContentHash,
+          },
+          select: { id: true },
+        });
+        if (existingRag) {
+          continue; // Already stored — skip duplicate
+        }
+
         const record = await db.evidenceItem.create({
           data: {
             researchRunId: run.id,
@@ -1545,9 +1688,10 @@ export async function executeResearchRun(
               passage.sectionHeader != null
                 ? `${passage.documentId} — ${passage.sectionHeader}`
                 : `${passage.documentId} — ${passage.documentTitle}`,
-            snippet: passage.content.slice(0, 1800),
+            snippet: ragSnippet,
             workflowTag: passage.workflowTag,
             confidenceScore,
+            contentHash: ragContentHash,
             metadata: toJson(metadata),
           },
           select: {
@@ -1620,6 +1764,11 @@ export async function executeResearchRun(
         // Non-critical — proceed without cross-connections
       }
 
+      await db.researchRun.update({
+        where: { id: run.id },
+        data: { status: 'BRIEFING' },
+      });
+
       // Phase 50: Narrative analysis generation — produces flowing boardroom content
       try {
         const spvs = await db.sPV.findMany({
@@ -1628,10 +1777,9 @@ export async function executeResearchRun(
         });
 
         // Map evidence records to EvidenceItem (PIPE-01: raw evidence, no intent compression)
-        const evidenceItems: EvidenceItem[] = evidenceRecords
+        // SELECT-01: Use selectEvidenceForPrompt for top-20 with max-5-per-source diversity cap
+        const allEvidence: EvidenceItem[] = evidenceRecords
           .filter((item) => item.sourceType !== 'RAG_DOCUMENT')
-          .sort((a, b) => b.confidenceScore - a.confidenceScore)
-          .slice(0, 60)
           .map((item) => ({
             sourceType: item.sourceType,
             sourceUrl: item.sourceUrl,
@@ -1640,6 +1788,7 @@ export async function executeResearchRun(
             confidenceScore: item.confidenceScore,
             workflowTag: item.workflowTag,
           }));
+        const evidenceItems = selectEvidenceForPrompt(allEvidence);
 
         // Map RAG passages to RagPassageInput (PIPE-02: with sourceLabel from Phase 49)
         const passageInputs: RagPassageInput[] = ragPassages.map((p) => ({
@@ -1655,7 +1804,7 @@ export async function executeResearchRun(
           prospect: {
             companyName: prospect.companyName ?? prospect.domain,
             industry: prospect.industry ?? null,
-            description: prospect.description ?? null,
+            description: prospectDescription,
             specialties: prospect.specialties ?? [],
             country: prospect.country ?? null,
             city: prospect.city ?? null,
@@ -1673,15 +1822,42 @@ export async function executeResearchRun(
 
         const analysisResult = await generateNarrativeAnalysis(narrativeInput);
 
+        // PROMPT-03: Enrich sections with visual data via Gemini Flash
+        let finalAnalysis = analysisResult;
+        try {
+          const visualResults = await generateSectionVisuals(
+            analysisResult.sections,
+            evidenceItems,
+          );
+          finalAnalysis = {
+            ...analysisResult,
+            sections: analysisResult.sections.map((s, i) => ({
+              ...s,
+              ...(visualResults[i]?.visualType
+                ? {
+                    visualType: visualResults[i].visualType,
+                    visualData: visualResults[i].visualData,
+                  }
+                : {}),
+            })),
+          };
+        } catch (visualErr) {
+          console.warn(
+            '[research-executor] Visual enrichment failed, proceeding without:',
+            visualErr instanceof Error ? visualErr.message : visualErr,
+          );
+        }
+
         await db.prospectAnalysis.create({
           data: {
             researchRunId: run.id,
             prospectId: input.prospectId,
             version: 'analysis-v2',
-            content: toJson(analysisResult),
+            content: toJson(finalAnalysis),
             modelUsed: analysisResult.modelUsed,
             inputSnapshot: toJson({
               evidenceCount: evidenceItems.length,
+              sourceBreakdown: buildSourceBreakdown(evidenceItems),
               passageCount: passageInputs.length,
               crossConnectionCount: crossConnections.length,
               spvCount: spvs.length,
@@ -1746,23 +1922,54 @@ export async function executeResearchRun(
     // (This else-branch is already non-ATLANTIS; condition kept for clarity)
     {
       try {
-        // Fetch active Use Cases for this project
-        const useCases = await db.useCase.findMany({
+        // Fetch active Use Cases for this project, sector-aware
+        // Determine prospect's sector from industry
+        const prospectSector = industryToSector(prospect.industry);
+
+        // Fetch sector-matched use cases first, then fill with others
+        const sectorUseCases = prospectSector
+          ? await db.useCase.findMany({
+              where: {
+                projectId: prospect.project.id,
+                isActive: true,
+                isShipped: true,
+                sector: prospectSector,
+              },
+              select: {
+                id: true,
+                title: true,
+                summary: true,
+                category: true,
+                sector: true,
+                outcomes: true,
+              },
+              orderBy: { updatedAt: 'desc' },
+              take: 15,
+            })
+          : [];
+
+        // Fill remaining slots with other sectors (cross-pollination)
+        const sectorIds = new Set(sectorUseCases.map((u) => u.id));
+        const otherUseCases = await db.useCase.findMany({
           where: {
             projectId: prospect.project.id,
             isActive: true,
             isShipped: true,
+            ...(sectorIds.size > 0 ? { id: { notIn: [...sectorIds] } } : {}),
           },
           select: {
             id: true,
             title: true,
             summary: true,
             category: true,
+            sector: true,
             outcomes: true,
           },
           orderBy: { updatedAt: 'desc' },
-          take: 20, // Cap at 20 use cases to control prompt size
+          take: prospectSector ? 5 : 20,
         });
+
+        const useCases = [...sectorUseCases, ...otherUseCases];
 
         if (useCases.length === 0) {
           diagnostics.push({
@@ -1773,10 +1980,9 @@ export async function executeResearchRun(
           });
         } else {
           // Map evidence records to EvidenceItem (same as Atlantis)
-          const evidenceItems: EvidenceItem[] = evidenceRecords
+          // SELECT-01: Use selectEvidenceForPrompt for top-20 with max-5-per-source diversity cap
+          const allEvidence: EvidenceItem[] = evidenceRecords
             .filter((item) => item.sourceType !== 'RAG_DOCUMENT')
-            .sort((a, b) => b.confidenceScore - a.confidenceScore)
-            .slice(0, 60)
             .map((item) => ({
               sourceType: item.sourceType,
               sourceUrl: item.sourceUrl,
@@ -1785,6 +1991,7 @@ export async function executeResearchRun(
               confidenceScore: item.confidenceScore,
               workflowTag: item.workflowTag,
             }));
+          const evidenceItems = selectEvidenceForPrompt(allEvidence);
 
           // Cross-prospect connection detection (same logic as Atlantis)
           const klarifaiCrossConnections: CrossProspectConnection[] = [];
@@ -1825,12 +2032,13 @@ export async function executeResearchRun(
               title: uc.title,
               summary: uc.summary,
               category: uc.category,
+              sector: uc.sector ?? null,
               outcomes: uc.outcomes as string[],
             })),
             prospect: {
               companyName: prospect.companyName ?? prospect.domain,
               industry: prospect.industry ?? null,
-              description: prospect.description ?? null,
+              description: prospectDescription,
               specialties: prospect.specialties ?? [],
               country: prospect.country ?? null,
               city: prospect.city ?? null,
@@ -1843,17 +2051,90 @@ export async function executeResearchRun(
           const analysisResult =
             await generateKlarifaiNarrativeAnalysis(klarifaiInput);
 
+          // Step 2: Match use cases separately via matchProofs (Gemini Flash)
+          // Uses the narrative output as query context for semantic matching
+          const narrativeQuery = [
+            analysisResult.executiveSummary,
+            ...analysisResult.sections.map((s) => s.title),
+          ].join('. ');
+
+          const proofMatches = await matchProofs(db, narrativeQuery, 6, {
+            projectId: prospect.project.id,
+            sector: industryToSector(prospect.industry),
+          });
+
+          // Convert ProofMatchResults to UseCaseRecommendations
+          const useCaseRecommendations = proofMatches
+            .filter((m) => m.score >= 0.3 && !m.isCustomPlan)
+            .map((m) => ({
+              useCaseTitle: m.proofTitle,
+              category: '', // not available from proofMatch
+              relevanceNarrative: m.proofSummary ?? '',
+              applicableOutcomes: [] as string[],
+            }));
+
+          // Enrich recommendations with full use case data (category + outcomes)
+          for (const rec of useCaseRecommendations) {
+            const fullUc = useCases.find((uc) => uc.title === rec.useCaseTitle);
+            if (fullUc) {
+              rec.category = fullUc.category;
+              rec.applicableOutcomes = fullUc.outcomes as string[];
+            }
+          }
+
+          // Merge: use matchProofs recommendations, fall back to any AI-generated ones
+          const finalRecommendations =
+            useCaseRecommendations.length > 0
+              ? useCaseRecommendations
+              : analysisResult.useCaseRecommendations;
+
+          const finalResult = {
+            ...analysisResult,
+            useCaseRecommendations: finalRecommendations,
+          };
+
+          // PROMPT-03: Enrich sections with visual data via Gemini Flash
+          let enrichedResult = finalResult;
+          try {
+            const visualResults = await generateSectionVisuals(
+              finalResult.sections,
+              evidenceItems,
+            );
+            enrichedResult = {
+              ...finalResult,
+              sections: finalResult.sections.map((s, i) => ({
+                ...s,
+                ...(visualResults[i]?.visualType
+                  ? {
+                      visualType: visualResults[i].visualType,
+                      visualData: visualResults[i].visualData,
+                    }
+                  : {}),
+              })),
+            };
+          } catch (visualErr) {
+            console.warn(
+              '[research-executor] Visual enrichment failed, proceeding without:',
+              visualErr instanceof Error ? visualErr.message : visualErr,
+            );
+          }
+
           await db.prospectAnalysis.create({
             data: {
               researchRunId: run.id,
               prospectId: input.prospectId,
               version: 'analysis-v2',
-              content: toJson(analysisResult),
+              content: toJson(enrichedResult),
               modelUsed: analysisResult.modelUsed,
               inputSnapshot: toJson({
                 evidenceCount: evidenceItems.length,
+                sourceBreakdown: buildSourceBreakdown(evidenceItems),
                 useCaseCount: useCases.length,
                 crossConnectionCount: klarifaiCrossConnections.length,
+                recommendationSource:
+                  useCaseRecommendations.length > 0
+                    ? 'matchProofs'
+                    : 'masterprompt-fallback',
               }),
             },
           });
@@ -1870,7 +2151,7 @@ export async function executeResearchRun(
           diagnostics.push({
             source: 'master_analysis',
             status: 'ok',
-            message: `Klarifai narrative analysis generated: ${analysisResult.sections.length} sections, ${analysisResult.useCaseRecommendations.length} use case recommendations${analysisResult.fallbackUsed ? ' (fallback model used)' : ''}`,
+            message: `Klarifai narrative analysis generated: ${analysisResult.sections.length} sections, ${finalRecommendations.length} use case recommendations (via ${useCaseRecommendations.length > 0 ? 'matchProofs' : 'masterprompt'})${analysisResult.fallbackUsed ? ' (fallback model used)' : ''}`,
           });
         }
       } catch (analysisErr) {
@@ -1916,6 +2197,11 @@ export async function executeResearchRun(
     where: { researchRunId: run.id },
   });
 
+  await db.researchRun.update({
+    where: { id: run.id },
+    data: { status: 'HYPOTHESIS' },
+  });
+
   const hypotheses = await generateHypothesisDraftsAI(
     evidenceRecords.map((item) => ({
       id: item.id,
@@ -1931,7 +2217,7 @@ export async function executeResearchRun(
       companyName: prospect.companyName,
       industry: prospect.industry,
       specialties: prospect.specialties,
-      description: prospect.description,
+      description: prospectDescription,
     },
     gate.confirmedPainTags,
     input.hypothesisModel,

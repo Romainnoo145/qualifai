@@ -18,7 +18,7 @@ async function scraplingFetch(
   endpoint: '/fetch' | '/fetch-dynamic',
   url: string,
   options?: StealthOptions,
-): Promise<{ html: string; ok: boolean }> {
+): Promise<{ html: string; ok: boolean; statusCode: number }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
   try {
@@ -29,26 +29,30 @@ async function scraplingFetch(
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
-    if (!response.ok) return { html: '', ok: false };
+    if (!response.ok) return { html: '', ok: false, statusCode: 0 };
     const data = (await response.json()) as ScraplingResponse;
-    return { html: data.html ?? '', ok: data.success && data.html.length > 0 };
+    return {
+      html: data.html ?? '',
+      ok: data.success && data.html.length > 0,
+      statusCode: data.status_code ?? 0,
+    };
   } catch (err) {
     clearTimeout(timeoutId);
     console.error('scrapling fetch failed for', url, err);
-    return { html: '', ok: false };
+    return { html: '', ok: false, statusCode: 0 };
   }
 }
 
 export async function fetchStealth(
   url: string,
   options?: StealthOptions,
-): Promise<{ html: string; ok: boolean }> {
+): Promise<{ html: string; ok: boolean; statusCode: number }> {
   return scraplingFetch('/fetch', url, options);
 }
 
 export async function fetchDynamic(
   url: string,
   options?: StealthOptions,
-): Promise<{ html: string; ok: boolean }> {
+): Promise<{ html: string; ok: boolean; statusCode: number }> {
   return scraplingFetch('/fetch-dynamic', url, options);
 }

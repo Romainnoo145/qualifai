@@ -1,0 +1,91 @@
+{
+  "capturedAt": "2026-04-21T17:58:16.817Z",
+  "prospect": {
+    "slug": "LQNrv57B",
+    "readableSlug": "nedri-spanstaal-bv",
+    "companyName": "Nedri Spanstaal BV",
+    "domain": "nedri.nl"
+  },
+  "analysis": {
+    "id": "cmmrpjser003xw7ijde7zonhj",
+    "version": "analysis-v2",
+    "createdAt": "2026-03-15T12:05:21.939Z",
+    "modelUsed": "gemini-2.5-pro",
+    "content": {
+      "version": "analysis-v2",
+      "sections": [
+        {
+          "id": "strategische-positionering",
+          "body": "Nedri Spanstaal heeft een onmiskenbare positie als een van Europa's grootste spanstaalproducenten, met een reputatie gebouwd op vakmanschap en betrouwbaarheid sinds 1925. Uw cruciale rol in de realisatie van grootschalige infrastructurele projecten, zoals het 'Vierpaardjes' viaduct en diverse bruggen in samenwerking met vooraanstaande partners als Heijmans en De Vries Voorspantechnieken, onderstreept uw technische competentie. Hoewel u de eigen markt omschrijft als 'meer competitief dan innovatief', wijst extern bewijs op een continue drang naar verbetering, zoals de ontwikkeling van een nieuwe testmethode voor spanningscorrosie. Deze combinatie van bewezen degelijkheid en gerichte innovatie maakt uw onderneming een zeer geloofwaardige partner voor de levering van het hoogwaardige bruggenstaal en constructiestaal dat de ruggengraat van Europe's Gate zal vormen.",
+          "title": "Strategische Kern en Marktpositie",
+          "citations": [
+            "Bron: Prospect Profiel",
+            "Bron: WEBSITE | Van staalstreng tot brugdek...",
+            "Bron: LINKEDIN | Nedri Spanstaal BV - LinkedIn post (DeVriesVoorspantechnieken)",
+            "Bron: WEBSITE | Nieuwe verbeterde testmethode: Spanningscorrosie...",
+            "Bron: Volume-VIII — Militaire Mobiliteit & Strategische Veiligheid (SPV: DefenceCo)"
+          ]
+        },
+        {
+          "id": "operationele-uitdagingen",
+          "body": "Uw operationele focus is gericht op het beheersen van een complexe realiteit: maximale efficiëntie behalen terwijl de staalmarkt onvoorspelbaar blijft. Interne initiatieven, zoals de ontwikkeling van een 'slimme tool' om de afstemming tussen sales en productiecapaciteit te optimaliseren, getuigen van een proactieve aanpak. Dit wordt deels bevestigd door externe waarnemingen van snelle laadtijden. Tegelijkertijd signaleren andere bronnen juist vertragingen, wat wijst op een operationele uitdaging die inherent is aan het managen van fluctuerende materiaalstromen. Uw kernprobleem blijft de afhankelijkheid van walsdraad met sterk wisselende prijzen en beschikbaarheid. Europe's Gate's Staaleiland biedt een structurele oplossing door een stabiele toevoer van 30 miljoen ton staal per jaar te garanderen, geproduceerd binnen een geïntegreerd Europees systeem. Dit biedt u de mogelijkheid om van een reactieve inkoopstrategie over te stappen op een voorspelbare, langetermijnplanning, wat uw operationele efficiëntie en margezekerheid fundamenteel zal versterken.",
+          "title": "Operationele Realiteit: Efficiëntie versus Volatiliteit",
+          "citations": [
+            "Bron: Prospect Profiel",
+            "Bron: LINKEDIN | Nedri Spanstaal BV - LinkedIn post (slimme tool)",
+            "Bron: REVIEWS | Nedri Spanstaal BV - Google Review (Graba, Daniel Nica)",
+            "Bron: REVIEWS | Nedri Spanstaal BV - Google Review (Viachaslau Drahun)",
+            "Bron: I — Groenstaal Productie (SPV: SteelCo)"
+          ]
+        },
+        {
+          "id": "risicos-en-toekomstbestendigheid",
+          "body": "Een gezonde bedrijfsvoering vereist het proactief beheren van risico's. De recente juridische tegenslag met Deutsche Bahn, zoals gerapporteerd door Het Financieele Dagblad, illustreert de potentiële impact van commerciële geschillen in uw sector. Een strategisch partnerschap met een project van de schaal van Europe's Gate, dat voorziet in langjarige leveringscontracten, kan dergelijke risico's significant mitigeren door wederzijdse afhankelijkheid en gezamenlijke doelstellingen. Op het gebied van duurzaamheid beschikt u met uw ISO 14001 certificering over een solide basis. Dit sluit aan bij de kern van Europe's Gate, waar jaarlijks 145 Mt CO2-reductie wordt gerealiseerd door de productie van groenstaal. Door aan te sluiten op onze toeleveringsketen, kunt u uw klanten niet alleen spanstaal van de hoogste kwaliteit bieden, maar ook met de laagst mogelijke CO2-voetafdruk, wat een beslissend concurrentievoordeel zal vormen in de komende decennia.",
+          "title": "Risico's, Duurzaamheid en Toekomstbestendigheid",
+          "citations": [
+            "Bron: NEWS | Nederlaag Nedri Spanstaal tegen Deutsche Bahn...",
+            "Bron: WEBSITE | Kwaliteit – Nedri Spanstaal BV",
+            "Bron: I — Groenstaal Productie (SPV: SteelCo)"
+          ]
+        }
+      ],
+      "modelUsed": "gemini-2.5-pro",
+      "generatedAt": "2026-03-15T12:05:21.937Z",
+      "openingHook": "Al bijna een eeuw verankert Nedri Spanstaal zich in de kern van Europa's meest vitale infrastructuur. Europe's Gate biedt nu de mogelijkheid om dit vakmanschap niet alleen toe te passen op projectniveau, maar te verheffen tot de schaal van continentale transformatie.",
+      "executiveSummary": "Nedri Spanstaal BV is een financieel robuuste, operationeel gedreven producent met een diepgewortelde expertise in spanstaal voor kritische infrastructuur. Uw succes wordt bepaald door efficiëntie en leverbetrouwbaarheid in een competitieve markt, maar tegelijkertijd vormt de volatiliteit van de staalmarkt — goed voor meer dan de helft van uw kostprijs — een structurele kwetsbaarheid. Een partnerschap met Europe's Gate biedt een fundamentele oplossing: directe toegang tot een stabiele, grootschalige bron van Europees groenstaal. Dit mitigeert uw voornaamste strategische risico, garandeert een decennialange afzetmarkt binnen ons project, en positioneert Nedri als een hoeksteen in de realisatie van de volgende generatie Europese infrastructuur.",
+      "spvRecommendations": [
+        {
+          "spvCode": "STEEL",
+          "spvName": "SteelCo",
+          "strategicTags": [
+            "supplyChainIntegration",
+            "strategicSourcing",
+            "valueAddedManufacturing"
+          ],
+          "relevanceNarrative": "Nedri Spanstaal is een ideale downstream-partner voor SteelCo. U kunt het op ons Staaleiland geproduceerde groene staal verwerken tot de hoogwaardige spanstaalproducten die essentieel zijn voor de constructie van Europe's Gate. Dit partnerschap lost uw voornaamste strategische uitdaging op: het biedt ongekende leveringszekerheid en stabiele prijzen voor uw belangrijkste grondstof."
+        },
+        {
+          "spvCode": "INFRA",
+          "spvName": "InfraCo",
+          "strategicTags": [
+            "criticalComponentSupplier",
+            "infrastructureDevelopment",
+            "longTermContracts"
+          ],
+          "relevanceNarrative": "Uw producten vormen letterlijk de versterking van de infrastructuur die InfraCo zal bouwen, van de 360 kilometer lange hoofdstructuur tot de 43 circulaire wooneilanden. Uw bewezen expertise met grote aannemers maakt u een voorkeursleverancier voor een project dat een afzetmarkt voor decennia garandeert. Een partnerschap met InfraCo betekent een stabiele, voorspelbare vraag op een ongekende schaal."
+        }
+      ]
+    },
+    "inputSnapshot": {
+      "spvCount": 8,
+      "passageCount": 12,
+      "evidenceCount": 60,
+      "crossConnectionCount": 1
+    }
+  },
+  "researchRun": {
+    "id": "cmmrpcd6e0000w7ijq2esd117",
+    "createdAt": "2026-03-15T11:59:35.606Z",
+    "status": "COMPLETED"
+  }
+}

@@ -4,6 +4,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { computeQuoteTotals, formatEuro } from '@/lib/quotes/quote-totals';
 
 export interface LineItemDraft {
+  fase: string;
   omschrijving: string;
   uren: number;
   tarief: number;
@@ -33,7 +34,7 @@ export function LineItemsEditor({
   };
 
   const addLine = () => {
-    onChange([...lines, { omschrijving: '', uren: 0, tarief: 95 }]);
+    onChange([...lines, { fase: '', omschrijving: '', uren: 0, tarief: 80 }]);
   };
 
   const removeLine = (index: number) => {
@@ -46,7 +47,7 @@ export function LineItemsEditor({
         <thead>
           <tr className="border-b border-[var(--color-border)] text-left">
             <th className="pb-2 pr-4 text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)]">
-              Omschrijving
+              Fase &amp; beschrijving
             </th>
             <th className="pb-2 pr-4 text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)] text-right w-[80px]">
               Uren
@@ -65,19 +66,35 @@ export function LineItemsEditor({
             <tr key={i} className="border-b border-[var(--color-border)]">
               <td className="py-2 pr-4">
                 {isReadOnly ? (
-                  <span className="text-[var(--color-ink)]">
-                    {line.omschrijving || '—'}
-                  </span>
+                  <div>
+                    <span className="block font-medium text-[var(--color-ink)]">
+                      {line.fase || '—'}
+                    </span>
+                    {line.omschrijving && (
+                      <span className="block text-[12px] text-[var(--color-muted)] mt-0.5">
+                        {line.omschrijving}
+                      </span>
+                    )}
+                  </div>
                 ) : (
-                  <input
-                    type="text"
-                    value={line.omschrijving}
-                    onChange={(e) =>
-                      updateLine(i, { omschrijving: e.target.value })
-                    }
-                    placeholder="Wat wordt opgeleverd"
-                    className="w-full bg-transparent text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:bg-[var(--color-surface-2)] rounded px-2 py-1 -mx-2 transition-colors"
-                  />
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      value={line.fase}
+                      onChange={(e) => updateLine(i, { fase: e.target.value })}
+                      placeholder="Fase / titel"
+                      className="w-full bg-transparent font-medium text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)] focus:bg-[var(--color-surface-2)] rounded px-2 py-1 -mx-2 transition-colors"
+                    />
+                    <input
+                      type="text"
+                      value={line.omschrijving}
+                      onChange={(e) =>
+                        updateLine(i, { omschrijving: e.target.value })
+                      }
+                      placeholder="Omschrijving (optioneel)"
+                      className="w-full bg-transparent text-[12px] text-[var(--color-muted)] outline-none placeholder:text-[var(--color-muted)] focus:bg-[var(--color-surface-2)] rounded px-2 py-0.5 -mx-2 transition-colors"
+                    />
+                  </div>
                 )}
               </td>
               <td className="py-2 pr-4 text-right">

@@ -1,11 +1,8 @@
 /**
- * AI Master Analysis type contract — v2 (analysis-v2) adds narrative output types.
+ * AI Master Analysis type contract — analysis-v2 (active).
  *
- * analysis-v1: rigid trigger/track JSON (legacy, deprecated — Phase 51 will migrate off)
- * analysis-v2: flowing narrative sections with raw evidence input (active)
+ * analysis-v2: flowing narrative sections with raw evidence input
  */
-
-import type { RagRetrievedPassage } from '@/lib/rag/retriever';
 
 // ---------------------------------------------------------------------------
 // analysis-v2 Output types (new)
@@ -112,6 +109,7 @@ export type UseCaseInput = {
   title: string;
   summary: string;
   category: string;
+  sector?: string | null; // ADD THIS
   outcomes: string[];
 };
 
@@ -164,69 +162,4 @@ export type AnalysisSPV = {
   code: string;
   slug: string;
   metricsTemplate: unknown;
-};
-
-// ---------------------------------------------------------------------------
-// analysis-v1 Output types (legacy — @deprecated, Phase 51 will migrate off)
-// ---------------------------------------------------------------------------
-
-/** @deprecated Use NarrativeAnalysis (analysis-v2) instead */
-export type AnalysisKPI = {
-  label: string;
-  value: string;
-  context: string;
-};
-
-/** @deprecated Use NarrativeAnalysis (analysis-v2) instead */
-export type AnalysisContext = {
-  hook: string;
-  kpis: AnalysisKPI[];
-  executiveHook: string;
-};
-
-/** @deprecated Use NarrativeAnalysis (analysis-v2) instead */
-export type TriggerCategory = 'market' | 'compliance_esg' | 'capital_derisking';
-
-/** @deprecated Use NarrativeSection (analysis-v2) instead */
-export type AnalysisTrigger = {
-  category: TriggerCategory;
-  title: string;
-  narrative: string;
-  numbers: string[];
-  urgency: 'high' | 'medium' | 'low';
-};
-
-/** @deprecated Use SPVRecommendation (analysis-v2) instead */
-export type AnalysisTrack = {
-  spvName: string;
-  spvCode: string;
-  scope: string;
-  relevance: string;
-  strategicTags: string[];
-};
-
-/** @deprecated Use NarrativeAnalysis (analysis-v2) instead */
-export type MasterAnalysis = {
-  version: 'analysis-v1';
-  context: AnalysisContext;
-  triggers: AnalysisTrigger[];
-  tracks: AnalysisTrack[];
-  generatedAt: string;
-  modelUsed: string;
-};
-
-// ---------------------------------------------------------------------------
-// analysis-v1 Input types (legacy — @deprecated)
-// ---------------------------------------------------------------------------
-
-// IntentVariables is no longer imported here; it was only used by MasterAnalysisInput.
-// The legacy MasterAnalysisInput below preserves backward compatibility.
-
-/** @deprecated Use NarrativeAnalysisInput (analysis-v2) instead */
-export type MasterAnalysisInput = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  intentVars: any; // was: IntentVariables — removed import to keep types.ts self-contained
-  passages: RagRetrievedPassage[];
-  prospect: AnalysisProspectProfile;
-  spvs: AnalysisSPV[];
 };

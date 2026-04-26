@@ -155,7 +155,15 @@ Tiny detail, high-impact brand signature.
 }
 ```
 
-**Pill buttons** (`--radius-full`) are the Klarifai signature CTA shape. Primary CTA is always a gold pill. Secondary is always a white pill with 1px navy border.
+**Button scope — read this before designing any CTA:**
+
+| Surface                                              | Primary CTA shape                                   | Background                                                | Text     | Reference               |
+| ---------------------------------------------------- | --------------------------------------------------- | --------------------------------------------------------- | -------- | ----------------------- |
+| Brochure pages (`/voorstel`, `/offerte`, `/analyse`) | pill (`--radius-full`)                              | gold gradient `linear-gradient(180deg, #e4c33c, #f4d95a)` | navy     | brochure-cover.tsx      |
+| Admin app (`/admin/*`), auth, transactional emails   | rectangle (`rounded-md`)                            | solid `var(--color-gold)` (#ebcb4b)                       | navy ink | layout.tsx login button |
+| Filter chips / toggle pills (admin lists)            | rectangle (`rounded-md` / `rounded-full` for chips) | navy `var(--color-ink)` when active                       | white    | quotes/page.tsx         |
+
+The gold gradient pill is brochure-only signature CTA — it's loud and conversion-focused. The app uses solid gold buttons because it's used many times per session and a gradient pill becomes visually exhausting. Don't apply the brochure pattern to admin/auth/email surfaces.
 
 ### 2.5 Borders
 
@@ -341,6 +349,62 @@ No drop shadows on text. No ambient shadows on sections. No glow effects.
 - Ghost: transparent, 1px `#d4d4d8` border, border-radius 6px, hover → border darkens to ink
 - Action row buttons: transparent, 1px `#e4e4e7` border, full-width, text-left, arrow auto-right
 - Circular nav: 36px circle, 1px border, hover → navy bg + gold icon
+
+---
+
+## Canonical button shapes
+
+### Gold pill (primary CTA — gold gradient + NAVY text)
+
+The ONLY accepted gold pill style in this codebase. Use this exact recipe:
+
+```css
+border: 1px solid #e4c33c;
+background: linear-gradient(180deg, #e4c33c 0%, #f4d95a 100%);
+color: var(--color-ink); /* navy — NEVER white */
+border-radius: 9999px;
+padding: 0.625rem 1.25rem;
+font-size: 11px;
+font-weight: 500;
+text-transform: uppercase;
+letter-spacing: 0.08em;
+```
+
+Or as a Tailwind className:
+
+```html
+<button
+  class="inline-flex items-center gap-2 rounded-full border border-[#e4c33c] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink)] disabled:opacity-50"
+>
+  Versturen
+</button>
+```
+
+**Never use white text on the gold pill. Never use a flat gold fill (always a 180deg gradient dark gold → light gold).**
+
+### Secondary outline pill (for non-CTA actions)
+
+```html
+<button
+  class="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-muted-dark)] hover:border-[var(--color-ink)] transition-colors"
+>
+  Annuleer
+</button>
+```
+
+### Outline action button (admin sidebar — rectangular, not pill)
+
+For admin secondary actions (Kopieer link, Bekijk offerte, Reset naar concept, Nieuwe versie):
+
+```html
+<button
+  class="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink)] hover:border-[var(--color-ink)] transition-all text-left"
+>
+  ...
+</button>
+```
+
+---
 
 **Activity feed event tags (only color beyond gold + ink):**
 

@@ -1,0 +1,3 @@
+CREATE TYPE "UseCaseSector" AS ENUM ('BOUW', 'INSTALLATIE', 'ONDERHOUD', 'PRODUCTIE', 'LOGISTIEK', 'ZORG', 'BOUW_DIENSTEN', 'ZAKELIJK', 'ACCOUNTANCY', 'ENERGIE');
+ALTER TABLE "UseCase" ADD COLUMN "sector" "UseCaseSector";
+CREATE INDEX "UseCase_sector_idx" ON "UseCase"("sector");

@@ -1,0 +1,107 @@
+{
+  "capturedAt": "2026-04-21T17:58:16.817Z",
+  "prospect": {
+    "slug": "BCDmoNqH",
+    "readableSlug": "heijmans",
+    "companyName": "Heijmans",
+    "domain": "heijmans.nl"
+  },
+  "analysis": {
+    "id": "cmmq0jwg9006cnqijl24dyels",
+    "version": "analysis-v2",
+    "createdAt": "2026-03-14T07:37:50.601Z",
+    "modelUsed": "gemini-2.5-pro",
+    "content": {
+      "version": "analysis-v2",
+      "sections": [
+        {
+          "id": "strategische-synergie",
+          "body": "Heijmans' reputatie is gebouwd op het managen van complexiteit binnen de vitale infrastructuur van Nederland. Uw ervaring met projecten in operationeel kritieke omgevingen, zoals het middenspanningsstation op de ECT Delta terminal [5] en het assetmanagement op Schiphol [21], toont een bewezen vermogen om zonder verstoring te opereren. Deze competentie is essentieel voor de gefaseerde ontwikkeling van Europe's Gate, dat zelf als geïntegreerde hub voor energie, data en transport functioneert [1, 2]. De huidige orderportefeuille van € 3,7 miljard [14] heeft een sterke basis gelegd. Europe's Gate biedt een transformatie van deze schaal: een partnerschap dat uw rol verschuift van een nationale leider naar een vormgever van Europese strategische autonomie, binnen een project waar alleen de vastgoedwaarde al € 11.312 miljard bedraagt [5].",
+          "title": "Strategische Synergie: Van Nationale Bouwer tot Europees Vormgever",
+          "citations": [
+            "Bron: WEBSITE | Middenspanningsstation ECT Delta terminal",
+            "Bron: WEBSITE | Schiphol Assetmanagement",
+            "Bron: WEBSITE | Heijmans jaarresultaten 2025",
+            "Bron: Volume-I — Militaire Mobiliteit & Strategische Veiligheid (SPV: DefenceCo)",
+            "Bron: VIII - Defensie & Veiligheid — Kritieke Infrastructuurbescherming (SPV: DefenceCo)",
+            "Bron: Volume I - Technische Specificaties & Locatie — Locatie & Gebiedsdefinitie"
+          ]
+        },
+        {
+          "id": "operationele-versnelling",
+          "body": "Uw strategische focus op digitalisering en procesinnovatie is de sleutel tot het realiseren van een project als Europe's Gate. De ontwikkeling van eigen applicaties voor ontwerpberekeningen [2] en de succesvolle toepassing van 'bouwstromen' voor gestandaardiseerde processen [8] zijn direct toepasbaar op de constructie van een lineaire megastad [5]. Deze aanpak, die u reeds verfijnt in projecten als 't Ven in Eindhoven [12], biedt het voorspelbare proces en het hoge bouwtempo dat noodzakelijk is. Dit raakt direct aan de strategische uitdagingen die u zelf identificeert: de dreigende arbeidstekorten [3] en de noodzaak voor versnelde ruimtelijke procedures [19]. Europe's Gate biedt de ultieme oplossing: een decennialange projectpijplijn die grootschalige investeringen in automatisering rechtvaardigt en een gestroomlijnd vergunningskader door de status van NATO-kritieke infrastructuur [2]. De succesvolle pilot met vergunningsvrij bouwen in Vught [1] is een voorbode van de efficiëntie die wij op systeemniveau bieden.",
+          "title": "Operationele Versnelling door Schaalgrootte en Standaardisatie",
+          "citations": [
+            "Bron: WEBSITE | Ontwerpkennis in één applicatie | digitaal bouwen",
+            "Bron: WEBSITE | Bouwstroom, Venlo",
+            "Bron: WEBSITE | 'T ven, Eindhoven",
+            "Bron: WEBSITE | Heijmans continues positive trend first half of the year",
+            "Bron: WEBSITE | Half year results 2024 royal Heijmans",
+            "Bron: WEBSITE | Vergunningsvrij bouwen versnelt woningbouw in Vught",
+            "Bron: Volume I - Technische Specificaties & Locatie — Locatie & Gebiedsdefinitie",
+            "Bron: VIII - Defensie & Veiligheid — Kritieke Infrastructuurbescherming (SPV: DefenceCo)"
+          ]
+        },
+        {
+          "id": "circulaire-verankering",
+          "body": "Heijmans toont leiderschap in het integreren van duurzaamheid en circulariteit in de gebouwde omgeving. Concrete projecten zoals de eerste circulaire modulaire geluidswand [57] en uw investeringen in de verbetering van biodiversiteit [23, 54] zijn tastbaar bewijs van deze toewijding. Dit sluit perfect aan op het fundament van Europe's Gate, dat is ontworpen als een volledig circulair systeem. Uw expertise kan direct worden ingezet bij de realisatie van ons onafhankelijke zoetwatersysteem [6] en de grootschalige, circulaire landaanwinning waarbij jaarlijks 30 miljoen ton staalslakken wordt getransformeerd van afvalstof naar een strategische bouwsteen [4]. Een partnerschap biedt Heijmans de mogelijkheid om uw duurzaamheidsvisie te verankeren in een project dat de ecologische voetafdruk van Europa fundamenteel herdefinieert.",
+          "title": "Verankering van Duurzaamheid in Kritieke Infrastructuur",
+          "citations": [
+            "Bron: NEWS | Eerste circulaire modulaire geluidswand in Nederland - Heijmans",
+            "Bron: WEBSITE | Heijmans koploper verbeteren biodiversiteit",
+            "Bron: WEBSITE | Onderzoek effecten natuurinclusief bouwen",
+            "Bron: VII - Blue Economy & Ocean Innovation — Waterbeheer & Circulaire Watersystemen (SPV: BlueCo)",
+            "Bron: III — Groenstaal Productie (SPV: SteelCo)"
+          ]
+        }
+      ],
+      "modelUsed": "gemini-2.5-pro",
+      "generatedAt": "2026-03-14T07:37:50.599Z",
+      "openingHook": "Heijmans heeft Nederland de afgelopen eeuw vormgegeven door gezonde leefomgevingen te creëren. Europe's Gate biedt u het platform om deze visie nu op continentale schaal te realiseren, vrij van de nationale beperkingen die uw groei momenteel remmen.",
+      "executiveSummary": "Deze analyse identificeert een strategisch partnerschap tussen Heijmans en Europe's Gate. Uw diepgaande expertise in complexe, integrale projecten en gestandaardiseerde bouwprocessen sluit naadloos aan op de schaal en ambitie van onze missie. Voor Heijmans biedt dit een unieke kans om uw innovaties in digitaal en circulair bouwen op een ongekend niveau toe te passen, uw orderportefeuille voor decennia te verankeren en de uitdagingen rondom vergunningstrajecten en arbeidskrapte structureel op te lossen. Wij zien Heijmans als een sleutelpartner in de realisatie van de meest kritieke infrastructuur van Europa.",
+      "spvRecommendations": [
+        {
+          "spvCode": "INFRA",
+          "spvName": "InfraCo",
+          "strategicTags": [
+            "kritieke_infrastructuur",
+            "circulaire_waterbouw",
+            "lange-termijn_assetbeheer"
+          ],
+          "relevanceNarrative": "Uw kernactiviteiten in civiele techniek, waterbouw [9, 43] en het beheer van complexe infrastructurele knooppunten [5, 15] maken Heijmans de aangewezen partner voor de realisatie van de fundering van Europe's Gate: van landaanwinning [9] tot de aanleg van havens en nutsvoorzieningen [10, 11]."
+        },
+        {
+          "spvCode": "REALESTATE",
+          "spvName": "RealEstateCo",
+          "strategicTags": [
+            "schaalbare_woningbouw",
+            "modulaire_constructie",
+            "gebiedsontwikkeling"
+          ],
+          "relevanceNarrative": "Als een van Nederlands meest prominente woning- en gebiedsontwikkelaars [1, 59] bent u uniek gepositioneerd om de vastgoedcomponent van Europe's Gate te leiden. Uw ervaring met gestandaardiseerde, snelle bouwprocessen [8, 35] is essentieel voor het efficiënt huisvesten van 16,9 miljoen inwoners [6]."
+        },
+        {
+          "spvCode": "BLUE",
+          "spvName": "BlueCo",
+          "strategicTags": [
+            "klimaatadaptatie",
+            "waterbeheer",
+            "kustbescherming"
+          ],
+          "relevanceNarrative": "Uw bewezen expertise in waterveiligheid, zoals de versterking van 20 kilometer dijk [43], is direct toepasbaar binnen BlueCo. Dit SPV richt zich op het creëren van een klimaatweerbaar [8] en circulair watersysteem [6], een discipline waarin Heijmans een leidende rol kan spelen in de bescherming van de nieuwe kustlijn."
+        }
+      ]
+    },
+    "inputSnapshot": {
+      "spvCount": 8,
+      "passageCount": 12,
+      "evidenceCount": 60,
+      "crossConnectionCount": 0
+    }
+  },
+  "researchRun": {
+    "id": "cmmq07si90022nqij5bdlptnm",
+    "createdAt": "2026-03-14T07:28:25.617Z",
+    "status": "COMPLETED"
+  }
+}

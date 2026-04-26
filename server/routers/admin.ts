@@ -14,6 +14,7 @@ import {
 } from '@/lib/readable-slug';
 import { executeResearchRun } from '@/lib/research-executor';
 import { matchProofs } from '@/lib/workflow-engine';
+import { industryToSector } from '@/lib/constants/sectors';
 import { TRPCError } from '@trpc/server';
 import { resolveLogoUrl } from '@/lib/enrichment/logo-pipeline';
 import { prettifyDomainToName } from '@/lib/enrichment/company-name';
@@ -656,6 +657,7 @@ export const adminRouter = router({
             const query = `${h.title} ${h.problemStatement}`;
             const matches = await matchProofs(ctx.db, query, 4, {
               projectId: prospect.projectId,
+              sector: industryToSector(prospect.industry),
             });
             for (const match of matches) {
               await ctx.db.proofMatch.create({
@@ -873,7 +875,14 @@ export const adminRouter = router({
             orderBy: { createdAt: 'desc' },
             take: 20,
           },
-          _count: { select: { sessions: true, contacts: true, signals: true } },
+          _count: {
+            select: {
+              sessions: true,
+              contacts: true,
+              signals: true,
+              evidenceItems: true,
+            },
+          },
         },
       });
     }),
@@ -896,6 +905,8 @@ export const adminRouter = router({
           ])
           .optional(),
         internalNotes: z.string().optional(),
+        voorstelMode: z.enum(['STANDARD', 'BESPOKE']).optional(),
+        bespokeUrl: z.string().url().max(500).nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -914,6 +925,12 @@ export const adminRouter = router({
           ...(input.status !== undefined && { status: input.status }),
           ...(input.internalNotes !== undefined && {
             internalNotes: input.internalNotes,
+          }),
+          ...(input.voorstelMode !== undefined && {
+            voorstelMode: input.voorstelMode,
+          }),
+          ...(input.bespokeUrl !== undefined && {
+            bespokeUrl: input.bespokeUrl,
           }),
         },
       });
@@ -1342,110 +1359,158 @@ export const adminRouter = router({
   getDashboardFeed: projectAdminProcedure.query(async ({ ctx }) => {
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
-    const [completedRuns, analyses, visits, sends] = await Promise.all([
-      // 1. Completed research runs
-      ctx.db.researchRun.findMany({
-        where: {
-          completedAt: { gte: fourteenDaysAgo },
-          status: 'COMPLETED',
-          prospect: { projectId: ctx.projectId },
-        },
-        orderBy: { completedAt: 'desc' },
-        take: 20,
-        select: {
-          id: true,
-          completedAt: true,
-          prospect: {
-            select: {
-              id: true,
-              companyName: true,
-              domain: true,
-              logoUrl: true,
+    const [completedRuns, analyses, visits, sends, quoteViews, quoteAccepts] =
+      await Promise.all([
+        // 1. Completed research runs
+        ctx.db.researchRun.findMany({
+          where: {
+            completedAt: { gte: fourteenDaysAgo },
+            status: 'COMPLETED',
+            prospect: { projectId: ctx.projectId },
+          },
+          orderBy: { completedAt: 'desc' },
+          take: 20,
+          select: {
+            id: true,
+            completedAt: true,
+            prospect: {
+              select: {
+                id: true,
+                companyName: true,
+                domain: true,
+                logoUrl: true,
+              },
+            },
+            _count: { select: { evidenceItems: true } },
+          },
+        }),
+
+        // 2. Narrative analyses
+        ctx.db.prospectAnalysis.findMany({
+          where: {
+            createdAt: { gte: fourteenDaysAgo },
+            version: 'analysis-v2',
+            prospect: { projectId: ctx.projectId },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+          select: {
+            id: true,
+            createdAt: true,
+            modelUsed: true,
+            prospect: {
+              select: {
+                id: true,
+                companyName: true,
+                domain: true,
+                logoUrl: true,
+              },
             },
           },
-          _count: { select: { evidenceItems: true } },
-        },
-      }),
+        }),
 
-      // 2. Narrative analyses
-      ctx.db.prospectAnalysis.findMany({
-        where: {
-          createdAt: { gte: fourteenDaysAgo },
-          version: 'analysis-v2',
-          prospect: { projectId: ctx.projectId },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-        select: {
-          id: true,
-          createdAt: true,
-          modelUsed: true,
-          prospect: {
-            select: {
-              id: true,
-              companyName: true,
-              domain: true,
-              logoUrl: true,
+        // 3. Discover page visits
+        ctx.db.wizardSession.findMany({
+          where: {
+            createdAt: { gte: fourteenDaysAgo },
+            prospect: { projectId: ctx.projectId },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+          select: {
+            id: true,
+            createdAt: true,
+            maxStepReached: true,
+            pdfDownloaded: true,
+            callBooked: true,
+            quoteRequested: true,
+            prospect: {
+              select: {
+                id: true,
+                companyName: true,
+                domain: true,
+                logoUrl: true,
+              },
             },
           },
-        },
-      }),
+        }),
 
-      // 3. Discover page visits
-      ctx.db.wizardSession.findMany({
-        where: {
-          createdAt: { gte: fourteenDaysAgo },
-          prospect: { projectId: ctx.projectId },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-        select: {
-          id: true,
-          createdAt: true,
-          maxStepReached: true,
-          pdfDownloaded: true,
-          callBooked: true,
-          quoteRequested: true,
-          prospect: {
-            select: {
-              id: true,
-              companyName: true,
-              domain: true,
-              logoUrl: true,
-            },
+        // 4. Sent outreach
+        ctx.db.outreachLog.findMany({
+          where: {
+            status: 'sent',
+            sentAt: { gte: fourteenDaysAgo },
+            contact: { prospect: { projectId: ctx.projectId } },
           },
-        },
-      }),
-
-      // 4. Sent outreach
-      ctx.db.outreachLog.findMany({
-        where: {
-          status: 'sent',
-          sentAt: { gte: fourteenDaysAgo },
-          contact: { prospect: { projectId: ctx.projectId } },
-        },
-        orderBy: { sentAt: 'desc' },
-        take: 20,
-        select: {
-          id: true,
-          sentAt: true,
-          channel: true,
-          subject: true,
-          contact: {
-            select: {
-              prospect: {
-                select: {
-                  id: true,
-                  companyName: true,
-                  domain: true,
-                  logoUrl: true,
+          orderBy: { sentAt: 'desc' },
+          take: 20,
+          select: {
+            id: true,
+            sentAt: true,
+            channel: true,
+            subject: true,
+            contact: {
+              select: {
+                prospect: {
+                  select: {
+                    id: true,
+                    companyName: true,
+                    domain: true,
+                    logoUrl: true,
+                  },
                 },
               },
             },
           },
-        },
-      }),
-    ]);
+        }),
+
+        // 5. Offerte first-views (Quote.viewedAt set)
+        ctx.db.quote.findMany({
+          where: {
+            viewedAt: { gte: fourteenDaysAgo },
+            prospect: { projectId: ctx.projectId },
+          },
+          orderBy: { viewedAt: 'desc' },
+          take: 20,
+          select: {
+            id: true,
+            nummer: true,
+            viewedAt: true,
+            prospect: {
+              select: {
+                id: true,
+                companyName: true,
+                domain: true,
+                logoUrl: true,
+              },
+            },
+          },
+        }),
+
+        // 6. Offerte acceptances
+        ctx.db.quote.findMany({
+          where: {
+            acceptedAt: { gte: fourteenDaysAgo },
+            prospect: { projectId: ctx.projectId },
+          },
+          orderBy: { acceptedAt: 'desc' },
+          take: 20,
+          select: {
+            id: true,
+            nummer: true,
+            acceptedAt: true,
+            signerName: true,
+            prospect: {
+              select: {
+                id: true,
+                companyName: true,
+                domain: true,
+                logoUrl: true,
+              },
+            },
+          },
+        }),
+      ]);
 
     // Map to unified feed items
     type FeedItem = {
@@ -1454,7 +1519,9 @@ export const adminRouter = router({
         | 'research_complete'
         | 'analysis_generated'
         | 'discover_visit'
-        | 'outreach_sent';
+        | 'outreach_sent'
+        | 'quote_viewed'
+        | 'quote_accepted';
       timestamp: Date;
       prospectId: string;
       prospectName: string;
@@ -1506,6 +1573,24 @@ export const adminRouter = router({
           s.contact.prospect.companyName ?? s.contact.prospect.domain,
         logoUrl: s.contact.prospect.logoUrl,
         detail: s.subject ?? `${s.channel} outreach sent`,
+      })),
+      ...quoteViews.map((q) => ({
+        id: `view-${q.id}`,
+        type: 'quote_viewed' as const,
+        timestamp: q.viewedAt!,
+        prospectId: q.prospect.id,
+        prospectName: q.prospect.companyName ?? q.prospect.domain,
+        logoUrl: q.prospect.logoUrl,
+        detail: `Offerte ${q.nummer} geopend`,
+      })),
+      ...quoteAccepts.map((q) => ({
+        id: `accept-${q.id}`,
+        type: 'quote_accepted' as const,
+        timestamp: q.acceptedAt!,
+        prospectId: q.prospect.id,
+        prospectName: q.prospect.companyName ?? q.prospect.domain,
+        logoUrl: q.prospect.logoUrl,
+        detail: `Offerte ${q.nummer} getekend door ${q.signerName ?? 'klant'}`,
       })),
     ];
 
@@ -1717,5 +1802,65 @@ export const adminRouter = router({
         },
       });
       return updated;
+    }),
+
+  // ─── Evidence & Analysis dossier queries ─────────────────────────────
+
+  listEvidence: projectAdminProcedure
+    .input(z.object({ prospectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Verify prospect belongs to project
+      await ctx.db.prospect.findFirstOrThrow({
+        where: { id: input.prospectId, projectId: ctx.projectId },
+        select: { id: true },
+      });
+
+      const items = await ctx.db.evidenceItem.findMany({
+        where: { prospectId: input.prospectId },
+        orderBy: [{ sourceType: 'asc' }, { confidenceScore: 'desc' }],
+        select: {
+          id: true,
+          sourceType: true,
+          sourceUrl: true,
+          title: true,
+          snippet: true,
+          confidenceScore: true,
+          workflowTag: true,
+          createdAt: true,
+        },
+      });
+
+      // Group by sourceType
+      const grouped: Record<string, typeof items> = {};
+      for (const item of items) {
+        const key = item.sourceType;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(item);
+      }
+
+      return { items, grouped, total: items.length };
+    }),
+
+  getAnalysis: projectAdminProcedure
+    .input(z.object({ prospectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Verify prospect belongs to project
+      await ctx.db.prospect.findFirstOrThrow({
+        where: { id: input.prospectId, projectId: ctx.projectId },
+        select: { id: true },
+      });
+
+      return ctx.db.prospectAnalysis.findFirst({
+        where: { prospectId: input.prospectId },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          version: true,
+          content: true,
+          modelUsed: true,
+          createdAt: true,
+          inputSnapshot: true,
+        },
+      });
     }),
 });

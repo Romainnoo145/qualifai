@@ -35,6 +35,7 @@ describe('crawl4ai client', () => {
       expect(result).toEqual({
         markdown: '# Page Title\nContent here',
         title: 'Page Title',
+        statusCode: 200,
       });
     });
 
@@ -51,7 +52,7 @@ describe('crawl4ai client', () => {
 
       const result = await extractMarkdown('https://example.com');
 
-      expect(result).toEqual({ markdown: '', title: '' });
+      expect(result).toEqual({ markdown: '', title: '', statusCode: 200 });
     });
 
     it('returns empty strings on non-200 response without throwing', async () => {
@@ -63,7 +64,7 @@ describe('crawl4ai client', () => {
 
       const result = await extractMarkdown('https://example.com');
 
-      expect(result).toEqual({ markdown: '', title: '' });
+      expect(result).toEqual({ markdown: '', title: '', statusCode: 0 });
     });
 
     it('returns empty strings on network timeout (AbortError) without throwing', async () => {
@@ -76,7 +77,29 @@ describe('crawl4ai client', () => {
 
       const result = await extractMarkdown('https://example.com');
 
-      expect(result).toEqual({ markdown: '', title: '' });
+      expect(result).toEqual({ markdown: '', title: '', statusCode: 0 });
+    });
+
+    it('returns statusCode: 404 when Crawl4AI response includes status_code: 404', async () => {
+      const mockFetch = vi.mocked(fetch);
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          results: [
+            {
+              markdown: 'page not found',
+              metadata: { title: 'Not Found' },
+              status_code: 404,
+            },
+          ],
+        }),
+      } as Response);
+
+      const result = await extractMarkdown('https://example.com/missing');
+
+      expect(result.statusCode).toBe(404);
     });
 
     it('sends request body with correct wrapped format including browser_config and crawler_config', async () => {
@@ -164,6 +187,30 @@ describe('crawl4ai client', () => {
 
       expect(drafts.length).toBeGreaterThan(0);
       expect(drafts[0]?.sourceType).toBe('JOB_BOARD');
+    });
+
+    it('returns empty array for a URL that returns HTTP 404 status', async () => {
+      const mockFetch = vi.mocked(fetch);
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          results: [
+            {
+              markdown: 'Pagina niet gevonden',
+              metadata: { title: 'Not Found' },
+              status_code: 404,
+            },
+          ],
+        }),
+      } as Response);
+
+      const drafts = await ingestCrawl4aiEvidenceDrafts([
+        'https://example.com/missing-page',
+      ]);
+
+      expect(drafts).toHaveLength(0);
     });
 
     it('creates fallback draft with confidenceScore 0.55 and metadata.fallback true for minimal content', async () => {

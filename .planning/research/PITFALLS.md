@@ -1,291 +1,310 @@
 # Pitfalls Research
 
-**Domain:** Unified AI outreach pipeline — merging template-based and AI-driven email systems with signal detection and multi-step cadence in an existing sales engine
-**Researched:** 2026-03-16
-**Confidence:** HIGH (derived from direct codebase inspection, not training-data guesses)
+**Domain:** Evidence pipeline overhaul — deduplication, relevance scoring, prompt decomposition
+**Researched:** 2026-04-20
+**Confidence:** HIGH (based on codebase inspection of real data + verified patterns)
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Stale `classifyDraftRisk` Blocks Signal-Triggered Drafts From Bulk Approve
+### Pitfall 1: Over-aggressive Deduplication Removes Valid Content Variants
 
 **What goes wrong:**
-`classifyDraftRisk()` in `server/routers/outreach.ts` marks a draft as `riskLevel: 'low'` only when `evidenceBacked && hasLossMap && hasCta`. Signal-triggered drafts written by the new AI engine (via `processSignal`) set `evidenceBacked: true` in metadata but leave `workflowLossMapId` absent — they have no loss map. Result: every signal draft shows `riskLevel: 'review'` and is excluded from "Verstuur alle" bulk approve, forcing manual review of every AI-generated draft even when the email is good.
+Hash-based or near-duplicate deduplication treats re-mentions of the same fact across different source types as duplicates and removes them. A job posting that mentions "wij zoeken iemand die ons Excel-chaos kan oplossen" and a Google Review that independently mentions "altijd gedoe met de administratie" share no text overlap but both validate the same pain signal. Semantic dedup at low similarity thresholds collapses these into one item, losing cross-source validation — exactly what the confidence formula depends on.
+
+For Dutch SMBs specifically: their web presence is thin. STB-kozijnen has 233 items; a 60% perceived duplication rate likely includes legitimate near-duplicates that individually look redundant but collectively establish a pattern. Removing 60% could leave 93 items — which sounds like a win until you realize 40 of those items are now from a single WEBSITE source type, destroying the source diversity signal.
 
 **Why it happens:**
-The `classifyDraftRisk` function was written for the v1.0 WorkflowLossMap-based flow where an attached loss map was mandatory. The new AI-only path doesn't produce a loss map. The function's logic was never updated.
+Developers see 427 items and assume the goal is minimization. The real goal is coverage per unique pain signal. Dedup tools optimize for "fewer items" not "maintained signal variety per source type."
 
 **How to avoid:**
-Update `classifyDraftRisk` to recognize the new draft kinds: `cadence_draft`, signal-triggered drafts, and intro-email drafts that come without a loss map. The `low` tier should be achievable based on AI generation flag + CTA presence alone. Add a `kind` field to the risk classification output so the queue can display the origin of each draft.
+
+- Deduplicate within source type, not across source types. Identical snippets from two WEBSITE crawls of the same URL are true duplicates. A REVIEWS item and a CAREERS item that reference the same operational pain are NOT duplicates — they are corroborating evidence.
+- Use URL-normalized hash dedup first (same URL scraped twice = true duplicate).
+- Apply content-hash dedup only within the same sourceType bucket.
+- Never use semantic similarity dedup unless similarity threshold is above 0.95.
+- After dedup, assert a minimum floor: at least 3 items per sourceType that had data. If dedup drops below floor, something is wrong.
 
 **Warning signs:**
-All drafts from signal processing or cadence engine show `riskLevel: 'review'`. Zero drafts qualify for bulk approve despite containing valid CTA and body.
+
+- Post-dedup evidence count drops more than 30% for any single sourceType.
+- The masterprompt confidence average drops after dedup despite removing "low quality" items (you removed cross-source corroboration).
+- Admin review page shows evidence grouped by sourceType with one or two sourceTypes now missing entirely.
 
 **Phase to address:**
-Phase that merges the two email systems (AI engine unification). Fix before exposing the bulk-approve button to the new draft types.
+Evidence Quality phase (Stream 1). Must be validated against real STB-kozijnen data before deployment.
 
 ---
 
-### Pitfall 2: Double-Unsubscribe Footer — Template Body + `sendOutreachEmail` Footer
+### Pitfall 2: Relevance Score Threshold Too High for Dutch-Language Content
 
 **What goes wrong:**
-`sendOutreachEmail()` in `lib/outreach/send-email.ts` always appends the Dutch unsubscribe footer via `withComplianceFooter()`. The WorkflowLossMap template-based emails stored in `emailBodyHtml` already contain a footer baked in at generation time. When those drafts are sent through `sendOutreachEmail`, the footer is doubled. The new AI-generated emails from `generateIntroEmail()` / `generateFollowUp()` do NOT bake in a footer, so they get the correct single footer. During the merge transition you will have both draft types in the queue simultaneously.
+The Gemini Flash scorer is calibrated on English-language workflow pain signals ("manual processes," "automation needs," "documented process issues"). Dutch SMB content uses indirect, understated language: "wij zijn een no-nonsense bedrijf," "ons team werkt hard," "wij doen alles voor de klant." The scorer reads these as low-relevance generic company descriptions (relevance 0.2-0.3) when they are actually structural signals about manual, relationship-driven operations.
+
+If a hard drop threshold of aiRelevance < 0.50 is applied uniformly, a significant portion of Dutch WEBSITE and REGISTRY content gets discarded even though it contains soft-but-real operational signals. For a Dutch SMB with thin web presence, this can eliminate the only evidence that exists for them.
+
+The existing soft gate philosophy ("Dutch SMBs have thin web presence — hard block unusable") was validated at the quality gate level. The same philosophy must apply at the evidence item level.
 
 **Why it happens:**
-Two independent paths were built at different times. The compliance layer was added to `sendOutreachEmail` after the template system was established, but the template already had its own footer.
+The threshold from the existing `quality-gate` logic (MIN_AVERAGE_CONFIDENCE = 0.55) gets cargo-culted into the per-item filter. These are different things: the quality gate aggregates across the full evidence set; the per-item filter decides what enters that set.
 
 **How to avoid:**
-During dead code removal of template email fields (`emailBodyHtml`, `emailBodyText` on `WorkflowLossMap`), audit every `sendOutreachEmail` call site to confirm none are passing pre-footer content. Add a test: send a draft through the queue, verify the unsubscribe link appears exactly once in the resulting bodyHtml.
+
+- Do not apply a single universal drop threshold. Use source-type-specific thresholds:
+  - REVIEWS, LINKEDIN, CAREERS: threshold 0.45 (direct pain signals, even Dutch understated ones)
+  - WEBSITE, REGISTRY: threshold 0.25 (context items that support narrative, not pain evidence)
+  - Fallback drafts (metadata.fallback === true): never score, always drop — they have no content.
+- Add Dutch-language examples to the scoring prompt. The current prompt uses English scoring examples (0.8-0.9: "mentions of manual processes"). Add Dutch equivalents: "wij zoeken iemand voor onze administratie," "ons team coördineert alles handmatig."
+- Log every drop with reason. If >20% of a sourceType is dropped, flag for human review before committing.
 
 **Warning signs:**
-Sent emails in Resend activity log show two "Geen verdere emails ontvangen" lines. The second is usually visually odd (different styling from the compliance-added one).
+
+- After scoring filter, a prospect with known rich WEBSITE content drops from 233 items to under 80.
+- All remaining evidence comes from REVIEWS/LINKEDIN with no WEBSITE context — masterprompt loses company description grounding.
+- Gemini narrative starts producing generic content rather than company-specific analysis (loss of WEBSITE context items).
 
 **Phase to address:**
-Dead code cleanup phase (WorkflowLossMap email fields). Add assertion to send-email.test.ts that checks footer count.
+Evidence Quality phase (Stream 1). Requires calibration run on STB-kozijnen and Mujjo before threshold is locked.
 
 ---
 
-### Pitfall 3: Evidence-Rich Context Stripped Before AI Prompt — Follow-Ups Become Generic
+### Pitfall 3: Masterprompt Decomposition Loses Citation Thread
 
 **What goes wrong:**
-`generateFollowUp()` in `lib/ai/generate-outreach.ts` accepts `OutreachContext`, which contains only contact/company fields from the Prospect record (industry, technologies, description). It does NOT receive the hypothesis text, evidence items, or analysis narrative from `ProspectAnalysis`. Follow-up emails therefore default to generic sales language ("Ik heb begrepen dat u werkt in de…") instead of referencing the specific pain points from the research.
+The masterprompt currently produces `sections[{id, title, body, citations, punchline}]` in one call. When split into: (1) narrative sections, then (2) a separate visualType/visualData call per section, the second call receives only the section body text — not the full evidence set. The visual data call cannot know which evidence items the narrative referenced, so it generates plausible-looking visualData that doesn't match the actual citations.
+
+This creates a silent correctness bug: the discover brochure renders charts or tables that look authoritative but are hallucinated relative to the evidence actually cited in the body.
 
 **Why it happens:**
-`OutreachContext` was designed for intro emails where evidence is implicit (the prospect hasn't been reached yet). The same context shape was reused for follow-ups without extending it to carry the evidence context. The cadence engine in `processDueCadenceSteps` loads prospect fields but never loads `ProspectAnalysis` or `WorkflowHypothesis` records.
+Decomposition naively splits by output field ("narrative then visuals") rather than by input dependency. The visual data generator needs the same evidence items the narrative used, not just the narrative text.
 
 **How to avoid:**
-Extend `OutreachContext` with an optional `evidence` field that carries the top 3-5 hypothesis titles and the analysis narrative. In `processDueCadenceSteps`, query `ProspectAnalysis.content` from the latest research run. Pass this into `buildFollowUpPrompt`. Limit evidence context to ~300 tokens to avoid prompt bloat.
+
+- The narrative call must return citation indices alongside the body (which it already does via `citations`).
+- The visualData call must receive: section body + the specific evidence items referenced by citation index, not all 60 evidence items.
+- Alternatively, generate visualData in the same narrative call but as a last step with a simple schema: `{"type": "table"|"metric"|"quote", "data": [...]}`. Keep the two together until there is a proven quality problem with combined output.
+- If splitting, validate that chart values in visualData can be traced back to at least one citation in the evidence set. Reject and regenerate if no match.
 
 **Warning signs:**
-Review follow-up drafts and compare openings: if they don't mention any specific pain point from the research, evidence threading is broken. Compare intro draft vs follow-up for same prospect — intro is specific, follow-up is generic.
+
+- Visual data call returns numbers that do not appear anywhere in the evidence snippets.
+- Chart titles reference concepts not in the narrative body.
+- `citations` array in the narrative section is empty even though the body makes specific claims.
 
 **Phase to address:**
-Multi-step cadence / AI follow-up generation phase. Required before cadence follow-ups are considered production-quality.
+Masterprompt Simplification phase (Stream 2). The visualData split is optional — only attempt if narrative-only output quality is validated first.
 
 ---
 
-### Pitfall 4: Signal Diff-Detection Fires Repeatedly on Stale Evidence
+### Pitfall 4: Backfill of Existing Evidence Items Locks the Table
 
 **What goes wrong:**
-The research refresh cron runs every 14 days and produces new `EvidenceItem` rows for each prospect. If "HEADCOUNT_GROWTH" evidence appears in both the previous run and the new run, but the signal-detection logic only checks whether a signal type is new in the latest `ResearchRun`, it will create a new `Signal` record and trigger a new draft on every refresh — even when the headcount hasn't changed. Result: a prospect who was growing 6 months ago continuously receives headcount-triggered emails.
+STB-kozijnen has 233 evidence items across 5 research runs. Mujjo has 427. When the new dedup + scoring logic is introduced, there is pressure to backfill existing items: run dedup against old data, update `confidenceScore` for all existing items, mark duplicates as deleted/hidden.
+
+Backfilling 427 rows with individual UPDATE statements inside a migration transaction will lock the `EvidenceItem` table. While small at current scale (7 prospects = ~2000 items total), this pattern becomes a production incident when the system has 50+ prospects.
+
+The deeper problem: `confidenceScore` in the schema is currently both the AI-scored confidence AND the source-type-based static default. After the overhaul, these will mean different things for old vs. new items. No schema field distinguishes "scored by AI" from "static default."
 
 **Why it happens:**
-The `Signal` model stores `isProcessed: false` on creation and gets marked `isProcessed: true` after `processSignal` runs. However, if signal detection creates a new `Signal` on every research run without deduplicating against recent signals of the same type, the flag is ineffective as a true idempotency guard.
+The instinct is to make all data consistent by backfilling. But adding a discriminating field (e.g., `aiScored: Boolean`) requires a migration, and the backfill vs. new-data distinction is important for understanding system state.
 
 **How to avoid:**
-Before creating a new `Signal` record during diff-detection, check whether an unprocessed or recently processed signal of the same type exists for this prospect within a configurable lookback window (e.g., 30 days). Use `db.signal.findFirst({ where: { prospectId, signalType, createdAt: { gte: lookbackDate } } })` and skip creation if found. Make the lookback window configurable per signal type (job changes: 90 days; headcount growth: 30 days).
+
+- Add `aiScored Boolean @default(false)` and `aiRelevance Float?` and `aiDepth Float?` as nullable fields on EvidenceItem. Old items keep their static confidenceScore; new items get AI scores.
+- Apply migration via manual `ALTER TABLE` on the Docker container (existing project pattern) + create migration file manually.
+- Backfill in batches of 100 via a CLI script, not inside a migration. Script must be idempotent: `WHERE aiScored = false AND snippet IS NOT NULL`.
+- Masterprompt pre-filter should prefer items where `aiScored = true` when available. Fall back to static confidence for old items.
+- Do NOT backfill all 7 prospects at once as first action. Run on 1 prospect, verify output, then proceed.
 
 **Warning signs:**
-Multiple `Signal` records with identical `signalType` and `prospectId` created within days of each other. Prospect receives the same "your company is growing" email twice or more.
+
+- Migration file contains UPDATE statements affecting more than 10 rows — move to a post-migration script.
+- After backfill, masterprompt receives 0 evidence items for a prospect (scoring threshold + old static scores = all filtered out).
+- Discover page renders "geen bewijs gevonden" for a prospect that had working analysis.
 
 **Phase to address:**
-Signal detection implementation phase. The dedup guard must be part of the detection function, not a retrospective cleanup.
+Evidence Quality phase (Stream 1) — schema migration component. Must precede any backfill or scoring logic.
 
 ---
 
-### Pitfall 5: `OutreachLog.metadata` Shape Inconsistency Breaks Queue Rendering
+### Pitfall 5: Crawl4AI Fallback Drafts Enter Scoring with No Content
 
 **What goes wrong:**
-`OutreachLog.metadata` is an untyped `Json?` field used to carry different shapes depending on origin: WorkflowLossMap drafts store `{ workflowLossMapId }`, cadence drafts store `{ kind: 'cadence_draft', outreachSequenceId, outreachStepId, evidenceBacked }`, signal drafts store `{ ruleId, signalId, personalizedOpener, callToAction }`. The queue page (`app/admin/outreach/page.tsx`) casts with `as any` and accesses fields like `metadata.language` directly. Adding new draft kinds without updating the queue UI causes silent undefined reads (no type error, wrong rendering).
+When Crawl4AI extracts less than 80 characters of markdown, `ingestCrawl4aiEvidenceDrafts` creates a fallback stub:
+
+```
+snippet: 'Pagina bestaat maar leverde minimale inhoud op bij browser-extractie.'
+confidenceScore: 0.55
+metadata: { adapter: 'crawl4ai', fallback: true }
+```
+
+This stub enters the DB as a real EvidenceItem. The AI scorer receives it with the placeholder snippet and scores it — but the placeholder text about "browser-extractie mislukt" may actually score 0.3-0.5 on relevance (it describes a technical process) and 0.2 on depth, resulting in a finalConfidence around 0.50-0.52. This is above any reasonable drop threshold, so the fallback survives into the masterprompt.
+
+The masterprompt then cites "Pagina bestaat maar leverde minimale inhoud op bij browser-extractie" as evidence for a prospect claim. The existing `scoreEvidenceBatch` already handles `metadata.notFound === true` by assigning finalConfidence 0.1, but fallback stubs use `metadata.fallback: true`, which is NOT in the skip check.
 
 **Why it happens:**
-`Json?` fields in Prisma are untyped at the application layer. The project has a known pattern of `as any` casts for metadata (flagged in MEMORY.md as tech debt). Each new draft source adds a new shape without a discriminated union.
+The `notFound` check was added for a specific 404 case. The `fallback` case was added later and not synchronized with the scorer skip logic.
 
 **How to avoid:**
-Define a typed `OutreachLogMetadata` discriminated union with at least these variants: `{ kind: 'wlm_draft', workflowLossMapId: string }`, `{ kind: 'cadence_draft', outreachSequenceId: string, outreachStepId: string }`, `{ kind: 'signal_draft', ruleId: string, signalId: string }`, `{ kind: 'intro_draft' }`. Provide a `parseOutreachLogMetadata(raw: unknown): OutreachLogMetadata` function used at every read site. The queue UI should branch on `kind` for source badges.
+
+- In `scoreEvidenceBatch`, extend the skip check: `if (meta?.notFound === true || meta?.fallback === true)` — assign finalConfidence 0.05.
+- Better: filter out fallback items before they reach the scorer entirely. Add a pre-score filter in `research-executor.ts` that drops items where `metadata.fallback === true` OR `metadata.notFound === true`.
+- Best: remove the fallback creation in `ingestCrawl4aiEvidenceDrafts` entirely. Return no draft for failed extractions. There is no value in storing "extraction failed" as evidence.
 
 **Warning signs:**
-Queue shows blank source badges for new draft types. `metadata.workflowLossMapId` is undefined for cadence drafts causing the loss-map CTA check to always fail. TypeScript compiler does not catch this because of `as any` casts.
+
+- Evidence admin page shows items with snippet "Pagina bestaat maar..." with confidence > 0.4.
+- Masterprompt context contains the Dutch phrase "browser-extractie mislukt."
+- Evidence count includes items with no meaningful content and non-zero confidence.
 
 **Phase to address:**
-Queue unification phase (making all draft types visible in one queue). The typed metadata parser should be created before writing any new queue rendering code.
+Evidence Quality phase (Stream 1) — fix this before scoring logic is implemented, not after.
 
 ---
 
-### Pitfall 6: Dead Code Removal Deletes WorkflowLossMap Email Fields Still Referenced in Asset Router
+### Pitfall 6: `.slice(0, 60)` Replacement Creates Regression on Current Working Prospects
 
 **What goes wrong:**
-`WorkflowLossMap.emailBodyHtml`, `.emailBodyText`, and `.emailSubject` are generated by `workflow-engine.ts` and consumed in `server/routers/assets.ts` (line 173: `emailBodyHtml: draft.emailBodyHtml`) and `server/routers/campaigns.ts` (line 759: `emailBodyHtml: draft.emailBodyHtml`). If dead code cleanup removes the generation path but the asset/campaign routers still reference these fields, approved sends through those routers break silently (empty body email sent) or loudly (Prisma field error).
+The current `.slice(0, 60)` in `master-prompt.ts` (sorted by confidenceScore descending) sends the 60 highest-static-confidence items to Gemini. This works adequately for the 7 existing prospects because their analysis has been tuned and approved.
+
+When the slice is replaced with "top 20 highest-quality items grouped by sourceType," the composition of what Gemini sees changes dramatically. Even if the new 20 are objectively better items, the narrative output will differ from what was previously generated and reviewed. If the E2E validation phase compares "new output" against the discover page and finds visual regressions, there is pressure to revert — losing the quality gains.
 
 **Why it happens:**
-The two code paths (old WorkflowLossMap-based send and new AI-based send) share `sendOutreachEmail()` but differ in how they populate the body. Removing the generation doesn't automatically remove the consumption.
+Output quality is subjectively assessed by reading the narrative. Developers change the evidence selection and see a different narrative structure, assume it is worse, and revert. The actual quality gain (fewer hallucinations, more grounded citations) is harder to see than "this sounds different."
 
 **How to avoid:**
-Before removing any WorkflowLossMap email generation code, run a full grep for `emailBodyHtml`, `emailBodyText`, `emailSubject` across the entire codebase and list all references. Deprecate those fields in the schema at the same time (mark with `@deprecated` comment). Confirm the asset router and campaign router are updated to use `OutreachLog.bodyHtml` from the new AI-generated draft path before deleting.
+
+- Before changing evidence selection, capture a baseline: run masterprompt for all 7 prospects with current code, save raw JSON output.
+- Define objective quality metrics to compare: citation depth (how many unique evidence items are cited in sections), specificity (presence of prospect-specific facts like company name, KvK number, employee count), and hallucination proxy (claims not traceable to any evidence item).
+- Compare new output against baseline on these metrics, not subjective "sounds better."
+- Run validation on one prospect first. Only expand to all 7 after first prospect passes.
 
 **Warning signs:**
-TypeScript does NOT catch this because `WorkflowLossMap` fields are queried via Prisma includes that return typed objects — but if the fields still exist in the schema, they just return empty string or null after the generation code is removed, not a compile error.
+
+- New narrative omits the prospect's company name or uses generic industry framing.
+- Citations array in sections becomes shorter (evidence not being cited = context not landing).
+- Gemini produces "Geen bewijs beschikbaar" disclaimers in narrative body despite evidence being present in context.
 
 **Phase to address:**
-Dead code cleanup phase. Do a reference audit as the very first step before touching workflow-engine.ts.
+E2E Validation phase (Stream 3). Baseline capture must happen before any Stream 2 changes deploy.
 
 ---
 
-### Pitfall 7: Cadence Step Created But Evidence Evidence-Context Missing — Empty Placeholder Body Shipped
+### Pitfall 7: Latency Budget Blown by Per-Item AI Scoring at Ingestion
 
 **What goes wrong:**
-In `evaluateCadence()`, a new `OutreachStep` is created with `bodyText: ''` and `bodyHtml: undefined` as a placeholder. The cron `processDueCadenceSteps` is supposed to fill in the AI content when the step is due. If the cron fails (AI API timeout, Gemini quota) the error is caught with `console.error` and the step is promoted to `QUEUED` status with empty body anyway (line 512: `await db.outreachStep.update({ status: 'QUEUED' })`). The draft queue then shows a blank email.
+The current `scoreEvidenceBatch` batches 15 items per Gemini Flash call. A fresh pipeline run for Mujjo (427 items) would require ~29 Gemini Flash calls. At 1-3 seconds per call, that is 30-90 seconds of additional latency added to the research pipeline — which already takes several minutes for browser-rendered extraction.
+
+If scoring is applied at ingestion time (before storing to DB), this latency adds to every research run. Users in the admin panel triggering "re-run research" will experience much longer wait times with no visible progress indicator.
 
 **Why it happens:**
-The error handling in `processDueCadenceSteps` uses "fall back to empty-body draft — admin can write copy manually" as the safety valve. This was reasonable in early cadence development but becomes a reliability issue when email generation is the primary path.
+Evidence scoring was designed for post-ingestion scoring (on existing items), not pre-storage filtering. Moving it to ingestion time changes the pipeline shape: previously evidence was stored fast, then scored async. Now scoring blocks storage.
 
 **How to avoid:**
-When AI generation fails, keep the step in `DRAFTED` status (do not promote to `QUEUED`). Increment a retry counter in metadata. After 3 failures, create a `QUEUED` step with a body that explicitly says "AI generation failed — please write manually." Add a separate admin notification or visual indicator in the queue for generation failures.
+
+- Keep scoring async. Store evidence items first (current behavior), then run scoring as a separate step that updates `aiRelevance`, `aiDepth`, `aiScored` fields.
+- Add a UI indicator in the admin: "Scoring evidence..." as a separate pipeline stage after "Evidence collected."
+- Set a batch ceiling: score at most 80 items per research run. If more than 80 items entered the DB, score the top 80 by static confidenceScore (source weight) first. Items beyond 80 get static scores as fallback.
+- For the masterprompt pre-filter: only use AI scores if `aiScored = true` for more than 50% of items. Otherwise fall back to source-weight sort.
 
 **Warning signs:**
-Draft queue shows emails with blank body and no subject. Queue count increases but send rate drops. Check logs for `[cadence-engine] generateFollowUp failed` entries.
+
+- Research pipeline takes more than 5 minutes for a single prospect.
+- Admin "run research" button appears stuck with no progress feedback.
+- Gemini Flash quota exceeded mid-pipeline (429 error) causing partial scoring with no recovery path.
 
 **Phase to address:**
-Multi-step cadence phase. Fix error handling before enabling cadence in production.
-
----
-
-### Pitfall 8: Bidirectional Link Breaks When Prospect Page Looks Up Drafts by `prospectId` But OutreachLog Has No `prospectId`
-
-**What goes wrong:**
-`OutreachLog` does not have a `prospectId` field. It has `contactId → Contact → prospectId`. Any query for "all drafts for prospect X" requires a JOIN through Contact. The prospect detail page currently shows outreach status only through `Contact.outreachStatus` and `OutreachSequence`. If the bidirectional link feature queries `OutreachLog` directly by prospectId (a natural mistake), it returns nothing.
-
-**Why it happens:**
-The `OutreachLog` schema was designed contact-first. Adding prospect-level outreach visibility requires traversing the relation graph — this is non-obvious and easily forgotten when writing new tRPC procedures.
-
-**How to avoid:**
-Write the prospect → outreach query once, in a shared utility function: `getOutreachLogsForProspect(db, prospectId)` that does `db.outreachLog.findMany({ where: { contact: { prospectId } } })`. Use this function in both the prospect detail page and the queue. Never write inline `where: { prospectId }` on OutreachLog — it will silently return empty results (no Prisma error because `prospectId` isn't a field).
-
-**Warning signs:**
-Prospect detail outreach tab shows no drafts even when drafts exist in the queue for that prospect's contacts. Check Prisma query: if it uses `OutreachLog.findMany({ where: { prospectId } })` directly, that's the bug.
-
-**Phase to address:**
-Bidirectional linking phase. Write the utility function before building the prospect detail outreach tab.
-
----
-
-### Pitfall 9: `processSignal` Creates Duplicate Drafts If Called Multiple Times Before `isProcessed` Is Set
-
-**What goes wrong:**
-`processUnprocessedSignals()` queries signals where `isProcessed: false`, processes them in a loop, and marks `isProcessed: true` at the end of `processSignal`. If "Process Signals" is clicked twice quickly (the button does not disable immediately on the second click), or if the cron and the manual button run concurrently, the same signal is processed twice, creating two drafts for the same contact.
-
-**Why it happens:**
-There is no atomic claim on the signal before processing begins. The `isProcessed` flag is set at the end of processing, not at the start. The button handler in the UI does disable the button while `isPending`, but concurrent processes (cron + button) have no coordination.
-
-**How to avoid:**
-Add an atomic claim at the start of `processSignal`: `await db.signal.updateMany({ where: { id: signal.id, isProcessed: false }, data: { isProcessed: true } })` and check `count === 1`. If count is 0, another process claimed it — skip. This is the same idempotency pattern already established elsewhere in the codebase (`Idempotency: atomic updateMany with status guard` from MEMORY.md).
-
-**Warning signs:**
-Multiple drafts with identical subject line exist in the queue for the same contact. `Signal` records have `isProcessed: true` but two `OutreachLog` records link to the same `signalId` in metadata.
-
-**Phase to address:**
-Signal processing phase. Add the atomic claim before wiring the manual trigger button.
+Evidence Quality phase (Stream 1) — architecture decision on sync vs. async scoring must be made before implementation begins.
 
 ---
 
 ## Technical Debt Patterns
 
-| Shortcut                                                                                                   | Immediate Benefit                       | Long-term Cost                                                                                | When Acceptable                                                                                   |
-| ---------------------------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `as any` on `OutreachLog.metadata`                                                                         | Avoids defining discriminated union now | Silent undefined reads when new draft kinds added; queue rendering breaks without type errors | Never in new code — create `parseOutreachLogMetadata()` utility                                   |
-| Empty placeholder body in cadence steps                                                                    | Cadence step created even if AI is down | Admin sees blank drafts; sends empty emails if bulk-approved without reading                  | Only if admin is forced to review (remove from bulk-approve pool when body is empty)              |
-| `loadProjectSender` duplicated in three files (`processor.ts`, `cadence/engine.ts`, `routers/outreach.ts`) | Each file is self-contained             | Sender config changes must be applied three times; drift inevitable                           | Extract to `lib/outreach/sender.ts` before adding a fourth call site                              |
-| `buildOutreachContext` duplicated in `routers/outreach.ts` and `cadence/engine.ts`                         | Fast to write                           | Two diverging context builders; evidence fields added to one, not the other                   | Extract to `lib/outreach/context.ts` in unification phase                                         |
-| Signal rules hard-coded in `lib/automation/rules.ts`                                                       | Simple, no DB reads                     | Adding a new rule requires a deploy; rules can't be tuned per project                         | Acceptable at current scale; add DB-backed rules only when multiple projects need different rules |
+| Shortcut                                            | Immediate Benefit       | Long-term Cost                                                               | When Acceptable                                              |
+| --------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Score at masterprompt time, not ingestion           | No pipeline latency     | Evidence DB has unscored items; quality gate sees raw static confidence      | Never — quality gate should reflect real quality             |
+| Universal drop threshold (0.50 for all sourceTypes) | Simpler code            | Over-filters Dutch WEBSITE/REGISTRY content, narrative loses company context | Never for Dutch NL market                                    |
+| Hash dedup across all sourceTypes                   | Maximum dedup ratio     | Destroys cross-source validation that drives confidence scores               | Never                                                        |
+| Keep `.slice(0, 60)` as-is for safe migration       | No regressions          | Arbitrary count remains, quality problem not fixed                           | Acceptable as phase 1 while scoring is validated             |
+| Skip backfill, only score new research runs         | No migration risk       | Existing 7 prospects keep inconsistent evidence sets                         | Acceptable for initial release with explicit `aiScored` flag |
+| Store fallback stubs in DB                          | Simpler ingestion logic | Fallbacks leak into masterprompt as phantom citations                        | Never — filter before storage                                |
 
 ---
 
 ## Integration Gotchas
 
-| Integration                | Common Mistake                                                                                                                                                                                  | Correct Approach                                                                                                                                 |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Resend email send          | Sending with `from` address not matching DKIM domain — Resend silently degrades deliverability                                                                                                  | Always use `info@klarifai.nl` from address; the `OUTREACH_FROM_EMAIL` env var must match the verified Resend domain                              |
-| Resend email send          | No idempotency key on send — retry on timeout creates duplicate sends                                                                                                                           | Resend's `idempotencyKey` parameter is available but not currently used. For now rely on DB `status: 'sent'` check on OutreachLog before sending |
-| Gemini Flash AI generation | Parsing error on JSON output swallowed silently — fallback returns empty body                                                                                                                   | Add structured logging on `JSON.parse` failures with the raw response text; don't silently fall back to empty                                    |
-| Gemini Flash AI generation | Model responds with markdown fences even with explicit "No markdown code fences" instruction — already handled in `generateJSON`                                                                | The strip logic is correct; do not remove it when cleaning up                                                                                    |
-| Research refresh cron      | Runs `executeResearchRun` sequentially for all stale prospects in one cron tick — if 10 prospects are stale, all 10 run in the same invocation, each taking 60-90 seconds                       | Add a `limit: 3` cap to `runResearchRefreshSweep` options and schedule cron more frequently rather than processing more per tick                 |
-| Cadence cron               | `processDueCadenceSteps` queries `nextStepReadyAt: { lte: now }` — if cron misses a tick (deploy, downtime), many steps become due simultaneously and all trigger AI generation in a tight loop | Add a processing cap (`take: 10` is already present) and verify the AI generation calls are not all awaited in series for the entire batch       |
+| Integration                | Common Mistake                                                                                               | Correct Approach                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Gemini Flash scoring       | Sending full 300-char snippet to scorer — scorer sees same text masterprompt sees                            | Trim to 200 chars for scoring (cost), use full snippet in masterprompt (quality)           |
+| Prisma EvidenceItem upsert | Using `create` instead of `upsert` on (prospectId, sourceUrl) — creates duplicate items across research runs | Add `@@unique([prospectId, sourceUrl])` constraint, use upsert with content update         |
+| Crawl4AI HTTP status       | Assuming Crawl4AI 200 means content was found — Crawl4AI returns 200 even for 404 pages                      | Check `looksLikeCrawled404()` AND content length. Crawl4AI has no HTTP status passthrough. |
+| Gemini JSON output         | Scorer prompt says "no markdown fences" but Gemini sometimes wraps in ```json anyway                         | The existing `jsonMatch = text.match(/\[[\s\S]*\]/)` handles this. Do not remove it.       |
+| Batch size for scoring     | Processing all items in one Gemini call — context window fills, scores become unreliable                     | Keep batch size at 15. Above 20 items per batch, scoring quality degrades measurably.      |
 
 ---
 
 ## Performance Traps
 
-| Trap                                                                                        | Symptoms                                                                                   | Prevention                                                                                                                  | When It Breaks                        |
-| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| Loading full `ProspectAnalysis.content` JSON for every draft in the queue                   | Queue page slow at 50+ drafts; each row triggers a nested query loading the full narrative | Use a summary/excerpt field or load analysis content only when draft is expanded                                            | At 20+ prospects with drafts in queue |
-| Signal detection scanning all evidence items on every research run                          | Research run completion handler slow; timeout on large evidence sets (83 items for Nedri)  | Diff-detect only on evidence items where `researchRunId` matches the latest two runs for that prospect                      | At 50+ evidence items per prospect    |
-| `processUnprocessedSignals` processes up to 50 signals sequentially including AI generation | Manual "Process Signals" button appears stuck for 30+ seconds if many signals pending      | Add progress feedback to the UI; process in parallel batches of 5 with `Promise.allSettled`                                 | At 10+ unprocessed signals            |
-| `getDecisionInbox` query used by the queue loads full `bodyHtml` for all 150 drafts         | Queue initial load slow; large HTML strings serialized over tRPC                           | Load only `subject`, `bodyText` preview, and metadata in the list query; load full `bodyHtml` only when a draft is expanded | At 30+ drafts in queue                |
-
----
-
-## Security Mistakes
-
-| Mistake                                                                  | Risk                                                                                                                    | Prevention                                                                                                                                                                        |
-| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Signal processing triggered via tRPC mutation without rate limiting      | Adversarial admin clicks "Process Signals" in rapid succession, exhausting Gemini quota and creating hundreds of drafts | Add a per-minute rate limit on `processSignals` mutation; return 429 if called within 60 seconds of last call                                                                     |
-| `OutreachLog.metadata` includes `unsubscribeUrl` with HMAC token         | Token leaks if metadata is exported or logged                                                                           | Token is per-contact+email combination; it's HMAC-signed and non-reversible. Accept as design: the URL already exists in the email body                                           |
-| Bulk approve sends emails to contacts with `outreachStatus: 'OPTED_OUT'` | GDPR violation, anti-spam complaint                                                                                     | `sendOutreachEmail` already checks `outreachStatus === 'OPTED_OUT'` and throws. Bulk approve must surface this error per-draft, not fail the entire batch silently                |
-| Dead code cleanup removes GDPR compliance footer by accident             | Every sent email lacks unsubscribe link — illegal in NL/BE                                                              | The footer is in `sendOutreachEmail` (`withComplianceFooter`), not in the draft body. As long as `sendOutreachEmail` is the only send path, footer cannot be accidentally removed |
-
----
-
-## UX Pitfalls
-
-| Pitfall                                                                                                        | User Impact                                                                    | Better Approach                                                                                                           |
-| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| Draft queue shows intro, follow-up, and signal drafts with no visual distinction                               | Admin cannot tell why a draft was generated; misjudges relevance               | Add a source badge to each row: "Intro", "Follow-up (day 3)", "Signal: Headcount Growth" using `metadata.kind`            |
-| "Process Signals" button on outreach page processes old signals for prospects the admin has already moved past | Stale signal drafts pollute the queue                                          | Add a staleness cutoff: only process signals where `detectedAt > (now - 30 days)`                                         |
-| Prospect detail page shows no outreach history                                                                 | Admin must go to outreach page to check status; context switching breaks focus | Prospect detail should show last 3 outreach logs and current draft status inline in the Outreach tab                      |
-| Bidirectional link from draft queue to prospect opens in a new context                                         | Admin loses queue position                                                     | Link to prospect in a slide-over or modal, not full navigation                                                            |
-| Bulk approve sends immediately without per-draft preview                                                       | Admin approves drafts they haven't read                                        | Require at least one draft to be expanded before bulk approve is enabled; or show a confirmation modal with preview count |
+| Trap                                                      | Symptoms                                                             | Prevention                                                                                        | When It Breaks                                         |
+| --------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Scoring 400+ items synchronously at ingestion             | Research pipeline stalls 90+ seconds, admin appears hung             | Async scoring via separate `scoreEvidenceForProspect` call triggered post-ingestion               | At 200+ items per prospect                             |
+| Full table scan for dedup check                           | `SELECT * FROM EvidenceItem WHERE prospectId = ?` on every ingestion | Use `@@unique([prospectId, sourceUrl])` DB constraint + upsert (DB enforces, no application scan) | At 500+ items                                          |
+| Sending all evidence to masterprompt for baseline capture | 18k chars per prompt, context rot on long inputs                     | Pre-filter to 20-25 items before sending, never raise this ceiling                                | Already at scale — current 60-item slice is borderline |
+| Re-running scoring on already-scored items                | 29 Gemini calls for Mujjo on every research refresh                  | Check `aiScored = true` before scoring; skip scored items                                         | At 50+ prospects                                       |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Unified draft queue:** All three draft kinds (intro, cadence follow-up, signal-triggered) appear in `getDecisionInbox` — verify by creating one of each type and checking the queue.
-- [ ] **Cadence follow-up evidence threading:** Check that a generated follow-up email references at least one specific pain point from the prospect's `ProspectAnalysis` — not just the company name.
-- [ ] **Signal dedup guard:** Manually trigger two research refreshes in quick succession; verify only one set of signal drafts is created, not two.
-- [ ] **Dead code removal complete:** Run `grep -r 'emailBodyHtml\|emailBodyText\|emailSubject' --include='*.ts'` after cleanup; should return zero results except schema definition and this checklist.
-- [ ] **GDPR footer present exactly once:** Send a test email from the new AI path; view raw HTML in Resend activity log; count occurrences of "uitschrijven".
-- [ ] **Prospect detail bidirectional link works:** Open any prospect that has a draft in the queue; the outreach tab on the detail page must show that draft.
-- [ ] **Bulk approve excludes empty-body drafts:** Filter `bulkApproveLowRisk` to skip any draft where `bodyHtml` and `bodyText` are both empty/null.
-- [ ] **`OutreachSequence.status` updated on send:** After approving a draft from the queue, verify the linked `OutreachSequence.status` transitions from `DRAFTED` to `SENT`. Cadence depends on this for `buildCadenceState`.
+- [ ] **Dedup scope:** Verify dedup is source-type-scoped, not cross-type. Check that post-dedup evidence set still has items from 4+ source types for any prospect with prior full pipeline run.
+- [ ] **Relevance scoring calibration:** Run scorer on 20 Dutch WEBSITE items from STB-kozijnen manually, verify none scored below 0.20 are items a human would consider relevant.
+- [ ] **Fallback stub filtering:** Search codebase for `metadata.fallback` and verify all paths that create fallback stubs either drop them before DB storage or mark them as finalConfidence 0.05.
+- [ ] **Crawl4AI 404 leak:** Verify `ingestCrawl4aiEvidenceDrafts` checks both `looksLikeCrawled404()` AND content length before creating any EvidenceItem.
+- [ ] **Backfill idempotency:** Run backfill script twice on same prospect. Verify no duplicate score updates, no confidence changes on second run.
+- [ ] **Discover page rendering:** After new masterprompt format deploys, open discover brochure for STB-kozijnen and verify all 4 steps render without missing fields.
+- [ ] **Legacy v1 prompt deletion:** After deletion, run `grep -r "buildLegacyPrompt\|analysis-v1\|generateMasterAnalysis" lib/` and verify zero results.
+- [ ] **Baseline comparison:** Before any Stream 2 changes, capture raw Gemini JSON output for all 7 prospects. Store in `scripts/baseline-analysis/` for regression comparison.
 
 ---
 
 ## Recovery Strategies
 
-| Pitfall                                               | Recovery Cost | Recovery Steps                                                                                                                                           |
-| ----------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Duplicate drafts from signal double-processing        | LOW           | Delete duplicate `OutreachLog` records; reset duplicate `Signal.isProcessed` to false and re-mark; add dedup guard before re-running                     |
-| Double unsubscribe footer in sent emails              | LOW-MEDIUM    | Cosmetic issue; no regulatory violation if link is present twice. Patch the template stripping in next deploy. No re-send required                       |
-| Cadence empty-body drafts in queue                    | LOW           | Filter queue to hide `bodyHtml IS NULL AND bodyText = ''`; add admin button "Regenerate" that re-runs AI generation for a specific draft                 |
-| Dead code removal broke asset router send path        | HIGH          | Revert WorkflowLossMap email field deletion; the fields still exist in DB (not a migration), so restoring the query is enough. Deploy hotfix immediately |
-| Signal diff-detection floods queue with stale signals | MEDIUM        | Add `detectedAt > (now - 30 days)` filter to `processUnprocessedSignals`; run a DB update to mark all signals older than 30 days as processed            |
+| Pitfall                                                           | Recovery Cost | Recovery Steps                                                                                                                                                       |
+| ----------------------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Over-aggressive dedup removed valid evidence                      | MEDIUM        | Restore evidence from previous research run (items are scoped to researchRunId, old runs exist); adjust dedup scope to source-type-only; re-run masterprompt         |
+| Threshold too high, prospect has 0 scored items                   | LOW           | Drop threshold for that sourceType; scoring is stored as separate fields, rerun scoring only (not full pipeline)                                                     |
+| Masterprompt narrative regression after evidence selection change | LOW           | Restore `.slice(0, 60)` temporarily; compare baseline JSON to identify which evidence items drove quality                                                            |
+| Backfill locked table                                             | HIGH          | Stop backfill script; run in smaller batches (50 rows max); add `pg_sleep(0.1)` between batches; monitor `pg_stat_activity`                                          |
+| Discover page renders blank after schema change                   | MEDIUM        | Check for nullable fields added to `ProspectAnalysis` JSON that brochure expects — add optional chaining in renderer; do not re-run analysis until renderer is fixed |
 
 ---
 
 ## Pitfall-to-Phase Mapping
 
-| Pitfall                                          | Prevention Phase                      | Verification                                                                          |
-| ------------------------------------------------ | ------------------------------------- | ------------------------------------------------------------------------------------- |
-| stale `classifyDraftRisk` blocks new draft types | AI engine unification phase           | Run all draft types through queue; verify bulk-approve count is non-zero              |
-| Double compliance footer                         | Dead code cleanup phase               | Unit test in send-email.test.ts: count "uitschrijven" occurrences                     |
-| Follow-up drafts lack evidence context           | AI follow-up generation phase         | Manual review: follow-up references at least one specific pain point                  |
-| Signal diff-detection fires on every refresh     | Signal detection implementation phase | Trigger two research refreshes; assert signal count incremented by 1 not 2            |
-| Metadata shape inconsistency breaks queue        | Queue unification phase               | TypeScript: create discriminated union, remove `as any` from metadata reads           |
-| Dead code removal breaks asset router            | Dead code cleanup phase               | Grep audit before deletion; run all E2E send paths after removal                      |
-| Empty cadence placeholder body promoted to queue | Cadence phase                         | Check `processDueCadenceSteps`: failed AI calls leave step as `DRAFTED`, not `QUEUED` |
-| Bidirectional link finds no drafts (wrong query) | Bidirectional linking phase           | Open prospect with known draft; verify detail page shows it                           |
-| Signal double-processing from concurrent runs    | Signal processing phase               | Atomic claim test: call processSignals twice in parallel; assert one draft created    |
+| Pitfall                                    | Prevention Phase                                    | Verification                                                        |
+| ------------------------------------------ | --------------------------------------------------- | ------------------------------------------------------------------- |
+| Over-aggressive dedup                      | Stream 1 (Evidence Quality)                         | Post-dedup sourceType count >= 4 for STB-kozijnen                   |
+| Dutch threshold miscalibration             | Stream 1 (Evidence Quality)                         | Manual review of 20 Dutch WEBSITE items before threshold locks      |
+| Fallback stubs surviving into masterprompt | Stream 1 (Evidence Quality) — fix first             | Search for "browser-extractie mislukt" in masterprompt context      |
+| Backfill table lock                        | Stream 1 (Evidence Quality) — schema migration      | Run migration on dev DB, check query duration                       |
+| Citation loss on prompt decomposition      | Stream 2 (Masterprompt)                             | visualData values traceable to at least one evidence citation       |
+| Slice replacement regression               | Stream 3 (E2E Validation) — baseline first          | Objective metrics: citation depth, specificity, hallucination proxy |
+| Latency budget blown                       | Stream 1 (Evidence Quality) — architecture decision | Research run for Mujjo completes in under 5 minutes with scoring    |
 
 ---
 
 ## Sources
 
-- Direct codebase inspection: `lib/cadence/engine.ts`, `lib/automation/processor.ts`, `lib/ai/generate-outreach.ts`, `lib/outreach/send-email.ts`, `server/routers/outreach.ts`, `prisma/schema.prisma`, `app/admin/outreach/page.tsx`
-- Project memory: MEMORY.md (known tRPC v11 inference gaps, idempotency pattern, metadata shape tech debt)
-- PROJECT.md (v8.0 milestone goal, current architecture decisions)
+- Codebase inspection: `lib/evidence-scorer.ts`, `lib/enrichment/crawl4ai.ts`, `lib/analysis/master-prompt.ts`, `lib/web-evidence-adapter.ts`, `.planning/phases/62-evidence-pipeline-overhaul/.continue-here.md`
+- Real data: STB-kozijnen 233 items / 5 runs, Mujjo 427 items — documented in `.continue-here.md`
+- Dedup patterns: RAG architecture scaling research — semantic dedup after RRF ranking preserves holistic relevance; deduplicating after ranking preserves the best holistic measure
+- Backfill risk: Schema migration production post-mortem — 4.5M row table lock in single transaction caused outage; batch in 1,000 rows max with explicit pauses
+- Scoring latency: Gemini API optimization docs (ai.google.dev/gemini-api/docs/optimization) — batch requests reduce tokenization costs; Flash-Lite for high-QPS classification workloads
+- Prompt decomposition: Context rot research (ACL Anthology 2025 EMNLP findings) — retrieval accuracy decreases for longer context; decomposition adds cascading error propagation risk
+- Dutch DPA scraping guidance: AP 2024 — noted for awareness; internal prospecting tool with manual review gates reduces GDPR risk
 
 ---
 
-_Pitfalls research for: v8.0 Unified Outreach Pipeline — Qualifai_
-_Researched: 2026-03-16_
+_Pitfalls research for: Evidence pipeline overhaul — Qualifai v10.0_
+_Researched: 2026-04-20_
