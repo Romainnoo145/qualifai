@@ -384,42 +384,37 @@ function ContactRow({
   onEdit?: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 px-2.5 py-2.5 rounded-[6px] border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-strong)] transition-colors">
-      <div className="flex items-center gap-3">
-        <div
-          className="flex h-7 w-7 items-center justify-center rounded-full flex-shrink-0"
-          style={{
-            background: accent ?? 'var(--color-ink)',
-            color: accent ? '#ffffff' : 'var(--color-gold-hi)',
-          }}
-        >
-          <span className="font-['Sora'] text-[10px] font-bold">
-            {initials}
-          </span>
+    <div className="relative flex items-center gap-3 py-1.5 pr-7">
+      <div
+        className="flex h-7 w-7 items-center justify-center rounded-full flex-shrink-0"
+        style={{
+          background: accent ?? 'var(--color-ink)',
+          color: accent ? '#ffffff' : 'var(--color-gold-hi)',
+        }}
+      >
+        <span className="font-['Sora'] text-[10px] font-bold">{initials}</span>
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[12px] font-semibold text-[var(--color-ink)] truncate leading-snug">
+          {name}
+          {isPrimary ? (
+            <span className="ml-1.5 text-[9px] font-normal text-[var(--color-tag-quality-text)] tracking-wider">
+              primair
+            </span>
+          ) : null}
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-[12px] font-semibold text-[var(--color-ink)] truncate">
-            {name}
-          </div>
-          <div className="text-[10px] text-[var(--color-muted)] truncate">
-            {role}
-          </div>
+        <div className="text-[10px] text-[var(--color-muted)] truncate leading-snug">
+          {role}
         </div>
-        {isPrimary ? (
-          <span className="text-[9px] text-[var(--color-tag-quality-text)] tracking-wider">
-            primair
-          </span>
-        ) : null}
       </div>
       {onEdit ? (
         <button
           type="button"
           onClick={onEdit}
-          className="w-full flex items-center justify-center gap-1.5 rounded-[5px] border border-[var(--color-border)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-muted)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)] transition-colors"
+          className="absolute right-0 top-1/2 -translate-y-1/2 p-1 rounded-[4px] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
           aria-label="Bewerk contact"
         >
-          <Pencil className="h-3 w-3" strokeWidth={1.75} />
-          Bewerk
+          <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
         </button>
       ) : null}
     </div>
@@ -1191,8 +1186,11 @@ export default function ProspectDetail() {
 
             {/* Voorstel routing */}
             <div className="space-y-2.5">
-              <Eyebrow>Voorstel routing</Eyebrow>
-              <div className="pt-1">
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+                  Voorstel routing
+                </span>
+                <span className="flex-1 h-px bg-[var(--color-border)]" />
                 <button
                   type="button"
                   onClick={() => {
@@ -1200,27 +1198,31 @@ export default function ProspectDetail() {
                     setDraftUrl(bespokeUrl ?? '');
                     setShowVoorstelModal(true);
                   }}
+                  className="p-1 rounded-[4px] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
+                  aria-label="Bewerk voorstel routing"
+                >
+                  <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
+                </button>
+              </div>
+              <div className="flex items-center gap-2 pt-0.5">
+                <span
                   className={cn(
-                    'w-full flex items-center gap-2.5 px-3.5 py-3 rounded-[6px] border text-[13px] font-medium text-left transition-all cursor-pointer',
+                    'inline-block h-2 w-2 rounded-full flex-shrink-0',
                     voorstelMode === 'BESPOKE'
-                      ? 'border-[var(--color-gold-hi)] text-[var(--color-gold-hi)] bg-[#e4c33c0d] hover:bg-[#e4c33c1a]'
-                      : 'border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-ink)]',
+                      ? 'bg-[var(--color-gold-hi)]'
+                      : 'bg-[var(--color-border-strong)]',
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-[13px]',
+                    voorstelMode === 'BESPOKE'
+                      ? 'text-[var(--color-gold-hi)]'
+                      : 'text-[var(--color-muted)]',
                   )}
                 >
-                  <span
-                    className={cn(
-                      'inline-block h-2 w-2 rounded-full flex-shrink-0',
-                      voorstelMode === 'BESPOKE'
-                        ? 'bg-[var(--color-gold-hi)]'
-                        : 'bg-[var(--color-border-strong)]',
-                    )}
-                  />
-                  {voorstelMode === 'BESPOKE'
-                    ? bespokeUrl
-                      ? `Bespoke · ${bespokeUrl.replace(/^https?:\/\//, '').slice(0, 24)}${bespokeUrl.length > 30 ? '…' : ''}`
-                      : 'Bespoke · geen URL'
-                    : 'Standaard'}
-                </button>
+                  {voorstelMode === 'BESPOKE' ? 'Bespoke' : 'Standaard'}
+                </span>
               </div>
             </div>
           </aside>
