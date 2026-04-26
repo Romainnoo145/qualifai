@@ -387,7 +387,6 @@ export const contactsRouter = router({
               logoUrl: true,
             },
           },
-          signals: { orderBy: { createdAt: 'desc' }, take: 20 },
           outreachLogs: { orderBy: { createdAt: 'desc' }, take: 20 },
         },
       });

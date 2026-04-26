@@ -11,8 +11,6 @@ import {
   Briefcase,
   Building2,
   Linkedin,
-  Zap,
-  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageLoader } from '@/components/ui/page-loader';
@@ -136,7 +134,7 @@ export default function ContactDetail() {
         )}
       </header>
 
-      {/* 2-column: info + signals */}
+      {/* 2-column: info + sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10">
         <div className="space-y-10">
           {/* Contact Info */}
@@ -282,49 +280,8 @@ export default function ContactDetail() {
           </section>
         </div>
 
-        {/* Signals sidebar */}
+        {/* Sidebar */}
         <aside className="space-y-10">
-          <section>
-            <SectionLabel>Signals</SectionLabel>
-            {c.signals?.length > 0 ? (
-              <div>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {c.signals.map((signal: any) => (
-                  <div
-                    key={signal.id}
-                    className="py-4 border-b border-[var(--color-surface-2)]"
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <Zap className="w-3 h-3 text-[var(--color-gold)]" />
-                      <span className="text-[9px] font-medium uppercase tracking-[0.08em] text-[var(--color-muted)]">
-                        {signal.signalType.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                    <p className="text-[13px] font-medium text-[var(--color-ink)]">
-                      {signal.title}
-                    </p>
-                    {signal.description && (
-                      <p className="text-[12px] font-light text-[var(--color-muted)] mt-1">
-                        {signal.description}
-                      </p>
-                    )}
-                    <p className="text-[10px] font-light text-[var(--color-muted)] mt-2 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {new Date(signal.detectedAt).toLocaleDateString('nl-NL', {
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="py-8 text-center text-[13px] font-light text-[var(--color-muted)]">
-                Geen signals.
-              </p>
-            )}
-          </section>
-
           {c.outreachNotes && (
             <section>
               <SectionLabel>Notities</SectionLabel>

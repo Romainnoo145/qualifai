@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Building2,
-  Zap,
   Mail,
   LogOut,
   FolderKanban,
@@ -219,7 +218,6 @@ function AdminShell({
     { href: '/admin/quotes', label: 'Offertes', icon: FileText },
     { href: '/admin/outreach', label: 'Draft Queue', icon: Mail },
     { href: '/admin/use-cases', label: 'Use Cases', icon: BookOpen },
-    { href: '/admin/signals', label: 'Signals', icon: Zap },
   ];
 
   const activeProject =
