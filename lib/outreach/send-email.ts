@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 import type { OutreachType } from '@prisma/client';
 import { createUnsubscribeToken } from '@/lib/outreach/unsubscribe';
 import { assessEmailForOutreach } from '@/lib/outreach/quality';
-import { getEmailSignature } from '@/lib/email/signatures';
+import { getEmailSignature } from '@/components/clients/klarifai/email-signature';
 
 const resend = new Resend(env.RESEND_API_KEY);
 

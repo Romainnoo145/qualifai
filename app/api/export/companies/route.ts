@@ -3,7 +3,9 @@ import prisma from '@/lib/prisma';
 import { resolveAdminProjectScope } from '@/server/admin-auth';
 
 export async function GET(req: NextRequest) {
-  const scope = resolveAdminProjectScope(req.headers.get('x-admin-token'));
+  const scope = await resolveAdminProjectScope(
+    req.headers.get('x-admin-token'),
+  );
   if (!scope) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
