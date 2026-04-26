@@ -17,6 +17,7 @@
 import { useEffect, useState } from 'react';
 import type { QuoteStatus } from '@prisma/client';
 import { useRouter } from 'next/navigation';
+import { GitBranch } from 'lucide-react';
 import { api } from '@/components/providers';
 
 // O6 verbatim Dutch copy — grep-enforced.
@@ -82,6 +83,7 @@ export function QuoteVersionConfirm({ quoteId, status }: Props) {
         onClick={() => setOpen(true)}
         data-testid="quote-version-button"
       >
+        <GitBranch className="h-3.5 w-3.5" />
         Nieuwe versie
       </button>
 

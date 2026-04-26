@@ -1,11 +1,23 @@
 # Warm-track Launch — Session Handoff (2026-04-26)
 
+## Beginprompt voor volgende sessie
+
+> Lees `docs/superpowers/handoff/2026-04-26-warm-track-launch-handoff.md` om de warm-track launch op te pakken. Ik werk op branch `feat/warm-track-launch`. De volgende prioriteit is **Fase 0 — productie deploy** (Vercel + Railway + Cloudflare DNS) zodat we de échte send naar Ron Hoeijmakers (Maintix) kunnen doen vanuit `qualifai.klarifai.nl`. Begeleid me stap voor stap door de CLI-acties — ik wil ze zelf uitvoeren maar met jouw exacte commando's en gebruikersnaam-prompts. Lokaal werkt alles end-to-end (incl. signing → ACCEPTED → admin notificatie).
+
 ## Current state
 
 Branch: `feat/warm-track-launch`
-Most recent commit: see `git log --oneline -1`
-Pushed to GitHub: yes (origin/feat/warm-track-launch)
-PR not yet opened.
+Most recent commit: zie `git log --oneline -1`
+Pushed to GitHub: ja (origin/feat/warm-track-launch)
+PR niet geopend.
+
+## Belangrijk om te weten bij start
+
+- Dev server draait standaard op poort 9200, Docker Postgres op 5433, Redis op 6381
+- Na elke schema-wijziging: `npx prisma generate` + restart dev server (anders kent client de nieuwe velden niet en faalt mutation stilletjes)
+- Maintix prospect bestaat lokaal in DB: `readableSlug=maintix`, `voorstelMode=BESPOKE`, `bespokeUrl=https://maintix-design.vercel.app`. Contact: Romano Kanters smoke test, primaryEmail `rtlkanters@gmail.com`
+- Eén actieve quote: `2026-OFF005` met line items + 30/40/30 schedule
+- Branch heeft veel commits — `git log --oneline -50` toont volledige historie
 
 ## What's done
 
