@@ -51,7 +51,9 @@ export const wizardRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const isAdminPreview = Boolean(resolveAdminProjectScope(ctx.adminToken));
+      const isAdminPreview = Boolean(
+        await resolveAdminProjectScope(ctx.adminToken),
+      );
       if (isAdminPreview) {
         return null;
       }
