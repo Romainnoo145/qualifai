@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronRight,
   Copy,
+  Download,
   ExternalLink,
   Loader2,
   Mail,
@@ -104,7 +105,6 @@ export default function QuoteDetailPage() {
   const utils = api.useUtils() as any;
 
   const [notes, setNotes] = useState('');
-  const [onderwerp, setOnderwerp] = useState('');
   const [lines, setLines] = useState<LineItemDraft[]>([]);
   const [showEmailCompose, setShowEmailCompose] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -118,7 +118,6 @@ export default function QuoteDetailPage() {
   // Auto-save guards: don't fire on initial hydration from server.
   const hasLinesEdited = useRef(false);
   const hasScheduleEdited = useRef(false);
-  const hasOnderwerpEdited = useRef(false);
 
   // Global save status indicator.
   const [saveStatus, setSaveStatus] = useState<SaveStatusState>('idle');
@@ -194,7 +193,6 @@ export default function QuoteDetailPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const q = quote as any;
     setNotes(q.meetingNotes ?? '');
-    setOnderwerp(quote.onderwerp ?? '');
     setIntroductie(quote.introductie ?? '');
     setUitdaging(quote.uitdaging ?? '');
     setAanpak(quote.aanpak ?? '');
@@ -217,26 +215,8 @@ export default function QuoteDetailPage() {
     // Reset guards — next change will be a genuine user edit.
     hasLinesEdited.current = false;
     hasScheduleEdited.current = false;
-    hasOnderwerpEdited.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quote?.updatedAt]);
-
-  // Auto-save: onderwerp — 800ms debounce after user edits.
-  useEffect(() => {
-    if (!quote || quote.status !== 'DRAFT') return;
-    if (!hasOnderwerpEdited.current) {
-      hasOnderwerpEdited.current = true;
-      return;
-    }
-    const timer = setTimeout(() => {
-      updateMutation.mutate({
-        id: quote.id,
-        onderwerp: onderwerp || undefined,
-      });
-    }, 800);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onderwerp]);
 
   // Auto-save: line items — 500ms debounce after user edits.
   useEffect(() => {
@@ -408,7 +388,7 @@ export default function QuoteDetailPage() {
             <span className="text-[var(--color-gold)]">.</span>
           </h1>
           {quote.onderwerp && (
-            <p className="mt-3 max-w-[600px] text-[16px] font-light leading-[1.55] text-[var(--color-muted-dark)]">
+            <p className="mt-2 text-[12px] text-[var(--color-muted)]">
               {quote.onderwerp}
             </p>
           )}
@@ -434,7 +414,7 @@ export default function QuoteDetailPage() {
               className="inline-flex items-center gap-2 rounded-full border border-[#e4c33c] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink)]"
             >
               <Mail className="h-3.5 w-3.5" />
-              {showEmailCompose ? 'Annuleer' : 'Verstuur'}
+              {showEmailCompose ? 'Annuleer' : 'Versturen'}
             </button>
           )}
         </div>
@@ -499,27 +479,6 @@ export default function QuoteDetailPage() {
       <div className="grid grid-cols-[minmax(0,1fr)_280px] gap-10">
         {/* Left: content */}
         <div className="space-y-10">
-          {/* Onderwerp — inline-editable */}
-          <Block>
-            <SectionLabel>Onderwerp</SectionLabel>
-            <input
-              type="text"
-              value={onderwerp}
-              onChange={(e) => setOnderwerp(e.target.value)}
-              onBlur={() => {
-                if (!isReadOnly && quote.status === 'DRAFT') {
-                  updateMutation.mutate({
-                    id: quote.id,
-                    onderwerp: onderwerp || undefined,
-                  });
-                }
-              }}
-              disabled={isReadOnly}
-              placeholder="Bijv. AI-gedreven leadkwalificatie voor Nedri"
-              className="input-minimal w-full text-[18px] font-light leading-[1.5]"
-            />
-          </Block>
-
           {/* Investering (line items) */}
           <Block>
             <div className="flex items-center gap-3 mb-4">
@@ -847,6 +806,15 @@ export default function QuoteDetailPage() {
                 </span>
               </div>
             </label>
+            <button
+              type="button"
+              disabled={deleteMutation.isPending || isReadOnly}
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-red-500 hover:border-red-300 hover:bg-red-50 transition-all disabled:opacity-40 mt-4"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Verwijder offerte
+            </button>
           </div>
 
           {/* ACTIES */}
@@ -874,7 +842,7 @@ export default function QuoteDetailPage() {
                   }
                   className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink)] hover:border-[var(--color-ink)] transition-all text-left"
                 >
-                  <ExternalLink className="h-3.5 w-3.5" />
+                  <Download className="h-3.5 w-3.5" />
                   Download als PDF
                   <span className="ml-auto text-[var(--color-border-strong)]">
                     →
@@ -885,19 +853,6 @@ export default function QuoteDetailPage() {
                 <QuoteVersionConfirm quoteId={quote.id} status={quote.status} />
               </div>
             </div>
-          </div>
-
-          {/* Verwijder — destructive, bottom */}
-          <div className="pt-4 border-t border-[var(--color-border)]">
-            <button
-              type="button"
-              disabled={deleteMutation.isPending || isReadOnly}
-              onClick={() => setShowDeleteConfirm(true)}
-              className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-red-500 hover:border-red-300 hover:bg-red-50 transition-all disabled:opacity-40"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Verwijder offerte
-            </button>
           </div>
         </aside>
       </div>
