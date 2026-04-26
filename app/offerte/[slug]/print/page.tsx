@@ -669,7 +669,7 @@ export default async function PrintPage({
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
-              € <span style={{ color: GOLD }}>{formatEuroNL(total)}</span>
+              € {formatEuroNL(total)}
             </span>
           </div>
         </div>
@@ -725,17 +725,13 @@ export default async function PrintPage({
             {/* Betalingsschema — compact, only when set */}
             {hasSchedule &&
               (() => {
-                const scheduleTotal = schedule.reduce(
-                  (acc, r) => acc + r.percentage,
-                  0,
-                );
                 const fmtCurrency = (n: number) =>
                   new Intl.NumberFormat('nl-NL', {
                     style: 'currency',
                     currency: 'EUR',
                   }).format(n);
                 return (
-                  <div style={{ marginBottom: '20px' }}>
+                  <div style={{ marginBottom: '24px' }}>
                     <div
                       style={{
                         fontSize: '10px',
@@ -743,176 +739,122 @@ export default async function PrintPage({
                         letterSpacing: '0.14em',
                         textTransform: 'uppercase',
                         color: MUTED,
-                        marginBottom: '8px',
+                        marginBottom: '16px',
                       }}
                     >
                       Betalingsschema
                     </div>
-                    <table style={{ marginBottom: '4px' }}>
-                      <thead>
-                        <tr style={{ borderBottom: `1px solid ${GREY}` }}>
-                          <th
-                            style={{
-                              textAlign: 'left',
-                              fontSize: '9px',
-                              fontWeight: 500,
-                              letterSpacing: '0.1em',
-                              textTransform: 'uppercase',
-                              color: MUTED,
-                              paddingBottom: '6px',
-                              paddingRight: '16px',
-                            }}
-                          >
-                            Termijn
-                          </th>
-                          <th
-                            style={{
-                              textAlign: 'right',
-                              fontSize: '9px',
-                              fontWeight: 500,
-                              letterSpacing: '0.1em',
-                              textTransform: 'uppercase',
-                              color: MUTED,
-                              paddingBottom: '6px',
-                              paddingRight: '16px',
-                              width: '40px',
-                            }}
-                          >
-                            %
-                          </th>
-                          <th
-                            style={{
-                              textAlign: 'right',
-                              fontSize: '9px',
-                              fontWeight: 500,
-                              letterSpacing: '0.1em',
-                              textTransform: 'uppercase',
-                              color: MUTED,
-                              paddingBottom: '6px',
-                              width: '110px',
-                            }}
-                          >
-                            Bedrag
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
+
+                    {/* ── Horizontal timeline ── */}
+                    <div style={{ position: 'relative' }}>
+                      {/* Connecting line behind dots */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '41px', // aligns with center of dot row
+                          left: `${(0.5 / schedule.length) * 100}%`,
+                          right: `${(0.5 / schedule.length) * 100}%`,
+                          height: '2px',
+                          background: GOLD,
+                        }}
+                      />
+
+                      {/* Stops row */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'row',
+                          alignItems: 'stretch',
+                        }}
+                      >
                         {schedule.map((item, idx) => {
                           const bedrag = total * (item.percentage / 100);
-                          const num = String(idx + 1).padStart(2, '0');
-                          const termijnText = item.dueOn
-                            ? `${item.label} · ${item.dueOn}`
-                            : item.label;
                           return (
-                            <tr
+                            <div
                               key={idx}
-                              style={{ borderBottom: `1px solid ${GREY}` }}
+                              style={{
+                                flex: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                textAlign: 'center',
+                                position: 'relative',
+                              }}
                             >
-                              <td
+                              {/* Label above */}
+                              <div
                                 style={{
-                                  paddingTop: '6px',
-                                  paddingBottom: '6px',
-                                  paddingRight: '16px',
-                                  verticalAlign: 'middle',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  color: NAVY,
+                                  marginBottom: '8px',
+                                  lineHeight: 1.3,
+                                  maxWidth: '120px',
                                 }}
                               >
-                                <span
-                                  style={{
-                                    fontSize: '12px',
-                                    fontWeight: 700,
-                                    color: GOLD,
-                                    marginRight: '6px',
-                                  }}
-                                >
-                                  {num}·
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: '12px',
-                                    fontWeight: 300,
-                                    color: NAVY,
-                                  }}
-                                >
-                                  {termijnText}
-                                </span>
-                              </td>
-                              <td
+                                {item.label}
+                              </div>
+
+                              {/* Gold dot */}
+                              <div
                                 style={{
-                                  paddingTop: '6px',
-                                  paddingBottom: '6px',
-                                  paddingRight: '16px',
-                                  textAlign: 'right',
-                                  fontSize: '12px',
+                                  width: '12px',
+                                  height: '12px',
+                                  borderRadius: '50%',
+                                  background: GOLD,
+                                  flexShrink: 0,
+                                  position: 'relative',
+                                  zIndex: 1,
+                                  marginBottom: '8px',
+                                }}
+                              />
+
+                              {/* Percentage + bedrag below */}
+                              <div
+                                style={{
+                                  fontSize: '11px',
+                                  fontWeight: 700,
                                   color: NAVY,
                                   fontVariantNumeric: 'tabular-nums',
-                                  verticalAlign: 'middle',
+                                  lineHeight: 1.4,
                                 }}
                               >
                                 {item.percentage}%
-                              </td>
-                              <td
+                              </div>
+                              <div
                                 style={{
-                                  paddingTop: '6px',
-                                  paddingBottom: '6px',
-                                  textAlign: 'right',
-                                  fontSize: '12px',
-                                  fontWeight: 500,
+                                  fontSize: '11px',
+                                  fontWeight: 400,
                                   color: NAVY,
                                   fontVariantNumeric: 'tabular-nums',
-                                  verticalAlign: 'middle',
+                                  lineHeight: 1.4,
                                 }}
                               >
                                 {fmtCurrency(bedrag)}
-                              </td>
-                            </tr>
+                              </div>
+                              {item.dueOn && (
+                                <div
+                                  style={{
+                                    fontSize: '10px',
+                                    fontWeight: 300,
+                                    color: MUTED,
+                                    marginTop: '3px',
+                                    lineHeight: 1.3,
+                                  }}
+                                >
+                                  {item.dueOn}
+                                </div>
+                              )}
+                            </div>
                           );
                         })}
-                      </tbody>
-                      <tfoot>
-                        <tr style={{ borderTop: `1px solid ${GREY}` }}>
-                          <td
-                            style={{
-                              paddingTop: '6px',
-                              fontSize: '12px',
-                              fontWeight: 700,
-                              color: NAVY,
-                            }}
-                          >
-                            Totaal
-                          </td>
-                          <td
-                            style={{
-                              paddingTop: '6px',
-                              textAlign: 'right',
-                              fontSize: '12px',
-                              fontWeight: 700,
-                              color: NAVY,
-                              fontVariantNumeric: 'tabular-nums',
-                              paddingRight: '16px',
-                            }}
-                          >
-                            {scheduleTotal}%
-                          </td>
-                          <td
-                            style={{
-                              paddingTop: '6px',
-                              textAlign: 'right',
-                              fontSize: '12px',
-                              fontWeight: 700,
-                              color: NAVY,
-                              fontVariantNumeric: 'tabular-nums',
-                            }}
-                          >
-                            {fmtCurrency(total)}
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
+                      </div>
+                    </div>
                   </div>
                 );
               })()}
 
-            <ul
+            <ol
               style={{
                 margin: 0,
                 padding: 0,
@@ -930,26 +872,37 @@ export default async function PrintPage({
                 '60 dagen garantie op opgeleverd werk.',
                 'Een op maat gemaakte verwerkersovereenkomst volgt samen met het contract, binnen 5 werkdagen na akkoord.',
                 'Algemene voorwaarden zijn van toepassing. Zie klarifai.nl/legal/terms-and-conditions.',
-              ].map((term) => (
+              ].map((term, idx) => (
                 <li
                   key={term}
                   style={{
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: '10px',
+                    gap: '12px',
                     fontSize: '12px',
                     fontWeight: 300,
                     color: NAVY,
                     lineHeight: 1.55,
                   }}
                 >
-                  <span style={{ color: GOLD, fontWeight: 700, flexShrink: 0 }}>
-                    —
+                  <span
+                    style={{
+                      color: GOLD,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                      fontVariantNumeric: 'tabular-nums',
+                      fontFamily: 'monospace',
+                      fontSize: '11px',
+                      minWidth: '20px',
+                      paddingTop: '1px',
+                    }}
+                  >
+                    {String(idx + 1).padStart(2, '0')}
                   </span>
                   <span>{term}</span>
                 </li>
               ))}
-            </ul>
+            </ol>
           </div>
 
           {/* ── VOOR AKKOORD: 2-column signature block ───────────────────────── */}
