@@ -7,14 +7,22 @@ interface Props {
   onClose: () => void;
   title: string;
   eyebrow?: string;
+  size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
 }
+
+const SIZES: Record<NonNullable<Props['size']>, string> = {
+  sm: 'max-w-[420px]',
+  md: 'max-w-[560px]',
+  lg: 'max-w-[720px]',
+};
 
 export function Popup({
   isOpen,
   onClose,
   title,
   eyebrow = 'Bewerken',
+  size,
   children,
 }: Props) {
   // Close on Escape
@@ -36,7 +44,7 @@ export function Popup({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[420px] mx-4 bg-white border border-[var(--color-border)] rounded-[8px] p-7 shadow-xl"
+        className={`w-full ${SIZES[size ?? 'sm']} mx-4 bg-white border border-[var(--color-border)] rounded-[8px] p-7 shadow-xl`}
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-[13px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)] mb-3">

@@ -431,6 +431,7 @@ export default function QuoteDetailPage() {
         onClose={() => setShowEmailCompose(false)}
         title="Email opstellen"
         eyebrow="Versturen"
+        size="lg"
       >
         <EmailCompose
           defaultSubject={`Voorstel ${quote.nummer} — ${quote.onderwerp}`}

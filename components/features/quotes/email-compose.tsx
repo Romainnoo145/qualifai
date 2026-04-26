@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Send, X } from 'lucide-react';
+import { Send } from 'lucide-react';
 
 interface Contact {
   id: string;
@@ -43,19 +43,7 @@ export function EmailCompose({
   const to = selectedContact?.primaryEmail ?? '';
 
   return (
-    <div className="rounded-xl bg-[var(--color-surface-2)] p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)]">
-          Email versturen
-        </span>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-[var(--color-muted)] hover:text-[var(--color-ink)]"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+    <div className="space-y-4">
       <div className="space-y-3">
         {validContacts.length > 0 ? (
           <select
@@ -90,11 +78,18 @@ export function EmailCompose({
           className="input-minimal w-full text-[13px] leading-[1.6]"
         />
       </div>
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2 pt-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-5 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.1em] border border-[var(--color-border)] text-[var(--color-muted-dark)] hover:border-[var(--color-ink)] transition-colors"
+        >
+          Annuleer
+        </button>
         <button
           type="button"
           onClick={() => onSend({ to, subject, body })}
-          disabled={isSubmitting || !to}
+          disabled={isSubmitting || !to.trim() || validContacts.length === 0}
           className="inline-flex items-center gap-2 rounded-full border border-[#e4c33c] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink)] disabled:opacity-50"
         >
           <Send className="h-3.5 w-3.5" />
