@@ -27,7 +27,7 @@ const QUOTE_STATUS_VALUES = [
 ] as const;
 
 const QuoteLineInputSchema = z.object({
-  fase: z.string().min(1),
+  fase: z.string().default(''),
   omschrijving: z.string().optional().default(''),
   oplevering: z.string().optional().default(''),
   uren: z.number().int().nonnegative(),
