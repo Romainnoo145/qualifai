@@ -425,6 +425,23 @@ export default function QuoteDetailPage() {
         />
       )}
 
+      {/* EMAIL COMPOSE popup */}
+      <Popup
+        isOpen={showEmailCompose && !isReadOnly}
+        onClose={() => setShowEmailCompose(false)}
+        title="Email opstellen"
+        eyebrow="Versturen"
+      >
+        <EmailCompose
+          defaultSubject={`Voorstel ${quote.nummer} — ${quote.onderwerp}`}
+          brochureUrl={brochureUrl}
+          contacts={quote.prospect.contacts ?? []}
+          isSubmitting={sendEmailMutation.isPending}
+          onSend={(data) => sendEmailMutation.mutate({ id: quote.id, ...data })}
+          onCancel={() => setShowEmailCompose(false)}
+        />
+      </Popup>
+
       {/* GEADRESSEERDE popup */}
       <Popup
         isOpen={showRecipientModal}
@@ -891,23 +908,6 @@ export default function QuoteDetailPage() {
                   )}
                 </div>
               )}
-            </Block>
-          )}
-
-          {/* Email compose (inline, below main content) */}
-          {showEmailCompose && !isReadOnly && (
-            <Block>
-              <SectionLabel>Email opstellen</SectionLabel>
-              <EmailCompose
-                defaultSubject={`Voorstel ${quote.nummer} — ${quote.onderwerp}`}
-                brochureUrl={brochureUrl}
-                contacts={quote.prospect.contacts ?? []}
-                isSubmitting={sendEmailMutation.isPending}
-                onSend={(data) =>
-                  sendEmailMutation.mutate({ id: quote.id, ...data })
-                }
-                onCancel={() => setShowEmailCompose(false)}
-              />
             </Block>
           )}
         </div>
