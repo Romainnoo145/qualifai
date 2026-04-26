@@ -95,7 +95,7 @@ export function EmailCompose({
           type="button"
           onClick={() => onSend({ to, subject, body })}
           disabled={isSubmitting || !to}
-          className="admin-btn-primary inline-flex items-center gap-2"
+          className="inline-flex items-center gap-2 rounded-full border border-[#e4c33c] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink)] disabled:opacity-50"
         >
           <Send className="h-3.5 w-3.5" />
           {isSubmitting ? 'Versturen...' : 'Verstuur definitief'}

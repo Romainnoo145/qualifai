@@ -172,6 +172,10 @@ export default function QuoteDetailPage() {
     onMutate: () => {
       setSaveStatus('saving');
     },
+    onError: (err: unknown) => {
+      console.error('[quote-update] save failed:', err);
+      setSaveStatus('idle');
+    },
   });
 
   // TODO: tRPC v11 inference gap — quotes.setActiveProposal
@@ -208,6 +212,7 @@ export default function QuoteDetailPage() {
     setAanpak(quote.aanpak ?? '');
     setLines(
       quote.lines.map((l) => ({
+        fase: l.fase ?? '',
         omschrijving: l.omschrijving ?? '',
         uren: l.uren,
         tarief: l.tarief,
@@ -240,6 +245,7 @@ export default function QuoteDetailPage() {
       updateMutation.mutate({
         id: quote.id,
         lines: lines.map((l, idx) => ({
+          fase: l.fase || '',
           omschrijving: l.omschrijving || undefined,
           uren: l.uren,
           tarief: l.tarief,
