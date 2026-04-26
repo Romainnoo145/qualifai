@@ -342,6 +342,62 @@ No drop shadows on text. No ambient shadows on sections. No glow effects.
 - Action row buttons: transparent, 1px `#e4e4e7` border, full-width, text-left, arrow auto-right
 - Circular nav: 36px circle, 1px border, hover → navy bg + gold icon
 
+---
+
+## Canonical button shapes
+
+### Gold pill (primary CTA — gold gradient + NAVY text)
+
+The ONLY accepted gold pill style in this codebase. Use this exact recipe:
+
+```css
+border: 1px solid #e4c33c;
+background: linear-gradient(180deg, #e4c33c 0%, #f4d95a 100%);
+color: var(--color-ink); /* navy — NEVER white */
+border-radius: 9999px;
+padding: 0.625rem 1.25rem;
+font-size: 11px;
+font-weight: 500;
+text-transform: uppercase;
+letter-spacing: 0.08em;
+```
+
+Or as a Tailwind className:
+
+```html
+<button
+  class="inline-flex items-center gap-2 rounded-full border border-[#e4c33c] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink)] disabled:opacity-50"
+>
+  Versturen
+</button>
+```
+
+**Never use white text on the gold pill. Never use a flat gold fill (always a 180deg gradient dark gold → light gold).**
+
+### Secondary outline pill (for non-CTA actions)
+
+```html
+<button
+  class="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-muted-dark)] hover:border-[var(--color-ink)] transition-colors"
+>
+  Annuleer
+</button>
+```
+
+### Outline action button (admin sidebar — rectangular, not pill)
+
+For admin secondary actions (Kopieer link, Bekijk offerte, Reset naar concept, Nieuwe versie):
+
+```html
+<button
+  class="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink)] hover:border-[var(--color-ink)] transition-all text-left"
+>
+  ...
+</button>
+```
+
+---
+
 **Activity feed event tags (only color beyond gold + ink):**
 
 Subtle semantic tints for 1-second category scanning:
