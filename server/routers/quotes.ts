@@ -642,6 +642,33 @@ export const quotesRouter = router({
       await ctx.db.quote.delete({ where: { id: input.id } });
       return { success: true };
     }),
+
+  /**
+   * Admin override: reset any non-DRAFT quote back to DRAFT.
+   *
+   * Clears all per-status fields (viewedAt, acceptedAt, snapshotData,
+   * snapshotAt, bespokeHtmlSnapshot, signatureData). Intended for dev/testing
+   * and legitimate edge cases (sent wrong quote, want to fix without creating
+   * a version chain). No status restriction — admin's call.
+   */
+  resetToDraft: projectAdminProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertQuoteInProject(ctx as unknown as ScopedCtx, input.id);
+
+      return ctx.db.quote.update({
+        where: { id: input.id },
+        data: {
+          status: 'DRAFT',
+          viewedAt: null,
+          acceptedAt: null,
+          snapshotData: Prisma.JsonNull,
+          snapshotAt: null,
+          bespokeHtmlSnapshot: null,
+          signatureData: null,
+        },
+      });
+    }),
 });
 
 /** Generate URL slug: `{kebab-company}-{kebab-nummer}` e.g. `marfa-2026-off001` */

@@ -200,6 +200,16 @@ export default function QuoteDetailPage() {
     onSuccess: () => router.push('/admin/quotes'),
   });
 
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  // TODO: tRPC v11 inference gap — quotes.resetToDraft
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const resetMut = (api.quotes as any).resetToDraft.useMutation({
+    onSuccess: () => {
+      quoteQuery.refetch();
+      setShowResetConfirm(false);
+    },
+  });
+
   // Seed local state when quote loads / changes (updatedAt as change signal).
   // Reset "hasEdited" guards so newly-hydrated state doesn't trigger auto-save.
   useEffect(() => {
@@ -400,6 +410,18 @@ export default function QuoteDetailPage() {
           isPending={deleteMutation.isPending}
           onConfirm={() => deleteMutation.mutate({ id: quote.id })}
           onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
+
+      {showResetConfirm && (
+        <ConfirmDialog
+          title="Reset naar concept"
+          description="Deze actie wist viewedAt, acceptedAt, snapshot en handtekening. Alleen bedoeld voor correcties of testing — niet aan te raden in productie."
+          confirmLabel="Reset"
+          cancelLabel="Annuleer"
+          onConfirm={() => resetMut.mutate({ id: quote.id })}
+          onCancel={() => setShowResetConfirm(false)}
+          isPending={resetMut.isPending}
         />
       )}
 
@@ -979,6 +1001,15 @@ export default function QuoteDetailPage() {
                 </span>
               </div>
             </label>
+            {quote.status !== 'DRAFT' && (
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(true)}
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-muted)] hover:text-amber-600 hover:bg-amber-50 transition-all rounded-[6px] mt-4"
+              >
+                Reset naar concept
+              </button>
+            )}
             <button
               type="button"
               disabled={deleteMutation.isPending || isReadOnly}
