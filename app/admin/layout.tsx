@@ -19,6 +19,7 @@ import {
   ADMIN_TOKEN_STORAGE_KEY,
   normalizeAdminToken,
 } from '@/lib/admin-token';
+import { GOLD_GRADIENT } from '@/lib/brochure-tokens';
 
 type NavItem = {
   href: string;
@@ -76,103 +77,120 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
   );
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [tokenInput, setTokenInput] = useState('');
 
   const handleLogout = () => {
     localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
     dispatchTokenChanged();
   };
 
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const candidate = normalizeAdminToken(tokenInput);
+    if (!candidate) {
+      setLoginError('Voer een token in.');
+      return;
+    }
+    setIsVerifying(true);
+    try {
+      const isValid = await verifyAdminToken(candidate);
+      if (!isValid) {
+        setLoginError('Token ongeldig.');
+        return;
+      }
+      localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, candidate);
+      setTokenInput('');
+      setLoginError(null);
+      dispatchTokenChanged();
+    } catch {
+      setLoginError('Kon token niet verifiëren. Probeer opnieuw.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   if (!token) {
     return (
-      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center px-6 py-10">
-        <div className="w-full max-w-sm space-y-10">
-          <div className="text-center space-y-5">
-            <div className="inline-flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[var(--color-ink)] shadow-sm">
-                <span className="font-['Sora'] text-xs font-bold tracking-tight text-[var(--color-gold-hi)]">
-                  K
-                </span>
-              </div>
-              <span className="font-['Sora'] text-xl font-bold tracking-tight text-[var(--color-ink)]">
-                Qualifai
-              </span>
-            </div>
-
-            <div>
-              <p className="admin-eyebrow">Admin login</p>
-              <p className="mt-2 text-[13px] font-normal text-[var(--color-muted-dark)]">
-                Gebruik je account-token om in te loggen.
+      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-[400px] space-y-12">
+          <div className="flex flex-col items-center space-y-7">
+            <img
+              src="/klarifai-logo.svg"
+              alt="Klarifai"
+              className="h-12 w-12"
+            />
+            <div className="text-center space-y-3">
+              <p className="font-['Sora'] text-[11px] font-medium tracking-[0.18em] uppercase text-[var(--color-muted)]">
+                <span style={{ color: '#e1c33c' }}>[ 01 ]</span>
+                <span className="ml-2.5">ADMIN</span>
+              </p>
+              <h1 className="font-['Sora'] text-[32px] font-bold leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)]">
+                Welkom terug<span style={{ color: '#e1c33c' }}>.</span>
+              </h1>
+              <p className="text-[13px] font-normal text-[var(--color-muted-dark)]">
+                Voer je account-token in om door te gaan.
               </p>
             </div>
           </div>
 
-          <div className="space-y-2.5">
-            {[
-              {
-                label: 'Klarifai',
-                slug: 'klarifai',
-                initials: 'KL',
-                token: process.env.NEXT_PUBLIC_ADMIN_SECRET,
-              },
-              {
-                label: "Atlantis · Europe's Gate",
-                slug: 'europes-gate',
-                initials: 'AT',
-                token: process.env.NEXT_PUBLIC_ATLANTIS_ADMIN_SECRET,
-              },
-            ]
-              .filter((a) => a.token)
-              .map((account) => (
-                <button
-                  key={account.slug}
-                  onClick={async () => {
-                    if (isVerifying || !account.token) return;
-                    setIsVerifying(true);
-                    try {
-                      const isValid = await verifyAdminToken(account.token);
-                      if (!isValid) {
-                        setLoginError(`Token ongeldig voor ${account.label}.`);
-                        return;
-                      }
-                      localStorage.setItem(
-                        ADMIN_TOKEN_STORAGE_KEY,
-                        account.token,
-                      );
-                      setLoginError(null);
-                      dispatchTokenChanged();
-                    } catch {
-                      setLoginError(
-                        'Kon token niet verifiëren. Probeer opnieuw.',
-                      );
-                    } finally {
-                      setIsVerifying(false);
-                    }
-                  }}
-                  disabled={isVerifying}
-                  className="flex w-full items-center gap-3.5 rounded-md border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-4 py-3.5 text-left transition-colors hover:border-[var(--color-ink)] disabled:opacity-50"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--color-ink)]">
-                    <span className="font-['Sora'] text-[10px] font-bold text-[var(--color-gold-hi)]">
-                      {account.initials}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold text-[var(--color-ink)]">
-                      {account.label}
-                    </p>
-                    <p className="mt-0.5 text-[10px] tracking-[0.08em] text-[var(--color-muted)]">
-                      {account.slug}
-                    </p>
-                  </div>
-                  <span className="text-[var(--color-muted)] text-xs">→</span>
-                </button>
-              ))}
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input
+              type="password"
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
+              autoFocus
+              autoComplete="current-password"
+              placeholder="••••••••••••••••"
+              disabled={isVerifying}
+              className="input-minimal w-full text-center text-[14px] tracking-[0.05em]"
+            />
+            <button
+              type="submit"
+              disabled={isVerifying || !tokenInput}
+              style={{
+                background: GOLD_GRADIENT,
+                borderRadius: '9999px',
+                color: '#040026',
+                fontFamily: 'var(--font-sora), sans-serif',
+                fontWeight: 700,
+                fontSize: '14px',
+                letterSpacing: '-0.005em',
+                padding: '16px 24px',
+                width: '100%',
+                border: 'none',
+                cursor: isVerifying || !tokenInput ? 'not-allowed' : 'pointer',
+                opacity: isVerifying || !tokenInput ? 0.45 : 1,
+                transition: 'opacity 0.15s ease, transform 0.15s ease',
+                boxShadow:
+                  isVerifying || !tokenInput
+                    ? 'none'
+                    : '0 1px 2px rgba(0,0,0,0.08), 0 8px 24px rgba(225, 195, 60, 0.28)',
+              }}
+            >
+              {isVerifying ? 'Verifiëren…' : 'Inloggen'}
+            </button>
+            {loginError ? (
+              <p className="text-center text-[12px] font-normal text-[var(--color-brand-danger)]">
+                {loginError}
+              </p>
+            ) : null}
+          </form>
+
+          <div className="flex flex-col items-center space-y-4 pt-2">
+            <div className="h-px w-12 bg-[var(--color-border)]" />
+            <Link
+              href="/voorstel/maintix"
+              className="group inline-flex items-center gap-1.5 text-[12px] font-medium tracking-[0.02em] text-[var(--color-muted-dark)] transition-colors hover:text-[var(--color-ink)]"
+            >
+              Bekijk een live demo
+              <span
+                className="inline-block transition-transform group-hover:translate-x-0.5"
+                style={{ color: '#e1c33c' }}
+              >
+                →
+              </span>
+            </Link>
           </div>
-          {loginError ? (
-            <p className="text-center text-[11px] text-[var(--color-brand-danger)]">
-              {loginError}
-            </p>
-          ) : null}
         </div>
       </div>
     );
@@ -254,11 +272,9 @@ function AdminShell({
         <Link
           href="/admin"
           aria-label="Qualifai"
-          className="mb-5 flex h-8 w-8 items-center justify-center rounded-[8px] bg-[var(--color-ink)] shadow-sm"
+          className="mb-5 flex h-8 w-8 items-center justify-center"
         >
-          <span className="font-['Sora'] text-[13px] font-bold tracking-tight text-[var(--color-gold-hi)]">
-            K
-          </span>
+          <img src="/klarifai-logo.svg" alt="Klarifai" className="h-7 w-7" />
         </Link>
 
         {/* Nav icons */}
