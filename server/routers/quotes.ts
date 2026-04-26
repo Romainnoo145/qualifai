@@ -125,6 +125,7 @@ export const quotesRouter = router({
               slug: true,
               readableSlug: true,
               companyName: true,
+              voorstelMode: true,
               status: true,
               contacts: {
                 select: {

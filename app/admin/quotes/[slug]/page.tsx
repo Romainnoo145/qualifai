@@ -1,7 +1,8 @@
 'use client';
 
 /**
- * Quote detail — single-column notes → narrative → line items → actions flow.
+ * Quote detail — reordered layout: Onderwerp → Investering → Betalingsschema
+ * → Concept-tekst (collapsible, hidden for BESPOKE prospects).
  *
  * Read-only branching on `status !== 'DRAFT'`.
  */
@@ -12,6 +13,9 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
+  ChevronDown,
+  ChevronRight,
+  Copy,
   ExternalLink,
   Loader2,
   Mail,
@@ -47,6 +51,7 @@ type QuoteDetailRow = Prisma.QuoteGetPayload<{
         slug: true;
         readableSlug: true;
         companyName: true;
+        voorstelMode: true;
         contacts: {
           select: {
             id: true;
@@ -99,9 +104,12 @@ export default function QuoteDetailPage() {
   const utils = api.useUtils() as any;
 
   const [notes, setNotes] = useState('');
+  const [onderwerp, setOnderwerp] = useState('');
   const [lines, setLines] = useState<LineItemDraft[]>([]);
   const [showEmailCompose, setShowEmailCompose] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [conceptTekstOpen, setConceptTekstOpen] = useState(false);
+  const [clipboardFeedback, setClipboardFeedback] = useState(false);
 
   // Payment schedule
   const [termijnen, setTermijnen] = useState(false);
@@ -110,6 +118,7 @@ export default function QuoteDetailPage() {
   // Auto-save guards: don't fire on initial hydration from server.
   const hasLinesEdited = useRef(false);
   const hasScheduleEdited = useRef(false);
+  const hasOnderwerpEdited = useRef(false);
 
   // Global save status indicator.
   const [saveStatus, setSaveStatus] = useState<SaveStatusState>('idle');
@@ -185,6 +194,7 @@ export default function QuoteDetailPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const q = quote as any;
     setNotes(q.meetingNotes ?? '');
+    setOnderwerp(quote.onderwerp ?? '');
     setIntroductie(quote.introductie ?? '');
     setUitdaging(quote.uitdaging ?? '');
     setAanpak(quote.aanpak ?? '');
@@ -207,8 +217,26 @@ export default function QuoteDetailPage() {
     // Reset guards — next change will be a genuine user edit.
     hasLinesEdited.current = false;
     hasScheduleEdited.current = false;
+    hasOnderwerpEdited.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quote?.updatedAt]);
+
+  // Auto-save: onderwerp — 800ms debounce after user edits.
+  useEffect(() => {
+    if (!quote || quote.status !== 'DRAFT') return;
+    if (!hasOnderwerpEdited.current) {
+      hasOnderwerpEdited.current = true;
+      return;
+    }
+    const timer = setTimeout(() => {
+      updateMutation.mutate({
+        id: quote.id,
+        onderwerp: onderwerp || undefined,
+      });
+    }, 800);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onderwerp]);
 
   // Auto-save: line items — 500ms debounce after user edits.
   useEffect(() => {
@@ -286,6 +314,9 @@ export default function QuoteDetailPage() {
   const isActiveProposal = q.isActiveProposal as boolean | undefined;
   const narrativeGeneratedAt = q.narrativeGeneratedAt as string | null;
   const hasNarrative = !!(introductie || uitdaging || aanpak);
+  const isBespoke =
+    (quote.prospect as unknown as { voorstelMode?: string }).voorstelMode ===
+    'BESPOKE';
 
   const brochureUrl = quote.prospect.readableSlug
     ? `${typeof window !== 'undefined' ? window.location.origin : ''}/offerte/${quote.prospect.readableSlug}`
@@ -304,6 +335,20 @@ export default function QuoteDetailPage() {
       uitdaging: field === 'uitdaging' ? value : uitdaging,
       aanpak: field === 'aanpak' ? value : aanpak,
     });
+  };
+
+  const handleCopyLink = async () => {
+    const url =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/offerte/${quote.prospect.readableSlug}`
+        : brochureUrl;
+    try {
+      await navigator.clipboard.writeText(url);
+      setClipboardFeedback(true);
+      setTimeout(() => setClipboardFeedback(false), 2000);
+    } catch {
+      // clipboard not available (e.g. non-https) — silently ignore
+    }
   };
 
   const scheduleTotal = schedule.reduce(
@@ -379,7 +424,7 @@ export default function QuoteDetailPage() {
               className="inline-flex items-center gap-2 rounded-[6px] border border-[var(--color-border-strong)] px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink)] hover:border-[var(--color-ink)] transition-colors"
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              Bekijk brochure
+              Bekijk offerte
             </button>
           )}
           {!isReadOnly && (
@@ -389,7 +434,7 @@ export default function QuoteDetailPage() {
               className="inline-flex items-center gap-2 rounded-full border border-[#e4c33c] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-ink)]"
             >
               <Mail className="h-3.5 w-3.5" />
-              {showEmailCompose ? 'Annuleer' : 'Email versturen'}
+              {showEmailCompose ? 'Annuleer' : 'Verstuur'}
             </button>
           )}
         </div>
@@ -454,62 +499,32 @@ export default function QuoteDetailPage() {
       <div className="grid grid-cols-[minmax(0,1fr)_280px] gap-10">
         {/* Left: content */}
         <div className="space-y-10">
-          {/* Notes */}
+          {/* Onderwerp — inline-editable */}
           <Block>
-            <SectionLabel>Gespreksnotities</SectionLabel>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              onBlur={() =>
-                updateNotesMutation.mutate({
-                  id: quote.id,
-                  meetingNotes: notes,
-                })
-              }
-              rows={6}
+            <SectionLabel>Onderwerp</SectionLabel>
+            <input
+              type="text"
+              value={onderwerp}
+              onChange={(e) => setOnderwerp(e.target.value)}
+              onBlur={() => {
+                if (!isReadOnly && quote.status === 'DRAFT') {
+                  updateMutation.mutate({
+                    id: quote.id,
+                    onderwerp: onderwerp || undefined,
+                  });
+                }
+              }}
               disabled={isReadOnly}
-              placeholder="Wat heb je besproken? Pijnpunten, context, concrete vragen..."
-              className="input-minimal w-full text-[14px] leading-[1.6] resize-none"
+              placeholder="Bijv. AI-gedreven leadkwalificatie voor Nedri"
+              className="input-minimal w-full text-[18px] font-light leading-[1.5]"
             />
-            {!isReadOnly && (
-              <div className="mt-4">
-                <button
-                  type="button"
-                  disabled={generateMutation.isPending || !notes.trim()}
-                  onClick={() => generateMutation.mutate({ id: quote.id })}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] disabled:opacity-50"
-                >
-                  {generateMutation.isPending && (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  )}
-                  {generateMutation.isPending
-                    ? 'Genereren...'
-                    : 'Genereer voorstel'}
-                </button>
-              </div>
-            )}
           </Block>
 
-          {/* Narrative */}
-          {(hasNarrative || narrativeGeneratedAt) && (
-            <Block>
-              <SectionLabel>Narratief</SectionLabel>
-              <NarrativePreview
-                introductie={introductie}
-                uitdaging={uitdaging}
-                aanpak={aanpak}
-                isGenerated={!!narrativeGeneratedAt}
-                isReadOnly={isReadOnly}
-                onUpdate={handleNarrativeUpdate}
-              />
-            </Block>
-          )}
-
-          {/* Line Items */}
+          {/* Investering (line items) */}
           <Block>
             <div className="flex items-center gap-3 mb-4">
               <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
-                Regels
+                Investering
               </span>
               <span className="flex-1 h-px bg-[var(--color-border)]" />
               <SaveStatus status={saveStatus} />
@@ -522,7 +537,7 @@ export default function QuoteDetailPage() {
             />
           </Block>
 
-          {/* Payment Schedule */}
+          {/* Betalingsschema */}
           <Block>
             <div className="flex items-center gap-3 mb-4">
               <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
@@ -692,7 +707,102 @@ export default function QuoteDetailPage() {
             )}
           </Block>
 
-          {/* Email compose (inline, below line items) */}
+          {/* Concept-tekst — collapsible, hidden entirely for BESPOKE */}
+          {!isBespoke && (
+            <Block>
+              {/* Collapsible header */}
+              <button
+                type="button"
+                onClick={() => setConceptTekstOpen((v) => !v)}
+                className="flex w-full items-center gap-3 mb-2 group"
+              >
+                <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] whitespace-nowrap">
+                  Concept-tekst
+                </span>
+                <span className="flex-1 h-px bg-[var(--color-border)]" />
+                {conceptTekstOpen ? (
+                  <ChevronDown className="h-3.5 w-3.5 text-[var(--color-muted)] group-hover:text-[var(--color-ink)] transition-colors flex-shrink-0" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5 text-[var(--color-muted)] group-hover:text-[var(--color-ink)] transition-colors flex-shrink-0" />
+                )}
+              </button>
+              {!conceptTekstOpen && (
+                <p className="text-[11px] text-[var(--color-muted)] font-light">
+                  Voor de standaard koude-track brochure. Gebruik
+                  gespreksnotities + AI om narrative te genereren.
+                </p>
+              )}
+
+              {conceptTekstOpen && (
+                <div className="mt-4 space-y-8">
+                  {/* Notes */}
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)] whitespace-nowrap">
+                        Gespreksnotities
+                      </span>
+                      <span className="flex-1 h-px bg-[var(--color-border)]" />
+                    </div>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      onBlur={() =>
+                        updateNotesMutation.mutate({
+                          id: quote.id,
+                          meetingNotes: notes,
+                        })
+                      }
+                      rows={6}
+                      disabled={isReadOnly}
+                      placeholder="Wat heb je besproken? Pijnpunten, context, concrete vragen..."
+                      className="input-minimal w-full text-[14px] leading-[1.6] resize-none"
+                    />
+                    {!isReadOnly && (
+                      <div className="mt-4">
+                        <button
+                          type="button"
+                          disabled={generateMutation.isPending || !notes.trim()}
+                          onClick={() =>
+                            generateMutation.mutate({ id: quote.id })
+                          }
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-medium uppercase tracking-[0.08em] bg-gradient-to-b from-[#e4c33c] to-[#f4d95a] text-[var(--color-ink)] border border-[#e4c33c] disabled:opacity-50"
+                        >
+                          {generateMutation.isPending && (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          )}
+                          {generateMutation.isPending
+                            ? 'Genereren...'
+                            : 'Genereer concept-tekst'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Narrative */}
+                  {(hasNarrative || narrativeGeneratedAt) && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)] whitespace-nowrap">
+                          Narratief
+                        </span>
+                        <span className="flex-1 h-px bg-[var(--color-border)]" />
+                      </div>
+                      <NarrativePreview
+                        introductie={introductie}
+                        uitdaging={uitdaging}
+                        aanpak={aanpak}
+                        isGenerated={!!narrativeGeneratedAt}
+                        isReadOnly={isReadOnly}
+                        onUpdate={handleNarrativeUpdate}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </Block>
+          )}
+
+          {/* Email compose (inline, below main content) */}
           {showEmailCompose && !isReadOnly && (
             <Block>
               <SectionLabel>Email opstellen</SectionLabel>
@@ -712,35 +822,60 @@ export default function QuoteDetailPage() {
 
         {/* Right: actions */}
         <aside className="space-y-8">
+          {/* INSTELLINGEN */}
+          <div>
+            <SectionLabel>Instellingen</SectionLabel>
+            <label className="flex items-start gap-2 py-3 border-b border-[var(--color-surface-2)] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!isActiveProposal}
+                onChange={(e) =>
+                  activeProposalMutation.mutate({
+                    id: quote.id,
+                    active: e.target.checked,
+                  })
+                }
+                className="h-3.5 w-3.5 mt-0.5 accent-[var(--color-gold)] flex-shrink-0"
+              />
+              <div>
+                <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-muted-dark)] block">
+                  Live op klantpagina
+                </span>
+                <span className="text-[10px] font-light text-[var(--color-muted)] leading-[1.5] block mt-0.5">
+                  Slechts één offerte per klant kan tegelijk live zijn op
+                  /offerte/[slug]
+                </span>
+              </div>
+            </label>
+          </div>
+
+          {/* ACTIES */}
           <div>
             <SectionLabel>Acties</SectionLabel>
             <div className="space-y-1.5">
               {quote.prospect.readableSlug && (
                 <button
                   type="button"
+                  onClick={handleCopyLink}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink)] hover:border-[var(--color-ink)] transition-all text-left"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  {clipboardFeedback ? 'Gekopieerd ✓' : 'Kopieer offerte-link'}
+                </button>
+              )}
+              {quote.prospect.readableSlug && (
+                <button
+                  type="button"
                   onClick={() =>
                     window.open(
-                      `/offerte/${quote.prospect.readableSlug}`,
+                      `/offerte/${quote.prospect.readableSlug}/print`,
                       '_blank',
                     )
                   }
                   className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink)] hover:border-[var(--color-ink)] transition-all text-left"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
-                  Bekijk brochure
-                  <span className="ml-auto text-[var(--color-border-strong)]">
-                    →
-                  </span>
-                </button>
-              )}
-              {!isReadOnly && (
-                <button
-                  type="button"
-                  onClick={() => setShowEmailCompose((v) => !v)}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-ink)] hover:border-[var(--color-ink)] transition-all text-left"
-                >
-                  <Mail className="h-3.5 w-3.5" />
-                  Email versturen
+                  Download als PDF
                   <span className="ml-auto text-[var(--color-border-strong)]">
                     →
                   </span>
@@ -752,30 +887,11 @@ export default function QuoteDetailPage() {
             </div>
           </div>
 
-          <div>
-            <SectionLabel>Instellingen</SectionLabel>
-            <label className="flex items-center gap-2 py-3 border-b border-[var(--color-surface-2)] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={!!isActiveProposal}
-                onChange={(e) =>
-                  activeProposalMutation.mutate({
-                    id: quote.id,
-                    active: e.target.checked,
-                  })
-                }
-                className="h-3.5 w-3.5 accent-[var(--color-gold)]"
-              />
-              <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--color-muted-dark)]">
-                Actief voorstel
-              </span>
-            </label>
-          </div>
-
+          {/* Verwijder — destructive, bottom */}
           <div className="pt-4 border-t border-[var(--color-border)]">
             <button
               type="button"
-              disabled={deleteMutation.isPending}
+              disabled={deleteMutation.isPending || isReadOnly}
               onClick={() => setShowDeleteConfirm(true)}
               className="flex w-full items-center gap-2 px-4 py-2.5 rounded-[6px] border border-[var(--color-border)] text-[11px] font-medium uppercase tracking-[0.06em] text-red-500 hover:border-red-300 hover:bg-red-50 transition-all disabled:opacity-40"
             >
