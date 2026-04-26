@@ -1561,6 +1561,32 @@ function Signing({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasSignature, setHasSignature] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleSubmitAccept = async () => {
+    if (!hasSignature || submitting) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const signatureData =
+        canvasRef.current?.toDataURL('image/png') ?? undefined;
+      const res = await fetch('/api/offerte/accept', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ prospectId: prospect.id, signatureData }),
+      });
+      if (!res.ok) {
+        setSubmitError('Kon niet versturen, probeer opnieuw.');
+        setSubmitting(false);
+        return;
+      }
+      onNext();
+    } catch {
+      setSubmitError('Netwerkfout, probeer opnieuw.');
+      setSubmitting(false);
+    }
+  };
 
   // Client-side computed — rendered inside a suppressHydrationWarning span
   // below. Safe because the date is a display-only string, never part of
@@ -2100,27 +2126,41 @@ function Signing({
             </p>
 
             {/* Gold pill CTA — full width, gated on signature being drawn */}
+            {submitError && (
+              <p
+                style={{
+                  margin: '0 0 4px',
+                  fontSize: '13px',
+                  color: '#ff6b6b',
+                  fontWeight: 500,
+                }}
+              >
+                {submitError}
+              </p>
+            )}
             <button
               type="button"
-              onClick={onNext}
-              disabled={!hasSignature}
+              onClick={handleSubmitAccept}
+              disabled={!hasSignature || submitting}
               style={{
                 marginTop: '8px',
                 padding: '20px 32px',
                 borderRadius: '9999px',
                 border: 'none',
-                background: hasSignature
-                  ? GOLD_GRADIENT
-                  : 'rgba(53, 59, 102, 0.4)',
-                color: hasSignature ? NAVY : TEXT_MUTED_ON_NAVY,
+                background:
+                  hasSignature && !submitting
+                    ? GOLD_GRADIENT
+                    : 'rgba(53, 59, 102, 0.4)',
+                color: hasSignature && !submitting ? NAVY : TEXT_MUTED_ON_NAVY,
                 fontFamily: 'var(--font-sora), sans-serif',
                 fontSize: '16px',
                 fontWeight: 700,
                 letterSpacing: '-0.01em',
-                cursor: hasSignature ? 'pointer' : 'not-allowed',
-                boxShadow: hasSignature
-                  ? '0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(225, 195, 60, 0.35)'
-                  : 'none',
+                cursor: hasSignature && !submitting ? 'pointer' : 'not-allowed',
+                boxShadow:
+                  hasSignature && !submitting
+                    ? '0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(225, 195, 60, 0.35)'
+                    : 'none',
                 transition:
                   'transform 150ms ease-out, box-shadow 150ms ease-out, background 200ms, color 200ms',
                 display: 'flex',
@@ -2129,20 +2169,20 @@ function Signing({
                 gap: '10px',
               }}
               onMouseEnter={(e) => {
-                if (!hasSignature) return;
+                if (!hasSignature || submitting) return;
                 e.currentTarget.style.transform = 'translateY(-1px)';
                 e.currentTarget.style.boxShadow =
                   '0 2px 4px rgba(0,0,0,0.2), 0 12px 32px rgba(225, 195, 60, 0.5)';
               }}
               onMouseLeave={(e) => {
-                if (!hasSignature) return;
+                if (!hasSignature || submitting) return;
                 e.currentTarget.style.transform = 'none';
                 e.currentTarget.style.boxShadow =
                   '0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(225, 195, 60, 0.35)';
               }}
             >
               <CheckIconSolid />
-              Bevestig en teken
+              {submitting ? 'Versturen...' : 'Bevestig en teken'}
             </button>
           </div>
         </div>

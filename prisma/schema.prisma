@@ -833,6 +833,10 @@ model Quote {
   narrativeGeneratedAt DateTime?
   viewedAt             DateTime?
 
+  // Acceptance — signature image (base64 PNG) + timestamp
+  signatureData String?   @db.Text
+  acceptedAt    DateTime?
+
   // Active voorstel flag — only one per prospect (Fase B)
   isActiveProposal Boolean @default(false)
 
