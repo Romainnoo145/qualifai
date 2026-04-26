@@ -27,7 +27,10 @@ export async function resolveAdminProjectScope(
   const token = normalizeAdminToken(rawToken);
   if (!token) return null;
 
-  // 1. DB lookup — primary path
+  // 1. DB lookup — primary path. If the DB is unreachable, swallow the
+  // error and fall through to env-compare. This is the dual-mode safety
+  // net the spec calls for: env-secrets remain a working noodingang
+  // during DB outages, deploys, or test runs that don't mock prisma.
   try {
     const projects = await prisma.project.findMany({
       where: { adminSecretHash: { not: null } },
@@ -39,7 +42,7 @@ export async function resolveAdminProjectScope(
       }
     }
   } catch {
-    // DB unavailable — fall through to env-var fallback
+    // intentional fall-through to env fallback
   }
 
   // 2. Env-var fallback — removed in follow-up PR
