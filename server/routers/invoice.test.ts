@@ -31,6 +31,27 @@ vi.mock('@/lib/invoice-number', () => ({
   nextInvoiceNumber: vi.fn().mockResolvedValue('F-2026-001'),
 }));
 
+vi.mock('@/lib/invoice-pdf', () => ({
+  renderInvoicePdf: vi.fn().mockResolvedValue(Buffer.from('fake-pdf')),
+}));
+
+// sendEmailMock is declared via vi.hoisted so it is available inside vi.mock factories
+// (which are hoisted to the top of the file by Vitest, before any imports run).
+const { sendEmailMock } = vi.hoisted(() => ({
+  sendEmailMock: vi
+    .fn()
+    .mockResolvedValue({ data: { id: 'email-id' }, error: null }),
+}));
+
+vi.mock('resend', () => {
+  const MockResend = function (this: {
+    emails: { send: typeof sendEmailMock };
+  }) {
+    this.emails = { send: sendEmailMock };
+  };
+  return { Resend: MockResend };
+});
+
 // Stub dependencies pulled in transitively by other routers
 vi.mock('@/lib/outreach/send-email', () => ({
   sendOutreachEmail: vi
@@ -62,6 +83,7 @@ vi.mock('@/lib/state-machines/quote', () => ({
 
 import { appRouter } from './_app';
 import { nextInvoiceNumber } from '@/lib/invoice-number';
+import { renderInvoicePdf } from '@/lib/invoice-pdf';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -79,7 +101,7 @@ type Mock = ReturnType<typeof vi.fn>;
 interface MockDb {
   project: { findUnique: Mock };
   engagement: { findFirst: Mock };
-  invoice: { create: Mock };
+  invoice: { create: Mock; findFirst: Mock; update: Mock };
   // Other models needed by appRouter's other sub-routers at import time
   quote: {
     findMany: Mock;
@@ -97,7 +119,11 @@ function makeMockDb(): MockDb {
   return {
     project: { findUnique: vi.fn().mockResolvedValue(PROJECT_A) },
     engagement: { findFirst: vi.fn() },
-    invoice: { create: vi.fn() },
+    invoice: {
+      create: vi.fn(),
+      findFirst: vi.fn(),
+      update: vi.fn(),
+    },
     // Stub out fields used by other routers mounted in appRouter
     quote: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -224,5 +250,115 @@ describe('invoice.prepare', () => {
     await expect(
       caller.invoice.prepare({ engagementId: 'eng-1', termijnIndex: 5 }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// invoice.send tests
+// ---------------------------------------------------------------------------
+
+describe('invoice.send', () => {
+  let db: ReturnType<typeof makeMockDb>;
+
+  const draftInvoice = {
+    id: 'inv-1',
+    status: 'DRAFT',
+    invoiceNumber: 'F-2026-001',
+    amountCents: 500000,
+    vatPercentage: 21,
+    termijnLabel: 'Bij ondertekening',
+    termijnIndex: 0,
+    sentAt: null,
+    dueAt: null,
+    paidAt: null,
+    pdfUrl: null,
+    notes: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    engagementId: 'eng-1',
+    engagement: {
+      id: 'eng-1',
+      projectId: 'tenant-klarifai',
+      quote: {
+        id: 'q-1',
+        nummer: 'OFF-001',
+        btwPercentage: 21,
+        lines: [],
+      },
+      prospect: {
+        id: 'p-1',
+        companyName: 'TestCo',
+        domain: 'test.co',
+        contacts: [{ primaryEmail: 'klant@test.co' }],
+      },
+    },
+  };
+
+  beforeEach(() => {
+    sendEmailMock.mockClear();
+    vi.mocked(renderInvoicePdf).mockClear();
+    db = makeMockDb();
+  });
+
+  it('renders PDF, sends email with attachment, transitions DRAFT → SENT atomically', async () => {
+    db.invoice.findFirst.mockResolvedValue(draftInvoice);
+    db.invoice.update.mockResolvedValue({ ...draftInvoice, status: 'SENT' });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+    await caller.invoice.send({ invoiceId: 'inv-1' });
+
+    expect(renderInvoicePdf).toHaveBeenCalledOnce();
+    expect(sendEmailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'klant@test.co',
+        subject: expect.stringContaining('F-2026-001'),
+        attachments: expect.arrayContaining([
+          expect.objectContaining({ filename: 'F-2026-001.pdf' }),
+        ]),
+      }),
+    );
+    expect(db.invoice.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'inv-1', status: 'DRAFT' }),
+        data: expect.objectContaining({
+          status: 'SENT',
+          sentAt: expect.any(Date),
+          dueAt: expect.any(Date),
+        }),
+      }),
+    );
+  });
+
+  it('throws CONFLICT if invoice is not in DRAFT', async () => {
+    db.invoice.findFirst.mockResolvedValue({
+      ...draftInvoice,
+      status: 'SENT',
+    });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+    await expect(
+      caller.invoice.send({ invoiceId: 'inv-1' }),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+  });
+
+  it('throws NOT_FOUND if invoice is in different tenant', async () => {
+    db.invoice.findFirst.mockResolvedValue({
+      ...draftInvoice,
+      engagement: { ...draftInvoice.engagement, projectId: 'tenant-other' },
+    });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+    await expect(
+      caller.invoice.send({ invoiceId: 'inv-1' }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 });
