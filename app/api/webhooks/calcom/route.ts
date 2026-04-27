@@ -318,12 +318,19 @@ export async function POST(req: NextRequest) {
     // so kickoff bookings never touch the cold-track OutreachLog matching below.
     const engagementId = toObject(bookingPayload.metadata).engagementId;
     if (typeof engagementId === 'string' && engagementId.length > 0) {
+      // BOOKING_CREATED → set kickoffBookedAt; BOOKING_CANCELLED → clear it.
+      const kickoffBookedAt =
+        eventType === 'BOOKING_CREATED' ? new Date() : null;
       try {
         await prisma.engagement.update({
           where: { id: engagementId },
-          data: { kickoffBookedAt: new Date() },
+          data: { kickoffBookedAt },
         });
-        return NextResponse.json({ ok: true, kind: 'kickoff' });
+        return NextResponse.json({
+          ok: true,
+          kind: 'kickoff',
+          eventType,
+        });
       } catch (err) {
         console.warn('[calcom] kickoff engagement not found', {
           engagementId,
