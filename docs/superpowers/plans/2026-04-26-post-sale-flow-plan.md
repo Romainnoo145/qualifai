@@ -2181,6 +2181,286 @@ git commit -m "feat(admin): invoice detail page with inline edit + action sideba
 
 ---
 
+### Task 13B: Top-level `/admin/facturen` overview
+
+**Files:**
+
+- Create: `app/admin/facturen/page.tsx`
+- Modify: `server/routers/invoice.ts` (add `listForTenant` query)
+- Modify: `server/routers/invoice.test.ts`
+- Modify: admin sidebar nav config (find with `grep -rn "Prospects\|prospecten" components/ app/admin/ --include="*.tsx" | grep -i sidebar`)
+
+**Why:** Per-prospect Project tab is good for in-context invoice work. But a top-level queue view is operationally important — Romano wants to see "totaal openstaand", "wat moet ik deze week sturen", "wat is overdue" zonder per-klant te klikken.
+
+- [ ] **Step 1: Add `listForTenant` query to invoice router**
+
+```ts
+listForTenant: projectAdminProcedure
+  .input(z.object({
+    status: z.enum(['DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED']).optional(),
+  }))
+  .query(async ({ ctx, input }) => {
+    const where = {
+      engagement: { projectId: ctx.projectId },
+      ...(input.status ? { status: input.status } : {}),
+    };
+
+    const [invoices, totalsRaw] = await Promise.all([
+      ctx.db.invoice.findMany({
+        where,
+        include: {
+          engagement: {
+            include: { prospect: { select: { id: true, slug: true, companyName: true, domain: true } } },
+          },
+        },
+        orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+      }),
+      ctx.db.invoice.groupBy({
+        by: ['status'],
+        where: { engagement: { projectId: ctx.projectId } },
+        _sum: { amountCents: true },
+        _count: true,
+      }),
+    ]);
+
+    const totals = {
+      outstanding: totalsRaw
+        .filter((t) => t.status === 'SENT' || t.status === 'OVERDUE')
+        .reduce((sum, t) => sum + (t._sum.amountCents ?? 0), 0),
+      paidThisMonth: 0, // computed in step 2 if relevant
+      countByStatus: Object.fromEntries(totalsRaw.map((t) => [t.status, t._count])),
+    };
+
+    return { invoices, totals };
+  }),
+```
+
+- [ ] **Step 2: Compute "paid this month" if needed**
+
+Add to the totals: a separate count of invoices with `paidAt` in the current calendar month. Either compute inline:
+
+```ts
+const startOfMonth = new Date();
+startOfMonth.setDate(1);
+startOfMonth.setHours(0, 0, 0, 0);
+
+const paidThisMonthRaw = await ctx.db.invoice.aggregate({
+  where: {
+    engagement: { projectId: ctx.projectId },
+    status: 'PAID',
+    paidAt: { gte: startOfMonth },
+  },
+  _sum: { amountCents: true },
+});
+totals.paidThisMonth = paidThisMonthRaw._sum.amountCents ?? 0;
+```
+
+Optional polish — skip if marginal.
+
+- [ ] **Step 3: Write failing tests for the list query**
+
+Append to `server/routers/invoice.test.ts`:
+
+```ts
+describe('invoice.listForTenant', () => {
+  it('returns scoped invoices + status totals', async () => {
+    mockDb.invoice = {
+      ...mockDb.invoice,
+      findMany: vi.fn().mockResolvedValue([
+        {
+          id: 'i1',
+          status: 'SENT',
+          amountCents: 100000,
+          engagement: { prospect: { companyName: 'A' } },
+        },
+        {
+          id: 'i2',
+          status: 'PAID',
+          amountCents: 50000,
+          engagement: { prospect: { companyName: 'B' } },
+        },
+      ]),
+      groupBy: vi.fn().mockResolvedValue([
+        { status: 'SENT', _sum: { amountCents: 100000 }, _count: 1 },
+        { status: 'PAID', _sum: { amountCents: 50000 }, _count: 1 },
+      ]),
+      aggregate: vi.fn().mockResolvedValue({ _sum: { amountCents: 0 } }),
+    };
+    const caller = invoiceRouter.createCaller(ctx);
+    const result = await caller.listForTenant({});
+    expect(result.invoices).toHaveLength(2);
+    expect(result.totals.outstanding).toBe(100000);
+    expect(result.totals.countByStatus).toEqual({ SENT: 1, PAID: 1 });
+  });
+
+  it('filters by status when provided', async () => {
+    mockDb.invoice.findMany = vi.fn().mockResolvedValue([]);
+    mockDb.invoice.groupBy = vi.fn().mockResolvedValue([]);
+    mockDb.invoice.aggregate = vi
+      .fn()
+      .mockResolvedValue({ _sum: { amountCents: 0 } });
+    const caller = invoiceRouter.createCaller(ctx);
+    await caller.listForTenant({ status: 'OVERDUE' });
+    expect(mockDb.invoice.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ status: 'OVERDUE' }),
+      }),
+    );
+  });
+});
+```
+
+Run, confirm RED, then GREEN after Step 1+2 are in place.
+
+- [ ] **Step 4: Build `/admin/facturen/page.tsx`**
+
+```tsx
+'use client';
+
+import Link from 'next/link';
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc/client';
+
+const formatEur = (cents: number) =>
+  (cents / 100).toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' });
+
+const STATUS_LABEL: Record<string, string> = {
+  DRAFT: 'Concept',
+  SENT: 'Verzonden',
+  PAID: 'Betaald',
+  OVERDUE: 'Vervallen',
+  CANCELLED: 'Geannuleerd',
+};
+
+export default function FacturenPage() {
+  const [statusFilter, setStatusFilter] = useState<undefined | string>(
+    undefined,
+  );
+  const { data, isLoading } = trpc.invoice.listForTenant.useQuery({
+    status: statusFilter as any,
+  });
+
+  if (isLoading) return <div className="p-6">Laden…</div>;
+  if (!data) return <div className="p-6">Geen toegang</div>;
+
+  return (
+    <div className="p-6 space-y-6">
+      <header>
+        <h1 className="text-2xl font-medium">Facturen</h1>
+      </header>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div className="border rounded p-4">
+          <div className="text-xs text-zinc-500">Openstaand</div>
+          <div className="text-2xl font-medium">
+            {formatEur(data.totals.outstanding)}
+          </div>
+        </div>
+        <div className="border rounded p-4">
+          <div className="text-xs text-zinc-500">Deze maand betaald</div>
+          <div className="text-2xl font-medium">
+            {formatEur(data.totals.paidThisMonth ?? 0)}
+          </div>
+        </div>
+        <div className="border rounded p-4">
+          <div className="text-xs text-zinc-500">Aantal per status</div>
+          <div className="text-sm space-y-0.5 mt-1">
+            {Object.entries(data.totals.countByStatus).map(([s, n]) => (
+              <div key={s}>
+                {STATUS_LABEL[s] ?? s}: {n as number}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-2 text-sm">
+        <button
+          onClick={() => setStatusFilter(undefined)}
+          className={!statusFilter ? 'font-medium' : ''}
+        >
+          Alle
+        </button>
+        {(['DRAFT', 'SENT', 'OVERDUE', 'PAID', 'CANCELLED'] as const).map(
+          (s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={statusFilter === s ? 'font-medium' : ''}
+            >
+              {STATUS_LABEL[s]}
+            </button>
+          ),
+        )}
+      </div>
+
+      <table className="w-full text-sm">
+        <thead className="text-xs text-zinc-500 text-left">
+          <tr>
+            <th className="py-2">Nummer</th>
+            <th>Klant</th>
+            <th>Termijn</th>
+            <th className="text-right">Bedrag</th>
+            <th>Status</th>
+            <th>Datum</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.invoices.map((inv: any) => (
+            <tr key={inv.id} className="border-t">
+              <td className="py-2">{inv.invoiceNumber}</td>
+              <td>
+                {inv.engagement.prospect.companyName ??
+                  inv.engagement.prospect.domain}
+              </td>
+              <td>{inv.termijnLabel}</td>
+              <td className="text-right">{formatEur(inv.amountCents)}</td>
+              <td>{STATUS_LABEL[inv.status]}</td>
+              <td>
+                {new Date(inv.sentAt ?? inv.createdAt).toLocaleDateString(
+                  'nl-NL',
+                )}
+              </td>
+              <td>
+                <Link
+                  href={`/admin/invoices/${inv.id}`}
+                  className="text-navy hover:underline"
+                >
+                  Bekijk →
+                </Link>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 5: Add to admin sidebar nav**
+
+Find the sidebar nav config (likely in `components/admin/sidebar.tsx` or similar — grep first). Add a "Facturen" entry pointing at `/admin/facturen`. Match the existing nav-item style (icon + label).
+
+- [ ] **Step 6: Type-check + smoke**
+
+```bash
+npx tsc --noEmit 2>&1 | head -10
+```
+
+Open `http://localhost:9200/admin/facturen` after creating a few invoices via Wave B prepare/send. Verify totals + filters work.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add app/admin/facturen/ server/routers/invoice.ts server/routers/invoice.test.ts \
+        components/admin/  # or wherever sidebar lives
+git commit -m "feat(admin): top-level /admin/facturen overview with totals + filter"
+```
+
+---
+
 ## Wave C — Polish + crons
 
 ### Task 14: Engagement tab full UI (milestones + invoice queue)
