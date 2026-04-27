@@ -1,6 +1,5 @@
 import chromium from '@sparticuz/chromium-min';
 import puppeteer from 'puppeteer-core';
-import { renderToString } from 'react-dom/server';
 import type {
   Engagement,
   Invoice,
@@ -32,6 +31,12 @@ export async function renderInvoicePdf(args: {
     prospect: Prospect;
   };
 }): Promise<Buffer> {
+  // Dynamic import: Next.js App Router static-analysis blocks
+  // `import { renderToString } from 'react-dom/server'` from any module
+  // reachable via a route handler. Loading it lazily at call-time bypasses
+  // the static check; this code path only runs server-side anyway.
+  const { renderToString } = await import('react-dom/server');
+
   const html =
     '<!doctype html>' +
     renderToString(
