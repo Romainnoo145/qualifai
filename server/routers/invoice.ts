@@ -276,4 +276,77 @@ export const invoiceRouter = router({
       }
       return invoice;
     }),
+
+  listForTenant: projectAdminProcedure
+    .input(
+      z.object({
+        status: z
+          .enum(['DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED'])
+          .optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const tenantWhere = { engagement: { projectId: ctx.projectId } };
+      const where = {
+        ...tenantWhere,
+        ...(input.status ? { status: input.status } : {}),
+      };
+
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const [invoices, totalsRaw, paidThisMonth] = await Promise.all([
+        ctx.db.invoice.findMany({
+          where,
+          include: {
+            engagement: {
+              include: {
+                prospect: {
+                  select: {
+                    id: true,
+                    slug: true,
+                    companyName: true,
+                    domain: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+        }),
+        ctx.db.invoice.groupBy({
+          by: ['status'],
+          where: tenantWhere,
+          _sum: { amountCents: true },
+          _count: true,
+        }),
+        ctx.db.invoice.aggregate({
+          where: {
+            ...tenantWhere,
+            status: 'PAID',
+            paidAt: { gte: startOfMonth },
+          },
+          _sum: { amountCents: true },
+        }),
+      ]);
+
+      const outstanding = totalsRaw
+        .filter((t) => t.status === 'SENT' || t.status === 'OVERDUE')
+        .reduce((sum, t) => sum + (t._sum.amountCents ?? 0), 0);
+
+      const countByStatus: Record<string, number> = {};
+      for (const t of totalsRaw) {
+        countByStatus[t.status] = t._count;
+      }
+
+      return {
+        invoices,
+        totals: {
+          outstanding,
+          paidThisMonth: paidThisMonth._sum.amountCents ?? 0,
+          countByStatus,
+        },
+      };
+    }),
 });

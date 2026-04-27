@@ -101,7 +101,14 @@ type Mock = ReturnType<typeof vi.fn>;
 interface MockDb {
   project: { findUnique: Mock };
   engagement: { findFirst: Mock };
-  invoice: { create: Mock; findFirst: Mock; update: Mock };
+  invoice: {
+    create: Mock;
+    findFirst: Mock;
+    findMany: Mock;
+    groupBy: Mock;
+    aggregate: Mock;
+    update: Mock;
+  };
   // Other models needed by appRouter's other sub-routers at import time
   quote: {
     findMany: Mock;
@@ -122,6 +129,9 @@ function makeMockDb(): MockDb {
     invoice: {
       create: vi.fn(),
       findFirst: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
+      groupBy: vi.fn().mockResolvedValue([]),
+      aggregate: vi.fn().mockResolvedValue({ _sum: { amountCents: 0 } }),
       update: vi.fn(),
     },
     // Stub out fields used by other routers mounted in appRouter
@@ -565,5 +575,72 @@ describe('invoice.getById', () => {
     ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// invoice.listForTenant tests
+// ---------------------------------------------------------------------------
+
+describe('invoice.listForTenant', () => {
+  let db: ReturnType<typeof makeMockDb>;
+
+  beforeEach(() => {
+    db = makeMockDb();
+  });
+
+  it('returns scoped invoices + status totals + outstanding sum', async () => {
+    db.invoice.findMany = vi.fn().mockResolvedValue([
+      {
+        id: 'i1',
+        status: 'SENT',
+        amountCents: 100000,
+        engagement: { prospect: { companyName: 'A' } },
+      },
+      {
+        id: 'i2',
+        status: 'PAID',
+        amountCents: 50000,
+        engagement: { prospect: { companyName: 'B' } },
+      },
+    ]);
+    db.invoice.groupBy = vi.fn().mockResolvedValue([
+      { status: 'SENT', _sum: { amountCents: 100000 }, _count: 1 },
+      { status: 'PAID', _sum: { amountCents: 50000 }, _count: 1 },
+    ]);
+    db.invoice.aggregate = vi
+      .fn()
+      .mockResolvedValue({ _sum: { amountCents: 50000 } });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+    const result = await caller.invoice.listForTenant({});
+
+    expect(result.invoices).toHaveLength(2);
+    expect(result.totals.outstanding).toBe(100000);
+    expect(result.totals.paidThisMonth).toBe(50000);
+    expect(result.totals.countByStatus).toEqual({ SENT: 1, PAID: 1 });
+  });
+
+  it('filters by status when provided', async () => {
+    db.invoice.findMany = vi.fn().mockResolvedValue([]);
+    db.invoice.groupBy = vi.fn().mockResolvedValue([]);
+    db.invoice.aggregate = vi
+      .fn()
+      .mockResolvedValue({ _sum: { amountCents: 0 } });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+    await caller.invoice.listForTenant({ status: 'OVERDUE' });
+
+    expect(db.invoice.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ status: 'OVERDUE' }),
+      }),
+    );
   });
 });

@@ -11,6 +11,7 @@ import {
   FolderKanban,
   BookOpen,
   FileText,
+  Receipt,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api } from '@/components/providers';
@@ -79,6 +80,7 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
   const [tokenInput, setTokenInput] = useState('');
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -216,6 +218,7 @@ function AdminShell({
     { href: '/admin/prospects', label: 'Companies', icon: Building2 },
     { href: '/admin/campaigns', label: 'Campaigns', icon: FolderKanban },
     { href: '/admin/quotes', label: 'Offertes', icon: FileText },
+    { href: '/admin/facturen', label: 'Facturen', icon: Receipt },
     { href: '/admin/outreach', label: 'Draft Queue', icon: Mail },
     { href: '/admin/use-cases', label: 'Use Cases', icon: BookOpen },
   ];
