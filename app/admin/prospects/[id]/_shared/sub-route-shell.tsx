@@ -11,6 +11,7 @@ const TABS = [
   { key: 'analyse', label: 'Analyse' },
   { key: 'outreach', label: 'Outreach' },
   { key: 'resultaten', label: 'Resultaten' },
+  { key: 'project', label: 'Project' },
 ] as const;
 
 type TabKey = (typeof TABS)[number]['key'];
