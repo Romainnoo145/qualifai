@@ -362,3 +362,208 @@ describe('invoice.send', () => {
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 });
+
+// ---------------------------------------------------------------------------
+// invoice.markPaid tests
+// ---------------------------------------------------------------------------
+
+describe('invoice.markPaid', () => {
+  let db: ReturnType<typeof makeMockDb>;
+
+  beforeEach(() => {
+    db = makeMockDb();
+  });
+
+  it('SENT → PAID with paidAt timestamp', async () => {
+    db.invoice.findFirst = vi.fn().mockResolvedValue({
+      id: 'inv-1',
+      status: 'SENT',
+      engagement: { projectId: 'tenant-klarifai' },
+    });
+    db.invoice.update = vi
+      .fn()
+      .mockResolvedValue({ id: 'inv-1', status: 'PAID' });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+    await caller.invoice.markPaid({ invoiceId: 'inv-1' });
+
+    expect(db.invoice.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: 'inv-1',
+          status: { in: ['SENT', 'OVERDUE'] },
+        }),
+        data: expect.objectContaining({
+          status: 'PAID',
+          paidAt: expect.any(Date),
+        }),
+      }),
+    );
+  });
+
+  it('throws NOT_FOUND for invoice in different tenant', async () => {
+    db.invoice.findFirst = vi.fn().mockResolvedValue({
+      id: 'inv-1',
+      status: 'SENT',
+      engagement: { projectId: 'tenant-other' },
+    });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+    await expect(
+      caller.invoice.markPaid({ invoiceId: 'inv-1' }),
+    ).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// invoice.cancel tests
+// ---------------------------------------------------------------------------
+
+describe('invoice.cancel', () => {
+  let db: ReturnType<typeof makeMockDb>;
+
+  beforeEach(() => {
+    db = makeMockDb();
+  });
+
+  it('DRAFT → CANCELLED', async () => {
+    db.invoice.findFirst = vi.fn().mockResolvedValue({
+      id: 'inv-1',
+      status: 'DRAFT',
+      engagement: { projectId: 'tenant-klarifai' },
+    });
+    db.invoice.update = vi
+      .fn()
+      .mockResolvedValue({ id: 'inv-1', status: 'CANCELLED' });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+    await caller.invoice.cancel({ invoiceId: 'inv-1' });
+
+    expect(db.invoice.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'CANCELLED' }),
+      }),
+    );
+  });
+
+  it('PAID → CANCELLED throws CONFLICT', async () => {
+    db.invoice.findFirst = vi.fn().mockResolvedValue({
+      id: 'inv-1',
+      status: 'PAID',
+      engagement: { projectId: 'tenant-klarifai' },
+    });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+    await expect(
+      caller.invoice.cancel({ invoiceId: 'inv-1' }),
+    ).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// invoice.update tests
+// ---------------------------------------------------------------------------
+
+describe('invoice.update', () => {
+  let db: ReturnType<typeof makeMockDb>;
+
+  beforeEach(() => {
+    db = makeMockDb();
+  });
+
+  it('updates DRAFT fields', async () => {
+    db.invoice.findFirst = vi.fn().mockResolvedValue({
+      id: 'inv-1',
+      status: 'DRAFT',
+      engagement: { projectId: 'tenant-klarifai' },
+    });
+    db.invoice.update = vi.fn().mockResolvedValue({ id: 'inv-1' });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+    await caller.invoice.update({ invoiceId: 'inv-1', notes: 'Test note' });
+
+    expect(db.invoice.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ notes: 'Test note' }),
+      }),
+    );
+  });
+
+  it('refuses update on SENT', async () => {
+    db.invoice.findFirst = vi.fn().mockResolvedValue({
+      id: 'inv-1',
+      status: 'SENT',
+      engagement: { projectId: 'tenant-klarifai' },
+    });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+    await expect(
+      caller.invoice.update({ invoiceId: 'inv-1', notes: 'late edit' }),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// invoice.getById tests
+// ---------------------------------------------------------------------------
+
+describe('invoice.getById', () => {
+  let db: ReturnType<typeof makeMockDb>;
+
+  beforeEach(() => {
+    db = makeMockDb();
+  });
+
+  it('returns invoice in scope', async () => {
+    db.invoice.findFirst = vi.fn().mockResolvedValue({
+      id: 'inv-1',
+      engagement: { projectId: 'tenant-klarifai' },
+    });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+    const result = await caller.invoice.getById({ invoiceId: 'inv-1' });
+    expect(result?.id).toBe('inv-1');
+  });
+
+  it('throws NOT_FOUND for invoice in different tenant', async () => {
+    db.invoice.findFirst = vi.fn().mockResolvedValue({
+      id: 'inv-1',
+      engagement: { projectId: 'tenant-other' },
+    });
+
+    const caller = appRouter.createCaller({
+      db: db as never,
+      adminToken: 'test-secret',
+    });
+    await expect(
+      caller.invoice.getById({ invoiceId: 'inv-1' }),
+    ).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+});

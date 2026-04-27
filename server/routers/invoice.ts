@@ -187,4 +187,93 @@ export const invoiceRouter = router({
         data: { status: 'SENT', sentAt, dueAt },
       });
     }),
+
+  markPaid: projectAdminProcedure
+    .input(z.object({ invoiceId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const invoice = await ctx.db.invoice.findFirst({
+        where: { id: input.invoiceId },
+        include: { engagement: { select: { projectId: true } } },
+      });
+      if (!invoice || invoice.engagement.projectId !== ctx.projectId) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+      return ctx.db.invoice.update({
+        where: { id: invoice.id, status: { in: ['SENT', 'OVERDUE'] } },
+        data: { status: 'PAID', paidAt: new Date() },
+      });
+    }),
+
+  cancel: projectAdminProcedure
+    .input(z.object({ invoiceId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const invoice = await ctx.db.invoice.findFirst({
+        where: { id: input.invoiceId },
+        include: { engagement: { select: { projectId: true } } },
+      });
+      if (!invoice || invoice.engagement.projectId !== ctx.projectId) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+      if (invoice.status === 'PAID') {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'Cannot cancel paid invoice',
+        });
+      }
+      return ctx.db.invoice.update({
+        where: { id: invoice.id },
+        data: { status: 'CANCELLED' },
+      });
+    }),
+
+  update: projectAdminProcedure
+    .input(
+      z.object({
+        invoiceId: z.string(),
+        termijnLabel: z.string().optional(),
+        amountCents: z.number().int().positive().optional(),
+        vatPercentage: z.number().int().min(0).max(100).optional(),
+        notes: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const invoice = await ctx.db.invoice.findFirst({
+        where: { id: input.invoiceId },
+        include: { engagement: { select: { projectId: true } } },
+      });
+      if (!invoice || invoice.engagement.projectId !== ctx.projectId) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+      if (invoice.status !== 'DRAFT') {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'Only DRAFT invoices are editable',
+        });
+      }
+      const { invoiceId, ...rest } = input;
+      return ctx.db.invoice.update({
+        where: { id: invoiceId },
+        data: rest,
+      });
+    }),
+
+  getById: projectAdminProcedure
+    .input(z.object({ invoiceId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const invoice = await ctx.db.invoice.findFirst({
+        where: { id: input.invoiceId },
+        include: {
+          engagement: {
+            include: {
+              quote: { include: { lines: true } },
+              prospect: true,
+            },
+          },
+        },
+      });
+      if (!invoice || invoice.engagement.projectId !== ctx.projectId) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+      return invoice;
+    }),
 });
