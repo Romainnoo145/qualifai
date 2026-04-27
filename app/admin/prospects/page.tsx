@@ -84,46 +84,7 @@ export default function ProspectList() {
         </Link>
       </div>
 
-      {/* View toggle */}
-      <div className="overflow-x-auto">
-        <div className="flex gap-2 w-max">
-          <button
-            onClick={() => setView('all')}
-            className={cn(
-              'px-4 py-2 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
-              view === 'all'
-                ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
-                : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
-            )}
-          >
-            <Building2 className="w-3.5 h-3.5 inline mr-1.5" /> All Companies
-          </button>
-          <button
-            onClick={() => setView('search-companies')}
-            className={cn(
-              'px-4 py-2 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
-              view === 'search-companies'
-                ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
-                : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
-            )}
-          >
-            <Search className="w-3.5 h-3.5 inline mr-1.5" /> Search Companies
-          </button>
-          <button
-            onClick={() => setView('search-contacts')}
-            className={cn(
-              'px-4 py-2 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
-              view === 'search-contacts'
-                ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
-                : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
-            )}
-          >
-            <Users className="w-3.5 h-3.5 inline mr-1.5" /> Search Contacts
-          </button>
-        </div>
-      </div>
-
-      {view === 'all' && <AllCompanies />}
+      {view === 'all' && <AllCompanies view={view} setView={setView} />}
       {view === 'search-companies' && (
         <CompanySearch onImported={() => setView('all')} />
       )}
@@ -132,7 +93,13 @@ export default function ProspectList() {
   );
 }
 
-function AllCompanies() {
+function AllCompanies({
+  view,
+  setView,
+}: {
+  view: View;
+  setView: (v: View) => void;
+}) {
   const prospects = api.admin.listProspects.useQuery(undefined, {
     // Poll every 10s while at least one row has an active research run.
     // Note: once this returns `false`, the interval only re-engages when the query
@@ -288,8 +255,8 @@ function AllCompanies() {
 
   return (
     <div className="space-y-8">
-      {/* Stage filter pills */}
-      <div className="flex gap-2 flex-wrap">
+      {/* Stage filter pills + right-aligned search toggles */}
+      <div className="flex flex-wrap items-center gap-2">
         {PIPELINE_FILTERS.map((filter) => {
           const count = stageFilterCounts[filter.key] ?? 0;
           return (
@@ -307,6 +274,30 @@ function AllCompanies() {
             </button>
           );
         })}
+        <div className="ml-auto flex gap-2">
+          <button
+            onClick={() => setView('search-companies')}
+            className={cn(
+              'px-3.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
+              view === 'search-companies'
+                ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
+            )}
+          >
+            <Search className="w-3 h-3 inline mr-1" /> Search Companies
+          </button>
+          <button
+            onClick={() => setView('search-contacts')}
+            className={cn(
+              'px-3.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
+              view === 'search-contacts'
+                ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
+                : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
+            )}
+          >
+            <Users className="w-3 h-3 inline mr-1" /> Search Contacts
+          </button>
+        </div>
       </div>
 
       {/* Grouped by stage */}
