@@ -2,6 +2,8 @@
 
 import { api } from '@/components/providers';
 import { InvoiceActions } from './invoice-actions';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { InvoiceDetailSkeleton } from './invoice-detail-skeleton';
 
 const formatEur = (cents: number) =>
   (cents / 100).toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' });
@@ -35,10 +37,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     onSuccess: () => refetch(),
   });
 
-  if (isLoading)
-    return (
-      <div className="p-6 text-[13px] text-[var(--color-muted)]">Laden…</div>
-    );
+  const showSkeleton = useDelayedLoading(isLoading);
+  if (isLoading) return showSkeleton ? <InvoiceDetailSkeleton /> : null;
   if (!data)
     return (
       <div className="p-6 text-[13px] text-[var(--color-muted)]">
