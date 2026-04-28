@@ -2,7 +2,14 @@ import { Resend } from 'resend';
 import { env } from '@/env.mjs';
 import prisma from '@/lib/prisma';
 
-const resend = new Resend(env.RESEND_API_KEY);
+// Lazy-init: Resend constructor throws if API key is missing. Module-init
+// instantiation crashes preview builds where the env var isn't set. Memoized
+// getter defers construction to first send.
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) _resend = new Resend(env.RESEND_API_KEY);
+  return _resend;
+}
 
 interface NotifyOptions {
   prospectId: string;
@@ -53,7 +60,7 @@ export async function notifyAdmin({
   let status = 'sent';
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: 'Qualifai <notifications@klarifai.nl>',
       to: [env.ADMIN_EMAIL],
       subject: subjects[type] ?? `Prospect activity: ${type}`,

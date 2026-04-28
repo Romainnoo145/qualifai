@@ -4,7 +4,12 @@ import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { env } from '@/env.mjs';
 
-const resend = new Resend(env.RESEND_API_KEY);
+// Lazy-init Resend (see lib/notifications.ts for rationale).
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) _resend = new Resend(env.RESEND_API_KEY);
+  return _resend;
+}
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -22,7 +27,7 @@ export async function POST(req: NextRequest) {
 
   let event;
   try {
-    event = resend.webhooks.verify({
+    event = getResend().webhooks.verify({
       payload: rawBody,
       headers: {
         id: req.headers.get('svix-id') ?? '',
