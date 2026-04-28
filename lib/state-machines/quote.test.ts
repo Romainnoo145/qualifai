@@ -42,6 +42,12 @@ function mockDb(quote: unknown) {
     prospect: {
       update: vi.fn().mockResolvedValue(undefined),
     },
+    engagement: {
+      create: vi.fn().mockResolvedValue({ id: 'eng1', milestones: [] }),
+    },
+    engagementMilestone: {
+      update: vi.fn().mockResolvedValue(undefined),
+    },
   };
   // Top-level quote.findUnique mirrors the shape the pre-fetch expects:
   // { status, prospect: { voorstelMode, bespokeUrl } }
@@ -310,6 +316,129 @@ describe('transitionQuote', () => {
     ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     });
+  });
+});
+
+describe('transitionQuote → ACCEPTED creates Engagement', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('creates Engagement with milestones from quote.paymentSchedule, marks first as completed', async () => {
+    const paymentSchedule = [
+      { label: 'Bij ondertekening', percentage: 30 },
+      { label: 'Na oplevering fase 1', percentage: 40 },
+      { label: 'Na definitieve oplevering', percentage: 30 },
+    ];
+
+    const sentQuote = {
+      ...BASE_QUOTE,
+      status: 'SENT' as const,
+      paymentSchedule,
+      prospect: {
+        ...BASE_QUOTE.prospect,
+        status: 'QUOTE_SENT' as const,
+        projectId: 'proj1',
+      },
+    };
+
+    // The first milestone returned from the nested include
+    const firstMilestone = {
+      id: 'ms1',
+      ordering: 0,
+      label: 'Bij ondertekening',
+    };
+
+    // Build a tx mock with engagement + engagementMilestone added
+    const tx = {
+      quote: {
+        findUnique: vi.fn().mockResolvedValue(sentQuote),
+        update: vi
+          .fn()
+          .mockImplementation(
+            ({ data }: { data: Record<string, unknown> }) => ({
+              ...sentQuote,
+              ...data,
+            }),
+          ),
+      },
+      prospect: {
+        update: vi.fn().mockResolvedValue(undefined),
+      },
+      engagement: {
+        create: vi.fn().mockResolvedValue({
+          id: 'eng1',
+          quoteId: 'q1',
+          prospectId: 'p1',
+          projectId: 'proj1',
+          milestones: [firstMilestone],
+        }),
+      },
+      engagementMilestone: {
+        update: vi.fn().mockResolvedValue(undefined),
+      },
+    };
+
+    const topLevelFindUnique = vi.fn().mockResolvedValue({
+      status: sentQuote.status,
+      prospect: { voorstelMode: 'STANDARD', bespokeUrl: null },
+    });
+
+    const db = {
+      $transaction: vi
+        .fn()
+        .mockImplementation(async (cb: (txArg: typeof tx) => unknown) =>
+          cb(tx),
+        ),
+      quote: { findUnique: topLevelFindUnique },
+      _tx: tx,
+    };
+
+    await transitionQuote(
+      db as unknown as Parameters<typeof transitionQuote>[0],
+      'q1',
+      'ACCEPTED',
+    );
+
+    // 1. engagement.create called once
+    expect(tx.engagement.create).toHaveBeenCalledTimes(1);
+
+    const createCall = tx.engagement.create.mock.calls[0]![0] as {
+      data: Record<string, unknown>;
+    };
+
+    // 2. quoteId, prospectId, projectId match the quote
+    expect(createCall.data.quoteId).toBe('q1');
+    expect(createCall.data.prospectId).toBe('p1');
+    expect(createCall.data.projectId).toBe('proj1');
+
+    // 3. milestones.create has one entry per paymentSchedule term with ordering + label
+    const milestonesCreate = (
+      createCall.data.milestones as {
+        create: Array<{ ordering: number; label: string }>;
+      }
+    ).create;
+    expect(milestonesCreate).toHaveLength(3);
+    expect(milestonesCreate[0]).toMatchObject({
+      ordering: 0,
+      label: 'Bij ondertekening',
+    });
+    expect(milestonesCreate[1]).toMatchObject({
+      ordering: 1,
+      label: 'Na oplevering fase 1',
+    });
+    expect(milestonesCreate[2]).toMatchObject({
+      ordering: 2,
+      label: 'Na definitieve oplevering',
+    });
+
+    // 4. engagementMilestone.update called to set completedAt on first milestone
+    expect(tx.engagementMilestone.update).toHaveBeenCalledTimes(1);
+    const milestoneUpdateCall = tx.engagementMilestone.update.mock
+      .calls[0]![0] as {
+      where: Record<string, unknown>;
+      data: Record<string, unknown>;
+    };
+    expect(milestoneUpdateCall.where).toEqual({ id: 'ms1' });
+    expect(milestoneUpdateCall.data.completedAt).toBeInstanceOf(Date);
   });
 });
 

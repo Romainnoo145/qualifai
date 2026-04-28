@@ -4,7 +4,9 @@ import { assetsRouter } from './assets';
 import { callPrepRouter } from './call-prep';
 import { campaignsRouter } from './campaigns';
 import { contactsRouter } from './contacts';
+import { engagementRouter } from './engagement';
 import { hypothesesRouter } from './hypotheses';
+import { invoiceRouter } from './invoice';
 import { outreachRouter } from './outreach';
 import { projectsRouter } from './projects';
 import { proofRouter } from './proof';
@@ -21,7 +23,9 @@ export const appRouter = router({
   callPrep: callPrepRouter,
   campaigns: campaignsRouter,
   contacts: contactsRouter,
+  engagement: engagementRouter,
   hypotheses: hypothesesRouter,
+  invoice: invoiceRouter,
   outreach: outreachRouter,
   projects: projectsRouter,
   proof: proofRouter,

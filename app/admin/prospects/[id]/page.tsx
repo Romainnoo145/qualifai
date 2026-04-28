@@ -650,7 +650,9 @@ export default function ProspectDetail() {
   // Sync local state when prospect data arrives (handles initial load + refetch)
   useEffect(() => {
     if (!p) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVoorstelMode(p.voorstelMode ?? 'STANDARD');
+
     setBespokeUrl(p.bespokeUrl ?? null);
   }, [p?.voorstelMode, p?.bespokeUrl]); // eslint-disable-line react-hooks/exhaustive-deps
   const runs = runsQuery.data as ResearchRunRow[] | undefined;
@@ -1081,6 +1083,10 @@ export default function ProspectDetail() {
                   href={`/admin/prospects/${id}/resultaten`}
                   label="Resultaten"
                   disabled
+                />
+                <DossierLink
+                  href={`/admin/prospects/${id}/project`}
+                  label="Project"
                 />
               </div>
             </div>

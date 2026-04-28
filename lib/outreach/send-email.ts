@@ -6,7 +6,12 @@ import { createUnsubscribeToken } from '@/lib/outreach/unsubscribe';
 import { assessEmailForOutreach } from '@/lib/outreach/quality';
 import { getEmailSignature } from '@/components/clients/klarifai/email-signature';
 
-const resend = new Resend(env.RESEND_API_KEY);
+// Lazy-init Resend (see lib/notifications.ts for rationale).
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) _resend = new Resend(env.RESEND_API_KEY);
+  return _resend;
+}
 
 const FROM_EMAIL =
   process.env.OUTREACH_FROM_EMAIL ?? 'Romano Kanters <info@klarifai.nl>';
@@ -111,18 +116,19 @@ export async function sendOutreachEmail(
   let sentAt: Date | null = new Date();
 
   try {
-    const { data: sendResult, error: sendError } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [to],
-      subject,
-      html: compliantContent.bodyHtml,
-      text: compliantContent.bodyText,
-      replyTo: REPLY_TO_EMAIL,
-      headers: {
-        'List-Unsubscribe': `<mailto:${UNSUBSCRIBE_EMAIL}?subject=unsubscribe>, <${unsubscribeUrl}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
-    });
+    const { data: sendResult, error: sendError } =
+      await getResend().emails.send({
+        from: FROM_EMAIL,
+        to: [to],
+        subject,
+        html: compliantContent.bodyHtml,
+        text: compliantContent.bodyText,
+        replyTo: REPLY_TO_EMAIL,
+        headers: {
+          'List-Unsubscribe': `<mailto:${UNSUBSCRIBE_EMAIL}?subject=unsubscribe>, <${unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
+      });
     if (sendError) {
       throw sendError;
     }

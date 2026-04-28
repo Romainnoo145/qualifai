@@ -215,6 +215,7 @@ model Prospect {
   prospectAnalyses        ProspectAnalysis[]
   outreachLogs            OutreachLog[]
   quotes                  Quote[]
+  engagements             Engagement[]
 
   // Analysis failure + model tracking (Phase 61.1 POLISH-03, SC #2)
   lastAnalysisError       String?
@@ -660,6 +661,7 @@ model Project {
   spvs             SPV[]
   projectDocuments ProjectDocument[]
   ragIngestionRuns RagIngestionRun[]
+  engagements      Engagement[]
 
   @@index([projectType])
 }
@@ -859,6 +861,7 @@ model Quote {
 
   lines          QuoteLine[]
   outreachLogs   OutreachLog[]
+  engagement     Engagement?
 
   @@index([prospectId])
   @@index([prospectId, isActiveProposal])
@@ -1107,4 +1110,85 @@ model ProspectAnalysis {
 
   @@index([prospectId])
   @@index([researchRunId])
+}
+
+// =============================================================================
+// POST-SALE FLOW (Wave A)
+// =============================================================================
+
+enum EngagementStatus {
+  ACTIVE
+  DELIVERED
+  ARCHIVED
+}
+
+model Engagement {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  quoteId       String   @unique
+  quote         Quote    @relation(fields: [quoteId], references: [id])
+  prospectId    String
+  prospect      Prospect @relation(fields: [prospectId], references: [id])
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id])
+  acceptedAt    DateTime
+  kickoffBookedAt        DateTime?
+  kickoffReminderCount   Int       @default(0)
+  kickoffReminderLastAt  DateTime?
+  status        EngagementStatus @default(ACTIVE)
+  milestones    EngagementMilestone[]
+  invoices      Invoice[]
+
+  @@index([prospectId])
+  @@index([projectId])
+}
+
+model EngagementMilestone {
+  id           String     @id @default(cuid())
+  engagementId String
+  engagement   Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  ordering     Int
+  label        String
+  completedAt  DateTime?
+
+  @@index([engagementId])
+  @@index([engagementId, ordering])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  engagementId  String
+  engagement    Engagement    @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  invoiceNumber String        @unique
+  termijnIndex  Int
+  termijnLabel  String
+  amountCents   Int
+  vatPercentage Int           @default(21)
+  status        InvoiceStatus @default(DRAFT)
+  sentAt        DateTime?
+  dueAt         DateTime?
+  paidAt        DateTime?
+  pdfUrl        String?
+  notes         String?       @db.Text
+
+  @@unique([engagementId, termijnIndex])
+  @@index([engagementId])
+  @@index([status])
+}
+
+model InvoiceSequence {
+  year         Int      @id
+  lastSequence Int      @default(0)
+  updatedAt    DateTime @updatedAt
 }
