@@ -132,8 +132,7 @@ function AdminAuth({ children }: { children: React.ReactNode }) {
             />
             <div className="text-center space-y-3">
               <p className="font-['Sora'] text-[11px] font-medium tracking-[0.18em] uppercase text-[var(--color-muted)]">
-                <span style={{ color: '#e1c33c' }}>[ 01 ]</span>
-                <span className="ml-2.5">ADMIN</span>
+                ADMIN
               </p>
               <h1 className="font-['Sora'] text-[32px] font-bold leading-[1.1] tracking-[-0.02em] text-[var(--color-ink)]">
                 Welkom terug<span style={{ color: '#e1c33c' }}>.</span>

@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/components/providers';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { ProspectAnalyseSkeleton } from '@/components/features/prospects/prospect-analyse-skeleton';
 import { RerunLoadingScreen } from '@/components/features/research/rerun-loading-screen';
 import { SubRouteShell } from '../_shared/sub-route-shell';
 import type { NarrativeAnalysis, NarrativeSection } from '@/lib/analysis/types';
@@ -139,6 +140,7 @@ export default function AnalysePage() {
     refetch?: () => Promise<unknown>;
   };
   const { data: analysis, isLoading } = analysisQuery;
+  const showSkeleton = useDelayedLoading(isLoading);
 
   const activeRun = api.research.getActiveStatusByProspectId.useQuery(
     { prospectId: id },
@@ -170,7 +172,9 @@ export default function AnalysePage() {
   return (
     <SubRouteShell active="analyse">
       {isLoading ? (
-        <PageLoader label="Analyse laden" description="Narrative ophalen." />
+        showSkeleton ? (
+          <ProspectAnalyseSkeleton />
+        ) : null
       ) : activeRun.data?.isActive ? (
         <RerunLoadingScreen
           variant="inline"

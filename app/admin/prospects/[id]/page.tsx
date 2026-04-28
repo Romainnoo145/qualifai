@@ -17,7 +17,8 @@ import {
   Check,
 } from 'lucide-react';
 import { api } from '@/components/providers';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { ProspectDetailSkeleton } from '@/components/features/prospects/prospect-detail-skeleton';
 import { Popup } from '@/components/ui/popup';
 import { cn } from '@/lib/utils';
 import { buildDiscoverPath } from '@/lib/prospect-url';
@@ -726,13 +727,9 @@ export default function ProspectDetail() {
           })
         : '#';
 
+  const showSkeleton = useDelayedLoading(prospectQuery.isLoading);
   if (prospectQuery.isLoading) {
-    return (
-      <PageLoader
-        label="Company laden"
-        description="Gegevens en activiteit ophalen."
-      />
-    );
+    return showSkeleton ? <ProspectDetailSkeleton /> : null;
   }
 
   if (!p) {

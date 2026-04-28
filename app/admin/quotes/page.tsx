@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Trash2 } from 'lucide-react';
 import { api } from '@/components/providers';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { QuotesListSkeleton } from '@/components/features/quotes/quotes-list-skeleton';
 import { QuoteStatusBadge } from '@/components/features/quotes/quote-status-badge';
 import { computeQuoteTotals, formatEuro } from '@/lib/quotes/quote-totals';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -75,8 +76,9 @@ export default function QuotesListPage() {
     }
   };
 
+  const showSkeleton = useDelayedLoading(list.isLoading);
   if (list.isLoading) {
-    return <PageLoader label="Offertes laden" description="Eén moment." />;
+    return showSkeleton ? <QuotesListSkeleton /> : null;
   }
 
   if (list.error) {

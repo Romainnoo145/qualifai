@@ -81,16 +81,11 @@ export default function FacturenPage() {
         </p>
       </div>
 
-      {/* Stat trio — section-label header pattern */}
+      {/* Stat trio */}
       <section className="space-y-4">
-        <div className="flex items-center gap-3">
-          <span className="text-[var(--color-gold)] font-medium tabular-nums">
-            [ 01 ]
-          </span>
-          <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)]">
-            Pulse
-          </span>
-        </div>
+        <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)]">
+          Pulse
+        </span>
         <div className="grid grid-cols-3 gap-px bg-[var(--color-border)] border border-[var(--color-border)] rounded-md overflow-hidden">
           <StatCard
             label="Openstaand"
@@ -126,16 +121,11 @@ export default function FacturenPage() {
         </div>
       </section>
 
-      {/* Lijst — section-label + filter pills + table */}
+      {/* Lijst — filter pills + table */}
       <section className="space-y-4">
-        <div className="flex items-center gap-3">
-          <span className="text-[var(--color-gold)] font-medium tabular-nums">
-            [ 02 ]
-          </span>
-          <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)]">
-            Lijst
-          </span>
-        </div>
+        <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)]">
+          Lijst
+        </span>
 
         <div className="flex flex-wrap items-center gap-2">
           {FILTERS.map((filter) => (

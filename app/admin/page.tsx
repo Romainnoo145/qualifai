@@ -14,7 +14,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { DashboardSkeleton } from '@/components/features/dashboard/dashboard-skeleton';
 
 // --- Helpers ---
 
@@ -330,13 +331,9 @@ export default function AdminDashboard() {
     },
   });
 
+  const showSkeleton = useDelayedLoading(feed.isLoading || actions.isLoading);
   if (feed.isLoading || actions.isLoading) {
-    return (
-      <PageLoader
-        label="Dashboard laden"
-        description="Recente activiteit en acties ophalen."
-      />
-    );
+    return showSkeleton ? <DashboardSkeleton /> : null;
   }
 
   if (feed.error || actions.error) {

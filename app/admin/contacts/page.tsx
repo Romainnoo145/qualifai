@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { Users, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { ContactsListSkeleton } from '@/components/features/contacts/contacts-list-skeleton';
 
 export default function ContactsPage() {
   const [search, setSearch] = useState('');
@@ -15,6 +16,7 @@ export default function ContactsPage() {
     search: search || undefined,
     seniority: seniority || undefined,
   });
+  const showSkeleton = useDelayedLoading(contacts.isLoading);
 
   return (
     <div className="max-w-[1400px] space-y-10">
@@ -51,10 +53,9 @@ export default function ContactsPage() {
 
       {/* Contact list */}
       {contacts.isLoading ? (
-        <PageLoader
-          label="Loading contacts"
-          description="Pulling the latest contact list."
-        />
+        showSkeleton ? (
+          <ContactsListSkeleton />
+        ) : null
       ) : contacts.data?.contacts.length === 0 ? (
         <div className="py-20 text-center">
           <Users className="w-12 h-12 text-[var(--color-border-strong)] mx-auto mb-4" />

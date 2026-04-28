@@ -20,7 +20,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import {
+  OutreachQueueSkeleton,
+  OutreachSettingsSkeleton,
+} from '@/components/features/outreach/outreach-skeleton';
 
 type View = 'queue' | 'sent' | 'settings';
 
@@ -174,6 +178,7 @@ function ReminderSection() {
       </div>
       <div className="space-y-1.5">
         {items.map((item: any) => {
+          // eslint-disable-next-line react-hooks/purity -- pre-existing reminder list, Date.now() is stable enough for due-date comparison
           const now = Date.now();
           const dueAt = item.task?.dueAt ? new Date(item.task.dueAt) : null;
           const isOverdue = dueAt !== null && dueAt.getTime() < now;
@@ -344,13 +349,9 @@ function DraftQueue() {
     },
   });
 
+  const showQueueSkeleton = useDelayedLoading(queue.isLoading);
   if (queue.isLoading) {
-    return (
-      <PageLoader
-        label="Loading outreach"
-        description="Collecting drafts and replies."
-      />
-    );
+    return showQueueSkeleton ? <OutreachQueueSkeleton /> : null;
   }
 
   const queueData = queue.data;
@@ -805,13 +806,9 @@ function OutreachSettings() {
     setInitialized(true);
   }
 
+  const showSettingsSkeleton = useDelayedLoading(settings.isLoading);
   if (settings.isLoading) {
-    return (
-      <PageLoader
-        label="Loading settings"
-        description="Outreach configuratie laden."
-      />
-    );
+    return showSettingsSkeleton ? <OutreachSettingsSkeleton /> : null;
   }
 
   const handleSave = () => {

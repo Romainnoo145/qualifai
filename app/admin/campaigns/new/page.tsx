@@ -16,7 +16,8 @@ import {
   Shield,
   WandSparkles,
 } from 'lucide-react';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { CampaignFormSkeleton } from '@/components/features/campaigns/campaign-form-skeleton';
 
 type WizardStepId = 0 | 1 | 2 | 3;
 
@@ -906,7 +907,6 @@ export default function NewCampaignWizardPage() {
     }
   };
 
-  /* eslint-disable react-hooks/set-state-in-effect -- one-time auto-search trigger on campaign load */
   useEffect(() => {
     if (
       !isExistingCampaignMode ||
@@ -931,7 +931,6 @@ export default function NewCampaignWizardPage() {
     isSearching,
     handleSearch,
   ]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const toggleCompany = (domain: string, companyName: string) => {
     setSelectedDomains((current) => {
@@ -1024,13 +1023,11 @@ export default function NewCampaignWizardPage() {
     router.push(`/admin/campaigns/${targetCampaignId}`);
   };
 
+  const showSkeleton = useDelayedLoading(
+    isExistingCampaignMode && existingCampaignQuery.isLoading,
+  );
   if (isExistingCampaignMode && existingCampaignQuery.isLoading) {
-    return (
-      <PageLoader
-        label="Loading campaign"
-        description="Opening the selected campaign."
-      />
-    );
+    return showSkeleton ? <CampaignFormSkeleton /> : null;
   }
 
   if (isExistingCampaignMode && !existingCampaignQuery.data) {
