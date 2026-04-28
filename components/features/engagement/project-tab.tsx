@@ -5,23 +5,20 @@ import { computeQuoteTotals, formatEuro } from '@/lib/quotes/quote-totals';
 import { KickoffBlock } from './kickoff-block';
 import { MilestoneChecklist } from './milestone-checklist';
 import { InvoiceQueue } from './invoice-queue';
+import { ProjectTabSkeleton } from './project-tab-skeleton';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
 
 export function ProjectTab({ prospectId }: { prospectId: string }) {
-  // TODO: tRPC v11 inference gap — engagement.getByProspect
-
   const {
     data: engagement,
     isLoading,
     refetch,
+    // TODO: tRPC v11 inference gap — engagement.getByProspect
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } = (api.engagement.getByProspect as any).useQuery({ prospectId });
 
-  if (isLoading) {
-    return (
-      <div className="text-[13px] text-[var(--color-muted)]">
-        Project laden…
-      </div>
-    );
-  }
+  const showSkeleton = useDelayedLoading(isLoading);
+  if (isLoading) return showSkeleton ? <ProjectTabSkeleton /> : null;
 
   if (!engagement) {
     return (
