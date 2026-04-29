@@ -13,7 +13,8 @@ import {
   Linkedin,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { ContactDetailSkeleton } from '@/components/features/contacts/contact-detail-skeleton';
 
 const OUTREACH_TYPE_LABELS: Record<string, string> = {
   INTRO_EMAIL: 'Intro Email',
@@ -48,14 +49,10 @@ export default function ContactDetail() {
   const params = useParams();
   const id = params.id as string;
   const contact = api.contacts.get.useQuery({ id });
+  const showSkeleton = useDelayedLoading(contact.isLoading);
 
   if (contact.isLoading) {
-    return (
-      <PageLoader
-        label="Loading contact"
-        description="Preparing contact details."
-      />
-    );
+    return showSkeleton ? <ContactDetailSkeleton /> : null;
   }
 
   if (!contact.data) {

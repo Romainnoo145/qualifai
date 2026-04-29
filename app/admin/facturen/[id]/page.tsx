@@ -1,6 +1,6 @@
 import { InvoiceDetail } from '@/components/features/invoice/invoice-detail';
 
-export default async function InvoicePage({
+export default async function InvoiceDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;

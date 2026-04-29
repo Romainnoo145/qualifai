@@ -7,7 +7,8 @@ import { useState } from 'react';
 import { ArrowLeft, Building2, Plus, X, Loader2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { deepAnalysisStatus } from '@/lib/deep-analysis';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { CampaignDetailSkeleton } from '@/components/features/campaigns/campaign-detail-skeleton';
 
 type FunnelStage =
   | 'imported'
@@ -350,14 +351,10 @@ export default function CampaignDetailPage() {
   const [stageFilter, setStageFilter] = useState<FunnelStage | null>(null);
 
   const query = api.campaigns.getWithFunnelData.useQuery({ id });
+  const showSkeleton = useDelayedLoading(query.isLoading);
 
   if (query.isLoading) {
-    return (
-      <PageLoader
-        label="Loading campaign"
-        description="Preparing campaign performance."
-      />
-    );
+    return showSkeleton ? <CampaignDetailSkeleton /> : null;
   }
 
   if (query.error || !query.data) {

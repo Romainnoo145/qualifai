@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { api } from '@/components/providers';
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { UseCasesSkeleton } from '@/components/features/use-cases/use-cases-skeleton';
 import { SECTOR_LABELS } from '@/lib/constants/sectors';
 import type { UseCaseSector } from '@prisma/client';
 
@@ -57,6 +58,7 @@ export default function UseCasesPage() {
   const useCases = api.useCases.list.useQuery(
     selectedSector ? { sector: selectedSector } : undefined,
   );
+  const showSkeleton = useDelayedLoading(useCases.isLoading);
 
   const createMutation = api.useCases.create.useMutation({
     onSuccess: async () => {
@@ -175,12 +177,7 @@ export default function UseCasesPage() {
       )}
 
       {/* Loading */}
-      {useCases.isLoading && (
-        <PageLoader
-          label="Loading use cases"
-          description="Preparing the use case library."
-        />
-      )}
+      {useCases.isLoading && showSkeleton && <UseCasesSkeleton />}
 
       {/* Main layout: sidebar + content */}
       {!useCases.isLoading && (

@@ -4,7 +4,8 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { ExternalLink, ChevronDown, ChevronRight } from 'lucide-react';
 import { api } from '@/components/providers';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { ProspectEvidenceSkeleton } from '@/components/features/prospects/prospect-evidence-skeleton';
 import { SubRouteShell } from '../_shared/sub-route-shell';
 
 // Source type display config
@@ -61,6 +62,7 @@ export default function EvidencePage() {
   const { data, isLoading } = api.admin.listEvidence.useQuery({
     prospectId: id,
   });
+  const showSkeleton = useDelayedLoading(isLoading);
 
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) => {
@@ -74,7 +76,9 @@ export default function EvidencePage() {
   return (
     <SubRouteShell active="evidence">
       {isLoading ? (
-        <PageLoader label="Evidence laden" description="Items ophalen." />
+        showSkeleton ? (
+          <ProspectEvidenceSkeleton />
+        ) : null
       ) : !data || data.total === 0 ? (
         <div className="py-16 text-center">
           <p className="text-[15px] text-[var(--color-muted-dark)]">

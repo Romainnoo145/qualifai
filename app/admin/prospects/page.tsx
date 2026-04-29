@@ -15,7 +15,8 @@ import {
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { computePipelineStage, type PipelineStage } from '@/lib/pipeline-stage';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { ProspectsListSkeleton } from '@/components/features/prospects/prospects-list-skeleton';
 import { ProspectLogo } from '@/components/features/prospects/prospect-logo';
 import { ResearchRunBadge } from '@/components/features/research/research-run-badge';
 import { isActiveStatus } from '@/lib/research/status-labels';
@@ -223,13 +224,9 @@ function AllCompanies({
     return groups;
   }, [visibleProspects]);
 
+  const showSkeleton = useDelayedLoading(prospects.isLoading);
   if (prospects.isLoading) {
-    return (
-      <PageLoader
-        label="Loading companies"
-        description="Fetching the latest prospect list."
-      />
-    );
+    return showSkeleton ? <ProspectsListSkeleton /> : null;
   }
 
   if (stagedProspects.length === 0) {

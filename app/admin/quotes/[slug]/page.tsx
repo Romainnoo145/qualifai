@@ -29,7 +29,8 @@ import { useRouter } from 'next/navigation';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Popup } from '@/components/ui/popup';
 import { api } from '@/components/providers';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { QuoteDetailSkeleton } from '@/components/features/quotes/quote-detail-skeleton';
 import { QuoteVersionConfirm } from '@/components/features/quotes/quote-version-confirm';
 import { QuoteStatusBadge } from '@/components/features/quotes/quote-status-badge';
 import { NarrativePreview } from '@/components/features/quotes/narrative-preview';
@@ -217,6 +218,7 @@ export default function QuoteDetailPage() {
     if (!quote) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const q = quote as any;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing seed-from-data pattern; init from server-fetched quote on mount/change
     setNotes(q.meetingNotes ?? '');
     setIntroductie(quote.introductie ?? '');
     setUitdaging(quote.uitdaging ?? '');
@@ -304,8 +306,9 @@ export default function QuoteDetailPage() {
     }
   }, [quote, slug, router]);
 
+  const showSkeleton = useDelayedLoading(quoteQuery.isLoading);
   if (quoteQuery.isLoading || !quote) {
-    return <PageLoader label="Offerte laden" description="Eén moment." />;
+    return showSkeleton ? <QuoteDetailSkeleton /> : null;
   }
   if (quoteQuery.error) {
     return (

@@ -3,10 +3,12 @@
 import { api } from '@/components/providers';
 import Link from 'next/link';
 import { FolderKanban, Plus } from 'lucide-react';
-import { PageLoader } from '@/components/ui/page-loader';
+import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
+import { CampaignsListSkeleton } from '@/components/features/campaigns/campaigns-list-skeleton';
 
 export default function CampaignsPage() {
   const campaigns = api.campaigns.list.useQuery();
+  const showSkeleton = useDelayedLoading(campaigns.isLoading);
 
   return (
     <div className="max-w-[1400px] space-y-10">
@@ -22,7 +24,7 @@ export default function CampaignsPage() {
         </Link>
       </div>
 
-      {campaigns.isLoading && <PageLoader label="Loading campaigns" />}
+      {campaigns.isLoading && showSkeleton && <CampaignsListSkeleton />}
 
       {!campaigns.isLoading && (campaigns.data ?? []).length === 0 && (
         <div className="py-20 text-center">
