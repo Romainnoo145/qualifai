@@ -2560,3 +2560,461 @@ Plan complete and saved to `docs/superpowers/plans/2026-04-29-prospect-creation-
 **2. Inline Execution** — execute tasks in this session with checkpoints between phases.
 
 Which approach?
+
+---
+
+## Plan-Eng-Review Revisions (v2 — 2026-04-29)
+
+The following deltas override sections of the original plan, in response to plan-eng-review findings. Apply during execution.
+
+### R1 — Phase 1 restructured: 2 migrations, no separate script (replaces Task 1.3)
+
+The original Task 1.3 was a `tsx` script between two migrations. On Vercel, `prisma migrate deploy` runs all migrations sequentially without giving the script a window — the cleanup migration would crash on rows still using legacy enum values.
+
+**New structure:** inline data migration into the cleanup SQL itself. Keep Task 1.1 (preflight) and Task 1.2 (additive). Replace Tasks 1.3 + 1.4 with the single Task 1.3-NEW below.
+
+**Task 1.3-NEW — Cleanup migration with embedded data remap**
+
+Files:
+
+- Create: `prisma/migrations/20260429120100_prospect_creation_flow_cleanup/migration.sql`
+
+```sql
+-- Single atomic migration: data remap → drop legacy columns → swap enum.
+
+-- Step 1: Remap legacy ProspectStatus rows.
+UPDATE "Prospect"
+  SET status = 'FAILED'::"ProspectStatus",
+      "failureReason" = 'Pre-rebuild migration: stuck in GENERATING. Probeer opnieuw.'
+  WHERE status = 'GENERATING'::"ProspectStatus";
+
+UPDATE "Prospect" p
+  SET status = 'READY'::"ProspectStatus",
+      "analysisCompletedAt" = (
+        SELECT MAX("createdAt") FROM "ProspectAnalysis" pa WHERE pa."prospectId" = p.id
+      )
+  WHERE status = 'ENRICHED'::"ProspectStatus"
+    AND EXISTS (
+      SELECT 1 FROM "ProspectAnalysis" pa
+      WHERE pa."prospectId" = p.id
+        AND pa.content::jsonb ? 'version'
+        AND pa.content->>'version' = 'analysis-v2'
+    );
+
+UPDATE "Prospect"
+  SET status = 'ANALYZING'::"ProspectStatus"
+  WHERE status = 'ENRICHED'::"ProspectStatus";
+
+-- Step 2: Drop legacy v1 columns.
+ALTER TABLE "Prospect" DROP COLUMN IF EXISTS "heroContent";
+ALTER TABLE "Prospect" DROP COLUMN IF EXISTS "dataOpportunities";
+ALTER TABLE "Prospect" DROP COLUMN IF EXISTS "automationAgents";
+ALTER TABLE "Prospect" DROP COLUMN IF EXISTS "successStories";
+ALTER TABLE "Prospect" DROP COLUMN IF EXISTS "aiRoadmap";
+
+-- Step 3: Swap enum to drop legacy values.
+ALTER TYPE "ProspectStatus" RENAME TO "ProspectStatus_old";
+CREATE TYPE "ProspectStatus" AS ENUM (
+  'DRAFT', 'ENRICHING', 'ANALYZING', 'READY', 'FAILED',
+  'SENT', 'VIEWED', 'ENGAGED', 'QUOTE_SENT', 'CONVERTED', 'ARCHIVED'
+);
+ALTER TABLE "Prospect"
+  ALTER COLUMN "status" DROP DEFAULT,
+  ALTER COLUMN "status" TYPE "ProspectStatus" USING ("status"::text::"ProspectStatus"),
+  ALTER COLUMN "status" SET DEFAULT 'DRAFT'::"ProspectStatus";
+DROP TYPE "ProspectStatus_old";
+```
+
+The `scripts/migrate-prospect-statuses.ts` script is deleted — no longer needed for prod. Local can run the same SQL via `docker exec`.
+
+### R2 — Phase 3 + Phase 6: use `waitUntil()` for Wave 2
+
+In Tasks 3.3 and 3.4, replace `void runWave2(...)` with:
+
+```ts
+import { waitUntil } from '@vercel/functions';
+
+waitUntil(
+  (async () => {
+    try {
+      await runWave2(ctx.db, { prospectId: wave1Result.prospectId });
+    } catch (error) {
+      console.error('[createAndProcess] Wave 2 unexpected error:', error);
+    }
+  })(),
+);
+```
+
+Add dep: `npm install @vercel/functions`. In local dev `waitUntil` degrades gracefully.
+
+### R3 — Issue 1.4: extend `recordAnalysisFailure`, route Wave 2 catches through it
+
+**Task 3.6 — Extend recordAnalysisFailure** (new task, after Task 3.5)
+
+Modify `lib/analysis/master-analyzer.ts`:
+
+```ts
+export async function recordAnalysisFailure(
+  db: ProspectFailureDb,
+  prospectId: string,
+  errorMessage: string,
+): Promise<void> {
+  const truncated = errorMessage.slice(0, 500);
+  await db.prospect.update({
+    where: { id: prospectId },
+    data: {
+      status: 'FAILED',
+      failureReason: truncated.slice(0, 200),
+      lastAnalysisError: truncated,
+      lastAnalysisAttemptedAt: new Date(),
+    },
+  });
+}
+```
+
+Update `lib/prospect-creation/wave-2.ts` catch blocks to call `recordAnalysisFailure(db, prospect.id, reason)` instead of writing status directly. Tests for runWave2 still pass (assertions are on resulting status/failureReason).
+
+### R4 — Issue 1.3: detail page status auto-refresh
+
+In Task 6.1, append to `AnalyzingHero`:
+
+```tsx
+'use client';
+import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+
+export function AnalyzingHero({ prospectId, status }: Props) {
+  const router = useRouter();
+  const wasActiveRef = useRef(true);
+  // ...existing query...
+  useEffect(() => {
+    if (!data) return;
+    if (data.isActive) {
+      wasActiveRef.current = true;
+      return;
+    }
+    if (wasActiveRef.current && !data.isActive) {
+      wasActiveRef.current = false;
+      router.refresh();
+    }
+  }, [data, router]);
+  // ...rest of render...
+}
+```
+
+Mirrors `components/features/research/active-run-poller.tsx`.
+
+### R5 — Issue 1.5: multi-tenant scope on `getActiveStatusByProspectId`
+
+In Task 6.1 Step 2, use `projectAdminProcedure` and add scope check:
+
+```ts
+getActiveStatusByProspectId: projectAdminProcedure
+  .input(z.object({ prospectId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    const prospect = await ctx.db.prospect.findFirst({
+      where: { id: input.prospectId, projectId: ctx.projectId },
+      select: { id: true },
+    });
+    if (!prospect) return { isActive: false, status: null, currentStep: null };
+    const run = await ctx.db.researchRun.findFirst({
+      where: { prospectId: prospect.id },
+      orderBy: { createdAt: 'desc' },
+      select: { status: true, currentStep: true },
+    });
+    if (!run) return { isActive: false, status: null, currentStep: null };
+    const isActive = ['PENDING', 'CRAWLING', 'EXTRACTING', 'HYPOTHESIS', 'BRIEFING'].includes(run.status);
+    return { isActive, status: run.status, currentStep: run.currentStep };
+  }),
+```
+
+### R6 — Issue 1.6: cron propagates ResearchRun error message
+
+In Task 8.1, replace simple `updateMany` with per-row loop:
+
+```ts
+const stale = await prisma.prospect.findMany({
+  where: {
+    status: 'ANALYZING',
+    createdAt: { lt: cutoff },
+    analysisCompletedAt: null,
+  },
+  select: {
+    id: true,
+    researchRuns: {
+      orderBy: { createdAt: 'desc' },
+      take: 1,
+      select: { status: true, summary: true },
+    },
+  },
+});
+
+let flagged = 0;
+for (const p of stale) {
+  const lastRun = p.researchRuns[0];
+  const reason =
+    lastRun?.status === 'FAILED'
+      ? `Research pipeline: ${(lastRun.summary as { error?: string } | null)?.error ?? 'failed (>30min)'}`
+      : 'Pipeline timeout (>30min). Probeer opnieuw via "Opnieuw proberen".';
+  await prisma.prospect.update({
+    where: { id: p.id },
+    data: { status: 'FAILED', failureReason: reason.slice(0, 200) },
+  });
+  flagged++;
+}
+return NextResponse.json({ flagged });
+```
+
+### R7 — Issue 1.7: verify Atlantis prospects before deleting `atlantis-discover-client.tsx`
+
+Insert pre-check in Task 4.2 Step 1:
+
+```bash
+docker exec qualifai-db psql -U user -d qualifai -c "
+  SELECT p.id, p.\"companyName\", p.status,
+    (SELECT pa.content->>'version' FROM \"ProspectAnalysis\" pa
+     WHERE pa.\"prospectId\" = p.id ORDER BY pa.\"createdAt\" DESC LIMIT 1) AS analysis_version
+  FROM \"Prospect\" p
+  JOIN \"Project\" pr ON pr.id = p.\"projectId\"
+  WHERE pr.\"projectType\" = 'ATLANTIS';
+"
+```
+
+Halt if any row shows `analysis-v1` or NULL — re-run pipeline before delete.
+
+### R8 — Issue 2.2: verify AnalyseBrochure props before rewriting page
+
+In Task 5.1, add Step 0: read `components/features/analyse/analyse-brochure.tsx` `interface Props` first; adjust page render to match required props (e.g., supply `analysisDateLabel` from `prospectAnalysis.createdAt` if required).
+
+### R9 — Issue 2.3: portable sed in Phase 7
+
+Replace Task 7.1 Step 2 sed with:
+
+```bash
+find app/ components/ lib/ server/ \( -name "*.ts" -o -name "*.tsx" \) -type f \
+  -exec sed -i.bak \
+    -e 's/buildDiscoverPath/buildAnalysePath/g' \
+    -e 's/buildDiscoverSlug/buildAnalyseSlug/g' \
+    -e 's/buildDiscoverUrl/buildAnalyseUrl/g' \
+    -e 's/discoverLookupCandidates/analyseLookupCandidates/g' \
+    {} +
+find app/ components/ lib/ server/ -name "*.bak" -delete
+```
+
+Works on BSD (Mac) and GNU (Linux) sed.
+
+### R10 — Issue 2.4: typed db mocks in wave-1/wave-2 tests
+
+In Tasks 3.1 and 3.2, replace `let db: any;` with:
+
+```ts
+type MockDb = {
+  prospect: {
+    create: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    findUniqueOrThrow: ReturnType<typeof vi.fn>;
+  };
+  prospectAnalysis: { findFirst: ReturnType<typeof vi.fn> };
+};
+let db: MockDb;
+```
+
+Cast at call sites: `await runWave1(db as unknown as PrismaClient, ...)`.
+
+### R11 — Issue 3.1: cron unit test (CRITICAL — regression rule)
+
+**Task 8.2 — Cron unit test** (new task, after Task 8.1)
+
+Files:
+
+- Create: `app/api/internal/cron/stale-analysis-detection/route.test.ts`
+
+```ts
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('@/lib/prisma', () => ({
+  default: { prospect: { findMany: vi.fn(), update: vi.fn() } },
+}));
+vi.mock('@/env.mjs', () => ({ env: { INTERNAL_CRON_SECRET: 'test-secret' } }));
+
+beforeEach(() => vi.clearAllMocks());
+
+describe('stale-analysis-detection POST', () => {
+  it('rejects without bearer token', async () => {
+    const { POST } = await import('./route');
+    const res = await POST(new Request('http://x', { method: 'POST' }));
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects with wrong bearer token', async () => {
+    const { POST } = await import('./route');
+    const res = await POST(
+      new Request('http://x', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer wrong' },
+      }),
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('flags stale ANALYZING with generic timeout when no FAILED run', async () => {
+    const prisma = (await import('@/lib/prisma')).default;
+    (prisma.prospect.findMany as any).mockResolvedValue([
+      { id: 'p1', researchRuns: [] },
+      { id: 'p2', researchRuns: [{ status: 'CRAWLING', summary: null }] },
+    ]);
+    const { POST } = await import('./route');
+    const res = await POST(
+      new Request('http://x', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer test-secret' },
+      }),
+    );
+    const body = await res.json();
+    expect(body.flagged).toBe(2);
+    expect(prisma.prospect.update).toHaveBeenCalledTimes(2);
+  });
+
+  it('propagates ResearchRun error when last run is FAILED', async () => {
+    const prisma = (await import('@/lib/prisma')).default;
+    (prisma.prospect.findMany as any).mockResolvedValue([
+      {
+        id: 'p1',
+        researchRuns: [
+          { status: 'FAILED', summary: { error: 'SERP API down' } },
+        ],
+      },
+    ]);
+    const { POST } = await import('./route');
+    await POST(
+      new Request('http://x', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer test-secret' },
+      }),
+    );
+    expect(prisma.prospect.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          failureReason: expect.stringContaining('SERP API down'),
+        }),
+      }),
+    );
+  });
+});
+```
+
+### R12 — Issue 3.2: multi-tenant scope test for retryAnalysis
+
+In Task 3.4, append a 4th test:
+
+```ts
+it('throws NOT_FOUND when prospect belongs to another project', async () => {
+  db.prospect.findFirst.mockResolvedValue(null);
+  const { retryAnalysisHandler } = await import('@/server/routers/admin');
+  await expect(
+    retryAnalysisHandler({ db, projectId: 'other-proj' }, { id: 'p1' }),
+  ).rejects.toThrow(/NOT_FOUND|not found/i);
+});
+```
+
+### R13 — Issue 3.3: full-pipeline integration test
+
+**Task 9.0 — Real-DB integration test** (new task, start of Phase 9)
+
+Files:
+
+- Create: `lib/prospect-creation/integration.test.ts`
+
+```ts
+import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
+import prisma from '@/lib/prisma';
+import { runWave1 } from './wave-1';
+import { runWave2 } from './wave-2';
+
+vi.mock('@/lib/enrichment/apollo-coverage', () => ({
+  enrichCompany: vi
+    .fn()
+    .mockResolvedValue({ companyName: 'TestCo', industry: 'D2C' }),
+}));
+vi.mock('@/lib/enrichment/kvk', () => ({
+  mergeApolloWithKvk: vi.fn().mockResolvedValue({
+    merged: { companyName: 'TestCo', industry: 'D2C' },
+    kvk: null,
+    confidence: { combined: 0.7 },
+  }),
+}));
+vi.mock('@/lib/research-executor', () => ({
+  executeResearchRun: vi.fn().mockImplementation(async (db, { prospectId }) => {
+    await db.prospectAnalysis.create({
+      data: {
+        prospectId,
+        version: 'analysis-v2',
+        content: {
+          version: 'analysis-v2',
+          sections: [{ id: 's1', title: 'X' }],
+        },
+      },
+    });
+    return { run: { id: 'rr-' + prospectId } };
+  }),
+}));
+
+describe('Wave 1 + Wave 2 happy path (real DB)', () => {
+  let projectId: string;
+  beforeAll(async () => {
+    const project = await prisma.project.findFirstOrThrow({
+      select: { id: true },
+    });
+    projectId = project.id;
+  });
+  afterEach(async () => {
+    await prisma.prospect.deleteMany({ where: { domain: 'inttest.example' } });
+  });
+
+  it('full DRAFT → ENRICHING → ANALYZING → READY', async () => {
+    const w1 = await runWave1(prisma, {
+      domain: 'inttest.example',
+      projectId,
+      manualFields: {},
+    });
+    expect(w1.status).toBe('ANALYZING');
+    const w2 = await runWave2(prisma, { prospectId: w1.prospectId });
+    expect(w2.status).toBe('READY');
+    const final = await prisma.prospect.findUniqueOrThrow({
+      where: { id: w1.prospectId },
+      include: { analyses: true },
+    });
+    expect(final.status).toBe('READY');
+    expect(final.analysisCompletedAt).not.toBeNull();
+    expect(final.analyses).toHaveLength(1);
+    expect((final.analyses[0].content as any).version).toBe('analysis-v2');
+  });
+});
+```
+
+Requires docker DB up. Run: `npx vitest run lib/prospect-creation/integration.test.ts`.
+
+### R14 — Final tally
+
+- Phases: 9 (unchanged)
+- Tasks: ~22 (was ~20; +Task 3.6 recordAnalysisFailure, +Task 8.2 cron test, +Task 9.0 integration test)
+- Migrations: 2 (was 3; data migration inlined into cleanup)
+- Test files: 5 (was 4; +cron test)
+- New deps: `@vercel/functions`
+
+All v2 deltas are additive. Executor reads each phase normally and applies the corresponding `R*` revision when it appears.
+
+---
+
+## GSTACK REVIEW REPORT
+
+| Review        | Trigger               | Why                             | Runs | Status                 | Findings                                                                               |
+| ------------- | --------------------- | ------------------------------- | ---- | ---------------------- | -------------------------------------------------------------------------------------- |
+| CEO Review    | `/plan-ceo-review`    | Scope & strategy                | 0    | —                      | not run                                                                                |
+| Codex Review  | `/codex review`       | Independent 2nd opinion         | 0    | —                      | not run                                                                                |
+| Eng Review    | `/plan-eng-review`    | Architecture & tests (required) | 1    | issues_open → resolved | 13 issues, 3 critical (waitUntil, migration ordering, cron test) — all addressed in v2 |
+| Design Review | `/plan-design-review` | UI/UX gaps                      | 0    | —                      | not run                                                                                |
+| DX Review     | `/plan-devex-review`  | Developer experience gaps       | 0    | —                      | not run                                                                                |
+
+- **UNRESOLVED:** 0
+- **VERDICT:** ENG CLEARED — ready to implement v2 plan
