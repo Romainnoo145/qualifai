@@ -100,7 +100,7 @@ export function InvoiceQueue({
                 </td>
                 <td className="py-2 text-right">
                   <Link
-                    href={`/admin/invoices/${inv.id as string}`}
+                    href={`/admin/facturen/${inv.id as string}`}
                     className="text-[var(--color-ink)] hover:underline text-[13px]"
                   >
                     Bekijk →

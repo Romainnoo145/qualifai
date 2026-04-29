@@ -1,57 +1,48 @@
-import {
-  Skeleton,
-  SkelHeading,
-  SkelLine,
-  SkelPill,
-  SkelStatCard,
-  SkelTableRow,
-} from '@/components/ui/skeleton';
+import { Skeleton, SkelHeading, SkelLine } from '@/components/ui/skeleton';
 
-/** Page-shape skeleton for /admin/facturen — matches the actual layout. */
+/** Kanban-shape skeleton — matches the 4-column status board. */
 export function FacturenSkeleton() {
   return (
-    <div className="max-w-[1400px] space-y-10">
+    <div className="max-w-[1500px] space-y-8">
+      {/* Header */}
       <div className="flex items-baseline justify-between pb-6 border-b border-[var(--color-border)]">
-        <SkelHeading width={280} />
-        <SkelLine width={140} className="h-3" />
+        <SkelHeading width="30%" />
+        <SkelLine width={140} className="h-2.5" />
       </div>
 
-      <section className="space-y-4">
-        <div className="flex items-center gap-3">
-          <SkelLine width={40} className="h-3" />
-          <SkelLine width={80} className="h-2.5" />
-        </div>
-        <div className="grid grid-cols-3 gap-px bg-[var(--color-border)] border border-[var(--color-border)] rounded-md overflow-hidden">
-          <SkelStatCard />
-          <SkelStatCard />
-          <SkelStatCard />
-        </div>
-      </section>
+      {/* Summary line */}
+      <SkelLine width="55%" className="h-3" />
 
-      <section className="space-y-4">
-        <div className="flex items-center gap-3">
-          <SkelLine width={40} className="h-3" />
-          <SkelLine width={80} className="h-2.5" />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <SkelPill width={64} />
-          <SkelPill width={84} />
-          <SkelPill width={92} />
-          <SkelPill width={84} />
-          <SkelPill width={76} />
-          <SkelPill width={104} />
-        </div>
-        <div className="border border-[var(--color-border)] rounded-md overflow-hidden">
-          <div className="bg-[var(--color-surface-2)] py-3 px-4 grid grid-cols-7 gap-3">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <Skeleton key={i} className="h-2.5 w-16" />
-            ))}
+      {/* 4-column kanban */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, col) => (
+          <div
+            key={col}
+            className="border border-[var(--color-border)] rounded-lg p-4 min-h-[400px] bg-[var(--color-surface)]"
+          >
+            <div className="flex items-baseline justify-between pb-3 mb-3 border-b border-[var(--color-border)]">
+              <SkelLine width="40%" className="h-2.5" />
+              <Skeleton className="h-4 w-7 rounded-full" />
+            </div>
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, card) => (
+                <div
+                  key={card}
+                  className="border border-[var(--color-border)] rounded-md p-3 space-y-2"
+                >
+                  <SkelLine width="40%" className="h-2" />
+                  <SkelLine width="65%" className="h-3" />
+                  <Skeleton className="h-5 w-24" />
+                  <div className="flex justify-between">
+                    <SkelLine width="50%" className="h-2" />
+                    <SkelLine width={30} className="h-2" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <SkelTableRow cols={7} />
-          <SkelTableRow cols={7} />
-          <SkelTableRow cols={7} />
-        </div>
-      </section>
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { api } from '@/components/providers';
 import { cn } from '@/lib/utils';
 import { useDelayedLoading } from '@/lib/hooks/use-delayed-loading';
@@ -10,68 +10,72 @@ import { FacturenSkeleton } from '@/components/features/invoice/facturen-skeleto
 const formatEur = (cents: number) =>
   (cents / 100).toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' });
 
-const STATUS_LABEL: Record<string, string> = {
+type InvoiceStatus = 'DRAFT' | 'SENT' | 'OVERDUE' | 'PAID' | 'CANCELLED';
+
+const COLUMN_LABEL: Record<Exclude<InvoiceStatus, 'CANCELLED'>, string> = {
   DRAFT: 'Concept',
   SENT: 'Verzonden',
-  PAID: 'Betaald',
   OVERDUE: 'Vervallen',
-  CANCELLED: 'Geannuleerd',
+  PAID: 'Betaald',
 };
 
-// Status badges use brand-aware tints — neutral surface + subtle ink shifts.
-// No invented Tailwind colors (no blue/green/red): DESIGN.md hard rule.
-const STATUS_BADGE: Record<string, string> = {
-  DRAFT:
-    'bg-[var(--color-surface-2)] text-[var(--color-muted)] border-[var(--color-border)]',
-  SENT: 'bg-[var(--color-surface-2)] text-[var(--color-ink)] border-[var(--color-border)]',
-  PAID: 'bg-[#f4d95a]/15 text-[var(--color-ink)] border-[var(--color-gold)]/40',
-  OVERDUE:
-    'bg-[var(--color-ink)]/5 text-[var(--color-ink)] border-[var(--color-ink)]/30 font-medium',
-  CANCELLED:
-    'bg-[var(--color-surface-2)] text-[var(--color-muted)] border-[var(--color-border)] line-through',
-};
-
-type StatusFilter =
-  | 'DRAFT'
-  | 'SENT'
-  | 'PAID'
-  | 'OVERDUE'
-  | 'CANCELLED'
-  | undefined;
-
-const FILTERS: Array<{ key: StatusFilter; label: string }> = [
-  { key: undefined, label: 'Alles' },
-  { key: 'DRAFT', label: 'Concept' },
-  { key: 'SENT', label: 'Verzonden' },
-  { key: 'OVERDUE', label: 'Vervallen' },
-  { key: 'PAID', label: 'Betaald' },
-  { key: 'CANCELLED', label: 'Geannuleerd' },
+// Order of kanban columns left-to-right — the lifecycle of money in motion.
+const COLUMN_ORDER: Array<Exclude<InvoiceStatus, 'CANCELLED'>> = [
+  'DRAFT',
+  'SENT',
+  'OVERDUE',
+  'PAID',
 ];
 
-export default function FacturenPage() {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(undefined);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Invoice = any;
 
+export default function FacturenPage() {
   // TODO: tRPC v11 inference gap — invoice.listForTenant
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, isLoading } = (api.invoice.listForTenant as any).useQuery({
-    status: statusFilter,
+    status: undefined,
   });
 
   const showSkeleton = useDelayedLoading(isLoading);
+
+  const grouped = useMemo(() => {
+    const result: Record<Exclude<InvoiceStatus, 'CANCELLED'>, Invoice[]> = {
+      DRAFT: [],
+      SENT: [],
+      OVERDUE: [],
+      PAID: [],
+    };
+    if (!data?.invoices) return result;
+    for (const inv of data.invoices as Invoice[]) {
+      if (inv.status === 'CANCELLED') continue;
+      const key = inv.status as Exclude<InvoiceStatus, 'CANCELLED'>;
+      if (result[key]) result[key].push(inv);
+    }
+    return result;
+  }, [data]);
+
   if (isLoading) {
     return showSkeleton ? <FacturenSkeleton /> : null;
   }
   if (!data) {
     return (
-      <div className="max-w-[1400px] p-6 text-sm text-[var(--color-muted)]">
+      <div className="max-w-[1500px] p-6 text-sm text-[var(--color-muted)]">
         Geen toegang
       </div>
     );
   }
 
+  const totalCount = (data.invoices as Invoice[]).length;
+  const cancelledCount =
+    grouped.DRAFT.length === 0 && grouped.SENT.length === 0
+      ? 0
+      : (data.invoices as Invoice[]).filter((i) => i.status === 'CANCELLED')
+          .length;
+
   return (
-    <div className="max-w-[1400px] space-y-10">
-      {/* Header — matches /admin/prospects pattern (48px bold + gold period) */}
+    <div className="max-w-[1500px] space-y-8">
+      {/* Header */}
       <div className="flex items-baseline justify-between pb-6 border-b border-[var(--color-border)]">
         <h1 className="text-[48px] font-bold text-[var(--color-ink)] tracking-[-0.025em] leading-[1.05]">
           Facturen<span className="text-[var(--color-gold)]">.</span>
@@ -81,170 +85,140 @@ export default function FacturenPage() {
         </p>
       </div>
 
-      {/* Stat trio */}
-      <section className="space-y-4">
-        <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)]">
-          Pulse
+      {/* Summary line — thin, single-row inventory */}
+      <div className="text-[13px] text-[var(--color-muted)] flex flex-wrap items-center gap-x-4 gap-y-1">
+        <span>
+          <strong className="text-[var(--color-ink)] font-medium tabular-nums">
+            {totalCount}
+          </strong>{' '}
+          facturen
         </span>
-        <div className="grid grid-cols-3 gap-px bg-[var(--color-border)] border border-[var(--color-border)] rounded-md overflow-hidden">
-          <StatCard
-            label="Openstaand"
-            value={formatEur(data.totals.outstanding)}
-            accent
-          />
-          <StatCard
-            label="Deze maand betaald"
-            value={formatEur(data.totals.paidThisMonth)}
-          />
-          <StatCard
-            label="Per status"
-            valueNode={
-              <div className="text-sm space-y-0.5 mt-1 leading-tight">
-                {Object.keys(data.totals.countByStatus).length === 0 ? (
-                  <span className="text-[var(--color-muted)]">—</span>
-                ) : (
-                  Object.entries(data.totals.countByStatus).map(([s, n]) => (
-                    <div
-                      key={s}
-                      className="flex items-baseline justify-between"
-                    >
-                      <span className="text-[var(--color-muted)]">
-                        {STATUS_LABEL[s] ?? s}
-                      </span>
-                      <span className="tabular-nums">{n as number}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            }
-          />
-        </div>
-      </section>
-
-      {/* Lijst — filter pills + table */}
-      <section className="space-y-4">
-        <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)]">
-          Lijst
+        <span className="text-[var(--color-border-strong)]">·</span>
+        <span>
+          <strong className="text-[var(--color-ink)] font-medium tabular-nums">
+            {formatEur(data.totals.outstanding)}
+          </strong>{' '}
+          openstaand
         </span>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {FILTERS.map((filter) => (
-            <button
-              key={filter.label}
-              onClick={() => setStatusFilter(filter.key)}
-              className={cn(
-                'px-3.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] rounded-md border transition-all',
-                statusFilter === filter.key
-                  ? 'bg-[var(--color-ink)] text-white border-[var(--color-ink)]'
-                  : 'bg-transparent text-[var(--color-muted)] border-[var(--color-border)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]',
-              )}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
-
-        {data.invoices.length === 0 ? (
-          <div className="border border-dashed border-[var(--color-border)] rounded-md py-16 text-center">
-            <p className="text-sm text-[var(--color-muted)]">
-              Geen facturen
-              {statusFilter ? ` in status ${STATUS_LABEL[statusFilter]}` : ''}.
-            </p>
-          </div>
-        ) : (
-          <div className="border border-[var(--color-border)] rounded-md overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--color-muted)] bg-[var(--color-surface-2)] text-left">
-                  <th className="py-3 px-4">Nummer</th>
-                  <th className="py-3 px-4">Klant</th>
-                  <th className="py-3 px-4">Termijn</th>
-                  <th className="py-3 px-4 text-right">Bedrag</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Datum</th>
-                  <th className="py-3 px-4"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {data.invoices.map((inv: any) => (
-                  <tr
-                    key={inv.id}
-                    className="border-t border-[var(--color-border)] hover:bg-[var(--color-surface-2)]/50 transition-colors"
-                  >
-                    <td className="py-3 px-4 tabular-nums text-[var(--color-ink)] font-medium">
-                      {inv.invoiceNumber}
-                    </td>
-                    <td className="py-3 px-4 text-[var(--color-ink)]">
-                      {inv.engagement.prospect.companyName ??
-                        inv.engagement.prospect.domain}
-                    </td>
-                    <td className="py-3 px-4 text-[var(--color-muted)]">
-                      {inv.termijnLabel}
-                    </td>
-                    <td className="py-3 px-4 text-right tabular-nums text-[var(--color-ink)]">
-                      {formatEur(inv.amountCents)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={cn(
-                          'inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-[0.06em] border',
-                          STATUS_BADGE[inv.status] ?? '',
-                        )}
-                      >
-                        {STATUS_LABEL[inv.status] ?? inv.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-[var(--color-muted)] tabular-nums">
-                      {new Date(inv.sentAt ?? inv.createdAt).toLocaleDateString(
-                        'nl-NL',
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <Link
-                        href={`/admin/invoices/${inv.id}`}
-                        className="text-[var(--color-ink)] hover:text-[var(--color-gold)] text-sm transition-colors"
-                      >
-                        Bekijk →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <span className="text-[var(--color-border-strong)]">·</span>
+        <span>
+          <strong className="text-[var(--color-ink)] font-medium tabular-nums">
+            {formatEur(data.totals.paidThisMonth)}
+          </strong>{' '}
+          betaald deze maand
+        </span>
+        {grouped.OVERDUE.length > 0 && (
+          <>
+            <span className="text-[var(--color-border-strong)]">·</span>
+            <span className="text-[var(--color-ink)] font-medium">
+              {grouped.OVERDUE.length} vervallen
+            </span>
+          </>
         )}
-      </section>
+        {cancelledCount > 0 && (
+          <>
+            <span className="text-[var(--color-border-strong)]">·</span>
+            <span>{cancelledCount} geannuleerd</span>
+          </>
+        )}
+      </div>
+
+      {/* 4-column kanban */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {COLUMN_ORDER.map((status) => (
+          <KanbanColumn
+            key={status}
+            label={COLUMN_LABEL[status]}
+            invoices={grouped[status]}
+            warn={status === 'OVERDUE'}
+          />
+        ))}
+      </div>
+
+      {totalCount === 0 && (
+        <div className="border border-dashed border-[var(--color-border)] rounded-md py-16 text-center">
+          <p className="text-sm text-[var(--color-muted)]">
+            Nog geen facturen. Maak er een aan vanuit een engagement.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
-function StatCard({
+function KanbanColumn({
   label,
-  value,
-  valueNode,
-  accent,
+  invoices,
+  warn,
 }: {
   label: string;
-  value?: string;
-  valueNode?: React.ReactNode;
-  accent?: boolean;
+  invoices: Invoice[];
+  warn: boolean;
 }) {
   return (
-    <div className="bg-[var(--color-surface)] p-5 space-y-1">
-      <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--color-muted)]">
-        {label}
-      </div>
-      {valueNode ?? (
-        <div
+    <div
+      className={cn(
+        'border rounded-lg p-4 min-h-[400px]',
+        warn
+          ? 'bg-[#f4d95a]/5 border-[var(--color-gold)]/40'
+          : 'bg-[var(--color-surface)] border-[var(--color-border)]',
+      )}
+    >
+      {/* Column head */}
+      <div className="flex items-baseline justify-between pb-3 mb-3 border-b border-[var(--color-border)]">
+        <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-ink)]">
+          {label}
+        </span>
+        <span
           className={cn(
-            'text-[28px] font-bold tabular-nums tracking-[-0.02em] leading-none',
-            accent ? 'text-[var(--color-ink)]' : 'text-[var(--color-ink)]',
+            'text-[11px] font-medium px-2 py-0.5 rounded-full tabular-nums',
+            warn
+              ? 'bg-[#f4d95a]/25 text-[var(--color-ink)]'
+              : 'bg-[var(--color-surface-2)] text-[var(--color-muted)]',
           )}
         >
-          {value}
-        </div>
-      )}
+          {invoices.length}
+        </span>
+      </div>
+
+      {/* Cards */}
+      <div className="space-y-2">
+        {invoices.length === 0 ? (
+          <p className="text-[11px] text-[var(--color-muted)] py-2">—</p>
+        ) : (
+          invoices.map((inv) => <InvoiceCard key={inv.id} invoice={inv} />)
+        )}
+      </div>
     </div>
+  );
+}
+
+function InvoiceCard({ invoice }: { invoice: Invoice }) {
+  const klant =
+    invoice.engagement.prospect.companyName ??
+    invoice.engagement.prospect.domain;
+  const dateStr = new Date(
+    invoice.sentAt ?? invoice.createdAt,
+  ).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' });
+
+  return (
+    <Link
+      href={`/admin/facturen/${invoice.id}`}
+      className="block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md p-3 hover:border-[var(--color-ink)] transition-colors"
+    >
+      <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--color-muted)] tabular-nums mb-1">
+        {invoice.invoiceNumber}
+      </div>
+      <div className="text-[14px] font-medium text-[var(--color-ink)] leading-tight mb-2 truncate">
+        {klant}
+      </div>
+      <div className="text-[18px] font-bold text-[var(--color-ink)] tabular-nums mb-2">
+        {formatEur(invoice.amountCents)}
+      </div>
+      <div className="text-[11px] text-[var(--color-muted)] flex justify-between">
+        <span className="truncate">{invoice.termijnLabel}</span>
+        <span className="tabular-nums shrink-0 ml-2">{dateStr}</span>
+      </div>
+    </Link>
   );
 }
